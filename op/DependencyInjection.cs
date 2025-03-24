@@ -5,8 +5,6 @@ using Application.SeedWork.Interfaces;
 using Ardalis.GuardClauses;
 using Infrastructure.Data;
 using Infrastructure.Data.Options;
-using Infrastructure.Identity;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,10 +34,6 @@ public static class DependencyInjection
             provider.GetRequiredService<ApplicationDbContext>()
         );
         services.AddScoped<ApplicationDbContextInitialiser>();
-
-        services
-            .AddIdentity<ApplicationUser, IdentityRole>()
-            .AddEntityFrameworkStores<ApplicationDbContext>();
 
         return services;
     }
