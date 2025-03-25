@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Data.Options;
+﻿namespace Infrastructure.SeedWork.Options;
 
 public class MssqlOptions
 {

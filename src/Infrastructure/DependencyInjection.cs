@@ -6,6 +6,7 @@ using Ardalis.GuardClauses;
 using Infrastructure.Data;
 using Infrastructure.Data.Options;
 using Infrastructure.Identity;
+using Infrastructure.SeedWork.Options;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -21,12 +22,9 @@ public static class DependencyInjection
         services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly())
         );
-        var mssqlConnectionString = configuration
-            .GetOptions<MssqlOptions>("MSSQL")
-            .ConnectionStringDockerDb;
-        Guard.Against.Null(
-            mssqlConnectionString,
-            message: "Connection String for docker composed not found!"
+        var mssqlConnectionString = Guard.Against.Null(
+            configuration.GetOptions<MssqlOptions>().ConnectionStringDockerDb,
+            "Connection String for docker composed not found!"
         );
 
         services.AddDbContext<ApplicationDbContext>(options =>

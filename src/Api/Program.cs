@@ -1,11 +1,12 @@
+using Api;
+using Api.SeedWork.Extensions;
 using Application;
 using Infrastructure;
 using Infrastructure.SeedWork;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddOpenApi();
-
+builder.AddApiServices(builder.Configuration);
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
@@ -15,8 +16,13 @@ if (app.Environment.IsDevelopment())
 {
     await app.InitializeDatabaseAsync();
     app.MapOpenApi();
+    app.MapScalarApiReferenceWithOptions();
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapEndpoints();
 
 app.Run();
