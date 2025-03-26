@@ -11,9 +11,15 @@ public class User : EndpointGroupBase
         var group = app.MapGroup(this.GetType().Name);
 
         group.MapGet("/test", Test).RequireAuthorization();
+        group.MapGet("/signUp", SignUp);
     }
 
-    private static Ok Test(HttpContext context)
+    private async Task SignUp()
+    {
+        
+    }
+
+    private static Ok Test()
     {
         return TypedResults.Ok();
     }

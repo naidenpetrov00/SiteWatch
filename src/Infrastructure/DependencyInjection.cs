@@ -1,12 +1,14 @@
 ﻿namespace Infrastructure;
 
 using System.Reflection;
+using Application.Interfaces;
 using Application.SeedWork.Interfaces;
 using Ardalis.GuardClauses;
 using Infrastructure.Data;
 using Infrastructure.Data.Options;
 using Infrastructure.Identity;
 using Infrastructure.SeedWork.Options;
+using Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -34,6 +36,7 @@ public static class DependencyInjection
             provider.GetRequiredService<ApplicationDbContext>()
         );
         services.AddScoped<ApplicationDbContextInitialiser>();
+        services.AddSingleton<IJwtTokenService, JwtTokenService>();
 
         services
             .AddIdentity<ApplicationUser, IdentityRole>()

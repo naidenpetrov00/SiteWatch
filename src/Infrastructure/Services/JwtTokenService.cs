@@ -24,7 +24,7 @@ public class JwtTokenService(IConfiguration configuration) : IJwtTokenService
             // Add more claims as needed (e.g., roles)
         };
 
-        var options = Guard.Against.Null(configuration.GetOptions<JwtOptions>());
+        var options = Guard.Against.Null(_configuration.GetOptions<JwtOptions>());
         var issuerFromConfiguration = Guard.Against.Null(options.Issuer);
         var audienceFromConfiguration = Guard.Against.Null(options.Audience);
         var keyFromConfiguration = Guard.Against.Null(options.Key);
