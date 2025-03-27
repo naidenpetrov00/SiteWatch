@@ -1,23 +1,30 @@
+using Application.SeedWork.Interfaces;
+using Application.SeedWork.Models;
 using MediatR;
 
 namespace Application.Identity.Commands.SignUp;
 
-public class SignUpCommand : IRequest<SignUpResult>
+public class SignUpCommand : IRequest<IdentityResultModel>
 {
-    public string FullName { get; set; }
-    public string Email { get; set; }
-    public string Password { get; set; }
+    public required string UserName { get; set; }
+    public required string Email { get; set; }
+    public required string Password { get; set; }
 }
 
-public class SignUpHandler : IRequestHandler<SignUpCommand, SignUpResult>
+public class SignUpHandler : IRequestHandler<SignUpCommand, IdentityResultModel>
 {
-    public SignUp(UserManager)
+    private readonly IIdentityService identityService;
+
+    public SignUpHandler(IIdentityService identityService)
     {
-        
+        this.identityService = identityService;
     }
 
-    public Task<SignUpResult> Handle(SignUpCommand request, CancellationToken cancellationToken)
+    public Task<IdentityResultModel> Handle(
+        SignUpCommand request,
+        CancellationToken cancellationToken
+    )
     {
-
+        return identityService.CreateUserAsync(request.UserName, request.Email, request.Password);
     }
 }

@@ -1,4 +1,4 @@
-namespace Infrastructure.SeedWork;
+namespace Infrastructure.SeedWork.Extension;
 
 using Domain.SeedWork;
 using Infrastructure.Data;

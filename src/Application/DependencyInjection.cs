@@ -2,6 +2,7 @@
 
 using System.Reflection;
 using Application.SeedWork.Behaviours;
+using Application.SeedWork.Interfaces;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;

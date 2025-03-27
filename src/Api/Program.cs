@@ -2,7 +2,7 @@ using Api;
 using Api.SeedWork.Extensions;
 using Application;
 using Infrastructure;
-using Infrastructure.SeedWork;
+using Infrastructure.SeedWork.Extension;
 
 var builder = WebApplication.CreateBuilder(args);
 

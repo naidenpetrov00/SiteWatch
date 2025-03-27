@@ -1,7 +1,6 @@
 ﻿namespace Infrastructure;
 
 using System.Reflection;
-using Application.Interfaces;
 using Application.SeedWork.Interfaces;
 using Ardalis.GuardClauses;
 using Infrastructure.Data;
@@ -37,6 +36,7 @@ public static class DependencyInjection
         );
         services.AddScoped<ApplicationDbContextInitialiser>();
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
+        services.AddTransient<IIdentityService, IdentityService>();
 
         services
             .AddIdentity<ApplicationUser, IdentityRole>()

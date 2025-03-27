@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.SeedWork;
+﻿namespace Infrastructure.SeedWork.Extension;
 
 using Infrastructure.Data;
 using Microsoft.AspNetCore.Builder;

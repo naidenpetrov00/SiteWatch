@@ -1,5 +1,6 @@
 namespace Application.SeedWork.Interfaces;
 
+using Application.Identity;
 using Application.SeedWork.Models;
 
 public interface IIdentityService
@@ -10,7 +11,7 @@ public interface IIdentityService
 
     Task<bool> AuthorizeAsync(string userId, string policyName);
 
-    Task<(Result Result, string UserId)> CreateUserAsync(string userName, string password);
+    Task<IdentityResultModel> CreateUserAsync(string userName, string email, string password);
 
     Task<Result> DeleteUserAsync(string userId);
 }
