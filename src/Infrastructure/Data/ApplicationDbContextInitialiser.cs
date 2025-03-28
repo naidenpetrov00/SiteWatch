@@ -2,7 +2,7 @@
 
 using System;
 using System.Threading.Tasks;
-using Infrastructure.Identity;
+using Application.SeedWork.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 

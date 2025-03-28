@@ -21,6 +21,7 @@ public static class DependencyInjection
         var audience = Guard.Against.Null(options.Audience);
         var key = Guard.Against.Null(options.Key);
 
+        builder.Services.AddAuthorization();
         builder
             .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
@@ -32,7 +33,5 @@ public static class DependencyInjection
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
                 };
             });
-
-        builder.Services.AddAuthorization();
     }
 }

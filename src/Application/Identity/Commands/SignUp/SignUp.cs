@@ -1,5 +1,4 @@
 using Application.SeedWork.Interfaces;
-using Application.SeedWork.Models;
 using MediatR;
 
 namespace Application.Identity.Commands.SignUp;

@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.SeedWork.Interfaces;
-using Infrastructure.Identity;
+using Application.SeedWork.Models;
 using Infrastructure.SeedWork.Extension;
 using MediatR;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;

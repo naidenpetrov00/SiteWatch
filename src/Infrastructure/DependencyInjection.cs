@@ -2,10 +2,12 @@
 
 using System.Reflection;
 using Application.SeedWork.Interfaces;
+using Application.SeedWork.Models;
 using Ardalis.GuardClauses;
 using Infrastructure.Data;
 using Infrastructure.Data.Options;
 using Infrastructure.Identity;
+using Infrastructure.Identity.Services;
 using Infrastructure.SeedWork.Options;
 using Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
@@ -39,7 +41,10 @@ public static class DependencyInjection
         services.AddTransient<IIdentityService, IdentityService>();
 
         services
-            .AddIdentity<ApplicationUser, IdentityRole>()
+            .AddIdentity<ApplicationUser, IdentityRole>(options =>
+            {
+                options.User.RequireUniqueEmail = true;
+            })
             .AddEntityFrameworkStores<ApplicationDbContext>();
 
         return services;

@@ -1,7 +1,10 @@
 using Application.Identity;
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models;
+using Ardalis.GuardClauses;
+using Infrastructure.Identity.Extensions;
 using Infrastructure.Identity.Extensions.cs;
+using Infrastructure.Identity.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 
@@ -13,18 +16,21 @@ public class IdentityService : IIdentityService
     private readonly IUserClaimsPrincipalFactory<ApplicationUser> _userClaimsPrincipalFactory;
     private readonly IAuthorizationService _authorizationService;
     private readonly IJwtTokenService _jwtTokenService;
+    private readonly SignInManager<ApplicationUser> _signInManager;
 
     public IdentityService(
         UserManager<ApplicationUser> userManager,
         IUserClaimsPrincipalFactory<ApplicationUser> userClaimsPrincipalFactory,
         IAuthorizationService authorizationService,
-        IJwtTokenService jwtTokenService
+        IJwtTokenService jwtTokenService,
+        SignInManager<ApplicationUser> signInManager
     )
     {
         _userManager = userManager;
         _userClaimsPrincipalFactory = userClaimsPrincipalFactory;
         _authorizationService = authorizationService;
         _jwtTokenService = jwtTokenService;
+        _signInManager = signInManager;
     }
 
     public async Task<string?> GetUserNameAsync(string userId)
@@ -88,5 +94,32 @@ public class IdentityService : IIdentityService
         var result = await _userManager.DeleteAsync(user);
 
         return result.ToApplicationResult();
+    }
+
+    public async Task<IApplicationUser?> FindUserByEmailAsync(string email) =>
+        await _userManager.FindByEmailAsync(email);
+
+    public async Task<IdentityResultModel> CheckPasswordAsync(
+        IApplicationUser user,
+        string password
+    )
+    {
+        var result = await _signInManager.CheckPasswordSignInAsync(
+            (ApplicationUser)user,
+            password,
+            false
+        );
+
+        if (result.Succeeded)
+        {
+            var token = _jwtTokenService.GenerateToken((ApplicationUser)user);
+            return new IdentityResultWithToken
+            {
+                Result = result.ToApplicationResult(),
+                Token = token,
+            };
+        }
+
+        return new IdentityResultOnly { Result = result.ToApplicationResult() };
     }
 }

@@ -1,5 +1,4 @@
 using System.Reflection;
-using Api.SeedWork.Extensions;
 
 namespace Api.SeedWork.Extensions;
 

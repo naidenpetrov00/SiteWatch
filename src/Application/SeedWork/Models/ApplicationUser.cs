@@ -1,4 +1,4 @@
-namespace Infrastructure.Identity;
+namespace Application.SeedWork.Models;
 
 using Microsoft.AspNetCore.Identity;
 

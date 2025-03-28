@@ -1,9 +1,10 @@
 using Api.SeedWork;
 using Application.Identity;
+using Application.Identity.Commands.SignIn;
 using Application.Identity.Commands.SignUp;
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Endpoints;
 
@@ -13,26 +14,27 @@ public class Identity : EndpointGroupBase
     {
         var group = app.MapGroup(this.GetType().Name);
 
-        group.MapGet("/signUp", SignUp);
+        group.MapPost("/signUp", SignUp);
+        group.MapPost("/signIn", SignIn);
     }
 
-    private async Task<Results<Ok<string>, BadRequest<string[]>>> SignUp(
+    public async Task<Results<Ok<IdentityResultWithToken>, BadRequest<string[]>>> SignUp(
         IMediator mediator,
-        SignUpCommand command
+        [FromBody] SignUpCommand command
     )
     {
         var result = await mediator.Send(command);
         if (result.Result.Succeeded && result is IdentityResultWithToken resultWithToken)
         {
-            return TypedResults.Ok(resultWithToken.Token);
+            return TypedResults.Ok(resultWithToken);
         }
 
         return TypedResults.BadRequest(result.Result.Errors);
     }
 
-    private async Task<Results<Ok<string>, BadRequest<string[]>>> SignIn(
+    public async Task<Results<Ok<string>, BadRequest<string[]>>> SignIn(
         IMediator mediator,
-        SignInCommand command
+        [FromBody] SignInCommand command
     )
     {
         var result = await mediator.Send(command);

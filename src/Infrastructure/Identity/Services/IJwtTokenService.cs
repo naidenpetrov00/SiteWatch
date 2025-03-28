@@ -1,6 +1,6 @@
-using Infrastructure.Identity;
+using Application.SeedWork.Models;
 
-namespace Application.SeedWork.Interfaces;
+namespace Infrastructure.Identity.Services;
 
 public interface IJwtTokenService
 {

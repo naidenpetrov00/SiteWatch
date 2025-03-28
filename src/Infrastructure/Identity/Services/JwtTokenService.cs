@@ -1,10 +1,10 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Application.SeedWork.Interfaces;
+using Application.SeedWork.Models;
 using Ardalis.GuardClauses;
 using Infrastructure.Data.Options;
-using Infrastructure.Identity;
+using Infrastructure.Identity.Services;
 using Infrastructure.SeedWork.Options;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
