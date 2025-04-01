@@ -1,14 +1,12 @@
-using Application.Identity;
+using Application.Identity.Commands;
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models;
-using Ardalis.GuardClauses;
 using Infrastructure.Identity.Extensions;
 using Infrastructure.Identity.Extensions.cs;
-using Infrastructure.Identity.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 
-namespace Infrastructure.Identity;
+namespace Infrastructure.Identity.Services;
 
 public class IdentityService : IIdentityService
 {
@@ -96,23 +94,21 @@ public class IdentityService : IIdentityService
         return result.ToApplicationResult();
     }
 
-    public async Task<IApplicationUser?> FindUserByEmailAsync(string email) =>
+    public async Task<ApplicationUser?> FindUserByEmailAsync(string email) =>
         await _userManager.FindByEmailAsync(email);
 
-    public async Task<IdentityResultModel> CheckPasswordAsync(
-        IApplicationUser user,
-        string password
-    )
+    public async Task<IdentityResultModel> CheckPasswordAsync(ApplicationUser user, string password)
     {
-        var result = await _signInManager.CheckPasswordSignInAsync(
-            (ApplicationUser)user,
+        var result = await _signInManager.PasswordSignInAsync(
+            user,
             password,
+            false,
             false
         );
 
         if (result.Succeeded)
         {
-            var token = _jwtTokenService.GenerateToken((ApplicationUser)user);
+            var token = _jwtTokenService.GenerateToken(user);
             return new IdentityResultWithToken
             {
                 Result = result.ToApplicationResult(),

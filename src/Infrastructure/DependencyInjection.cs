@@ -6,7 +6,6 @@ using Application.SeedWork.Models;
 using Ardalis.GuardClauses;
 using Infrastructure.Data;
 using Infrastructure.Data.Options;
-using Infrastructure.Identity;
 using Infrastructure.Identity.Services;
 using Infrastructure.SeedWork.Options;
 using Infrastructure.Services;
@@ -37,6 +36,7 @@ public static class DependencyInjection
             provider.GetRequiredService<ApplicationDbContext>()
         );
         services.AddScoped<ApplicationDbContextInitialiser>();
+        services.AddScoped<IEmailService, EmailService>();
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
         services.AddTransient<IIdentityService, IdentityService>();
 

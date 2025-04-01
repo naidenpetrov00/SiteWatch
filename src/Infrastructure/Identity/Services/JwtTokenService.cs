@@ -4,12 +4,11 @@ using System.Text;
 using Application.SeedWork.Models;
 using Ardalis.GuardClauses;
 using Infrastructure.Data.Options;
-using Infrastructure.Identity.Services;
 using Infrastructure.SeedWork.Options;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
-namespace Infrastructure.Services;
+namespace Infrastructure.Identity.Services;
 
 public class JwtTokenService(IConfiguration configuration) : IJwtTokenService
 {
@@ -19,8 +18,9 @@ public class JwtTokenService(IConfiguration configuration) : IJwtTokenService
     {
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Name, user.Id),
+            new Claim(JwtRegisteredClaimNames.NameId, user.Id),
             new Claim(JwtRegisteredClaimNames.Email, user.Email!),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             // Add more claims as needed (e.g., roles)
         };
 
@@ -35,7 +35,9 @@ public class JwtTokenService(IConfiguration configuration) : IJwtTokenService
         var token = new JwtSecurityToken(
             issuer: issuerFromConfiguration,
             audience: audienceFromConfiguration,
-            expires: DateTime.Now.AddDays(int.Parse(expiresFromConfiguration)),
+            // expires: DateTime.Now.AddDays(int.Parse(expiresFromConfiguration)),
+            expires: DateTime.Now.AddMinutes(1),
+            claims: claims,
             signingCredentials: creds
         );
 

@@ -1,4 +1,4 @@
-using Application.Identity;
+using Application.Identity.Commands;
 using Application.SeedWork.Models;
 using Microsoft.AspNetCore.Identity;
 

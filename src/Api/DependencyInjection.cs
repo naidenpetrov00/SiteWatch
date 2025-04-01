@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text;
 using Ardalis.GuardClauses;
 using Infrastructure.Data.Options;
@@ -15,13 +16,13 @@ public static class DependencyInjection
     )
     {
         builder.Services.AddOpenApi();
+        builder.Services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
         var options = Guard.Against.Null(configuration.GetOptions<JwtOptions>());
         var issuer = Guard.Against.Null(options.Issuer);
         var audience = Guard.Against.Null(options.Audience);
         var key = Guard.Against.Null(options.Key);
 
-        builder.Services.AddAuthorization();
         builder
             .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
@@ -30,8 +31,10 @@ public static class DependencyInjection
                 {
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = issuer,
+                    ValidAudience = audience,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
                 };
             });
+        builder.Services.AddAuthorization();
     }
 }

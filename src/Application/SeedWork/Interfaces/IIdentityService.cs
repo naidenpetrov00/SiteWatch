@@ -1,13 +1,13 @@
 namespace Application.SeedWork.Interfaces;
 
-using Application.Identity;
+using Application.Identity.Commands;
 using Application.SeedWork.Models;
 
 public interface IIdentityService
 {
     Task<string?> GetUserNameAsync(string userId);
 
-    Task<ApplicationUser> FindUserByEmailAsync(string email);
+    Task<ApplicationUser?> FindUserByEmailAsync(string email);
 
     Task<bool> IsInRoleAsync(string userId, string role);
 
@@ -17,5 +17,5 @@ public interface IIdentityService
 
     Task<Result> DeleteUserAsync(string userId);
 
-    Task<IdentityResultModel> CheckPasswordAsync(IApplicationUser user, string password);
+    Task<IdentityResultModel> CheckPasswordAsync(ApplicationUser user, string password);
 }

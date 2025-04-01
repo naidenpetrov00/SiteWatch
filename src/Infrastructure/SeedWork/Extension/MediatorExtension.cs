@@ -4,9 +4,9 @@ using Domain.SeedWork;
 using Infrastructure.Data;
 using MediatR;
 
-public static class MediatorExtensions
+internal static class MediatorExtensions
 {
-    public static async Task DispatchDomainEventsAsync(
+    internal static async Task DispatchDomainEventsAsync(
         this IMediator mediator,
         ApplicationDbContext dbContext
     )

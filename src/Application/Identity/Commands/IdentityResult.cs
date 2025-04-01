@@ -1,7 +1,7 @@
-using Application.SeedWork.Interfaces;
+using Application.Identity.Queries.Users;
 using Application.SeedWork.Models;
 
-namespace Application.Identity;
+namespace Application.Identity.Commands;
 
 public abstract class IdentityResultModel
 {
@@ -17,11 +17,12 @@ public class IdentityResultWithToken : IdentityResultModel
 
 public class IdentityResultWithUser : IdentityResultModel
 {
-    public required ApplicationUser User { get; set; }
+    public required UserInfoDto User { get; set; }
 }
 
 public static class IdentityResultErrors
 {
     public static string UserNotFound => "User with this Email doesnt exist";
     public static string InvalidCredentials => "Invalid email or password";
+    public static string EmailAlreadyRegistered => "Email already registered";
 }

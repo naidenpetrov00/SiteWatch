@@ -1,5 +1,6 @@
 using Api.SeedWork;
-using Application.Identity;
+using Api.SeedWork.Extensions;
+using Application.Identity.Commands;
 using Application.Identity.Commands.SignIn;
 using Application.Identity.Commands.SignUp;
 using MediatR;
@@ -12,7 +13,7 @@ public class Identity : EndpointGroupBase
 {
     public override void Map(WebApplication app)
     {
-        var group = app.MapGroup(this.GetType().Name);
+        var group = app.MapGroupCustom();
 
         group.MapPost("/signUp", SignUp);
         group.MapPost("/signIn", SignIn);

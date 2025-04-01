@@ -1,10 +1,22 @@
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Api.SeedWork.Extensions;
 
-public static class WebApplicationExtensions
+internal static class WebApplicationExtensions
 {
-    public static WebApplication MapEndpoints(this WebApplication app)
+    internal static RouteGroupBuilder MapGroupCustom(
+        this WebApplication app,
+        [CallerFilePath] string callerFilePath = "",
+        string? customGroupName = null
+    )
+    {
+        string groupName =
+            customGroupName ?? Path.GetFileNameWithoutExtension(callerFilePath).ToLower();
+        return app.MapGroup(groupName);
+    }
+
+    internal static WebApplication MapEndpoints(this WebApplication app)
     {
         var endpointGroupType = typeof(EndpointGroupBase);
 
