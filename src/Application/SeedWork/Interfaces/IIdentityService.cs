@@ -18,4 +18,7 @@ public interface IIdentityService
     Task<Result> DeleteUserAsync(string userId);
 
     Task<IdentityResultModel> CheckPasswordAsync(ApplicationUser user, string password);
+
+    Task<IdentityResultModel> ConfirmEmailAsync(ApplicationUser user, string token);
+    string GenerateEmailVerificationToken();
 }

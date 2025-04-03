@@ -1,10 +1,13 @@
 using Api;
 using Api.SeedWork.Extensions;
 using Application;
+using DotNetEnv;
 using Infrastructure;
 using Infrastructure.SeedWork.Extension;
 
 var builder = WebApplication.CreateBuilder(args);
+
+Env.Load();
 
 builder.AddApiServices(builder.Configuration);
 builder.Services.AddApplicationServices();

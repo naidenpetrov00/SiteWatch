@@ -1,6 +1,7 @@
 using Api.SeedWork;
 using Api.SeedWork.Extensions;
 using Application.Identity.Commands;
+using Application.Identity.Commands.Email;
 using Application.Identity.Commands.SignIn;
 using Application.Identity.Commands.SignUp;
 using MediatR;
@@ -17,6 +18,8 @@ public class Identity : EndpointGroupBase
 
         group.MapPost("/signUp", SignUp);
         group.MapPost("/signIn", SignIn);
+        group.MapPost("/sendVerification", SendVerificationEmail);
+        group.MapPost("/verifyEmail", VerifyEmail);
     }
 
     public async Task<Results<Ok<IdentityResultWithToken>, BadRequest<string[]>>> SignUp(
@@ -40,9 +43,31 @@ public class Identity : EndpointGroupBase
     {
         var result = await mediator.Send(command);
         if (result.Result.Succeeded && result is IdentityResultWithToken resultWithToken)
-        {
             return TypedResults.Ok(resultWithToken.Token);
-        }
+
+        return TypedResults.BadRequest(result.Result.Errors);
+    }
+
+    public async Task<Results<NoContent, BadRequest<string[]>>> SendVerificationEmail(
+        IMediator mediator,
+        SendEmailVerificationCommand command
+    )
+    {
+        var result = await mediator.Send(command);
+        if (result.Result.Succeeded)
+            return TypedResults.NoContent();
+
+        return TypedResults.BadRequest(result.Result.Errors);
+    }
+
+    public async Task<Results<NoContent, BadRequest<string[]>>> VerifyEmail(
+        IMediator mediator,
+        VerifyEmailCommand command
+    )
+    {
+        var result = await mediator.Send(command);
+        if (result.Result.Succeeded)
+            return TypedResults.NoContent();
 
         return TypedResults.BadRequest(result.Result.Errors);
     }

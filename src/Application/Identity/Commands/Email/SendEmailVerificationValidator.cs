@@ -6,6 +6,6 @@ public class SendEmailVerificationValidator : AbstractValidator<SendEmailVerific
 {
     public SendEmailVerificationValidator()
     {
-        RuleFor(se => se.Email).NotNull().NotEmpty().EmailAddress();
+        RuleFor(se => se.Email).NotEmpty().EmailAddress();
     }
 }

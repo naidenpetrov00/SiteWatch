@@ -1,4 +1,5 @@
 using Application.Identity.Commands;
+using Application.SeedWork.Enums;
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models;
 using Infrastructure.Identity.Extensions;
@@ -99,12 +100,7 @@ public class IdentityService : IIdentityService
 
     public async Task<IdentityResultModel> CheckPasswordAsync(ApplicationUser user, string password)
     {
-        var result = await _signInManager.PasswordSignInAsync(
-            user,
-            password,
-            false,
-            false
-        );
+        var result = await _signInManager.PasswordSignInAsync(user, password, false, false);
 
         if (result.Succeeded)
         {
@@ -118,4 +114,35 @@ public class IdentityService : IIdentityService
 
         return new IdentityResultOnly { Result = result.ToApplicationResult() };
     }
+
+    public async Task<IdentityResultModel> ConfirmEmailAsync(ApplicationUser user, string token)
+    {
+        var authenticatoinToken = await _userManager.GetAuthenticationTokenAsync(
+            user,
+            EmailProvider.Email.ToString(),
+            EmailProvider.SMTP.ToString()
+        );
+
+        if (authenticatoinToken == null || authenticatoinToken != token)
+            return new IdentityResultOnly
+            {
+                Result = Result.Failure([IdentityResultErrors.TokenNotValid]),
+            };
+
+        var secureToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+        var result = await _userManager.ConfirmEmailAsync(user, secureToken);
+        if (result.Succeeded)
+        {
+            await _userManager.RemoveAuthenticationTokenAsync(
+                user,
+                EmailProvider.Email.ToString(),
+                EmailProvider.SMTP.ToString()
+            );
+            return new IdentityResultOnly { Result = Result.Success() };
+        }
+        return new IdentityResultOnly { Result = result.ToApplicationResult() };
+    }
+
+    public string GenerateEmailVerificationToken() =>
+        new Random().Next(100000, 999999).ToString("D6");
 }

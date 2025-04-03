@@ -20,8 +20,6 @@ public sealed class ApplicationDbContext : IdentityDbContext<ApplicationUser>, I
         this.mediatR = mediatR;
     }
 
-    // public DbSet<PackingItem> PackingItems => Set<PackingItem>();
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

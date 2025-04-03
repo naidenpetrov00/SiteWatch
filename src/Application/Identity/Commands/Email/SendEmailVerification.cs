@@ -1,6 +1,6 @@
+using Application.SeedWork.Enums;
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models;
-using Application.SeedWork.Models.Internal;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 
@@ -35,7 +35,7 @@ public class SendEmailVerificationHandler
     )
     {
         var user = await _identityService.FindUserByEmailAsync(request.Email);
-        if (user == null)
+        if (user == null && user?.Email == null)
             return new IdentityResultOnly
             {
                 Result = Result.Failure([IdentityResultErrors.UserNotFound]),
@@ -47,8 +47,17 @@ public class SendEmailVerificationHandler
                 Result = Result.Failure([IdentityResultErrors.EmailAlreadyRegistered]),
             };
 
-        var token = _userManager.GenerateEmailConfirmationTokenAsync(user);
+        var token = _identityService.GenerateEmailVerificationToken();
 
-        _emailService.SendEmailAsync(user.Email,);
+        await _userManager.SetAuthenticationTokenAsync(
+            user,
+            EmailProvider.Email.ToString(),
+            EmailProvider.SMTP.ToString(),
+            token
+        );
+
+        await _emailService.SendEmailAsync(user.Email!, token);
+
+        return new IdentityResultOnly { Result = Result.Success() };
     }
 }

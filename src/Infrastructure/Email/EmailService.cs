@@ -18,18 +18,18 @@ public class EmailService : IEmailService
         _gmailOptions = Guard.Against.Null(config.GetOptions<GmailOptions>());
     }
 
-    public async Task SendEmailAsync(string toEmail, string subject, string body)
+    public async Task SendEmailAsync(string toEmail, string token)
     {
         var password = Environment.GetEnvironmentVariable("GmailSmtpPassword");
-        using var client = new SmtpClient()
-        {
-            Host = _gmailOptions.Host!,
-            Port = int.Parse(_gmailOptions.Port!),
-            Credentials = new NetworkCredential(_gmailOptions.Email, password),
-            EnableSsl = true,
-        };
-        var message = EmailTemplates.VerifyEmail(_gmailOptions.Email, toEmail);
-        // var message = new MailMessage(_gmailOptions.Email!, toEmail, subject, body);
+
+        using var client = new SmtpClient();
+        client.Host = _gmailOptions.Host!;
+        client.Port = int.Parse(_gmailOptions.Port!);
+        client.Credentials = new NetworkCredential(_gmailOptions.Email, password);
+        client.EnableSsl = true;
+        client.UseDefaultCredentials = false;
+
+        var message = EmailTemplates.VerifyEmail(_gmailOptions.Email!, toEmail, token);
 
         await client.SendMailAsync(message);
     }
