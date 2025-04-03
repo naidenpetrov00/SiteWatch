@@ -47,7 +47,7 @@ public class SendEmailVerificationHandler
                 Result = Result.Failure([IdentityResultErrors.EmailAlreadyRegistered]),
             };
 
-        var token = _identityService.GenerateEmailVerificationToken();
+        var token = _identityService.GenerateVerificationToken();
 
         await _userManager.SetAuthenticationTokenAsync(
             user,
@@ -56,7 +56,7 @@ public class SendEmailVerificationHandler
             token
         );
 
-        await _emailService.SendEmailAsync(user.Email!, token);
+        await _emailService.SendVerifyEmailAsync(user.Email!, token);
 
         return new IdentityResultOnly { Result = Result.Success() };
     }

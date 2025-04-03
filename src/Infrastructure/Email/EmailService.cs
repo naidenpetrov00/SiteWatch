@@ -18,7 +18,7 @@ public class EmailService : IEmailService
         _gmailOptions = Guard.Against.Null(config.GetOptions<GmailOptions>());
     }
 
-    public async Task SendEmailAsync(string toEmail, string token)
+    private async Task SendEmail(MailMessage message)
     {
         var password = Environment.GetEnvironmentVariable("GmailSmtpPassword");
 
@@ -29,8 +29,18 @@ public class EmailService : IEmailService
         client.EnableSsl = true;
         client.UseDefaultCredentials = false;
 
-        var message = EmailTemplates.VerifyEmail(_gmailOptions.Email!, toEmail, token);
-
         await client.SendMailAsync(message);
+    }
+
+    public async Task SendVerifyEmailAsync(string toEmail, string token)
+    {
+        var message = EmailTemplates.VerifyEmail(_gmailOptions.Email!, toEmail, token);
+        await SendEmail(message);
+    }
+
+    public async Task SendPasswordResetEmailAsync(string toEmail, string token)
+    {
+        var message = EmailTemplates.ResetPassword(_gmailOptions.Email!, toEmail, token);
+        await SendEmail(message);
     }
 }

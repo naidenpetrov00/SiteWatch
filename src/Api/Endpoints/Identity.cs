@@ -2,6 +2,7 @@ using Api.SeedWork;
 using Api.SeedWork.Extensions;
 using Application.Identity.Commands;
 using Application.Identity.Commands.Email;
+using Application.Identity.Commands.ResetPassword;
 using Application.Identity.Commands.SignIn;
 using Application.Identity.Commands.SignUp;
 using MediatR;
@@ -20,6 +21,8 @@ public class Identity : EndpointGroupBase
         group.MapPost("/signIn", SignIn);
         group.MapPost("/sendVerification", SendVerificationEmail);
         group.MapPost("/verifyEmail", VerifyEmail);
+        group.MapPost("/sendResetVerification", SendResetPasswordEmail);
+        group.MapPost("/resetPassword", ResetPassword);
     }
 
     public async Task<Results<Ok<IdentityResultWithToken>, BadRequest<string[]>>> SignUp(
@@ -63,6 +66,30 @@ public class Identity : EndpointGroupBase
     public async Task<Results<NoContent, BadRequest<string[]>>> VerifyEmail(
         IMediator mediator,
         VerifyEmailCommand command
+    )
+    {
+        var result = await mediator.Send(command);
+        if (result.Result.Succeeded)
+            return TypedResults.NoContent();
+
+        return TypedResults.BadRequest(result.Result.Errors);
+    }
+
+    public async Task<Results<NoContent, BadRequest<string[]>>> SendResetPasswordEmail(
+        IMediator mediator,
+        SendResetPasswordEmailCommand command
+    )
+    {
+        var result = await mediator.Send(command);
+        if (result.Result.Succeeded)
+            return TypedResults.NoContent();
+
+        return TypedResults.BadRequest(result.Result.Errors);
+    }
+
+    public async Task<Results<NoContent, BadRequest<string[]>>> ResetPassword(
+        IMediator mediator,
+        ResetPasswordCommand command
     )
     {
         var result = await mediator.Send(command);

@@ -2,5 +2,6 @@ namespace Application.SeedWork.Interfaces;
 
 public interface IEmailService
 {
-    Task SendEmailAsync(string toEmail, string token);
+    Task SendVerifyEmailAsync(string toEmail, string token);
+    Task SendPasswordResetEmailAsync(string toEmail, string token);
 }

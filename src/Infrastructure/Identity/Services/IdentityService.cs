@@ -1,4 +1,5 @@
 using Application.Identity.Commands;
+using Application.Identity.Commands.ResetPassword;
 using Application.SeedWork.Enums;
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models;
@@ -31,6 +32,8 @@ public class IdentityService : IIdentityService
         _jwtTokenService = jwtTokenService;
         _signInManager = signInManager;
     }
+
+    public IdentityService() { }
 
     public async Task<string?> GetUserNameAsync(string userId)
     {
@@ -143,6 +146,41 @@ public class IdentityService : IIdentityService
         return new IdentityResultOnly { Result = result.ToApplicationResult() };
     }
 
-    public string GenerateEmailVerificationToken() =>
-        new Random().Next(100000, 999999).ToString("D6");
+    public string GenerateVerificationToken() => new Random().Next(100000, 999999).ToString("D6");
+
+    public async Task<IdentityResultModel> ResetPasswordAsync(
+        ApplicationUser user,
+        string token,
+        string newPassword
+    )
+    {
+        var authenticatoinToken = await _userManager.GetAuthenticationTokenAsync(
+            user,
+            EmailProvider.Password.ToString(),
+            EmailProvider.SMTP.ToString()
+        );
+
+        if (authenticatoinToken == null || authenticatoinToken != token)
+            return new IdentityResultOnly
+            {
+                Result = Result.Failure([IdentityResultErrors.TokenNotValid]),
+            };
+
+        var identityPasswordResetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+        var result = await _userManager.ResetPasswordAsync(
+            user,
+            identityPasswordResetToken,
+            newPassword
+        );
+        if (result.Succeeded)
+        {
+            await _userManager.RemoveAuthenticationTokenAsync(
+                user,
+                EmailProvider.Password.ToString(),
+                EmailProvider.SMTP.ToString()
+            );
+            return new IdentityResultOnly { Result = Result.Success() };
+        }
+        return new IdentityResultOnly { Result = result.ToApplicationResult() };
+    }
 }

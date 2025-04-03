@@ -1,6 +1,7 @@
 namespace Application.SeedWork.Interfaces;
 
 using Application.Identity.Commands;
+using Application.Identity.Commands.ResetPassword;
 using Application.SeedWork.Models;
 
 public interface IIdentityService
@@ -20,5 +21,10 @@ public interface IIdentityService
     Task<IdentityResultModel> CheckPasswordAsync(ApplicationUser user, string password);
 
     Task<IdentityResultModel> ConfirmEmailAsync(ApplicationUser user, string token);
-    string GenerateEmailVerificationToken();
+    string GenerateVerificationToken();
+    Task<IdentityResultModel> ResetPasswordAsync(
+        ApplicationUser user,
+        string token,
+        string newPassword
+    );
 }
