@@ -1,8 +1,6 @@
-using Application.Identity.Commands;
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 
 namespace Application.Identity.Commands.ResetPassword;
 

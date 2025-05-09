@@ -1,5 +1,4 @@
 using Application.Identity.Commands;
-using Application.Identity.Commands.ResetPassword;
 using Application.SeedWork.Enums;
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models;
@@ -32,8 +31,6 @@ public class IdentityService : IIdentityService
         _jwtTokenService = jwtTokenService;
         _signInManager = signInManager;
     }
-
-    public IdentityService() { }
 
     public async Task<string?> GetUserNameAsync(string userId)
     {

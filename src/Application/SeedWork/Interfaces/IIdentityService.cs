@@ -1,7 +1,6 @@
 namespace Application.SeedWork.Interfaces;
 
 using Application.Identity.Commands;
-using Application.Identity.Commands.ResetPassword;
 using Application.SeedWork.Models;
 
 public interface IIdentityService
