@@ -21,6 +21,7 @@ public class EmailService : IEmailService
     private async Task SendEmail(MailMessage message)
     {
         var password = Environment.GetEnvironmentVariable("GmailSmtpPassword");
+        // odnk ghjs mqvm swlg
 
         using var client = new SmtpClient();
         client.Host = _gmailOptions.Host!;
