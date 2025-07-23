@@ -36,7 +36,10 @@ public class SendResetPasswordEmailHandler
     {
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user == null)
-            return new IdentityResultOnly { Result = Result.Failure([]) };
+            return new IdentityResultOnly
+            {
+                Result = Result.Failure([IdentityResultErrors.UserNotFound]),
+            };
 
         var token = _identityService.GenerateVerificationToken();
 

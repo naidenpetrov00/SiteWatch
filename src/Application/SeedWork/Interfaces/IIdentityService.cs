@@ -20,7 +20,11 @@ public interface IIdentityService
     Task<IdentityResultModel> CheckPasswordAsync(ApplicationUser user, string password);
 
     Task<IdentityResultModel> ConfirmEmailAsync(ApplicationUser user, string token);
+
     string GenerateVerificationToken();
+
+    Task<bool> IsVerifiedEmailAsync(string email);
+
     Task<IdentityResultModel> ResetPasswordAsync(
         ApplicationUser user,
         string token,

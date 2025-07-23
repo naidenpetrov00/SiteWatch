@@ -180,4 +180,15 @@ public class IdentityService : IIdentityService
         }
         return new IdentityResultOnly { Result = result.ToApplicationResult() };
     }
+
+    public async Task<bool> IsVerifiedEmailAsync(string email)
+    {
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user == null)
+        {
+            return false;
+        }
+
+        return await _userManager.IsEmailConfirmedAsync(user);
+    }
 }
