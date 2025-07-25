@@ -1,14 +1,19 @@
-import { useState } from "react";
-import { Alert, StyleSheet, View } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { Alert, StyleSheet, View, useColorScheme } from "react-native";
+import { DefaultTheme, Theme } from "@react-navigation/native";
 
-import FlatButton from "../ui/FlatButton";
 import AuthForm from "./AuthForm";
-import { Colors } from "../../constants/styles";
+import { Colors } from "@/config/constants/Colors";
+import FlatButton from "../ui/FlatButton";
+import { useCustomTheme } from "@/hooks/useCustomTheme";
+import { useNavigation } from "@react-navigation/native";
+import { useState } from "react";
 
-const AuthContent = ({ isLogin, onAuthenticate }) => {
-  const navigation = useNavigation();
-
+type AuthContentProps = {
+  isLogin: boolean;
+  onAuthenticate: (credentials: { email: string; password: string }) => void;
+};
+const AuthContent = ({ isLogin, onAuthenticate }: AuthContentProps) => {
+  const theme = useCustomTheme();
   const [credentialsInvalid, setCredentialsInvalid] = useState({
     email: false,
     password: false,
@@ -17,14 +22,15 @@ const AuthContent = ({ isLogin, onAuthenticate }) => {
   });
 
   function switchAuthModeHandler() {
-    if (isLogin) {
-      navigation.replace("Signup");
-    } else {
-      navigation.replace("Login");
-    }
+    // Todo
   }
 
-  function submitHandler(credentials) {
+  function submitHandler(credentials: {
+    email: string;
+    password: string;
+    confirmEmail?: string;
+    confirmPassword?: string;
+  }) {
     let { email, confirmEmail, password, confirmPassword } = credentials;
 
     email = email.trim();
@@ -53,7 +59,7 @@ const AuthContent = ({ isLogin, onAuthenticate }) => {
   }
 
   return (
-    <View style={styles.authContent}>
+    <View style={[styles.authContent, dynamicStyles(theme).authContent]}>
       <AuthForm
         isLogin={isLogin}
         onSubmit={submitHandler}
@@ -76,7 +82,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 32,
     padding: 16,
     borderRadius: 8,
-    backgroundColor: Colors.primary800,
     elevation: 2,
     shadowColor: "black",
     shadowOffset: { width: 1, height: 1 },
@@ -87,3 +92,10 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 });
+
+const dynamicStyles = (theme: Theme) =>
+  StyleSheet.create({
+    authContent: {
+      backgroundColor: theme.colors.background,
+    },
+  });
