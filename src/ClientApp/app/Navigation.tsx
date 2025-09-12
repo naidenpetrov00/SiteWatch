@@ -1,8 +1,8 @@
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import { NavigationContainer } from "@react-navigation/native";
 import React from "react";
-import SignIn from "./(identity)/SignIn";
-import SignUp from "./(identity)/SignUp";
+import SignIn from "./SignIn";
+import SignUp from "./SignUp";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 const Stack = createNativeStackNavigator();
@@ -22,19 +22,19 @@ const AuthStack = () => {
   );
 }
 
-const AuthenticatedStack = () => {
-  return (
-    <Stack.Navigator
-      screenOptions={{
-        headerStyle: { backgroundColor: Colors.primary500 },
-        headerTintColor: "white",
-        contentStyle: { backgroundColor: Colors.primary100 },
-      }}
-    >
-      <Stack.Screen name="Welcome" component={WelcomeScreen} />
-    </Stack.Navigator>
-  );
-};
+// const AuthenticatedStack = () => {
+//   return (
+//     <Stack.Navigator
+//       screenOptions={{
+//         headerStyle: { backgroundColor: Colors.primary500 },
+//         headerTintColor: "white",
+//         contentStyle: { backgroundColor: Colors.primary100 },
+//       }}
+//     >
+//       <Stack.Screen name="Welcome" component={WelcomeScreen} />
+//     </Stack.Navigator>
+//   );
+// };
 
 const Navigation = () => {
   return (

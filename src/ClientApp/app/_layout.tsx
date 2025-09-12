@@ -1,21 +1,13 @@
-import "react-native-reanimated";
+import { Redirect, Slot, Stack, router } from "expo-router";
 
-import * as SplashScreen from "expo-splash-screen";
+import AppProvider from "@/components/app/provider";
 
-import { AppProvider } from "./provider";
-import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-
-SplashScreen.preventAutoHideAsync();
-
-export default function RootLayout() {
+const Root = () => {
   return (
     <AppProvider>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
+      <Slot />
     </AppProvider>
   );
-}
+};
+
+export default Root;

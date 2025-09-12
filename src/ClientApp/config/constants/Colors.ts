@@ -1,26 +1,20 @@
-import { useColorScheme } from "react-native";
-
-const tintColorLight = "#0a7ea4";
-const tintColorDark = "#fff";
-
 export const Colors = {
   light: {
     text: "#11181C",
-    background: "#fff",
-    tint: tintColorLight,
+    background: "#ffffff",
+    primary: "#f37c13",
+    secondary: "#5a5a5a",
     icon: "#687076",
     tabIconDefault: "#687076",
-    tabIconSelected: tintColorLight,
+    tabIconSelected: "#f37c13",
   },
   dark: {
     text: "#ECEDEE",
-    background: "#151718",
-    tint: tintColorDark,
+    background: "#111516",
+    primary: "#f37c13",
+    secondary: "#5a5a5a",
     icon: "#9BA1A6",
     tabIconDefault: "#9BA1A6",
-    tabIconSelected: tintColorDark,
+    tabIconSelected: "#f37c13",
   },
 };
-
-// ✅ Custom hook to get active theme
-
