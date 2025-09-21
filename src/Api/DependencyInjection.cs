@@ -16,7 +16,7 @@ public static class DependencyInjection
     )
     {
         builder.Services.AddOpenApi();
-        builder.Services.AddAutoMapper(Assembly.GetExecutingAssembly());
+        builder.Services.AddAutoMapper(cfg => { }, Assembly.GetExecutingAssembly());
 
         var options = Guard.Against.Null(configuration.GetOptions<JwtOptions>());
         var issuer = Guard.Against.Null(options.Issuer);

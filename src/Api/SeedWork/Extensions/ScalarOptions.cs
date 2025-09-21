@@ -12,7 +12,7 @@ internal static class ScalarApiReferenceExtensions
                 .WithTitle("SiteWatchApi")
                 .WithTheme(ScalarTheme.Mars)
                 .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
-                .WithPreferredScheme("Bearer");
+                .AddPreferredSecuritySchemes("Bearer");
         });
     }
 }
