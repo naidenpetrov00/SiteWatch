@@ -9,32 +9,8 @@ const signInStyles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
   },
-  logoBadge: {
-    width: 62,
-    height: 62,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 8,
-  },
-  logoText: {
-    fontWeight: "700",
-  },
-  headerWrap: {
-    marginTop: 24,
-    alignItems: "center",
-  },
-  title: {
-    fontSize: 32,
-    lineHeight: 38,
-    fontWeight: "800",
-    textAlign: "center",
-  },
-  subtitle: {
-    marginTop: 6,
-    fontSize: 13,
-    textAlign: "center",
-  },
+ 
+ 
   form: {
     marginTop: 28,
   },

@@ -7,15 +7,17 @@ import {
   useColorScheme,
 } from "react-native";
 
+import AuthPageTitle from "@/features/auth/components/AuthPageTitle/AuthPageTitle";
 import { Colors } from "@/config/constants/Colors";
+import Logo from "@/features/auth/components/Logo/Logo";
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import signInStyles from "../features/auth/components/SignIn.styles";
+import { useColorPalette } from "@/hooks/useColorPalette";
 
 export default function SignUp() {
-  const colorScheme = useColorScheme();
-  const colorPalette = colorScheme === "dark" ? Colors.dark : Colors.light;
+  const colorPalette = useColorPalette();
   return (
     <SafeAreaView
       style={[signInStyles.safe, { backgroundColor: colorPalette.background }]}
@@ -27,30 +29,10 @@ export default function SignUp() {
         ]}
       >
         {/* Logo badge */}
-        <View
-          style={[
-            signInStyles.logoBadge,
-            { backgroundColor: colorPalette.primary },
-          ]}
-        >
-          <Text
-            style={[signInStyles.logoText, { color: colorPalette.background }]}
-          >
-            Logo
-          </Text>
-        </View>
-
+        <Logo/>
+        
         {/* Title + subtitle */}
-        <View style={signInStyles.headerWrap}>
-          <Text style={[signInStyles.title, { color: colorPalette.text }]}>
-            Create new{"\n"}Account
-          </Text>
-          <Text
-            style={[signInStyles.subtitle, { color: colorPalette.secondary }]}
-          >
-            Already Registered? Log in here.
-          </Text>
-        </View>
+        <AuthPageTitle title={"Create new\n Account"} description="Already Registered? Log in"/>
 
         {/* Form */}
         <View style={signInStyles.form}>
