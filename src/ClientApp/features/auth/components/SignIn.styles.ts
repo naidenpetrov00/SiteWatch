@@ -1,7 +1,7 @@
 import { StyleSheet } from "react-native";
 const RADIUS = 14;
 
-const signInStyles = StyleSheet.create({
+const signUpStyles = StyleSheet.create({
   safe: {
     flex: 1,
   },
@@ -52,4 +52,4 @@ const signInStyles = StyleSheet.create({
   },
 });
 
-export default signInStyles;
+export default signUpStyles;

@@ -1,8 +1,8 @@
 import { Colors } from "@/config/constants/Colors";
 import { NavigationContainer } from "@react-navigation/native";
 import React from "react";
-import SignIn from "../../app/SignIn";
-import SignUp from "../../app/SignUp";
+import SignIn from "../../app/SignUp";
+import SignUp from "../../app/SignIn";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 const Stack = createNativeStackNavigator();
@@ -16,8 +16,8 @@ const AuthStack = () => {
         contentStyle: { backgroundColor: Colors.light.background },
       }}
     >
-      <Stack.Screen name="Login" component={SignIn} />
       <Stack.Screen name="Signup" component={SignUp} />
+      <Stack.Screen name="Login" component={SignIn} />
     </Stack.Navigator>
   );
 };
