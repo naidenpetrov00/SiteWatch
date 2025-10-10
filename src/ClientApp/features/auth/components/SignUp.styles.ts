@@ -14,18 +14,7 @@ const signUpStyles = StyleSheet.create({
   form: {
     marginTop: 28,
   },
-  label: {
-    marginTop: 16,
-    fontSize: 12,
-    letterSpacing: 1,
-    marginBottom: 8,
-  },
-  input: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: RADIUS,
-    fontSize: 16,
-  },
+ 
   cta: {
     marginTop: 22,
     borderRadius: RADIUS,

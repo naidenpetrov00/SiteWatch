@@ -1,15 +1,17 @@
 export const Colors = {
   light: {
     text: "#11181C",
+    placeholderText: "#11181c73",
     background: "#ffffff",
     primary: "#f37c13",
-    secondary: "#5a5a5a",
+    secondary: "#888888ff",
     icon: "#687076",
     tabIconDefault: "#687076",
     tabIconSelected: "#f37c13",
   },
   dark: {
     text: "#ECEDEE",
+    placeholderText:  "#ecedee79",
     background: "#111516",
     primary: "#f37c13",
     secondary: "#5a5a5a",
