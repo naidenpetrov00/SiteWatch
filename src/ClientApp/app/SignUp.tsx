@@ -4,25 +4,27 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   TouchableWithoutFeedback,
   View,
-  useColorScheme,
 } from "react-native";
+import React, { useRef } from "react";
 
 import AuthPageTitle from "@/features/auth/components/AuthPageTitle/AuthPageTitle";
 import FormField from "@/components/ui/FormField/FormField";
 import Logo from "@/features/auth/components/Logo/Logo";
-import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
 import signUpStyles from "../features/auth/components/SignUp.styles";
 import { useColorPalette } from "@/hooks/useColorPalette";
 
-export default function SignUp() {
+const SignUp = () => {
   const colorPalette = useColorPalette();
+
+  const nameRef = useRef<TextInput>(null);
+  const emailRef = useRef<TextInput>(null);
+  const passRef = useRef<TextInput>(null);
+
   return (
     <SafeAreaView
       style={[signUpStyles.safe, { backgroundColor: colorPalette.background }]}
@@ -56,16 +58,30 @@ export default function SignUp() {
               {/* Form */}
 
               <View style={signUpStyles.form}>
-                <FormField label="name" placeholder="Jiara Martins" />
                 <FormField
+                  ref={nameRef}
+                  label="name"
+                  placeholder="Jiara Martins"
+                  returnKeyType="next"
+                  submitBehavior="submit"
+                  onSubmitEditing={() => emailRef.current?.focus()}
+                />
+                <FormField
+                  ref={emailRef}
                   label="email"
                   placeholder="whataGreatApp@email.com"
                   keyboardType="email-address"
+                  returnKeyType="next"
+                  submitBehavior="submit"
+                  onSubmitEditing={() => passRef.current?.focus()}
                 />
                 <FormField
+                  ref={passRef}
                   label="password"
                   placeholder="******"
                   secureTextEntry={true}
+                  returnKeyType="done"
+                  submitBehavior="blurAndSubmit"
                 />
 
                 <Pressable
@@ -91,27 +107,11 @@ export default function SignUp() {
                 </Pressable>
               </View>
             </ScrollView>
-            {/* Footer link */}
-            {/* <View style={signUpStyles.footer}>
-            <Text
-            style={[
-              signUpStyles.footerMuted,
-              { color: colorPalette.secondary },
-              ]}
-              >
-              Already Have Account?
-              </Text>
-              <Pressable onPress={() => router.push("/SignIn")}>
-              <Text
-              style={[signUpStyles.footerLink, { color: colorPalette.text }]}
-              >
-                {"  "}Login !
-                </Text>
-                </Pressable>
-                </View> */}
           </View>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
-}
+};
+
+export default SignUp;

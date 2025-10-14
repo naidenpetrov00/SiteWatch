@@ -28,7 +28,7 @@ export const AuthPageTitle: React.FC<IAuthPageTitleProps> = ({
           { color: colorPalette.secondary },
         ]}
       >
-        <Pressable onPress={() => router.push(href)}>
+        <Pressable onPress={() => router.replace(href)}>
           <Text>{description}</Text>
         </Pressable>
       </Text>

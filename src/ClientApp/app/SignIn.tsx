@@ -1,27 +1,112 @@
-import { Button, Text, View } from "react-native";
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableWithoutFeedback,
+  View,
+  useColorScheme,
+} from "react-native";
+import React, { useRef } from "react";
 
-import React from "react";
+import AuthPageTitle from "@/features/auth/components/AuthPageTitle/AuthPageTitle";
+import FormField from "@/components/ui/FormField/FormField";
+import Logo from "@/features/auth/components/Logo/Logo";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import signUpStyles from "../features/auth/components/SignUp.styles";
+import { useColorPalette } from "@/hooks/useColorPalette";
 
-export default function SignIn() {
+const SignIn = () => {
+  const colorPalette = useColorPalette();
+
+  const nameRef = useRef<TextInput>(null);
+  const emailRef = useRef<TextInput>(null);
+  const passRef = useRef<TextInput>(null);
+
   return (
-    <View
-      style={{
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 16,
-      }}
+    <SafeAreaView
+      style={[signUpStyles.safe, { backgroundColor: colorPalette.background }]}
     >
-      <Text style={{ fontSize: 22, fontWeight: "600" }}>Register</Text>
-      {/* Put your inputs here */}
-      <Button
-        title="Create account"
-        onPress={() => {
-          router.push("/SignUp");
-        }}
-      />
-      <Button title="Back to Login" onPress={() => router.back()} />
-    </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <View
+            style={[
+              signUpStyles.container,
+              { backgroundColor: colorPalette.background },
+            ]}
+          >
+            {/* Logo badge */}
+            <Logo />
+
+            <ScrollView
+              contentContainerStyle={{ flexGrow: 1 }}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
+            >
+              {/* Title + subtitle */}
+              <AuthPageTitle
+                title={"Login"}
+                description="No Account no Problem? Register here"
+                href={"/SignUp"}
+              />
+
+              {/* Form */}
+
+              <View style={signUpStyles.form}>
+                <FormField
+                  ref={emailRef}
+                  label="email"
+                  placeholder="whataGreatApp@email.com"
+                  keyboardType="email-address"
+                  returnKeyType="next"
+                  submitBehavior="submit"
+                  onSubmitEditing={() => passRef.current?.focus()}
+                />
+                <FormField
+                  ref={passRef}
+                  label="password"
+                  placeholder="******"
+                  secureTextEntry={true}
+                  returnKeyType="done"
+                  submitBehavior="blurAndSubmit"
+                />
+
+                <Pressable
+                  onPress={() => {
+                    /* handle sign up */
+                  }}
+                  style={({ pressed }) => [
+                    signUpStyles.cta,
+                    {
+                      backgroundColor: colorPalette.primary,
+                    },
+                    pressed && { opacity: 0.9, transform: [{ scale: 0.995 }] },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      signUpStyles.ctaText,
+                      { color: colorPalette.background },
+                    ]}
+                  >
+                    Sign up
+                  </Text>
+                </Pressable>
+              </View>
+            </ScrollView>
+          </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
-}
+};
+
+export default SignIn;
