@@ -17,13 +17,19 @@ import Logo from "@/features/auth/components/Logo/Logo";
 import { SafeAreaView } from "react-native-safe-area-context";
 import signUpStyles from "../features/auth/components/SignUp.styles";
 import { useColorPalette } from "@/hooks/useColorPalette";
+import { useCreateAccount } from "@/features/auth/api/create-account";
 
 const SignUp = () => {
   const colorPalette = useColorPalette();
+  const createAccount = useCreateAccount({});
 
   const nameRef = useRef<TextInput>(null);
   const emailRef = useRef<TextInput>(null);
   const passRef = useRef<TextInput>(null);
+
+  const handleSignUp = () => {
+    createAccount.mutate({ data: {} });
+  };
 
   return (
     <SafeAreaView
@@ -85,9 +91,7 @@ const SignUp = () => {
                 />
 
                 <Pressable
-                  onPress={() => {
-                    /* handle sign up */
-                  }}
+                  onPress={handleSignUp}
                   style={({ pressed }) => [
                     signUpStyles.cta,
                     {

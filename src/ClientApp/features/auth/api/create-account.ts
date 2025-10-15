@@ -1,13 +1,24 @@
-import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
-
 import { MutationConfig } from "@/lib/react-query";
 import { api } from "@/lib/api-client";
+import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 
 export const createAccountInputSchema = z.object({
-  username: z.string().min(6, "Minimum 6").max(10, "Maximum 10"),
+  username: z
+    .string()
+    .min(4, "Minimum 4")
+    .max(20, "Maximum 20")
+    .regex(/^\S+$/, "No spaces allowed"),
   email: z.string().email(),
-  password: z.string().min(6, "Required"),
+  password: z
+    .string()
+    .min(6, "Required")
+    .max(20, "Maximum 20")
+    .regex(
+      /^(?=.*[A-Z])(?=.*\d).+$/,
+      "Must include at least one uppercase letter and one digit"
+    )
+    .regex(/^\S+$/, "No spaces allowed"),
 });
 
 export type CreateAccountInput = z.infer<typeof createAccountInputSchema>;
@@ -17,7 +28,7 @@ export const createAccount = ({
 }: {
   data: CreateAccountInput;
 }): Promise<Comment> => {
-  return api.post("/comments", data);
+  return api.post("/identity/signUp", data);
 };
 
 type UseCreateAccountOption = {
@@ -27,5 +38,7 @@ type UseCreateAccountOption = {
 export const useCreateAccount = ({
   mutationConfig,
 }: UseCreateAccountOption) => {
-  return useMutation({ mutationFn: createAccount });
+  const config = mutationConfig || {};
+
+  return useMutation({ mutationFn: createAccount, ...config });
 };
