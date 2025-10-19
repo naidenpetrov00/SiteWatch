@@ -1,3 +1,4 @@
+import { Controller, FieldError } from "react-hook-form";
 import { Fragment, useEffect } from "react";
 import {
   KeyboardTypeOptions,
@@ -23,6 +24,8 @@ interface IFormField {
   returnKeyType?: ReturnKeyTypeOptions;
   submitBehavior?: SubmitBehavior;
   onSubmitEditing?: (e: TextInputSubmitEditingEvent) => void;
+  control?: any;
+  validationError?: FieldError;
 }
 
 const FormField = React.forwardRef<TextInput, IFormField>(
@@ -35,6 +38,8 @@ const FormField = React.forwardRef<TextInput, IFormField>(
       returnKeyType,
       submitBehavior,
       onSubmitEditing,
+      control,
+      validationError,
     },
     ref
   ) => {
@@ -46,23 +51,37 @@ const FormField = React.forwardRef<TextInput, IFormField>(
           {label.toUpperCase()}
         </Text>
 
-        <TextInput
-          ref={ref}
-          placeholder={placeholder}
-          placeholderTextColor={colorPalette.placeholderText}
-          secureTextEntry={secureTextEntry}
-          keyboardType={keyboardType}
-          returnKeyType={returnKeyType}
-          submitBehavior={submitBehavior}
-          onSubmitEditing={onSubmitEditing}
-          style={[
-            formFieldStyles.input,
-            {
-              backgroundColor: colorPalette.secondary,
-              color: colorPalette.text,
-            },
-          ]}
+        <Controller
+          name={label}
+          control={control}
+          render={({ field: { value, onBlur, onChange } }) => (
+            <TextInput
+              ref={ref}
+              value={value}
+              onBlur={onBlur}
+              onChangeText={onChange}
+              placeholder={placeholder}
+              placeholderTextColor={colorPalette.placeholderText}
+              secureTextEntry={secureTextEntry}
+              keyboardType={keyboardType}
+              returnKeyType={returnKeyType}
+              submitBehavior={submitBehavior}
+              onSubmitEditing={onSubmitEditing}
+              style={[
+                formFieldStyles.input,
+                {
+                  backgroundColor: colorPalette.secondary,
+                  color: colorPalette.text,
+                },
+              ]}
+            />
+          )}
         />
+        {validationError && (
+          <Text style={formFieldStyles.errorText}>
+            {validationError.message ?? "Invalid value"}
+          </Text>
+        )}
       </Fragment>
     );
   }

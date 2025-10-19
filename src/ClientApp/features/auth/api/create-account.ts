@@ -12,7 +12,7 @@ export const createAccountInputSchema = z.object({
   email: z.string().email(),
   password: z
     .string()
-    .min(6, "Required")
+    .min(6, "Minimum 6")
     .max(20, "Maximum 20")
     .regex(
       /^(?=.*[A-Z])(?=.*\d).+$/,

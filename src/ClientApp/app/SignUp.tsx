@@ -2,34 +2,21 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
-  Text,
-  TextInput,
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import React, { useRef } from "react";
 
 import AuthPageTitle from "@/features/auth/components/AuthPageTitle/AuthPageTitle";
-import FormField from "@/components/ui/FormField/FormField";
 import Logo from "@/features/auth/components/Logo/Logo";
+import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
+import SignUpForm from "@/features/auth/components/SignUpForm/SignUpForm";
 import signUpStyles from "../features/auth/components/SignUp.styles";
 import { useColorPalette } from "@/hooks/useColorPalette";
-import { useCreateAccount } from "@/features/auth/api/create-account";
 
 const SignUp = () => {
   const colorPalette = useColorPalette();
-  const createAccount = useCreateAccount({});
-
-  const nameRef = useRef<TextInput>(null);
-  const emailRef = useRef<TextInput>(null);
-  const passRef = useRef<TextInput>(null);
-
-  const handleSignUp = () => {
-    createAccount.mutate({ data: {} });
-  };
 
   return (
     <SafeAreaView
@@ -48,7 +35,6 @@ const SignUp = () => {
           >
             {/* Logo badge */}
             <Logo />
-
             <ScrollView
               contentContainerStyle={{ flexGrow: 1 }}
               keyboardShouldPersistTaps="handled"
@@ -61,55 +47,8 @@ const SignUp = () => {
                 href={"/SignIn"}
               />
 
-              {/* Form */}
-
-              <View style={signUpStyles.form}>
-                <FormField
-                  ref={nameRef}
-                  label="name"
-                  placeholder="Jiara Martins"
-                  returnKeyType="next"
-                  submitBehavior="submit"
-                  onSubmitEditing={() => emailRef.current?.focus()}
-                />
-                <FormField
-                  ref={emailRef}
-                  label="email"
-                  placeholder="whataGreatApp@email.com"
-                  keyboardType="email-address"
-                  returnKeyType="next"
-                  submitBehavior="submit"
-                  onSubmitEditing={() => passRef.current?.focus()}
-                />
-                <FormField
-                  ref={passRef}
-                  label="password"
-                  placeholder="******"
-                  secureTextEntry={true}
-                  returnKeyType="done"
-                  submitBehavior="blurAndSubmit"
-                />
-
-                <Pressable
-                  onPress={handleSignUp}
-                  style={({ pressed }) => [
-                    signUpStyles.cta,
-                    {
-                      backgroundColor: colorPalette.primary,
-                    },
-                    pressed && { opacity: 0.9, transform: [{ scale: 0.995 }] },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      signUpStyles.ctaText,
-                      { color: colorPalette.background },
-                    ]}
-                  >
-                    Sign up
-                  </Text>
-                </Pressable>
-              </View>
+              {/* Form */} 
+              <SignUpForm />
             </ScrollView>
           </View>
         </TouchableWithoutFeedback>

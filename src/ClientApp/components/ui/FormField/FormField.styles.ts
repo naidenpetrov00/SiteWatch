@@ -13,6 +13,7 @@ const formFieldStyles = StyleSheet.create({
     borderRadius: 14,
     fontSize: 16,
   },
+  errorText: { marginTop: 6, color: "#ff6b6b", fontSize: 12 },
 });
 
 export default formFieldStyles;

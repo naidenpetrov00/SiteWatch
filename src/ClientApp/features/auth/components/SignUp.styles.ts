@@ -1,5 +1,4 @@
 import { StyleSheet } from "react-native";
-const RADIUS = 14;
 
 const signUpStyles = StyleSheet.create({
   safe: {
@@ -8,23 +7,6 @@ const signUpStyles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 24,
-  },
- 
- 
-  form: {
-    marginTop: 28,
-  },
- 
-  cta: {
-    marginTop: 22,
-    borderRadius: RADIUS,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 14,
-  },
-  ctaText: {
-    fontWeight: "700",
-    fontSize: 16,
   },
   footer: {
     marginTop: 22,
