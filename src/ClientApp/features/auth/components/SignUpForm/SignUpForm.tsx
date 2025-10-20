@@ -1,18 +1,25 @@
 import {
   CreateAccountInput,
   createAccountInputSchema,
+  useCreateAccount,
 } from "../../api/create-account";
 import { Pressable, Text, TextInput, View } from "react-native";
 import React, { useRef } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 
 import FormField from "@/components/ui/FormField/FormField";
+import { create } from "react-test-renderer";
 import signUpFormStyles from "./SignUpForm.styles";
 import { useColorPalette } from "@/hooks/useColorPalette";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 interface ISignUpForm {}
 
+const defaultValues: CreateAccountInput = {
+  email: "naiden.petrov.31.12.00@gmail.com",
+  username: "Test.2010",
+  password: "Test.2010",
+};
 const SignUpForm = ({}: ISignUpForm) => {
   const colorPalette = useColorPalette();
 
@@ -25,11 +32,13 @@ const SignUpForm = ({}: ISignUpForm) => {
     handleSubmit,
     formState: { errors },
   } = useForm<CreateAccountInput>({
+    defaultValues,
     resolver: zodResolver(createAccountInputSchema),
   });
 
+  const { mutate, isPending } = useCreateAccount({ mutationConfig: {} });
   const onSignUp: SubmitHandler<CreateAccountInput> = (data) => {
-    console.log(data);
+    mutate({ data });
   };
 
   return (
@@ -72,13 +81,16 @@ const SignUpForm = ({}: ISignUpForm) => {
           {
             backgroundColor: colorPalette.primary,
           },
-          pressed && { opacity: 0.9, transform: [{ scale: 0.995 }] },
+          isPending
+            ? { opacity: 0.5 }
+            : pressed && { opacity: 0.9, transform: [{ scale: 0.995 }] },
         ]}
+        disabled={isPending}
       >
         <Text
           style={[signUpFormStyles.ctaText, { color: colorPalette.background }]}
         >
-          Sign up
+          {isPending ? "Creating..." : "Sign up"}
         </Text>
       </Pressable>
     </View>

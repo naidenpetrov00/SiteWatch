@@ -7,17 +7,23 @@ export const api = Axios.create({
 });
 
 api.interceptors.response.use(
-  (response) => {
-    return response.data;
-  },
+  (response) => response.data,
   (error) => {
-    const message = error.response?.data?.message || error.message;
 
-    console.log(message);
-
-    if (error.response?.status === 401) {
+    if (error.response) {
+      console.log("❌ API responded with error:");
+      console.log("Status:", error.response.status);
+      console.log("URL:", error.config?.baseURL + error.config?.url);
+      console.log("Data:", error.response.data);
+    } else if (error.request) {
+      console.log("🚫 No response received (Network Error)");
+      console.log("URL:", error.config?.baseURL + error.config?.url);
+      console.log("Request:", error.request);
+    } else {
+      console.log("⚙️ Request setup error:", error.message);
     }
 
     return Promise.reject(error);
   }
 );
+

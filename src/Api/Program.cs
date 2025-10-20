@@ -18,8 +18,10 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     await app.InitializeDatabaseAsync();
+    builder.WebHost.UseUrls("http://0.0.0.0:5293");
     app.MapOpenApi();
     app.MapScalarApiReferenceWithOptions();
+    app.UseCors("DevCors");
 }
 
 app.UseHttpsRedirection();

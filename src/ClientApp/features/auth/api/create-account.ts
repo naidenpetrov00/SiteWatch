@@ -1,5 +1,6 @@
 import { MutationConfig } from "@/lib/react-query";
 import { api } from "@/lib/api-client";
+import { env } from "@/config/env";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 
@@ -23,12 +24,12 @@ export const createAccountInputSchema = z.object({
 
 export type CreateAccountInput = z.infer<typeof createAccountInputSchema>;
 
-export const createAccount = ({
+export const createAccount = async ({
   data,
 }: {
   data: CreateAccountInput;
-}): Promise<Comment> => {
-  return api.post("/identity/signUp", data);
+}): Promise<void> => {
+  await api.post("/identity/signUp", data);
 };
 
 type UseCreateAccountOption = {
@@ -40,5 +41,14 @@ export const useCreateAccount = ({
 }: UseCreateAccountOption) => {
   const config = mutationConfig || {};
 
-  return useMutation({ mutationFn: createAccount, ...config });
+  return useMutation({
+    mutationFn: createAccount,
+    onSuccess: () => {
+      console.log("Account created successfully!");
+    },
+    onError: (error) => {
+      console.error("Failed to create account:", error);
+    },
+    ...config,
+  });
 };

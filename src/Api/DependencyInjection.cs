@@ -17,7 +17,20 @@ public static class DependencyInjection
     {
         builder.Services.AddOpenApi();
         builder.Services.AddAutoMapper(cfg => { }, Assembly.GetExecutingAssembly());
-
+        builder.Services.AddCors(opt =>
+        {
+            opt.AddPolicy(
+                "DevCors",
+                policy =>
+                {
+                    policy
+                        .AllowAnyOrigin()
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .SetPreflightMaxAge(TimeSpan.FromHours(1));
+                }
+            );
+        });
         var options = Guard.Against.Null(configuration.GetOptions<JwtOptions>());
         var issuer = Guard.Against.Null(options.Issuer);
         var audience = Guard.Against.Null(options.Audience);
