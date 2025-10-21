@@ -1,10 +1,13 @@
 using System.Net;
 using System.Net.Mail;
+using Application.SeedWork.Enums;
 using Application.SeedWork.Interfaces;
+using Application.SeedWork.Models;
 using Ardalis.GuardClauses;
 using Infrastructure.Data.Options;
 using Infrastructure.Email;
 using Infrastructure.SeedWork.Options;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 
 namespace Infrastructure.Services;
@@ -12,10 +15,12 @@ namespace Infrastructure.Services;
 public class EmailService : IEmailService
 {
     private readonly GmailOptions _gmailOptions;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public EmailService(IConfiguration config)
+    public EmailService(IConfiguration config, UserManager<ApplicationUser> userManager)
     {
         _gmailOptions = Guard.Against.Null(config.GetOptions<GmailOptions>());
+        _userManager = userManager;
     }
 
     private async Task SendEmail(MailMessage message)
@@ -33,9 +38,16 @@ public class EmailService : IEmailService
         await client.SendMailAsync(message);
     }
 
-    public async Task SendVerifyEmailAsync(string toEmail, string token)
+    public async Task SendVerifyEmailAsync(ApplicationUser user, string toEmail, string token)
     {
+        await _userManager.SetAuthenticationTokenAsync(
+            user,
+            EmailProvider.Email.ToString(),
+            EmailProvider.SMTP.ToString(),
+            token
+        );
         var message = EmailTemplates.VerifyEmail(_gmailOptions.Email!, toEmail, token);
+
         await SendEmail(message);
     }
 

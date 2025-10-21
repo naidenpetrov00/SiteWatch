@@ -1,6 +1,11 @@
+import axios, { AxiosError } from "axios";
+
+import { Alert } from "react-native";
+import { CreateAccountResponse } from "@/types/identity";
 import { MutationConfig } from "@/lib/react-query";
 import { api } from "@/lib/api-client";
 import { env } from "@/config/env";
+import { paths } from "@/config/constants/paths";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 
@@ -28,8 +33,8 @@ export const createAccount = async ({
   data,
 }: {
   data: CreateAccountInput;
-}): Promise<void> => {
-  await api.post("/identity/signUp", data);
+}): Promise<CreateAccountResponse> => {
+  return await api.post(paths.identity.signUp, data);
 };
 
 type UseCreateAccountOption = {
@@ -43,11 +48,14 @@ export const useCreateAccount = ({
 
   return useMutation({
     mutationFn: createAccount,
-    onSuccess: () => {
-      console.log("Account created successfully!");
+    onSuccess: (data) => {
+      console.log(data);
     },
-    onError: (error) => {
-      console.error("Failed to create account:", error);
+    onError: (error: AxiosError) => {
+      const errors = Array.isArray(error.response?.data)
+        ? error.response?.data.join("\n")
+        : String(error.response?.data);
+      Alert.alert("Sign up failed", errors);
     },
     ...config,
   });

@@ -16,13 +16,15 @@ public class IdentityService : IIdentityService
     private readonly IAuthorizationService _authorizationService;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly SignInManager<ApplicationUser> _signInManager;
+    private readonly IEmailService _emailService;
 
     public IdentityService(
         UserManager<ApplicationUser> userManager,
         IUserClaimsPrincipalFactory<ApplicationUser> userClaimsPrincipalFactory,
         IAuthorizationService authorizationService,
         IJwtTokenService jwtTokenService,
-        SignInManager<ApplicationUser> signInManager
+        SignInManager<ApplicationUser> signInManager,
+        IEmailService emailService
     )
     {
         _userManager = userManager;
@@ -30,6 +32,7 @@ public class IdentityService : IIdentityService
         _authorizationService = authorizationService;
         _jwtTokenService = jwtTokenService;
         _signInManager = signInManager;
+        _emailService = emailService;
     }
 
     public async Task<string?> GetUserNameAsync(string userId)
@@ -55,6 +58,9 @@ public class IdentityService : IIdentityService
         }
 
         var token = _jwtTokenService.GenerateToken(user);
+        var emailVerificationToken = GenerateVerificationToken();
+        await _emailService.SendVerifyEmailAsync(user, user.Email!, emailVerificationToken);
+
         return new IdentityResultWithToken { Result = result.ToApplicationResult(), Token = token };
     }
 

@@ -7,3 +7,8 @@ export enum IdentityActionTypes {
   ADD_TOKEN = "AddToken",
   REMOVE_TOKEN = "RemoveToken",
 }
+
+export type CreateAccountResponse = {
+  token: string;
+  email: string;
+};

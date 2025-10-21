@@ -56,7 +56,7 @@ public class SendEmailVerificationHandler
             token
         );
 
-        await _emailService.SendVerifyEmailAsync(user.Email!, token);
+        await _emailService.SendVerifyEmailAsync(user, user.Email!, token);
 
         return new IdentityResultOnly { Result = Result.Success() };
     }
