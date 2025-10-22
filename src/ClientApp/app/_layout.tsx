@@ -1,7 +1,7 @@
+import { Modal, Text } from "react-native";
 import { Slot, Stack } from "expo-router";
 
 import AppProvider from "@/components/app/provider";
-import { Text } from "react-native";
 
 const RootLayout = () => {
   const isAuthenticated = false;
@@ -15,6 +15,10 @@ const RootLayout = () => {
         <Stack.Protected guard={!isAuthenticated}>
           <Stack.Screen name="SignUp" options={{ headerShown: false }} />
           <Stack.Screen name="SignIn" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="VerifyEmail"
+            options={{ presentation: "modal", gestureEnabled: false }}
+          />
         </Stack.Protected>
       </Stack>
     </AppProvider>

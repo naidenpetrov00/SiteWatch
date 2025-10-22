@@ -8,7 +8,7 @@ import { useColorPalette } from "@/hooks/useColorPalette";
 interface IAuthPageTitleProps {
   title: string;
   description: string;
-  href: Href;
+  href?: Href;
 }
 
 export const AuthPageTitle: React.FC<IAuthPageTitleProps> = ({
@@ -17,6 +17,7 @@ export const AuthPageTitle: React.FC<IAuthPageTitleProps> = ({
   href,
 }) => {
   const colorPalette = useColorPalette();
+
   return (
     <View style={authPageTitleStyles.headerWrap}>
       <Text style={[authPageTitleStyles.title, { color: colorPalette.text }]}>
@@ -28,9 +29,13 @@ export const AuthPageTitle: React.FC<IAuthPageTitleProps> = ({
           { color: colorPalette.secondary },
         ]}
       >
-        <Pressable onPress={() => router.replace(href)}>
+        {href ? (
+          <Pressable onPress={() => router.replace(href)}>
+            <Text>{description}</Text>
+          </Pressable>
+        ) : (
           <Text>{description}</Text>
-        </Pressable>
+        )}
       </Text>
     </View>
   );

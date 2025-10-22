@@ -6,6 +6,7 @@ import { MutationConfig } from "@/lib/react-query";
 import { api } from "@/lib/api-client";
 import { env } from "@/config/env";
 import { paths } from "@/config/constants/paths";
+import { router } from "expo-router";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 
@@ -48,8 +49,8 @@ export const useCreateAccount = ({
 
   return useMutation({
     mutationFn: createAccount,
-    onSuccess: (data) => {
-      console.log(data);
+    onSuccess: ({ email }) => {
+      router.push({ pathname: "VerifyEmail", params: { email } });
     },
     onError: (error: AxiosError) => {
       const errors = Array.isArray(error.response?.data)

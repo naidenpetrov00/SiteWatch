@@ -6,9 +6,9 @@ import {
 import { Pressable, Text, TextInput, View } from "react-native";
 import React, { useRef } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
+import { router, useRouter } from "expo-router";
 
 import FormField from "@/components/ui/FormField/FormField";
-import { create } from "react-test-renderer";
 import signUpFormStyles from "./SignUpForm.styles";
 import { useColorPalette } from "@/hooks/useColorPalette";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,6 +22,7 @@ const defaultValues: CreateAccountInput = {
 };
 const SignUpForm = ({}: ISignUpForm) => {
   const colorPalette = useColorPalette();
+  const router = useRouter();
 
   const nameRef = useRef<TextInput>(null);
   const emailRef = useRef<TextInput>(null);
@@ -36,9 +37,12 @@ const SignUpForm = ({}: ISignUpForm) => {
     resolver: zodResolver(createAccountInputSchema),
   });
 
-  const { mutate, isPending } = useCreateAccount({ mutationConfig: {} });
+  const { mutate, isPending } = useCreateAccount({
+    mutationConfig: {},
+  });
   const onSignUp: SubmitHandler<CreateAccountInput> = (data) => {
-    mutate({ data });
+    router.push("VerifyEmail");
+    // mutate({ data });
   };
 
   return (
