@@ -61,7 +61,12 @@ public class IdentityService : IIdentityService
         var emailVerificationToken = GenerateVerificationToken();
         await _emailService.SendVerifyEmailAsync(user, user.Email!, emailVerificationToken);
 
-        return new IdentityResultWithToken { Result = result.ToApplicationResult(), Token = token };
+        return new IdentityResultWithTokenEmail
+        {
+            Result = result.ToApplicationResult(),
+            Token = token,
+            Email = email,
+        };
     }
 
     public async Task<bool> IsInRoleAsync(string userId, string role)

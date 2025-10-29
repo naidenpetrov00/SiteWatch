@@ -38,11 +38,14 @@ const SignUpForm = ({}: ISignUpForm) => {
   });
 
   const { mutate, isPending } = useCreateAccount({
-    mutationConfig: {},
+    mutationConfig: {
+      onSuccess: (data) => {
+        router.push({ pathname: "VerifyEmail", params: { email: data.email } });
+      },
+    },
   });
   const onSignUp: SubmitHandler<CreateAccountInput> = (data) => {
-    router.push("VerifyEmail");
-    // mutate({ data });
+    mutate({ data });
   };
 
   return (
@@ -50,6 +53,7 @@ const SignUpForm = ({}: ISignUpForm) => {
       <FormField
         ref={nameRef}
         control={control}
+        name="username"
         validationError={errors.username}
         label="username"
         placeholder="Jiara Martins"
@@ -60,6 +64,7 @@ const SignUpForm = ({}: ISignUpForm) => {
       <FormField
         ref={emailRef}
         control={control}
+        name="email"
         validationError={errors.email}
         label="email"
         placeholder="whataGreatApp@email.com"
@@ -71,6 +76,7 @@ const SignUpForm = ({}: ISignUpForm) => {
       <FormField
         ref={passRef}
         control={control}
+        name="password"
         validationError={errors.password}
         label="password"
         placeholder="******"

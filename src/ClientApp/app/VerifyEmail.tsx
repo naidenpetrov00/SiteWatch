@@ -13,10 +13,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import VerifyEmailForm from "@/features/auth/components/VerifyEmailForm/VerifyEmailForm";
 import signUpStyles from "@/features/auth/components/SignUp.styles";
 import { useColorPalette } from "@/hooks/useColorPalette";
-import { useRoute } from "@react-navigation/native";
+import { useLocalSearchParams } from "expo-router";
 
 const VerifyEmail = () => {
   const colorPalette = useColorPalette();
+  const {email} = useLocalSearchParams<{email:string}>();
 
   return (
     <SafeAreaView
@@ -44,11 +45,11 @@ const VerifyEmail = () => {
               {/* Title + subtitle */}
               <AuthPageTitle
                 title={"Enter Code"}
-                description="Check you email. Resend again if there is no soul"
+                description={`Check ${email}. Resend again if there is no soul`}
               />
 
               {/* Form */}
-              <VerifyEmailForm />
+              <VerifyEmailForm email={email} />
             </ScrollView>
           </View>
         </TouchableWithoutFeedback>

@@ -25,6 +25,7 @@ interface IFormField {
   submitBehavior?: SubmitBehavior;
   onSubmitEditing?: (e: TextInputSubmitEditingEvent) => void;
   control?: any;
+  name: string;
   validationError?: FieldError;
 }
 
@@ -39,6 +40,7 @@ const FormField = React.forwardRef<TextInput, IFormField>(
       submitBehavior,
       onSubmitEditing,
       control,
+      name,
       validationError,
     },
     ref
@@ -52,7 +54,7 @@ const FormField = React.forwardRef<TextInput, IFormField>(
         </Text>
 
         <Controller
-          name={label}
+          name={name}
           control={control}
           render={({ field: { value, onBlur, onChange } }) => (
             <TextInput

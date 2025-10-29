@@ -7,37 +7,30 @@ import { paths } from "@/config/constants/paths";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 
-export const verifyEmailSchema = z.object({
-  token: z.string().regex(/^\d{6}$/, "Enter exactly 6 digits"),
-});
-
-export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
-
-export const emailSchema = verifyEmailSchema.extend({
+export const resendEmailInputSchema = z.object({
   email: z.string().email(),
 });
-export type emailSchema = z.infer<typeof emailSchema>;
 
-export const verifyEmail = async ({
+export type ResendEmailInput = z.infer<typeof resendEmailInputSchema>;
+
+export const resendEmail = async ({
   data,
 }: {
-  data: VerifyEmailInput;
+  data: ResendEmailInput;
 }): Promise<void> => {
-  return await api.post(paths.identity.verifyEmail, data);
+  console.log(data);
+  api.post(paths.identity.resendEmail, data);
 };
 
-type UseVerifyEmailOption = {
-  mutationConfig?: MutationConfig<typeof verifyEmail>;
+type UseResendEmailOption = {
+  mutationConfig?: MutationConfig<typeof resendEmail>;
 };
 
-export const useVerifyEmail = ({ mutationConfig }: UseVerifyEmailOption) => {
+export const useResendEmail = ({ mutationConfig }: UseResendEmailOption) => {
   const config = mutationConfig || {};
 
   return useMutation({
-    mutationFn: verifyEmail,
-    onSuccess: () => {
-      console.log("Email Verified");
-    },
+    mutationFn: resendEmail,
     onError: (error: AxiosError) => {
       const errors = Array.isArray(error.response?.data)
         ? error.response?.data.join("\n")

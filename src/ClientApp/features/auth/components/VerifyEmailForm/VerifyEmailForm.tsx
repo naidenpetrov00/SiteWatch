@@ -1,10 +1,5 @@
-import {
-  CreateAccountInput,
-  createAccountInputSchema,
-  useCreateAccount,
-} from "../../api/create-account";
-import { Pressable, Text, TextInput, View } from "react-native";
-import React, { useEffect, useRef, useState } from "react";
+import { Pressable, Text, View } from "react-native";
+import React, { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import {
   VerifyEmailInput,
@@ -15,67 +10,71 @@ import {
 import FormField from "@/components/ui/FormField/FormField";
 import signUpFormStyles from "../SignUpForm/SignUpForm.styles";
 import { useColorPalette } from "@/hooks/useColorPalette";
-import { useRouter } from "expo-router";
+import { useResendEmail } from "../../api/resend-email";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-interface VerifyEmailForm {}
+interface VerifyEmailForm {
+  email: string;
+}
 
-const defaultValues: VerifyEmailInput = {
-  code: "123456",
-};
+const RESEND_COOLDOWN = 20;
 
-const RESEND_COOLDOWN = 15;
-
-const VerifyEmailForm = ({}: VerifyEmailForm) => {
+const VerifyEmailForm = ({ email }: VerifyEmailForm) => {
   const colorPalette = useColorPalette();
-  const router = useRouter();
 
   const {
     control,
     handleSubmit,
     formState: { errors },
   } = useForm<VerifyEmailInput>({
-    defaultValues,
     resolver: zodResolver(verifyEmailInputSchema),
   });
 
   const [secondsLeft, setSecondsLeft] = useState<number>(RESEND_COOLDOWN);
-  const [isResending, setIsResending] = useState(false);
 
   useEffect(() => {
     if (secondsLeft <= 0) return;
-    const id = setInterval(() => setSecondsLeft((s) => s - 1), 1000);
+    const id = setInterval(() => {
+      setSecondsLeft((s) => (s <= 1 ? 0 : s - 1));
+    }, 1000);
     return () => clearInterval(id);
-  }, []);
+  }, [secondsLeft]);
 
-  const { mutate, isPending } = useVerifyEmail({ mutationConfig: {} });
+  const { mutate: verifyMutation, isPending } = useVerifyEmail({
+    mutationConfig: {},
+  });
   const onVerifyEmail: SubmitHandler<VerifyEmailInput> = (data) => {
-    mutate({ data });
+    // data.email = email;
+    console.log(data);
+
+    verifyMutation({ data });
   };
 
-  const handleResend = async () => {
-    if (secondsLeft > 0 || isResending) return;
-    try {
-      setIsResending(true);
-      // await api.post(paths.identity.resendCode, { email: ... });
-      // On success, restart cooldown:
-      setSecondsLeft(RESEND_COOLDOWN);
-    } catch (e) {
-      // Alert.alert("Resend failed", String(e));
-    } finally {
-      setIsResending(false);
+  const { mutate: resendMutation, isPending: resendIsPending } = useResendEmail(
+    {
+      mutationConfig: {
+        onSuccess: () => {
+          setSecondsLeft(RESEND_COOLDOWN);
+        },
+      },
     }
+  );
+  const onResendEmail = () => {
+    if (secondsLeft > 0) return;
+    resendMutation({ data: { email: email } });
   };
 
   return (
     <View style={signUpFormStyles.form}>
       <FormField
+        name="token"
         control={control}
-        validationError={errors.code}
-        label="6 digit code"
-        placeholder="XXX XXX"
+        validationError={errors.token}
+        label="6 digit token"
+        placeholder="XXXXXX"
         returnKeyType="done"
         submitBehavior="blurAndSubmit"
+        keyboardType="number-pad"
       />
 
       <Pressable
@@ -105,12 +104,11 @@ const VerifyEmailForm = ({}: VerifyEmailForm) => {
             opacity: 0.7,
           }}
         >
-          You can resend in {secondsLeft}s
+          On the way. You can resend in {secondsLeft}s
         </Text>
       ) : (
         <Pressable
-          onPress={handleResend}
-          disabled={isResending}
+          onPress={onResendEmail}
           style={({ pressed }) => [
             signUpFormStyles.cta,
             { backgroundColor: colorPalette.primary },
@@ -122,7 +120,7 @@ const VerifyEmailForm = ({}: VerifyEmailForm) => {
           <Text
             style={[signUpFormStyles.ctaText, { color: colorPalette.text }]}
           >
-            {isResending ? "Resending..." : "Resend code"}
+            {resendIsPending ? "Resending..." : "Resend code"}
           </Text>
         </Pressable>
       )}

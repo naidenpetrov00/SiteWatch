@@ -3,5 +3,6 @@ export const paths = {
     signUp: "/identity/signUp",
     sendVerification: "/identity/sendVerification",
     verifyEmail: "/identity/verifyEmail",
+    resendEmail: "/identity/sendVerification",
   },
 };
