@@ -20,6 +20,11 @@ public class IdentityResultWithTokenEmail : IdentityResultWithToken
     public required string Email { get; set; }
 }
 
+public class IdentityResultWithUserToken : IdentityResultWithToken
+{
+    public required UserInfoDto User { get; set; }
+}
+
 public class IdentityResultWithUser : IdentityResultModel
 {
     public required UserInfoDto User { get; set; }

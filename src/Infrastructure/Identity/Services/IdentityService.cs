@@ -1,4 +1,5 @@
 using Application.Identity.Commands;
+using Application.Identity.Queries.Users;
 using Application.SeedWork.Enums;
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models;
@@ -149,7 +150,16 @@ public class IdentityService : IIdentityService
                 EmailProvider.Email.ToString(),
                 EmailProvider.SMTP.ToString()
             );
-            return new IdentityResultOnly { Result = Result.Success() };
+            return new IdentityResultWithUser
+            {
+                Result = Result.Success(),
+                User = new UserInfoDto
+                {
+                    Id = user.Id,
+                    Email = user.Email,
+                    UserName = user.UserName,
+                },
+            };
         }
         return new IdentityResultOnly { Result = result.ToApplicationResult() };
     }
