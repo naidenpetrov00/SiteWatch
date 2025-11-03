@@ -4,6 +4,7 @@ import { DarkTheme, DefaultTheme } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React, { ReactNode } from "react";
 
+import { AuthProvider } from "@/store/auth_context";
 import { ThemeProvider } from "@react-navigation/native";
 import { queryConfig } from "@/lib/react-query";
 import { useColorScheme } from "@/hooks/useColorScheme";
@@ -24,7 +25,7 @@ const AppProvider = ({ children }: AppProviderProps) => {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

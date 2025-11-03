@@ -1,14 +1,18 @@
+import {
+  EmailSchema,
+  VerifyEmailInput,
+  useVerifyEmail,
+  verifyEmailSchema,
+} from "../../api/verify-email";
 import { Pressable, Text, View } from "react-native";
 import React, { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
-import {
-  VerifyEmailInput,
-  useVerifyEmail,
-  verifyEmailInputSchema,
-} from "../../api/verify-email";
+import { router, useRouter } from "expo-router";
 
 import FormField from "@/components/ui/FormField/FormField";
+import { paths } from "@/config/constants/paths";
 import signUpFormStyles from "../SignUpForm/SignUpForm.styles";
+import { useAuth } from "@/store/auth_context";
 import { useColorPalette } from "@/hooks/useColorPalette";
 import { useResendEmail } from "../../api/resend-email";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,7 +31,7 @@ const VerifyEmailForm = ({ email }: VerifyEmailForm) => {
     handleSubmit,
     formState: { errors },
   } = useForm<VerifyEmailInput>({
-    resolver: zodResolver(verifyEmailInputSchema),
+    resolver: zodResolver(verifyEmailSchema),
   });
 
   const [secondsLeft, setSecondsLeft] = useState<number>(RESEND_COOLDOWN);
@@ -40,13 +44,20 @@ const VerifyEmailForm = ({ email }: VerifyEmailForm) => {
     return () => clearInterval(id);
   }, [secondsLeft]);
 
+  const router = useRouter();
+  const { login } = useAuth();
   const { mutate: verifyMutation, isPending } = useVerifyEmail({
-    mutationConfig: {},
+    mutationConfig: {
+      onSuccess: (user) => {
+        console.log("user");
+        console.log(user);
+        // login();
+        router.replace("/Home");
+      },
+    },
   });
-  const onVerifyEmail: SubmitHandler<VerifyEmailInput> = (data) => {
-    // data.email = email;
-    console.log(data);
-
+  const onVerifyEmail: SubmitHandler<EmailSchema> = (data) => {
+    data.email = email;
     verifyMutation({ data });
   };
 
@@ -78,6 +89,7 @@ const VerifyEmailForm = ({ email }: VerifyEmailForm) => {
       />
 
       <Pressable
+        // @ts-ignore
         onPress={handleSubmit(onVerifyEmail)}
         style={({ pressed }) => [
           signUpFormStyles.cta,

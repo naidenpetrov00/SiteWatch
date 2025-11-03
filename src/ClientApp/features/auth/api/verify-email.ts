@@ -1,6 +1,7 @@
+import { CreateAccountResponse, User } from "@/types/identity";
+
 import { Alert } from "react-native";
 import { AxiosError } from "axios";
-import { CreateAccountResponse } from "@/types/identity";
 import { MutationConfig } from "@/lib/react-query";
 import { api } from "@/lib/api-client";
 import { paths } from "@/config/constants/paths";
@@ -16,14 +17,16 @@ export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
 export const emailSchema = verifyEmailSchema.extend({
   email: z.string().email(),
 });
-export type emailSchema = z.infer<typeof emailSchema>;
+export type EmailSchema = z.infer<typeof emailSchema>;
 
 export const verifyEmail = async ({
   data,
 }: {
-  data: VerifyEmailInput;
-}): Promise<void> => {
-  return await api.post(paths.identity.verifyEmail, data);
+  data: EmailSchema;
+}): Promise<User> => {
+  const response = await api.post(paths.identity.verifyEmail, data);
+  console.log(response);
+  return response.data;
 };
 
 type UseVerifyEmailOption = {
@@ -35,9 +38,6 @@ export const useVerifyEmail = ({ mutationConfig }: UseVerifyEmailOption) => {
 
   return useMutation({
     mutationFn: verifyEmail,
-    onSuccess: () => {
-      console.log("Email Verified");
-    },
     onError: (error: AxiosError) => {
       const errors = Array.isArray(error.response?.data)
         ? error.response?.data.join("\n")
