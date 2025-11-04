@@ -1,7 +1,6 @@
-import { CreateAccountResponse, User } from "@/types/identity";
-
 import { Alert } from "react-native";
 import { AxiosError } from "axios";
+import { IdentityResultWithUserToken } from "@/types/api";
 import { MutationConfig } from "@/lib/react-query";
 import { api } from "@/lib/api-client";
 import { paths } from "@/config/constants/paths";
@@ -23,11 +22,8 @@ export const verifyEmail = async ({
   data,
 }: {
   data: EmailSchema;
-}): Promise<User> => {
-  const response = await api.post(paths.identity.verifyEmail, data);
-  console.log(response);
-  return response.data;
-};
+}): Promise<IdentityResultWithUserToken> =>
+  await api.post(paths.identity.verifyEmail, data);
 
 type UseVerifyEmailOption = {
   mutationConfig?: MutationConfig<typeof verifyEmail>;

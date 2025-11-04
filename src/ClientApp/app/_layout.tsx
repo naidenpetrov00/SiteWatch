@@ -1,8 +1,5 @@
-import { Children, ReactNode } from "react";
-import { Modal, Text } from "react-native";
-import { Slot, Stack } from "expo-router";
-
 import AppProvider from "@/components/app/provider";
+import { Stack } from "expo-router";
 import { useAuth } from "@/store/auth_context";
 
 const RootLayout = () => {

@@ -7,14 +7,13 @@ import {
 import { Pressable, Text, View } from "react-native";
 import React, { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
-import { router, useRouter } from "expo-router";
 
 import FormField from "@/components/ui/FormField/FormField";
-import { paths } from "@/config/constants/paths";
 import signUpFormStyles from "../SignUpForm/SignUpForm.styles";
 import { useAuth } from "@/store/auth_context";
 import { useColorPalette } from "@/hooks/useColorPalette";
 import { useResendEmail } from "../../api/resend-email";
+import { useRouter } from "expo-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 interface VerifyEmailForm {
@@ -48,10 +47,8 @@ const VerifyEmailForm = ({ email }: VerifyEmailForm) => {
   const { login } = useAuth();
   const { mutate: verifyMutation, isPending } = useVerifyEmail({
     mutationConfig: {
-      onSuccess: (user) => {
-        console.log("user");
-        console.log(user);
-        // login();
+      onSuccess: ({ user: { email, id, username }, token }) => {
+        login({ id, email, username }, token);
         router.replace("/Home");
       },
     },
