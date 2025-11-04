@@ -25,15 +25,15 @@ public class Identity : EndpointGroupBase
         group.MapPost("/resetPassword", ResetPassword);
     }
 
-    public async Task<Results<Ok<IdentityResultWithToken>, BadRequest<string[]>>> SignUp(
+    public async Task<Results<Ok<IdentityResultWithEmail>, BadRequest<string[]>>> SignUp(
         IMediator mediator,
         [FromBody] SignUpCommand command
     )
     {
         var result = await mediator.Send(command);
-        if (result.Result.Succeeded && result is IdentityResultWithToken resultWithToken)
+        if (result.Result.Succeeded && result is IdentityResultWithEmail resultWithEmail)
         {
-            return TypedResults.Ok(resultWithToken);
+            return TypedResults.Ok(resultWithEmail);
         }
 
         return TypedResults.BadRequest(result.Result.Errors);
@@ -63,14 +63,14 @@ public class Identity : EndpointGroupBase
         return TypedResults.BadRequest(result.Result.Errors);
     }
 
-    public async Task<Results<NoContent, BadRequest<string[]>>> VerifyEmail(
+    public async Task<Results<Ok<IdentityResultWithUserToken>, BadRequest<string[]>>> VerifyEmail(
         IMediator mediator,
         VerifyEmailCommand command
     )
     {
         var result = await mediator.Send(command);
-        if (result.Result.Succeeded)
-            return TypedResults.NoContent();
+        if (result.Result.Succeeded && result is IdentityResultWithUserToken resultWithUserToken)
+            return TypedResults.Ok(resultWithUserToken);
 
         return TypedResults.BadRequest(result.Result.Errors);
     }

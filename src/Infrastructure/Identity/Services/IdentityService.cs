@@ -58,16 +58,10 @@ public class IdentityService : IIdentityService
             return new IdentityResultOnly { Result = result.ToApplicationResult() };
         }
 
-        var token = _jwtTokenService.GenerateToken(user);
         var emailVerificationToken = GenerateVerificationToken();
         await _emailService.SendVerifyEmailAsync(user, user.Email!, emailVerificationToken);
 
-        return new IdentityResultWithTokenEmail
-        {
-            Result = result.ToApplicationResult(),
-            Token = token,
-            Email = email,
-        };
+        return new IdentityResultWithEmail { Result = result.ToApplicationResult(), Email = email };
     }
 
     public async Task<bool> IsInRoleAsync(string userId, string role)
@@ -127,7 +121,10 @@ public class IdentityService : IIdentityService
         return new IdentityResultOnly { Result = result.ToApplicationResult() };
     }
 
-    public async Task<IdentityResultModel> ConfirmEmailAsync(ApplicationUser user, string token)
+    public async Task<IdentityResultModel> ConfirmEmailAsync(
+        ApplicationUser user,
+        string emailToken
+    )
     {
         var authenticatoinToken = await _userManager.GetAuthenticationTokenAsync(
             user,
@@ -135,7 +132,7 @@ public class IdentityService : IIdentityService
             EmailProvider.SMTP.ToString()
         );
 
-        if (authenticatoinToken == null || authenticatoinToken != token)
+        if (authenticatoinToken == null || authenticatoinToken != emailToken)
             return new IdentityResultOnly
             {
                 Result = Result.Failure([IdentityResultErrors.TokenNotValid]),
@@ -150,7 +147,8 @@ public class IdentityService : IIdentityService
                 EmailProvider.Email.ToString(),
                 EmailProvider.SMTP.ToString()
             );
-            return new IdentityResultWithUser
+            var token = _jwtTokenService.GenerateToken(user);
+            return new IdentityResultWithUserToken
             {
                 Result = Result.Success(),
                 User = new UserInfoDto
@@ -159,9 +157,13 @@ public class IdentityService : IIdentityService
                     Email = user.Email,
                     UserName = user.UserName,
                 },
+                Token = token,
             };
         }
-        return new IdentityResultOnly { Result = result.ToApplicationResult() };
+        return new IdentityResultOnly
+        {
+            Result = Result.Failure([IdentityResultErrors.TokenNotValid]),
+        };
     }
 
     public string GenerateVerificationToken() => new Random().Next(100000, 999999).ToString("D6");
