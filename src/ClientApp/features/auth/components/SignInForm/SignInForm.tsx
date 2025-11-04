@@ -5,26 +5,28 @@ import {
 } from "../../api/create-account";
 import { Pressable, Text, TextInput, View } from "react-native";
 import React, { useRef } from "react";
+import {
+  SignInInput,
+  signInInputSchema,
+  useSignIn,
+} from "../../api/sign-in-accounts";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { router, useRouter } from "expo-router";
 
 import FormField from "@/components/ui/FormField/FormField";
-import signUpFormStyles from "./SignUpForm.styles";
+import signUpFormStyles from "../SignUpForm/SignUpForm.styles";
 import { useColorPalette } from "@/hooks/useColorPalette";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-interface ISignUpForm {}
+interface ISignInFormForm {}
 
-const defaultValues: CreateAccountInput = {
+const defaultValues: SignInInput = {
   email: "naiden.petrov.31.12.00@gmail.com",
-  username: "Test.2010",
   password: "Test.2010",
 };
-const SignUpForm = ({}: ISignUpForm) => {
+const SignInForm = ({}: ISignInFormForm) => {
   const colorPalette = useColorPalette();
-  const router = useRouter();
 
-  const nameRef = useRef<TextInput>(null);
   const emailRef = useRef<TextInput>(null);
   const passRef = useRef<TextInput>(null);
 
@@ -32,29 +34,18 @@ const SignUpForm = ({}: ISignUpForm) => {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<CreateAccountInput>({
+  } = useForm<SignInInput>({
     defaultValues,
-    resolver: zodResolver(createAccountInputSchema),
+    resolver: zodResolver(signInInputSchema),
   });
 
-  const { mutate, isPending } = useCreateAccount();
-  const onSignUp: SubmitHandler<CreateAccountInput> = (data) => {
+  const { mutate, isPending } = useSignIn();
+  const onSignIn: SubmitHandler<SignInInput> = (data) => {
     mutate({ data });
   };
 
   return (
     <View style={signUpFormStyles.form}>
-      <FormField
-        ref={nameRef}
-        control={control}
-        name="username"
-        validationError={errors.username}
-        label="username"
-        placeholder="Jiara Martins"
-        returnKeyType="next"
-        submitBehavior="submit"
-        onSubmitEditing={() => emailRef.current?.focus()}
-      />
       <FormField
         ref={emailRef}
         control={control}
@@ -79,7 +70,7 @@ const SignUpForm = ({}: ISignUpForm) => {
         submitBehavior="blurAndSubmit"
       />
       <Pressable
-        onPress={handleSubmit(onSignUp)}
+        onPress={handleSubmit(onSignIn)}
         style={({ pressed }) => [
           signUpFormStyles.cta,
           {
@@ -94,11 +85,11 @@ const SignUpForm = ({}: ISignUpForm) => {
         <Text
           style={[signUpFormStyles.ctaText, { color: colorPalette.background }]}
         >
-          {isPending ? "Creating..." : "Sign up"}
+          {isPending ? "Signing In..." : "Sign In"}
         </Text>
       </Pressable>
     </View>
   );
 };
 
-export default SignUpForm;
+export default SignInForm;

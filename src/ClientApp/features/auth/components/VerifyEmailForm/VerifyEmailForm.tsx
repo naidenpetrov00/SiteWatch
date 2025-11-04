@@ -10,10 +10,8 @@ import { SubmitHandler, useForm } from "react-hook-form";
 
 import FormField from "@/components/ui/FormField/FormField";
 import signUpFormStyles from "../SignUpForm/SignUpForm.styles";
-import { useAuth } from "@/store/auth_context";
 import { useColorPalette } from "@/hooks/useColorPalette";
 import { useResendEmail } from "../../api/resend-email";
-import { useRouter } from "expo-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 interface VerifyEmailForm {
@@ -43,16 +41,7 @@ const VerifyEmailForm = ({ email }: VerifyEmailForm) => {
     return () => clearInterval(id);
   }, [secondsLeft]);
 
-  const router = useRouter();
-  const { login } = useAuth();
-  const { mutate: verifyMutation, isPending } = useVerifyEmail({
-    mutationConfig: {
-      onSuccess: ({ user: { email, id, username }, token }) => {
-        login({ id, email, username }, token);
-        router.replace("/Home");
-      },
-    },
-  });
+  const { mutate: verifyMutation, isPending } = useVerifyEmail();
   const onVerifyEmail: SubmitHandler<EmailSchema> = (data) => {
     data.email = email;
     verifyMutation({ data });

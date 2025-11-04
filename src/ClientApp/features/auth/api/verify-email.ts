@@ -4,6 +4,8 @@ import { IdentityResultWithUserToken } from "@/types/api";
 import { MutationConfig } from "@/lib/react-query";
 import { api } from "@/lib/api-client";
 import { paths } from "@/config/constants/paths";
+import { router } from "expo-router";
+import { useAuth } from "@/store/auth_context";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 
@@ -26,20 +28,25 @@ export const verifyEmail = async ({
   await api.post(paths.identity.verifyEmail, data);
 
 type UseVerifyEmailOption = {
-  mutationConfig?: MutationConfig<typeof verifyEmail>;
+  mutationConfig?: MutationConfig<typeof verifyEmail> | undefined;
 };
 
-export const useVerifyEmail = ({ mutationConfig }: UseVerifyEmailOption) => {
-  const config = mutationConfig || {};
-
+export const useVerifyEmail = ({
+  mutationConfig,
+}: UseVerifyEmailOption = {}) => {
+  const { login } = useAuth();
   return useMutation({
     mutationFn: verifyEmail,
+    onSuccess: ({ user, token }) => {
+      login(user, token);
+      router.replace("/Home");
+    },
     onError: (error: AxiosError) => {
       const errors = Array.isArray(error.response?.data)
         ? error.response?.data.join("\n")
         : String(error.response?.data);
       Alert.alert("Verification Failed", errors);
     },
-    ...config,
+    ...mutationConfig,
   });
 };

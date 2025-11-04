@@ -19,8 +19,8 @@ const Root = () => {
         <Stack.Screen name="(app)" options={{ headerShown: false }} />
       </Stack.Protected>
       <Stack.Protected guard={!isAuthenticated}>
-        <Stack.Screen name="SignUp" options={{ headerShown: false }} />
         <Stack.Screen name="SignIn" options={{ headerShown: false }} />
+        <Stack.Screen name="SignUp" options={{ headerShown: false }} />
         <Stack.Screen
           name="VerifyEmail"
           options={{ presentation: "modal", gestureEnabled: false }}

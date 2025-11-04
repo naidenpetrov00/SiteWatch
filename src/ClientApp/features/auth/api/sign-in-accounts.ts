@@ -1,21 +1,18 @@
+import { CreateAccountResponse, SignInResponse } from "@/types/identity";
 import axios, { AxiosError } from "axios";
 
 import { Alert } from "react-native";
-import { CreateAccountResponse } from "@/types/identity";
+import { IdentityResultWithUserToken } from "@/types/api";
 import { MutationConfig } from "@/lib/react-query";
 import { api } from "@/lib/api-client";
 import { env } from "@/config/env";
 import { paths } from "@/config/constants/paths";
 import { router } from "expo-router";
+import { useAuth } from "@/store/auth_context";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 
-export const createAccountInputSchema = z.object({
-  username: z
-    .string()
-    .min(4, "Minimum 4")
-    .max(20, "Maximum 20")
-    .regex(/^\S+$/, "No spaces allowed"),
+export const signInInputSchema = z.object({
   email: z.string().email(),
   password: z
     .string()
@@ -28,33 +25,33 @@ export const createAccountInputSchema = z.object({
     .regex(/^\S+$/, "No spaces allowed"),
 });
 
-export type CreateAccountInput = z.infer<typeof createAccountInputSchema>;
+export type SignInInput = z.infer<typeof signInInputSchema>;
 
 export const createAccount = async ({
   data,
 }: {
-  data: CreateAccountInput;
-}): Promise<CreateAccountResponse> => {
-  return await api.post(paths.identity.signUp, data);
+  data: SignInInput;
+}): Promise<IdentityResultWithUserToken> => {
+  return await api.post(paths.identity.signIn, data);
 };
 
-type UseCreateAccountOption = {
+type UseSignInOption = {
   mutationConfig?: MutationConfig<typeof createAccount>;
 };
 
-export const useCreateAccount = ({
-  mutationConfig,
-}: UseCreateAccountOption = {}) => {
+export const useSignIn = ({ mutationConfig }: UseSignInOption = {}) => {
+  const { login } = useAuth();
   return useMutation({
     mutationFn: createAccount,
-    onSuccess: (data) => {
-      router.push({ pathname: "VerifyEmail", params: { email: data.email } });
+    onSuccess: ({ user, token }) => {
+      login(user, token);
+      router.push("/Home");
     },
     onError: (error: AxiosError) => {
       const errors = Array.isArray(error.response?.data)
         ? error.response?.data.join("\n")
         : String(error.response?.data);
-      Alert.alert("Sign up failed", errors);
+      Alert.alert("Sign in failed", errors);
     },
     ...mutationConfig,
   });

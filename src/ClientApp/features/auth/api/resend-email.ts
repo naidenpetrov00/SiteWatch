@@ -26,9 +26,9 @@ type UseResendEmailOption = {
   mutationConfig?: MutationConfig<typeof resendEmail>;
 };
 
-export const useResendEmail = ({ mutationConfig }: UseResendEmailOption) => {
-  const config = mutationConfig || {};
-
+export const useResendEmail = ({
+  mutationConfig,
+}: UseResendEmailOption = {}) => {
   return useMutation({
     mutationFn: resendEmail,
     onError: (error: AxiosError) => {
@@ -37,6 +37,6 @@ export const useResendEmail = ({ mutationConfig }: UseResendEmailOption) => {
         : String(error.response?.data);
       Alert.alert("Verification Failed", errors);
     },
-    ...config,
+    ...mutationConfig,
   });
 };

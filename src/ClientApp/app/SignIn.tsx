@@ -2,32 +2,21 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
   TouchableWithoutFeedback,
   View,
-  useColorScheme,
 } from "react-native";
-import React, { useRef } from "react";
 
 import AuthPageTitle from "@/features/auth/components/AuthPageTitle/AuthPageTitle";
-import FormField from "@/components/ui/FormField/FormField";
 import Logo from "@/features/auth/components/Logo/Logo";
+import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import SignInForm from "@/features/auth/components/SignInForm/SignInForm";
 import signUpStyles from "../features/auth/components/SignUp.styles";
 import { useColorPalette } from "@/hooks/useColorPalette";
 
 const SignIn = () => {
   const colorPalette = useColorPalette();
-
-  const nameRef = useRef<TextInput>(null);
-  const emailRef = useRef<TextInput>(null);
-  const passRef = useRef<TextInput>(null);
-
   return (
     <SafeAreaView
       style={[signUpStyles.safe, { backgroundColor: colorPalette.background }]}
@@ -45,7 +34,6 @@ const SignIn = () => {
           >
             {/* Logo badge */}
             <Logo />
-
             <ScrollView
               contentContainerStyle={{ flexGrow: 1 }}
               keyboardShouldPersistTaps="handled"
@@ -59,48 +47,7 @@ const SignIn = () => {
               />
 
               {/* Form */}
-
-              <View style={signUpStyles.form}>
-                <FormField
-                  ref={emailRef}
-                  label="email"
-                  placeholder="whataGreatApp@email.com"
-                  keyboardType="email-address"
-                  returnKeyType="next"
-                  submitBehavior="submit"
-                  onSubmitEditing={() => passRef.current?.focus()}
-                />
-                <FormField
-                  ref={passRef}
-                  label="password"
-                  placeholder="******"
-                  secureTextEntry={true}
-                  returnKeyType="done"
-                  submitBehavior="blurAndSubmit"
-                />
-
-                <Pressable
-                  onPress={() => {
-                    /* handle sign up */
-                  }}
-                  style={({ pressed }) => [
-                    signUpStyles.cta,
-                    {
-                      backgroundColor: colorPalette.primary,
-                    },
-                    pressed && { opacity: 0.9, transform: [{ scale: 0.995 }] },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      signUpStyles.ctaText,
-                      { color: colorPalette.background },
-                    ]}
-                  >
-                    Sign up
-                  </Text>
-                </Pressable>
-              </View>
+              <SignInForm />
             </ScrollView>
           </View>
         </TouchableWithoutFeedback>

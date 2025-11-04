@@ -1,6 +1,7 @@
-import { Href, router } from "expo-router";
+import { Href, HrefObject, router } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 
+import { NavigationOptions } from "expo-router/build/global-state/routing";
 import React from "react";
 import authPageTitleStyles from "./AuthPageTitle.styles";
 import { useColorPalette } from "@/hooks/useColorPalette";
@@ -17,7 +18,6 @@ export const AuthPageTitle: React.FC<IAuthPageTitleProps> = ({
   href,
 }) => {
   const colorPalette = useColorPalette();
-
   return (
     <View style={authPageTitleStyles.headerWrap}>
       <Text style={[authPageTitleStyles.title, { color: colorPalette.text }]}>

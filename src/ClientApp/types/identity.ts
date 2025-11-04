@@ -13,6 +13,10 @@ export type CreateAccountResponse = {
   email: string;
 };
 
+export type SignInResponse = {
+  token: string;
+};
+
 export interface User {
   id: string;
   username: string;
