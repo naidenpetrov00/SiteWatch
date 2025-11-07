@@ -1,6 +1,7 @@
 using Application.SeedWork.Enums;
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models;
+using Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 

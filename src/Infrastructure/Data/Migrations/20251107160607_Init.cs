@@ -1,13 +1,12 @@
-﻿#nullable disable
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace ReCollect.Infrastructure.Migrations
+#nullable disable
+
+namespace Infrastructure.Data.Migrations
 {
-    using System;
-    using Microsoft.EntityFrameworkCore.Migrations;
-
-
     /// <inheritdoc />
-    public partial class InitWithOldData : Migration
+    public partial class Init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -52,11 +51,12 @@ namespace ReCollect.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "PackingLists",
+                name: "Sites",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Created = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LastModified = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
@@ -64,7 +64,7 @@ namespace ReCollect.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PackingLists", x => x.Id);
+                    table.PrimaryKey("PK_Sites", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -174,30 +174,33 @@ namespace ReCollect.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "PackingItems",
+                name: "ApplicationUserSite",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name_Value = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Quantity = table.Column<long>(type: "bigint", nullable: false),
-                    IsPacked = table.Column<bool>(type: "bit", nullable: false),
-                    PackingListId = table.Column<int>(type: "int", nullable: false),
-                    Created = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    LastModified = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    LastModifiedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    SitesId = table.Column<int>(type: "int", nullable: false),
+                    UsersId = table.Column<string>(type: "nvarchar(450)", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PackingItems", x => x.Id);
+                    table.PrimaryKey("PK_ApplicationUserSite", x => new { x.SitesId, x.UsersId });
                     table.ForeignKey(
-                        name: "FK_PackingItems_PackingLists_PackingListId",
-                        column: x => x.PackingListId,
-                        principalTable: "PackingLists",
+                        name: "FK_ApplicationUserSite_AspNetUsers_UsersId",
+                        column: x => x.UsersId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ApplicationUserSite_Sites_SitesId",
+                        column: x => x.SitesId,
+                        principalTable: "Sites",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ApplicationUserSite_UsersId",
+                table: "ApplicationUserSite",
+                column: "UsersId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
@@ -237,16 +240,14 @@ namespace ReCollect.Infrastructure.Migrations
                 column: "NormalizedUserName",
                 unique: true,
                 filter: "[NormalizedUserName] IS NOT NULL");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_PackingItems_PackingListId",
-                table: "PackingItems",
-                column: "PackingListId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "ApplicationUserSite");
+
             migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 
@@ -263,16 +264,13 @@ namespace ReCollect.Infrastructure.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
-                name: "PackingItems");
+                name: "Sites");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
-
-            migrationBuilder.DropTable(
-                name: "PackingLists");
         }
     }
 }

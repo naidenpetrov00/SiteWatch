@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.SeedWork.Interfaces;
-using Application.SeedWork.Models;
+using Domain.Entities;
 using Infrastructure.SeedWork.Extension;
 using MediatR;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -13,6 +13,8 @@ using Microsoft.EntityFrameworkCore;
 public sealed class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplicationDbContext
 {
     private readonly IMediator mediatR;
+
+    public DbSet<Site> Sites => Set<Site>();
 
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IMediator mediatR)
         : base(options)

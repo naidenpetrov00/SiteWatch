@@ -1,8 +1,7 @@
-namespace Application.SeedWork.Exceptions
+namespace Application.SeedWork.Exceptions;
+
+class UserNotFound : Exception
 {
-    class UserNotFound : Exception
-    {
-        public UserNotFound(string message)
-            : base(message) { }
-    }
+    public UserNotFound(string message)
+        : base(message) { }
 }

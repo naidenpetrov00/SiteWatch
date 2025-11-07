@@ -3,6 +3,7 @@ using Application.Identity.Queries.Users;
 using Application.SeedWork.Enums;
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models;
+using Domain.Entities;
 using Infrastructure.Identity.Extensions;
 using Infrastructure.Identity.Extensions.cs;
 using Microsoft.AspNetCore.Authorization;

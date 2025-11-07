@@ -2,6 +2,7 @@ namespace Application.SeedWork.Interfaces;
 
 using Application.Identity.Commands;
 using Application.SeedWork.Models;
+using Domain.Entities;
 
 public interface IIdentityService
 {

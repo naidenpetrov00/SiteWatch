@@ -1,5 +1,6 @@
 using Application.SeedWork.Models;
 using AutoMapper;
+using Domain.Entities;
 
 namespace Application.Identity.Queries.Users;
 

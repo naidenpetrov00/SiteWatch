@@ -1,21 +1,21 @@
-﻿namespace Domain.SeedWork;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
-using System.ComponentModel.DataAnnotations.Schema;
+namespace Domain.SeedWork;
 
 public abstract class BaseEntity
 {
 #pragma warning disable CS8618
-    public int Id { get; private set; }
+    public string Id { get; set; }
 #pragma warning restore CS8618
 
-    private List<BaseEvent> events = new();
+    private List<BaseEvent> events = [];
 
     [NotMapped]
     public IReadOnlyCollection<BaseEvent> Events => events.AsReadOnly();
 
     protected void AddDomainEvent(BaseEvent domainEvent)
     {
-        events ??= new List<BaseEvent>();
+        events ??= [];
         events.Add(domainEvent);
     }
 

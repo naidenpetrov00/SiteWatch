@@ -4,6 +4,7 @@ using System.Reflection;
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models;
 using Ardalis.GuardClauses;
+using Domain.Entities;
 using Infrastructure.Data;
 using Infrastructure.Data.Options;
 using Infrastructure.Identity.Services;

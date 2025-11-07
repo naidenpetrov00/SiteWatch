@@ -1,4 +1,5 @@
 using Application.SeedWork.Models;
+using Domain.Entities;
 
 namespace Infrastructure.Identity.Services;
 
