@@ -1,9 +1,9 @@
-namespace Application.SeedWork.Interfaces;
 
 using Application.Identity.Commands;
 using Application.SeedWork.Models;
 using Domain.Entities;
 
+namespace Application.SeedWork.Interfaces;
 public interface IIdentityService
 {
     Task<string?> GetUserNameAsync(string userId);

@@ -5,7 +5,7 @@ namespace Domain.SeedWork;
 public abstract class BaseEntity
 {
 #pragma warning disable CS8618
-    public string Id { get; set; }
+    public Guid Id { get; set; }
 #pragma warning restore CS8618
 
     private List<BaseEvent> events = [];

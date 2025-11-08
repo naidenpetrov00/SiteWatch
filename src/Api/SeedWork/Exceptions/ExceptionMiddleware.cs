@@ -1,7 +1,7 @@
-﻿namespace ReCollect.Api.Infrastructure.Exceptions;
-
+﻿
 using System.Text.Json;
 
+namespace ReCollect.Api.Infrastructure.Exceptions;
 internal sealed class ExceptionMiddleware : IMiddleware
 {
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)

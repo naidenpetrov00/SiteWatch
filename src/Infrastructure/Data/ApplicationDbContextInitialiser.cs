@@ -1,31 +1,29 @@
-﻿namespace Infrastructure.Data;
-
-using System;
-using System.Threading.Tasks;
-using Application.SeedWork.Models;
-using Domain.Entities;
+﻿using Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
-public class ApplicationDbContextInitialiser
-{
-    private readonly ApplicationDbContext _dbContext;
-    private readonly UserManager<ApplicationUser> _userManager;
+namespace Infrastructure.Data;
 
-    private async Task<IList<ApplicationUser>> AddUsers()
+public class ApplicationDbContextInitialiser(
+    ApplicationDbContext dbContext,
+    UserManager<ApplicationUser> userManager
+)
+{
+    private readonly ApplicationDbContext _dbContext = dbContext;
+    private readonly UserManager<ApplicationUser> _userManager = userManager;
+
+    private async Task<List<ApplicationUser>> AddUsers()
     {
         var user1 = new ApplicationUser
         {
             UserName = "Test.2010",
             Email = "naiden.petrov.31.12.00@gmail.com",
-            PasswordHash = "Test.2010",
             EmailConfirmed = true,
         };
         var user2 = new ApplicationUser
         {
             UserName = "Test2.2010",
             Email = "naidenpetrov00@gmail.com",
-            PasswordHash = "Test2.2010",
             EmailConfirmed = true,
         };
         await _userManager.CreateAsync(user1, "Test@123");
@@ -33,58 +31,58 @@ public class ApplicationDbContextInitialiser
         return [user1, user2];
     }
 
-    private async Task AddSites(IList<ApplicationUser> users)
+    private async Task AddSites(List<ApplicationUser> users)
     {
-        if (await _dbContext.Sites.AnyAsync() && users is null)
+        if (users is null || users.Count == 0 || await _dbContext.Sites.AnyAsync())
             return;
 
         var sites = new List<Site>
         {
-            new Site("Central Office")
+            new("Cen", "Vitosha 17")
             {
                 Created = DateTimeOffset.UtcNow,
                 CreatedBy = "System",
                 LastModified = DateTimeOffset.UtcNow,
                 LastModifiedBy = "System",
-                Users = new List<ApplicationUser> { users[0] },
             },
-            new Site("Regional Office North")
+            new("Regional Office North", "Dondukov 11")
             {
                 Created = DateTimeOffset.UtcNow,
                 CreatedBy = "System",
                 LastModified = DateTimeOffset.UtcNow,
                 LastModifiedBy = "System",
-                Users = new List<ApplicationUser> { users[1] },
             },
-            new Site("Regional Office South")
+            new("Regional Office South", "Kestenova Gora 24")
             {
                 Created = DateTimeOffset.UtcNow,
                 CreatedBy = "System",
                 LastModified = DateTimeOffset.UtcNow,
                 LastModifiedBy = "System",
-                Users = users,
             },
         };
+        sites[0].AddUser(users[0]);
+        sites[1].AddUser(users[1]);
+        sites[1].AddUserRange(users);
 
         await _dbContext.Sites.AddRangeAsync(sites);
         await _dbContext.SaveChangesAsync();
-    }
-
-    public ApplicationDbContextInitialiser(
-        ApplicationDbContext dbContext,
-        UserManager<ApplicationUser> userManager
-    )
-    {
-        _dbContext = dbContext;
-        _userManager = userManager;
     }
 
     public async Task InitalizeDatabaseAsync()
     {
         try
         {
-            await _dbContext.Database.EnsureCreatedAsync();
-            await _dbContext.Database.MigrateAsync();
+            if (!await _dbContext.Database.CanConnectAsync())
+            {
+                await _dbContext.Database.EnsureCreatedAsync();
+                Console.WriteLine("Database created (EnsureCreated).");
+            }
+            else
+            {
+                await _dbContext.Database.MigrateAsync();
+                Console.WriteLine("Applied pending migrations.");
+            }
+
             var users = await AddUsers();
             await AddSites(users);
         }

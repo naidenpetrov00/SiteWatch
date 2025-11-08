@@ -1,9 +1,9 @@
-namespace Infrastructure.SeedWork.Extension;
 
 using Domain.SeedWork;
 using Infrastructure.Data;
 using MediatR;
 
+namespace Infrastructure.SeedWork.Extension;
 internal static class MediatorExtensions
 {
     internal static async Task DispatchDomainEventsAsync(

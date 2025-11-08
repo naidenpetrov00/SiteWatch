@@ -1,4 +1,3 @@
-namespace Application.SeedWork.Behaviours;
 
 using System.Reflection;
 using Application.SeedWork.Exceptions;
@@ -6,6 +5,7 @@ using Application.SeedWork.Interfaces;
 using Application.SeedWork.Security;
 using MediatR;
 
+namespace Application.SeedWork.Behaviours;
 public class AuthorizationBehaviour<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {

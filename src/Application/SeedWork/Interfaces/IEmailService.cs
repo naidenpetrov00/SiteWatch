@@ -1,4 +1,3 @@
-using Application.SeedWork.Models;
 using Domain.Entities;
 
 namespace Application.SeedWork.Interfaces;

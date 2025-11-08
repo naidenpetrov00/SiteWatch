@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Mail;
 using Application.SeedWork.Enums;
 using Application.SeedWork.Interfaces;
-using Application.SeedWork.Models;
 using Ardalis.GuardClauses;
 using Domain.Entities;
 using Infrastructure.Data.Options;

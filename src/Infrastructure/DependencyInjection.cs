@@ -1,8 +1,6 @@
-﻿namespace Infrastructure;
-
+﻿
 using System.Reflection;
 using Application.SeedWork.Interfaces;
-using Application.SeedWork.Models;
 using Ardalis.GuardClauses;
 using Domain.Entities;
 using Infrastructure.Data;
@@ -15,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+namespace Infrastructure;
 public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructureServices(

@@ -1,7 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Application.SeedWork.Models;
 using Ardalis.GuardClauses;
 using Domain.Entities;
 using Infrastructure.Data.Options;

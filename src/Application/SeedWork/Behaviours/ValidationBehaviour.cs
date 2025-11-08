@@ -1,10 +1,7 @@
-﻿namespace Application.SeedWork.Behaviours;
-
-using System.Threading;
-using System.Threading.Tasks;
-using FluentValidation;
+﻿using FluentValidation;
 using MediatR;
 
+namespace Application.SeedWork.Behaviours;
 public class ValidationBehaviour<TRequest, TRespose> : IPipelineBehavior<TRequest, TRespose>
     where TRequest : notnull
 {
