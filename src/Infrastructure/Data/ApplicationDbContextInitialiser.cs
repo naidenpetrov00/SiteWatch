@@ -38,7 +38,7 @@ public class ApplicationDbContextInitialiser(
 
         var sites = new List<Site>
         {
-            new("Cen", "Vitosha 17")
+            new("Central Office", "Vitosha 17")
             {
                 Created = DateTimeOffset.UtcNow,
                 CreatedBy = "System",
