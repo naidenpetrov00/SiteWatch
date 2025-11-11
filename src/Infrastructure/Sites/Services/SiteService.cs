@@ -13,7 +13,8 @@ public class SiteService(IApplicationDbContext dbContext, IMapper mapper) : ISit
     public Task<List<SitesDto>> GetSitesByUserAsync(
         Guid userId,
         CancellationToken cancellationToken
-    ) => _dbContext
+    ) =>
+        _dbContext
             .Sites.AsNoTracking()
             .Where(site => site.Users.Any(user => user.Id == userId.ToString()))
             .ProjectTo<SitesDto>(_mapper.ConfigurationProvider)

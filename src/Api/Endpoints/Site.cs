@@ -12,7 +12,7 @@ public class Site : EndpointGroupBase
     {
         var group = app.MapGroupCustom();
 
-        group.MapGet("/sitesByUser/{userId:guid}", SitesByUser);
+        group.MapGet("/sitesByUser/{userId:guid}", SitesByUser).RequireAuthorization();
     }
 
     public async Task<Ok<List<SitesDto>>> SitesByUser(
