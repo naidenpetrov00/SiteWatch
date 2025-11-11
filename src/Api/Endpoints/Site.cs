@@ -3,7 +3,6 @@ using Api.SeedWork.Extensions;
 using Application.Sites.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Endpoints;
 
@@ -13,12 +12,15 @@ public class Site : EndpointGroupBase
     {
         var group = app.MapGroupCustom();
 
-        group.MapGet("/sitesByUser/{userId}", SitesByUser);
+        group.MapGet("/sitesByUser/{userId:guid}", SitesByUser);
     }
 
-    public async Task<Ok<List<SitesDto>>> SitesByUser(IMediator mediator, [FromQuery] Guid userId)
+    public async Task<Ok<List<SitesDto>>> SitesByUser(
+        IMediator mediator,
+        [AsParameters] SitesByUserQuery query
+    )
     {
-        var sites = await mediator.Send(new SitesByUserQuery());
+        var sites = await mediator.Send(query);
         return TypedResults.Ok(sites);
     }
 }

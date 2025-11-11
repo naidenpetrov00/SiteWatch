@@ -22,12 +22,9 @@ public class SignUpHandler : IRequestHandler<SignUpCommand, IdentityResultModel>
     public async Task<IdentityResultModel> Handle(
         SignUpCommand request,
         CancellationToken cancellationToken
-    )
-    {
-        return await identityService.CreateUserAsync(
+    ) => await identityService.CreateUserAsync(
             request.UserName,
             request.Email,
             request.Password
         );
-    }
 }

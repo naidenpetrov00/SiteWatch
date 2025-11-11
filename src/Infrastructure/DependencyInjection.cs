@@ -1,19 +1,20 @@
-﻿
-using System.Reflection;
+﻿using System.Reflection;
 using Application.SeedWork.Interfaces;
 using Ardalis.GuardClauses;
 using Domain.Entities;
 using Infrastructure.Data;
 using Infrastructure.Data.Options;
+using Infrastructure.Email;
 using Infrastructure.Identity.Services;
 using Infrastructure.SeedWork.Options;
-using Infrastructure.Services;
+using Infrastructure.Sites.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure;
+
 public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructureServices(
@@ -39,6 +40,7 @@ public static class DependencyInjection
         services.AddScoped<IEmailService, EmailService>();
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
         services.AddTransient<IIdentityService, IdentityService>();
+        services.AddTransient<ISiteService, SiteService>();
 
         services
             .AddIdentity<ApplicationUser, IdentityRole>(options =>

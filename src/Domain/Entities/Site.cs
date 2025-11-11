@@ -21,10 +21,7 @@ public class Site : BaseAuditableEntity
     public SiteAddress Address { get; private set; }
     public virtual IReadOnlyCollection<ApplicationUser> Users => _users;
 
-    public void AddUser(ApplicationUser user)
-    {
-        _users.Add(user);
-    }
+    public void AddUser(ApplicationUser user) => _users.Add(user);
 
     public void AddUserRange(List<ApplicationUser> users)
     {

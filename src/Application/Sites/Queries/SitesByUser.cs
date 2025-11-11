@@ -19,8 +19,5 @@ public class SitesByUserQueryHandler : IRequestHandler<SitesByUserQuery, List<Si
     public Task<List<SitesDto>> Handle(
         SitesByUserQuery request,
         CancellationToken cancellationToken
-    )
-    {
-        return _siteService.GetSitesByUserAsync(request.UserId, cancellationToken);
-    }
+    ) => _siteService.GetSitesByUserAsync(request.UserId, cancellationToken);
 }

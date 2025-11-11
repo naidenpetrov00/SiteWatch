@@ -5,12 +5,11 @@ using Application.SeedWork.Interfaces;
 using Ardalis.GuardClauses;
 using Domain.Entities;
 using Infrastructure.Data.Options;
-using Infrastructure.Email;
 using Infrastructure.SeedWork.Options;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 
-namespace Infrastructure.Services;
+namespace Infrastructure.Email;
 
 public class EmailService : IEmailService
 {

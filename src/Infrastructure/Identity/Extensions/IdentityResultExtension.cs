@@ -5,10 +5,7 @@ namespace Infrastructure.Identity.Extensions.cs;
 
 public static class IdentityResultExtension
 {
-    public static Result ToApplicationResult(this IdentityResult result)
-    {
-        return result.Succeeded
+    public static Result ToApplicationResult(this IdentityResult result) => result.Succeeded
             ? Result.Success()
             : Result.Failure(result.Errors.Select(e => e.Description));
-    }
 }

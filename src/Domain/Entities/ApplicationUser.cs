@@ -8,10 +8,7 @@ public class ApplicationUser : IdentityUser
 
     public virtual ICollection<Site> Sites => _sites;
 
-    public void AddSite(Site site)
-    {
-        _sites.Add(site);
-    }
+    public void AddSite(Site site) => _sites.Add(site);
 
     public void AddSiteRange(List<Site> sites)
     {

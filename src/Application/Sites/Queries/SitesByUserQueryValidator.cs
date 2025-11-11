@@ -1,5 +1,6 @@
-using Application.Sites.Queries;
 using FluentValidation;
+
+namespace Application.Sites.Queries;
 
 public class SitesByUserQueryValidator : AbstractValidator<SitesByUserQuery>
 {
