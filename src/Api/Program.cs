@@ -10,9 +10,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 Env.Load();
 
+builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.AddApiServices(builder.Configuration);
 builder.Services.AddApplicationServices();
-builder.Services.AddInfrastructureServices(builder.Configuration);
 
 var app = builder.Build();
 
@@ -28,10 +28,24 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapEndpoints();
+app.MapGet(
+        "/auth-test",
+        (HttpContext ctx) =>
+        {
+            var user = ctx.User;
+            return Results.Ok(
+                new
+                {
+                    IsAuthenticated = user.Identity?.IsAuthenticated ?? false,
+                    Name = user.Identity?.Name,
+                    Claims = user.Claims.Select(c => new { c.Type, c.Value }),
+                }
+            );
+        }
+    )
+    .RequireAuthorization();
 
 app.Run();

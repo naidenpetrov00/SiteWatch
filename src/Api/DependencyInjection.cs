@@ -37,7 +37,12 @@ public static class DependencyInjection
         var key = Guard.Against.Null(options.Key);
 
         builder
-            .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
             .AddJwtBearer(options =>
             {
                 options.TokenValidationParameters = new TokenValidationParameters
