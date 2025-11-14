@@ -39,7 +39,7 @@ export const useVerifyEmail = ({
     mutationFn: verifyEmail,
     onSuccess: ({ user, token }) => {
       login(user, token);
-      router.replace("/Home");
+      router.replace("/Sites");
     },
     onError: (error: AxiosError) => {
       const errors = Array.isArray(error.response?.data)

@@ -1,8 +1,3 @@
-import {
-  CreateAccountInput,
-  createAccountInputSchema,
-  useCreateAccount,
-} from "../../api/create-account";
 import { Pressable, Text, TextInput, View } from "react-native";
 import React, { useRef } from "react";
 import {
@@ -11,7 +6,6 @@ import {
   useSignIn,
 } from "../../api/sign-in-accounts";
 import { SubmitHandler, useForm } from "react-hook-form";
-import { router, useRouter } from "expo-router";
 
 import FormField from "@/components/ui/FormField/FormField";
 import signUpFormStyles from "../SignUpForm/SignUpForm.styles";
@@ -22,7 +16,7 @@ interface ISignInFormForm {}
 
 const defaultValues: SignInInput = {
   email: "naiden.petrov.31.12.00@gmail.com",
-  password: "Test.2010",
+  password: "Test@123",
 };
 const SignInForm = ({}: ISignInFormForm) => {
   const colorPalette = useColorPalette();
