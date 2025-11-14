@@ -39,14 +39,14 @@ public class Identity : EndpointGroupBase
         return TypedResults.BadRequest(result.Result.Errors);
     }
 
-    public async Task<Results<Ok<string>, BadRequest<string[]>>> SignIn(
+    public async Task<Results<Ok<IdentityResultWithUserToken>, BadRequest<string[]>>> SignIn(
         IMediator mediator,
         [FromBody] SignInCommand command
     )
     {
         var result = await mediator.Send(command);
-        if (result.Result.Succeeded && result is IdentityResultWithToken resultWithToken)
-            return TypedResults.Ok(resultWithToken.Token);
+        if (result.Result.Succeeded && result is IdentityResultWithUserToken resultWithToken)
+            return TypedResults.Ok(resultWithToken);
 
         return TypedResults.BadRequest(result.Result.Errors);
     }

@@ -1,8 +1,12 @@
 using AutoMapper;
 using Domain.Entities;
 
+namespace Application.Sites.Queries;
+
 public class SitesDto
 {
+    public Guid Id { get; set; }
+
     public string? Name { get; init; }
     public string? Address { get; init; }
 

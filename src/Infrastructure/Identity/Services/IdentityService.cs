@@ -3,6 +3,7 @@ using Application.Identity.Queries.Users;
 using Application.SeedWork.Enums;
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models;
+using AutoMapper;
 using Domain.Entities;
 using Infrastructure.Identity.Extensions;
 using Infrastructure.Identity.Extensions.cs;
@@ -19,6 +20,7 @@ public class IdentityService : IIdentityService
     private readonly IJwtTokenService _jwtTokenService;
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly IEmailService _emailService;
+    private readonly IMapper _mapper;
 
     public IdentityService(
         UserManager<ApplicationUser> userManager,
@@ -26,7 +28,8 @@ public class IdentityService : IIdentityService
         IAuthorizationService authorizationService,
         IJwtTokenService jwtTokenService,
         SignInManager<ApplicationUser> signInManager,
-        IEmailService emailService
+        IEmailService emailService,
+        IMapper mapper
     )
     {
         _userManager = userManager;
@@ -35,6 +38,7 @@ public class IdentityService : IIdentityService
         _jwtTokenService = jwtTokenService;
         _signInManager = signInManager;
         _emailService = emailService;
+        _mapper = mapper;
     }
 
     public async Task<string?> GetUserNameAsync(string userId)
@@ -112,10 +116,12 @@ public class IdentityService : IIdentityService
         if (result.Succeeded)
         {
             var token = _jwtTokenService.GenerateToken(user);
-            return new IdentityResultWithToken
+            var userDto = _mapper.Map<UserInfoDto>(user);
+            return new IdentityResultWithUserToken
             {
                 Result = result.ToApplicationResult(),
                 Token = token,
+                User = userDto,
             };
         }
 
