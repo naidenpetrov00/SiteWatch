@@ -7,6 +7,6 @@ export const paths = {
     resendEmail: "/identity/sendVerification",
   },
   sites: {
-    getByUserId: (userId: string) => `/sitesByUser/${userId}`,
+    getByUserId: (userId: string) => `/site/sitesByUser/${userId}`,
   },
 };

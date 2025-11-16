@@ -2,14 +2,16 @@ import { FlatList, View } from "react-native";
 
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
+import SignIn from "../SignIn";
 import SiteCard from "@/features/sites/component/SiteCard";
 import signUpStyles from "@/features/auth/components/SignUp.styles"; // reuse layout
 import { useColorPalette } from "@/hooks/useColorPalette";
 import { useGetSitesByUserId } from "@/features/sites/api/get-sites-by-user";
+import { useRouter } from "expo-router";
 
 const Sites = () => {
   const colorPalette = useColorPalette();
-
+  const router = useRouter();
   const { data: sites } = useGetSitesByUserId();
 
   return (
@@ -33,7 +35,11 @@ const Sites = () => {
             <SiteCard
               site={item}
               onPress={(site) => {
-                console.log("Pressed site:", site.id);
+                console.log(site);
+                router.navigate({
+                  pathname: "/(app)/Sites/[siteId]",
+                  params: { siteId: site.id },
+                });
               }}
             />
           )}

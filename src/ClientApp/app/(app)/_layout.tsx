@@ -4,12 +4,11 @@ import {
   Label,
   NativeTabs,
 } from "expo-router/unstable-native-tabs";
-import { DynamicColorIOS, Text } from "react-native";
 
 import React from "react";
 import { useColorPalette } from "@/hooks/useColorPalette";
 
-export default function AppLayout() {
+export default function SitesLayout() {
   const colorPalette = useColorPalette();
   return (
     <NativeTabs

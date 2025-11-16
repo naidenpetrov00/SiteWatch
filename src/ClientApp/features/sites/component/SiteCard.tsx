@@ -7,7 +7,7 @@ import { useColorPalette } from "@/hooks/useColorPalette";
 
 interface SiteCardProps {
   site: Site;
-  onPress?: (site: Site) => void;
+  onPress: (site: Site) => void;
 }
 
 const SiteCard = ({ site, onPress }: SiteCardProps) => {
@@ -15,7 +15,7 @@ const SiteCard = ({ site, onPress }: SiteCardProps) => {
 
   return (
     <Pressable
-      onPress={onPress ? () => onPress(site) : undefined}
+      onPress={() => onPress(site)}
       style={({ pressed }) => [
         styles.card,
         {
