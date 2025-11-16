@@ -45,7 +45,7 @@ export const useSignIn = ({ mutationConfig }: UseSignInOption = {}) => {
     mutationFn: createAccount,
     onSuccess: ({ user, token }) => {
       login(user, token);
-      router.push("/Sites");
+      router.replace("/Sites");
     },
     onError: (error: AxiosError) => {
       const errors = Array.isArray(error.response?.data)

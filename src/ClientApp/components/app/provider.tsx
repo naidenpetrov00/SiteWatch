@@ -8,6 +8,7 @@ import { AuthProvider } from "@/store/auth_context";
 import { ThemeProvider } from "@react-navigation/native";
 import { queryConfig } from "@/lib/react-query";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useReactQueryDevTools } from "@dev-plugins/react-query";
 
 type AppProviderProps = {
   children: ReactNode;
@@ -21,6 +22,7 @@ const AppProvider = ({ children }: AppProviderProps) => {
         defaultOptions: queryConfig,
       })
   );
+  useReactQueryDevTools(queryClient);
 
   return (
     <QueryClientProvider client={queryClient}>

@@ -7,7 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useColorPalette } from "@/hooks/useColorPalette";
 import { useLocalSearchParams } from "expo-router";
 
-const CamerasScreen = () => {
+const Info = () => {
   const { siteId } = useLocalSearchParams<{ siteId: string }>();
   console.log(siteId);
   const colorPalette = useColorPalette();
@@ -44,7 +44,7 @@ const CamerasScreen = () => {
   );
 };
 
-export default CamerasScreen;
+export default Info;
 export const mockCameras = [
   {
     id: "cam-1",

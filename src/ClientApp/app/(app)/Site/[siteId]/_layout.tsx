@@ -9,7 +9,6 @@ import { useLocalSearchParams } from "expo-router";
 export default function SiteTabsLayout() {
   const { siteId } = useLocalSearchParams<{ siteId: string }>();
 
-  // You can show site name in header later if you want
   return (
     <NativeTabs>
       <NativeTabs.Trigger name="Cameras">

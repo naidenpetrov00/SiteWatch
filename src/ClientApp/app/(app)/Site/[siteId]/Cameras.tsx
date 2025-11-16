@@ -7,7 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useColorPalette } from "@/hooks/useColorPalette";
 import { useLocalSearchParams } from "expo-router";
 
-const CamerasScreen = () => {
+const Cameras = () => {
   const { siteId } = useLocalSearchParams<{ siteId: string }>();
   console.log(siteId);
   const colorPalette = useColorPalette();
@@ -25,26 +25,24 @@ const CamerasScreen = () => {
   //   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colorPalette.background }}>
-      <FlatList
-        data={cameras}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{ padding: 16 }}
-        renderItem={({ item }) => (
-          <CameraCard
-            camera={item}
-            onPress={() => {
-              // later: open full-screen live view, etc.
-              console.log("Pressed camera:", item.id);
-            }}
-          />
-        )}
-      />
-    </SafeAreaView>
+    <FlatList
+      data={cameras}
+      keyExtractor={(item) => item.id}
+      contentContainerStyle={{ padding: 16 }}
+      renderItem={({ item }) => (
+        <CameraCard
+          camera={item}
+          onPress={() => {
+            // later: open full-screen live view, etc.
+            console.log("Pressed camera:", item.id);
+          }}
+        />
+      )}
+    />
   );
 };
 
-export default CamerasScreen;
+export default Cameras;
 export const mockCameras = [
   {
     id: "cam-1",

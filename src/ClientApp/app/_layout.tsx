@@ -1,8 +1,14 @@
+import { Slot, useNavigationContainerRef } from "expo-router";
+
 import AppProvider from "@/components/app/provider";
 import { Stack } from "expo-router";
 import { useAuth } from "@/store/auth_context";
+import { useReactNavigationDevTools } from "@dev-plugins/react-navigation";
 
 const RootLayout = () => {
+  const navigationRef = useNavigationContainerRef();
+
+  useReactNavigationDevTools(navigationRef);
   return (
     <AppProvider>
       <Root />
