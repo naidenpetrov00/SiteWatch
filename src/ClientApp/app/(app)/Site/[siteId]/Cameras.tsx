@@ -1,6 +1,6 @@
 import { FlatList, Text, View } from "react-native";
 
-import CameraCard from "@/features/cameras/components/CameraCard";
+import CameraCard from "@/features/cameras/components/CameraCard/CameraCard";
 // app/sites/[siteId].tsx
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -9,7 +9,6 @@ import { useLocalSearchParams } from "expo-router";
 
 const Cameras = () => {
   const { siteId } = useLocalSearchParams<{ siteId: string }>();
-  console.log(siteId);
   const colorPalette = useColorPalette();
 
   const cameras = mockCameras;

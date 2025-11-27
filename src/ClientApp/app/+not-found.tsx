@@ -1,14 +1,16 @@
 import { Link, Stack, router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useColorPalette } from "@/hooks/useColorPalette";
 
 export default function NotFoundScreen() {
+  const colorPalette = useColorPalette();
   return (
     <>
       <Stack.Screen options={{ title: "Oops!" }} />
       <View style={styles.container}>
-        <Text>This screen doesn't exist.</Text>
+        <Text style={{ color: colorPalette.text }}>This screen doesn't exist.</Text>
         <Pressable onPress={() => router.replace("/SignIn")}>
-          <Text>Go to home screen!</Text>
+          <Text style={{ color: colorPalette.text }}>Go to home screen!</Text>
         </Pressable>
       </View>
     </>

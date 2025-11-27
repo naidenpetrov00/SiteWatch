@@ -100,6 +100,7 @@ const VerifyEmailForm = ({ email }: VerifyEmailForm) => {
             marginTop: 10,
             textAlign: "center",
             opacity: 0.7,
+            color: colorPalette.text,
           }}
         >
           On the way. You can resend in {secondsLeft}s

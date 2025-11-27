@@ -1,6 +1,6 @@
 import { FlatList, Text, View } from "react-native";
 
-import CameraCard from "@/features/cameras/components/CameraCard";
+import CameraCard from "@/features/cameras/components/CameraCard/CameraCard";
 // app/sites/[siteId].tsx
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
