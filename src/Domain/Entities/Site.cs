@@ -3,13 +3,10 @@ using Domain.ValueObjects;
 
 namespace Domain.Entities;
 
-public class Site : BaseAuditableEntity
+public sealed class Site : BaseAuditableEntity
 {
     private readonly HashSet<ApplicationUser> _users = [];
-
-#pragma warning disable CS8618
-    private Site() { }
-#pragma warning restore CS8618
+    private readonly HashSet<Camera> _cameras = [];
 
     public Site(SiteName name, SiteAddress address)
     {
@@ -17,9 +14,15 @@ public class Site : BaseAuditableEntity
         Address = address;
     }
 
-    public SiteName Name { get; private set; }
-    public SiteAddress Address { get; private set; }
-    public virtual IReadOnlyCollection<ApplicationUser> Users => _users;
+    // ReSharper disable once UnusedMember.Local
+    private Site()
+    {
+    }
+
+    public SiteName Name { get; private set; } = null!;
+    public SiteAddress Address { get; private set; } = null!;
+    public IReadOnlyCollection<ApplicationUser> Users => _users;
+    public IReadOnlyCollection<Camera> Cameras => _cameras;
 
     public void AddUser(ApplicationUser user) => _users.Add(user);
 

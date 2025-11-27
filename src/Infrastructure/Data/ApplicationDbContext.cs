@@ -8,17 +8,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Data;
 
-public sealed class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IApplicationDbContext
+public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IMediator mediator)
+    : IdentityDbContext<ApplicationUser>(options), IApplicationDbContext
 {
-    private readonly IMediator mediatR;
-
     public DbSet<Site> Sites => Set<Site>();
-
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IMediator mediatR)
-        : base(options)
-    {
-        this.mediatR = mediatR;
-    }
+    public DbSet<Camera> Cameras => Set<Camera>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -28,7 +22,7 @@ public sealed class ApplicationDbContext : IdentityDbContext<ApplicationUser>, I
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        await this.mediatR.DispatchDomainEventsAsync(this);
+        await mediator.DispatchDomainEventsAsync(this);
 
         return await base.SaveChangesAsync(cancellationToken);
     }

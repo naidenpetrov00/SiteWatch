@@ -5,7 +5,7 @@ namespace Application.Sites.Queries;
 
 public class SitesDto
 {
-    public Guid Id { get; set; }
+    public Guid Id { get; init; }
 
     public string? Name { get; init; }
     public string? Address { get; init; }

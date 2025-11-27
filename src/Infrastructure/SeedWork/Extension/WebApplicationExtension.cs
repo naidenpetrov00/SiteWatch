@@ -13,6 +13,6 @@ public static class WebApplicationExtension
         var initializer =
             scope.ServiceProvider.GetRequiredService<ApplicationDbContextInitialiser>();
 
-        await initializer.InitalizeDatabaseAsync();
+        await initializer.InitializeDatabaseAsync();
     }
 }

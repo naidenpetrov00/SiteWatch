@@ -15,7 +15,7 @@ public class Site : EndpointGroupBase
         group.MapGet("/sitesByUser/{userId:guid}", SitesByUser).RequireAuthorization();
     }
 
-    public async Task<Ok<List<SitesDto>>> SitesByUser(
+    private static async Task<Ok<List<SitesDto>>> SitesByUser(
         IMediator mediator,
         [AsParameters] SitesByUserQuery query
     )

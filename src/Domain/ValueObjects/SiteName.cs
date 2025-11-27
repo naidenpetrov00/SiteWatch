@@ -21,7 +21,7 @@ public sealed class SiteName : ValueObject
         Value = value.Trim();
     }
 
-    public static SiteName Create(string value) => new(value);
+    private static SiteName Create(string value) => new(value);
 
     public static implicit operator string(SiteName name) => name.ToString();
 
