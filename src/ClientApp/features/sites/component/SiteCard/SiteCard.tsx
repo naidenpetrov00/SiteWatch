@@ -1,9 +1,10 @@
-import {Pressable, Text, View} from "react-native";
+import {Text, View} from "react-native";
 
 import React from "react";
 import {Site} from "../../api/types";
 import {useColorPalette} from "@/hooks/useColorPalette";
 import siteCardStyles from "./SiteCard.styles";
+import Card from "@/components/ui/Card/Card";
 
 interface SiteCardProps {
     site: Site;
@@ -14,16 +15,10 @@ const SiteCard = ({site, onPress}: SiteCardProps) => {
     const colorPalette = useColorPalette();
 
     return (
-        <Pressable
+        <Card
             onPress={() => onPress(site)}
-            style={({pressed}) => [
-                siteCardStyles.card,
-                {
-                    backgroundColor: colorPalette.background,
-                    borderColor: colorPalette.primary,
-                },
-                pressed && {opacity: 0.9, transform: [{scale: 0.98}]},
-            ]}
+            backgroundColor={colorPalette.background}
+            borderColor={colorPalette.primary}
         >
             <View style={siteCardStyles.content}>
                 <Text style={[siteCardStyles.title, {color: colorPalette.text}]}>
@@ -33,7 +28,7 @@ const SiteCard = ({site, onPress}: SiteCardProps) => {
                     {site.address}
                 </Text>
             </View>
-        </Pressable>
+        </Card>
     );
 };
 

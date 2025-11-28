@@ -24,20 +24,26 @@ const Cameras = () => {
   //   }
 
   return (
-    <FlatList
-      data={cameras}
-      keyExtractor={(item) => item.id}
-      contentContainerStyle={{ padding: 16 }}
-      renderItem={({ item }) => (
-        <CameraCard
-          camera={item}
-          onPress={() => {
-            // later: open full-screen live view, etc.
-            console.log("Pressed camera:", item.id);
-          }}
-        />
-      )}
-    />
+    <View style={[{ backgroundColor: colorPalette.background }]}>
+      <FlatList
+        data={cameras}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{
+          padding: 16,
+          gap: 16,
+          backgroundColor: colorPalette.background,
+        }}
+        renderItem={({ item }) => (
+          <CameraCard
+            camera={item}
+            onPress={() => {
+              // later: open full-screen live view, etc.
+              console.log("Pressed camera:", item.id);
+            }}
+          />
+        )}
+      />
+    </View>
   );
 };
 

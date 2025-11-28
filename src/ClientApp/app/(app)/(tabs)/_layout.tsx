@@ -1,29 +1,58 @@
-import {
-  Badge,
-  Icon,
-  Label,
-  NativeTabs,
-} from "expo-router/unstable-native-tabs";
+import { StyleSheet, useColorScheme } from "react-native";
 
+import { BlurView } from "expo-blur";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import React from "react";
+import { Tabs } from "expo-router";
 import { useColorPalette } from "@/hooks/useColorPalette";
 
 export default function SitesLayout() {
   const colorPalette = useColorPalette();
+  const colorScheme = useColorScheme();
+
   return (
-    <NativeTabs
-      labelStyle={{ color: colorPalette.text }}
-      tintColor={colorPalette.tabIconSelected}
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: { position: "absolute" },
+        tabBarActiveTintColor: colorPalette.tabIconSelected,
+        tabBarInactiveTintColor: colorPalette.tabIconDefault,
+        tabBarBackground: () => (
+          <BlurView
+            tint={colorScheme!}
+            intensity={50}
+            style={StyleSheet.absoluteFill}
+          />
+        ),
+        headerTintColor: colorPalette.primary,
+      }}
     >
-      <NativeTabs.Trigger name="Sites">
-        <Icon sf="gear" drawable="custom_settings_drawable" />
-        <Label>Sites</Label>
-        <Badge>2 Cams</Badge>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="index">
-        <Label>Home</Label>
-        <Icon sf="house.fill" drawable="custom_android_drawable" />
-      </NativeTabs.Trigger>
-    </NativeTabs>
+      <Tabs.Screen
+        name="Sites"
+        options={{
+          title: "Sites",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? "business" : "business-outline"}
+              size={20}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: "Home",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? "home" : "home-outline"}
+              size={20}
+              color={color}
+            />
+          ),
+        }}
+      />
+    </Tabs>
   );
 }
