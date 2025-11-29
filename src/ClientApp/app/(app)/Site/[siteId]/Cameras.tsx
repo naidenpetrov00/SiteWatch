@@ -1,45 +1,71 @@
-import { FlatList, Text, View } from "react-native";
+import { FlatList, Text, TouchableOpacity, View } from "react-native";
 
 import CameraCard from "@/features/cameras/components/CameraCard/CameraCard";
-// app/sites/[siteId].tsx
+import LoadingState from "@/components/app/LoadingState";
+import cameraStyles from "@/features/cameras/components/Cameras.styles";
 import React from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useCamerasBySite } from "@/features/cameras/api/get-cameras-by-site";
 import { useColorPalette } from "@/hooks/useColorPalette";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 const Cameras = () => {
   const { siteId } = useLocalSearchParams<{ siteId: string }>();
+  const router = useRouter();
   const colorPalette = useColorPalette();
 
-  const cameras = mockCameras;
+  const { data: cameras, isLoading } = useCamerasBySite({ siteId });
 
-  //   if (isLoading) {
-  //     return (
-  //       <SafeAreaView
-  //         style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-  //       >
-  //         <Text style={{ color: colorPalette.text }}>Loading cameras...</Text>
-  //       </SafeAreaView>
-  //     );
-  //   }
+  const handleAddCamera = () => {
+    console.log("Add camera tapped");
+  };
+
+  if (isLoading) {
+    return <LoadingState label="Loading cameras..." />;
+  }
 
   return (
-    <View style={[{ backgroundColor: colorPalette.background }]}>
+    <View
+      style={[cameraStyles.container, { backgroundColor: colorPalette.background }]}
+    >
       <FlatList
-        data={cameras}
+        data={cameras ?? []}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{
-          padding: 16,
-          gap: 16,
-          backgroundColor: colorPalette.background,
-        }}
+        contentContainerStyle={[
+          cameraStyles.listContent,
+          {
+            backgroundColor: colorPalette.background,
+            justifyContent: cameras?.length ? undefined : "center",
+          },
+        ]}
+        ListEmptyComponent={
+          <View style={cameraStyles.emptyState}>
+            <Text style={{ color: colorPalette.text, fontSize: 16 }}>
+              No cameras at this Site
+            </Text>
+            <TouchableOpacity
+              style={[
+                cameraStyles.addButton,
+                { backgroundColor: colorPalette.primary },
+              ]}
+              onPress={handleAddCamera}
+            >
+              <Text
+                style={{ color: colorPalette.background, fontWeight: "600" }}
+              >
+                Add camera
+              </Text>
+            </TouchableOpacity>
+          </View>
+        }
         renderItem={({ item }) => (
           <CameraCard
             camera={item}
-            onPress={() => {
-              // later: open full-screen live view, etc.
-              console.log("Pressed camera:", item.id);
-            }}
+            onPress={() =>
+              router.push({
+                pathname: "/Camera/[cameraId]",
+                params: { cameraId: item.id },
+              })
+            }
           />
         )}
       />
@@ -48,32 +74,3 @@ const Cameras = () => {
 };
 
 export default Cameras;
-export const mockCameras = [
-  {
-    id: "cam-1",
-    name: "Entrance Camera",
-    snapshotUrl:
-      "https://placehold.co/800x450?text=Entrance+Camera&font=roboto",
-  },
-  {
-    id: "cam-2",
-    name: "Office Hallway",
-    snapshotUrl: "https://placehold.co/800x450?text=Office+Hallway&font=roboto",
-  },
-  {
-    id: "cam-3",
-    name: "Warehouse Corner",
-    snapshotUrl:
-      "https://placehold.co/800x450?text=Warehouse+Corner&font=roboto",
-  },
-  {
-    id: "cam-4",
-    name: "Parking Lot",
-    snapshotUrl: "https://placehold.co/800x450?text=Parking+Lot&font=roboto",
-  },
-  {
-    id: "cam-5",
-    name: "Back Door",
-    snapshotUrl: "https://placehold.co/800x450?text=Back+Door&font=roboto",
-  },
-];

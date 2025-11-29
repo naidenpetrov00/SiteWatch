@@ -1,4 +1,4 @@
-export type Camera = {
-  id: string;
-  name:string;
+export interface Camera {
+    id: string
+    name: string
 };

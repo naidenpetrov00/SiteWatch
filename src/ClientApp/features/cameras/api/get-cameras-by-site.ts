@@ -1,38 +1,40 @@
 import { QueryConfig, queryConfig } from "@/lib/react-query";
-import { queryOptions, useQuery } from "@tanstack/react-query";
 
-import { Site } from "./types";
+import { Camera } from "./types";
 import { api } from "@/lib/api-client";
 import { paths } from "@/config/constants/paths";
 import { useAuth } from "@/store/auth_context";
+import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 
 export const getCamerasBySiteContextSchema = z.object({
-  cameraId: z.string().uuid("Invalid GUID format"),
+  siteId: z.string().uuid("Invalid GUID format"),
   accessToken: z.string().jwt(),
 });
 
-export type GetSitesByAuthContext = z.infer<typeof getSitesByAuthContextSchema>;
+export type GetCamerasBySiteContext = z.infer<
+  typeof getCamerasBySiteContextSchema
+>;
 
-export const getSitesByUser = ({
-  userId,
+export const getCameraBySite = ({
+  siteId: cameraId,
   accessToken,
-}: GetSitesByAuthContext): Promise<Site[]> =>
-  api.get(paths.sites.getByUserId(userId), {
+}: GetCamerasBySiteContext): Promise<Camera[]> =>
+  api.get(paths.cameras.getBySiteId(cameraId), {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 
-type UseCommentsOptions = {
-  queryConfig?: QueryConfig<typeof getSitesByUser>;
+type UseCamerasBySiteOptions = {
+  siteId: string;
+  queryConfig?: QueryConfig<typeof getCameraBySite>;
 };
 
-export const useGetSitesByUserId = ({}: UseCommentsOptions = {}) => {
-  const { user, accessToken } = useAuth();
-  const userId = user!.id;
+export const useCamerasBySite = ({ siteId }: UseCamerasBySiteOptions) => {
+  const { accessToken } = useAuth();
   return useQuery({
-    queryKey: ["sites", userId],
+    queryKey: ["cameras", siteId],
     queryFn: () => {
-      return getSitesByUser({ userId, accessToken: accessToken! });
+      return getCameraBySite({ siteId, accessToken: accessToken! });
     },
     ...queryConfig,
   });

@@ -1,4 +1,4 @@
-import { FlatList, View } from "react-native";
+import { FlatList } from "react-native";
 
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -7,11 +7,16 @@ import signUpStyles from "@/features/auth/components/SignUp.styles"; // reuse la
 import { useColorPalette } from "@/hooks/useColorPalette";
 import { useGetSitesByUserId } from "@/features/sites/api/get-sites-by-user";
 import { useRouter } from "expo-router";
+import LoadingState from "@/components/app/LoadingState";
 
 const Sites = () => {
   const colorPalette = useColorPalette();
   const router = useRouter();
-  const { data: sites } = useGetSitesByUserId();
+  const { data: sites, isLoading } = useGetSitesByUserId();
+
+  if (isLoading) {
+    return <LoadingState label="Loading sites..." />;
+  }
 
   return (
     <SafeAreaView
@@ -29,7 +34,10 @@ const Sites = () => {
           <SiteCard
             site={item}
             onPress={(site) => {
-              router.push(`/Site/${site.id}`);
+              router.push({
+                pathname: "/Site/[siteId]/Cameras",
+                params: { siteId: site.id },
+              });
             }}
           />
         )}

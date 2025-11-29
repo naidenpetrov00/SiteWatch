@@ -1,10 +1,10 @@
 import { QueryConfig, queryConfig } from "@/lib/react-query";
-import { queryOptions, useQuery } from "@tanstack/react-query";
 
 import { Site } from "./types";
 import { api } from "@/lib/api-client";
 import { paths } from "@/config/constants/paths";
 import { useAuth } from "@/store/auth_context";
+import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 
 export const getSitesByAuthContextSchema = z.object({
