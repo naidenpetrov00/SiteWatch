@@ -3,6 +3,7 @@ using Application.Identity.Queries.Users;
 using Application.SeedWork.Interfaces;
 using Ardalis.GuardClauses;
 using Domain.Entities;
+using Infrastructure.Cameras;
 using Infrastructure.Data;
 using Infrastructure.Data.Options;
 using Infrastructure.Email;
@@ -42,12 +43,10 @@ public static class DependencyInjection
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
         services.AddTransient<IIdentityService, IdentityService>();
         services.AddTransient<ISiteService, SiteService>();
+        services.AddTransient<ICameraService, CameraService>();
 
         services
-            .AddIdentity<ApplicationUser, IdentityRole>(options =>
-            {
-                options.User.RequireUniqueEmail = true;
-            })
+            .AddIdentity<ApplicationUser, IdentityRole>(options => { options.User.RequireUniqueEmail = true; })
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders()
             .AddSignInManager();

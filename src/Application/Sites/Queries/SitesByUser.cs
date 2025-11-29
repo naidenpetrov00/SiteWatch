@@ -1,3 +1,4 @@
+using Application.SeedWork.Interfaces;
 using MediatR;
 
 namespace Application.Sites.Queries;

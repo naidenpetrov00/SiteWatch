@@ -8,16 +8,13 @@ namespace Infrastructure.Sites.Services;
 
 public class SiteService(IApplicationDbContext dbContext, IMapper mapper) : ISiteService
 {
-    private readonly IApplicationDbContext _dbContext = dbContext;
-    private readonly IMapper _mapper = mapper;
-
     public Task<List<SitesDto>> GetSitesByUserAsync(
         Guid userId,
         CancellationToken cancellationToken
     ) =>
-        _dbContext
+        dbContext
             .Sites.AsNoTracking()
             .Where(site => site.Users.Any(user => user.Id == userId.ToString()))
-            .ProjectTo<SitesDto>(_mapper.ConfigurationProvider)
+            .ProjectTo<SitesDto>(mapper.ConfigurationProvider)
             .ToListAsync(cancellationToken);
 }
