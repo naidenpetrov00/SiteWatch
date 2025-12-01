@@ -1,25 +1,10 @@
-import { Dimensions, StyleSheet } from "react-native";
-
-const { width } = Dimensions.get("window");
-const streamHeight = width * 0.62;
+import { StyleSheet } from "react-native";
 
 const cameraViewerStyles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
     gap: 24,
-  },
-  streamWrapper: {
-    width: "100%",
-    height: streamHeight,
-    borderWidth: 2,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.2)",
-  },
-  streamLabel: {
-    fontSize: 18,
   },
   detailsWrapper: {
     gap: 4,

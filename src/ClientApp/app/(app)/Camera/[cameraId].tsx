@@ -5,6 +5,7 @@ import { useLocalSearchParams } from "expo-router";
 
 import { useColorPalette } from "@/hooks/useColorPalette";
 import cameraViewerStyles from "@/features/cameras/components/CameraViewer.styles";
+import CameraStream from "@/features/cameras/components/CameraStream/CameraStream";
 
 const joystickDirections = [
   { label: "↑", key: "up" },
@@ -28,18 +29,7 @@ const CameraScreen = () => {
         { backgroundColor: colorPalette.background },
       ]}
     >
-      <View
-        style={[
-          cameraViewerStyles.streamWrapper,
-          {
-            borderColor: colorPalette.primary,
-          },
-        ]}
-      >
-        <Text style={[cameraViewerStyles.streamLabel, { color: colorPalette.text }]}>
-          Camera Stream
-        </Text>
-      </View>
+      <CameraStream />
 
       <View style={cameraViewerStyles.detailsWrapper}>
         <Text style={[cameraViewerStyles.cameraName, { color: colorPalette.text }]}>
