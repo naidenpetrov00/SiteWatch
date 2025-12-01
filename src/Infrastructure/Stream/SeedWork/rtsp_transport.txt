@@ -1,0 +1,8 @@
+ ffmpeg -rtsp_transport tcp \
+  -i "rtsp://admin:L264B20A@192.168.100.23:554/cam/realmonitor?channel=1&subtype=0" \
+  -c:v copy \
+  -f hls \
+  -hls_time 1 \
+  -hls_list_size 2 \
+  -hls_flags delete_segments+append_list+omit_endlist \
+  /home/naidenpetrov00/dev/SiteWatch/src/Infrastructure/Stream/SeedWork/index.m3u8

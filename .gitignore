@@ -402,3 +402,5 @@ src/Api/.env
 # JetBrains
 .idea/
 *.iml
+/guidelines.md
+/sqlserver
