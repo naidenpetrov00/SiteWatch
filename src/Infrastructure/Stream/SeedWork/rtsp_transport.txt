@@ -6,3 +6,6 @@
   -hls_list_size 2 \
   -hls_flags delete_segments+append_list+omit_endlist \
   /home/naidenpetrov00/dev/SiteWatch/src/Infrastructure/Stream/SeedWork/index.m3u8
+
+
+ffplay -fflags nobuffer /home/naidenpetrov00/dev/SiteWatch/src/Infrastructure/Stream/SeedWork/index.m3u8
