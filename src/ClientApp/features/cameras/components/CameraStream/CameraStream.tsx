@@ -1,5 +1,5 @@
 import { Text, View } from "react-native";
-import { VLCPlayer, VlCPlayerView } from "react-native-vlc-media-player";
+// import { VLCPlayer, VlCPlayerView } from "react-native-vlc-media-player";
 
 import React from "react";
 import { cameraStreamStyles } from "./CameraStream.styles";
@@ -24,11 +24,11 @@ const CameraStream: React.FC<CameraStreamProps> = ({
         { borderColor: colorPalette.primary },
       ]}
     >
-      <VLCPlayer
-        // style={[styles.video]}
-        videoAspectRatio="16:9"
-        source={{ uri: videoSource }}
-      />
+      {/*<VLCPlayer*/}
+      {/*  // style={[styles.video]}*/}
+      {/*  videoAspectRatio="16:9"*/}
+      {/*  source={{ uri: videoSource }}*/}
+      {/*/>*/}
       <Text
         style={[cameraStreamStyles.streamLabel, { color: colorPalette.text }]}
       >
