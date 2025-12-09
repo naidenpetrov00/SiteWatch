@@ -3,7 +3,12 @@ import { StyleSheet } from "react-native";
 const cameraViewerStyles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    marginTop: 24,
     gap: 24,
   },
   detailsWrapper: {

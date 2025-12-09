@@ -1,7 +1,7 @@
+import React, {useRef} from "react";
 import {Text, View} from "react-native";
 import {VLCPlayer, VlCPlayerView} from "react-native-vlc-media-player";
 
-import React from "react";
 import {cameraStreamStyles} from "./CameraStream.styles";
 import {useColorPalette} from "@/hooks/useColorPalette";
 
@@ -12,12 +12,15 @@ interface CameraStreamProps {
 // const videoSource =
 //     "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
 const videoSource =
-    "rtsp://admin:L264B20A@192.168.100.23:554/cam/realmonitor?channel=1&subtype=0"
+    "rtsp://admin:L264B20A@192.168.100.23:554/cam/realmonitor?channel=1&subtype=0";
 
 const CameraStream: React.FC<CameraStreamProps> = ({
                                                        label = "Camera Stream",
                                                    }) => {
     const colorPalette = useColorPalette();
+    const sourceRef = useRef(videoSource);
+    const renderCount = React.useRef(0);
+    renderCount.current++;
 
     return (
         <View
@@ -27,9 +30,12 @@ const CameraStream: React.FC<CameraStreamProps> = ({
             ]}
         >
             <VLCPlayer
-                // style={[styles.video]}
-                videoAspectRatio="16:9"
-                source={{uri: videoSource}}
+                style={cameraStreamStyles.video}
+                autoAspectRatio={true}
+                source={{
+                    uri: sourceRef.current,
+                }}
+                resizeMode="fill"
             />
             {/*<VlCPlayerView*/}
             {/*    autoplay={true}*/}
@@ -43,9 +49,9 @@ const CameraStream: React.FC<CameraStreamProps> = ({
             {/*    }}*/}
             {/*/>*/}
             <Text
-                style={[cameraStreamStyles.streamLabel, {color: colorPalette.text}]}
+                style={[cameraStreamStyles.streamLabel, {color: colorPalette.text, zIndex: 10000}]}
             >
-                {label}
+                {renderCount.current}
             </Text>
         </View>
     );

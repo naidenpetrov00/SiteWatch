@@ -30,43 +30,44 @@ const CameraScreen = () => {
       ]}
     >
       <CameraStream />
+      <View style={cameraViewerStyles.content}>
+        <View style={cameraViewerStyles.detailsWrapper}>
+          <Text style={[cameraViewerStyles.cameraName, { color: colorPalette.text }]}>
+            Camera {cameraId}
+          </Text>
+          <Text style={{ color: colorPalette.secondary }}>
+            Live view with manual controls
+          </Text>
+        </View>
 
-      <View style={cameraViewerStyles.detailsWrapper}>
-        <Text style={[cameraViewerStyles.cameraName, { color: colorPalette.text }]}>
-          Camera {cameraId}
-        </Text>
-        <Text style={{ color: colorPalette.secondary }}>
-          Live view with manual controls
-        </Text>
-      </View>
-
-      <View style={cameraViewerStyles.joystickWrapper}>
-        <Text style={[cameraViewerStyles.joystickLabel, { color: colorPalette.text }]}>
-          Movement Joystick
-        </Text>
-        <View
-          style={[
-            cameraViewerStyles.joystick,
-            {
-              borderColor: colorPalette.primary,
-              backgroundColor: colorPalette.background,
-            },
-          ]}
-        >
-          {joystickDirections.map((direction) => (
-            <TouchableOpacity
-              key={direction.key}
-              style={[
-                cameraViewerStyles.directionButton,
-                { backgroundColor: colorPalette.primary },
-              ]}
-              onPress={() => handleDirection(direction.key)}
-            >
-              <Text style={{ color: colorPalette.background, fontSize: 18 }}>
-                {direction.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <View style={cameraViewerStyles.joystickWrapper}>
+          <Text style={[cameraViewerStyles.joystickLabel, { color: colorPalette.text }]}>
+            Movement Joystick
+          </Text>
+          <View
+            style={[
+              cameraViewerStyles.joystick,
+              {
+                borderColor: colorPalette.primary,
+                backgroundColor: colorPalette.background,
+              },
+            ]}
+          >
+            {joystickDirections.map((direction) => (
+              <TouchableOpacity
+                key={direction.key}
+                style={[
+                  cameraViewerStyles.directionButton,
+                  { backgroundColor: colorPalette.primary },
+                ]}
+                onPress={() => handleDirection(direction.key)}
+              >
+                <Text style={{ color: colorPalette.background, fontSize: 18 }}>
+                  {direction.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
       </View>
     </SafeAreaView>
