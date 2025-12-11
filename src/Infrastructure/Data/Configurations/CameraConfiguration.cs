@@ -18,7 +18,7 @@ public class CameraConfiguration : IEntityTypeConfiguration<Camera>
             c => c.CameraBrand,
             n =>
             {
-                n.Property(p => p.Brand).HasColumnName("Brand").HasMaxLength(20).IsRequired();
+                n.Property(p => p.Brand).HasColumnName("Brand").HasConversion<int>().IsRequired();
                 n.Property(p => p.Model).HasColumnName("Model").HasMaxLength(100).IsRequired();
             }
         );

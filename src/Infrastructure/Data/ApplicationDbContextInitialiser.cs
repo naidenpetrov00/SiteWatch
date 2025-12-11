@@ -1,4 +1,5 @@
 ﻿using Domain.Entities;
+using Domain.ValueObjects;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -11,9 +12,11 @@ public class ApplicationDbContextInitialiser(
     ILogger<ApplicationDbContextInitialiser> logger
 )
 {
-    private readonly ApplicationDbContext _dbContext = dbContext;
-    private readonly UserManager<ApplicationUser> _userManager = userManager;
-    private readonly ILogger<ApplicationDbContextInitialiser> _logger = logger;
+    private static readonly string[] SeedUserEmails =
+    [
+        "naiden.petrov.31.12.00@gmail.com",
+        "naidenpetrov00@gmail.com",
+    ];
 
     private async Task<List<ApplicationUser>> AddUsers()
     {
@@ -29,14 +32,14 @@ public class ApplicationDbContextInitialiser(
             Email = "naidenpetrov00@gmail.com",
             EmailConfirmed = true,
         };
-        await _userManager.CreateAsync(user1, "Test@123");
-        await _userManager.CreateAsync(user2, "Test@123");
+        await userManager.CreateAsync(user1, "Test@123");
+        await userManager.CreateAsync(user2, "Test@123");
         return [user1, user2];
     }
 
     private async Task AddSites(List<ApplicationUser> users)
     {
-        if (users.Count == 0 || await _dbContext.Sites.AnyAsync())
+        if (users.Count == 0 || await dbContext.Sites.AnyAsync())
             return;
 
         var sites = new List<Site>
@@ -67,35 +70,67 @@ public class ApplicationDbContextInitialiser(
         sites[1].AddUser(users[1]);
         sites[1].AddUserRange(users);
 
-        await _dbContext.Sites.AddRangeAsync(sites);
-        await _dbContext.SaveChangesAsync();
+        await dbContext.Sites.AddRangeAsync(sites);
+        await dbContext.SaveChangesAsync();
+    }
+
+    private async Task ClearSeedDataAsync()
+    {
+        var deletedCameras = await dbContext.Cameras.ExecuteDeleteAsync();
+        var deletedSites = await dbContext.Sites.ExecuteDeleteAsync();
+
+        if (deletedCameras > 0 || deletedSites > 0)
+        {
+            logger.LogInformation(
+                "Cleared {CameraCount} cameras and {SiteCount} sites.",
+                deletedCameras,
+                deletedSites
+            );
+        }
+
+        foreach (var email in SeedUserEmails)
+        {
+            var user = await userManager.FindByEmailAsync(email);
+            if (user is null)
+                continue;
+
+            var result = await userManager.DeleteAsync(user);
+            if (result.Succeeded)
+            {
+                logger.LogInformation("Deleted seed user {Email}.", email);
+            }
+            else
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                logger.LogWarning("Failed to delete seed user {Email}: {Errors}", email, errors);
+            }
+        }
     }
 
     private async Task AddCameras()
     {
-        if (await _dbContext.Cameras.AnyAsync())
+        if (await dbContext.Cameras.AnyAsync())
         {
-            _logger.LogInformation("Camera seeding skipped: cameras already exist.");
+            logger.LogInformation("Camera seeding skipped: cameras already exist.");
             return;
         }
 
-        var site = await _dbContext.Sites
-            .FirstOrDefaultAsync(s => s.Address.Value == "Dondukov 11");
+        var site = await dbContext.Sites.FirstOrDefaultAsync(s => s.Address.Value == "Dondukov 11");
 
         if (site is null)
         {
-            _logger.LogWarning("Camera seeding skipped: site with address 'Dondukov 11' not found.");
+            logger.LogWarning("Camera seeding skipped: site with address 'Dondukov 11' not found.");
             return;
         }
 
         var now = DateTimeOffset.UtcNow;
 
-        var cameras = new List<Camera>
+        var cameras = new List<Camera>();
+        for (var i = 1; i <= 5; i++)
         {
-            Camera.Create("Entrance"),
-            Camera.Create("Lobby"),
-            Camera.Create("Parking"),
-        };
+            var cameraBrand = CameraBrand.Create(Brand.Dahua, "SD2A500NB");
+            cameras.Add(Camera.Create(i.ToString(), cameraBrand));
+        }
 
         foreach (var cam in cameras)
         {
@@ -110,44 +145,51 @@ public class ApplicationDbContextInitialiser(
             cam.LastModifiedBy = "System";
         }
 
-        await _dbContext.Cameras.AddRangeAsync(cameras);
-        await _dbContext.SaveChangesAsync();
-        _logger.LogInformation("Seeded {CameraCount} cameras to site at address 'Dondukov 11'.", cameras.Count);
+        await dbContext.Cameras.AddRangeAsync(cameras);
+        await dbContext.SaveChangesAsync();
+        logger.LogInformation(
+            "Seeded {CameraCount} cameras to site at address 'Dondukov 11'.",
+            cameras.Count
+        );
     }
 
     public async Task InitializeDatabaseAsync()
     {
         try
         {
-            _logger.LogInformation("Starting database initialization...");
+            logger.LogInformation("Starting database initialization...");
 
-            if (!await _dbContext.Database.CanConnectAsync())
+            if (!await dbContext.Database.CanConnectAsync())
             {
-                await _dbContext.Database.EnsureCreatedAsync();
-                _logger.LogInformation("Database created via EnsureCreated.");
+                await dbContext.Database.EnsureCreatedAsync();
+                logger.LogInformation("Database created via EnsureCreated.");
 
                 // Verify connectivity after creation
-                if (!await _dbContext.Database.CanConnectAsync())
+                if (!await dbContext.Database.CanConnectAsync())
                 {
-                    _logger.LogError("Database could not be created or connected after EnsureCreated.");
+                    logger.LogError(
+                        "Database could not be created or connected after EnsureCreated."
+                    );
                     return;
                 }
             }
             else
             {
-                await _dbContext.Database.MigrateAsync();
-                _logger.LogInformation("Applied pending migrations.");
+                await dbContext.Database.MigrateAsync();
+                logger.LogInformation("Applied pending migrations.");
             }
+
+            await ClearSeedDataAsync();
 
             var users = await AddUsers();
             await AddSites(users);
             await AddCameras();
 
-            _logger.LogInformation("Database initialization completed successfully.");
+            logger.LogInformation("Database initialization completed successfully.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An error occurred during database initialization.");
+            logger.LogError(ex, "An error occurred during database initialization.");
             throw;
         }
     }

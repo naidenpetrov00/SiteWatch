@@ -10,7 +10,7 @@ public class CameraName : ValueObject
     private CameraName(string value)
     {
         Guard.Against.NullOrWhiteSpace(value, nameof(value));
-        Guard.Against.OutOfRange(value.Length, nameof(value), 2, 100);
+        Guard.Against.OutOfRange(value.Length, nameof(value), 1, 100);
 
         Value = value.Trim();
     }

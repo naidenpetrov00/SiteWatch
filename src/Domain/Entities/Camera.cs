@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using Domain.SeedWork;
 using Domain.ValueObjects;
 
@@ -6,16 +5,6 @@ namespace Domain.Entities;
 
 public sealed class Camera : BaseAuditableEntity
 {
-    // ReSharper disable once UnusedMember.Local
-    private Camera()
-    {
-    }
-
-    private Camera(CameraName cameraName)
-    {
-        CameraName = cameraName;
-    }
-
     public CameraName CameraName { get; private set; } = null!;
     public CameraBrand CameraBrand { get; private set; } = null!;
     public string? Username { get; private set; }
@@ -24,7 +13,18 @@ public sealed class Camera : BaseAuditableEntity
     public int Port { get; private set; } = 554;
     public Site? Site { get; private set; }
 
-    public static Camera Create(string name) => new(name);
+    // ReSharper disable once UnusedMember.Local
+    private Camera()
+    {
+    }
+
+    private Camera(CameraName cameraName, CameraBrand cameraBrand)
+    {
+        CameraName = cameraName;
+        CameraBrand = cameraBrand;
+    }
+
+    public static Camera Create(string name, CameraBrand cameraBrand) => new(name, cameraBrand);
 
     public void AddToSite(Site site) => Site = site;
     public void RemoveFromSite() => Site = null;

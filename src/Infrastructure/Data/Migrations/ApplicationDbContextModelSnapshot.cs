@@ -114,14 +114,30 @@ namespace Infrastructure.Data.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(39)
+                        .HasColumnType("nvarchar(39)");
+
                     b.Property<DateTimeOffset>("LastModified")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("LastModifiedBy")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Password")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<int>("Port")
+                        .HasMaxLength(5)
+                        .HasColumnType("int");
+
                     b.Property<Guid?>("SiteId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Username")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.HasKey("Id");
 
@@ -307,6 +323,29 @@ namespace Infrastructure.Data.Migrations
                         .WithMany("Cameras")
                         .HasForeignKey("SiteId");
 
+                    b.OwnsOne("Domain.ValueObjects.CameraBrand", "CameraBrand", b1 =>
+                        {
+                            b1.Property<Guid>("CameraId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<int>("Brand")
+                                .HasColumnType("int")
+                                .HasColumnName("Brand");
+
+                            b1.Property<string>("Model")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("nvarchar(100)")
+                                .HasColumnName("Model");
+
+                            b1.HasKey("CameraId");
+
+                            b1.ToTable("Cameras");
+
+                            b1.WithOwner()
+                                .HasForeignKey("CameraId");
+                        });
+
                     b.OwnsOne("Domain.ValueObjects.CameraName", "CameraName", b1 =>
                         {
                             b1.Property<Guid>("CameraId")
@@ -325,6 +364,9 @@ namespace Infrastructure.Data.Migrations
                             b1.WithOwner()
                                 .HasForeignKey("CameraId");
                         });
+
+                    b.Navigation("CameraBrand")
+                        .IsRequired();
 
                     b.Navigation("CameraName")
                         .IsRequired();
