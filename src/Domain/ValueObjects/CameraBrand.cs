@@ -1,5 +1,6 @@
 using Ardalis.GuardClauses;
 using Domain.SeedWork;
+using Domain.SeedWork.Enums;
 
 namespace Domain.ValueObjects;
 

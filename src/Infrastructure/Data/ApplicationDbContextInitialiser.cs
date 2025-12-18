@@ -1,4 +1,5 @@
 ﻿using Domain.Entities;
+using Domain.SeedWork.Enums;
 using Domain.ValueObjects;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
