@@ -4,5 +4,6 @@ namespace Application.SeedWork.Interfaces;
 
 public interface ICameraService
 {
-    Task<List<CamerasDto>> GetCamerasBySiteIdAsync(Guid siteId, CancellationToken cancellationToken);
+    Task<List<CameraDto>> GetCamerasBySiteIdAsync(Guid siteId, CancellationToken cancellationToken);
+    Task<CameraDto> GetCameraByIdAsync(Guid requestId, CancellationToken cancellationToken);
 }

@@ -3,14 +3,14 @@ using MediatR;
 
 namespace Application.Cameras.Queries;
 
-public class CamerasBySiteQuery : IRequest<List<CamerasDto>>
+public class CamerasBySiteQuery : IRequest<List<CameraDto>>
 {
     public Guid SiteId { get; init; }
 }
 
 public class CamerasBySiteQueryHandler(ICameraService cameraService)
-    : IRequestHandler<CamerasBySiteQuery, List<CamerasDto>>
+    : IRequestHandler<CamerasBySiteQuery, List<CameraDto>>
 {
-    public Task<List<CamerasDto>> Handle(CamerasBySiteQuery request, CancellationToken cancellationToken) =>
+    public Task<List<CameraDto>> Handle(CamerasBySiteQuery request, CancellationToken cancellationToken) =>
         cameraService.GetCamerasBySiteIdAsync(request.SiteId, cancellationToken);
 }

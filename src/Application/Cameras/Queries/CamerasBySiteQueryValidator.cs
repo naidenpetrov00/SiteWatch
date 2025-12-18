@@ -18,9 +18,6 @@ public class CamerasBySiteQueryValidator : AbstractValidator<CamerasBySiteQuery>
             .WithMessage("Site not found.");
     }
 
-    private async Task<bool> SiteExists(Guid siteId, CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        return await _dbContext.Sites.AnyAsync(site => site.Id == siteId, cancellationToken);
-    }
+    private async Task<bool> SiteExists(Guid siteId, CancellationToken cancellationToken) =>
+        await _dbContext.Sites.AnyAsync(site => site.Id == siteId, cancellationToken);
 }

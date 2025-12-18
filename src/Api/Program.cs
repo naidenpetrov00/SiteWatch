@@ -15,6 +15,7 @@ builder.AddApiServices(builder.Configuration);
 builder.Services.AddApplicationServices();
 
 var app = builder.Build();
+app.UseCustomMiddleware();
 
 if (app.Environment.IsDevelopment())
 {
@@ -23,7 +24,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.MapScalarApiReferenceWithOptions();
     app.UseCors("DevCors");
-    app.UseRequestResponseLogging();
+    // app.UseRequestResponseLogging();
 }
 
 app.UseHttpsRedirection();
@@ -31,21 +32,5 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapEndpoints();
-app.MapGet(
-        "/auth-test",
-        (HttpContext ctx) =>
-        {
-            var user = ctx.User;
-            return Results.Ok(
-                new
-                {
-                    IsAuthenticated = user.Identity?.IsAuthenticated ?? false,
-                    Name = user.Identity?.Name,
-                    Claims = user.Claims.Select(c => new { c.Type, c.Value }),
-                }
-            );
-        }
-    )
-    .RequireAuthorization();
 
 app.Run();

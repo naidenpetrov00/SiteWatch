@@ -179,7 +179,7 @@ public class ApplicationDbContextInitialiser(
                 logger.LogInformation("Applied pending migrations.");
             }
 
-            await ClearSeedDataAsync();
+            // await ClearSeedDataAsync();
 
             var users = await AddUsers();
             await AddSites(users);
