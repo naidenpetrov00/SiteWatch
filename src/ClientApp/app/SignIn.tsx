@@ -17,7 +17,6 @@ import {useColorPalette} from "@/hooks/useColorPalette";
 
 const SignIn = () => {
     const colorPalette = useColorPalette();
-    const op = 4;
     return (
         <SafeAreaView
             style={[signUpStyles.safe, {backgroundColor: colorPalette.background}]}

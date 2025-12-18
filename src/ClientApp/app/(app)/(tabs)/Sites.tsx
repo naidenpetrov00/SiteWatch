@@ -1,4 +1,4 @@
-import { FlatList } from "react-native";
+import { FlatList, RefreshControl } from "react-native";
 
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -12,7 +12,7 @@ import LoadingState from "@/components/app/LoadingState";
 const Sites = () => {
   const colorPalette = useColorPalette();
   const router = useRouter();
-  const { data: sites, isLoading } = useGetSitesByUserId();
+  const { data: sites, isLoading, isRefetching, refetch } = useGetSitesByUserId();
 
   if (isLoading) {
     return <LoadingState label="Loading sites..." />;
@@ -29,6 +29,14 @@ const Sites = () => {
       <FlatList
         data={sites}
         keyExtractor={(item) => item.id}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            tintColor={colorPalette.primary}
+            colors={[colorPalette.primary]}
+          />
+        }
         contentContainerStyle={{ paddingVertical: 16 }}
         renderItem={({ item }) => (
           <SiteCard

@@ -1,6 +1,6 @@
 import { QueryConfig, queryConfig } from "@/lib/react-query";
 
-import { Camera } from "./types";
+import { Camera } from "./models";
 import { api } from "@/lib/api-client";
 import { paths } from "@/config/constants/paths";
 import { useAuth } from "@/store/auth_context";

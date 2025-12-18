@@ -1,6 +1,6 @@
 import { Image, Text, View } from "react-native";
 
-import { Camera } from "../../api/types";
+import { Camera } from "../../api/models";
 import Card from "@/components/ui/Card/Card";
 import React from "react";
 import { cameraCardStyles } from "./CameraCard.styles";

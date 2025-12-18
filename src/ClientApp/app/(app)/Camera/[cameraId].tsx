@@ -1,11 +1,14 @@
+import { Text, TouchableOpacity, View } from "react-native";
+
+import CameraStream from "@/features/cameras/components/CameraStream/CameraStream";
+import { ChannelType } from "@/features/cameras/types";
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Text, TouchableOpacity, View } from "react-native";
-import { useLocalSearchParams } from "expo-router";
-
-import { useColorPalette } from "@/hooks/useColorPalette";
 import cameraViewerStyles from "@/features/cameras/components/CameraViewer.styles";
-import CameraStream from "@/features/cameras/components/CameraStream/CameraStream";
+import { useColorPalette } from "@/hooks/useColorPalette";
+import useGetCameraFromCacheOrApi from "@/features/cameras/hooks/useGetCameraFromCacheOrApi";
+import useGetRtspUrl from "@/features/cameras/hooks/useGetRtspUrl";
+import { useLocalSearchParams } from "expo-router";
 
 const joystickDirections = [
   { label: "↑", key: "up" },
@@ -15,8 +18,13 @@ const joystickDirections = [
 ];
 
 const CameraScreen = () => {
-  const { cameraId } = useLocalSearchParams<{ cameraId: string }>();
+  const { cameraId, siteId } = useLocalSearchParams<{
+    cameraId: string;
+    siteId: string;
+  }>();
   const colorPalette = useColorPalette();
+
+  const camera = useGetCameraFromCacheOrApi(siteId, cameraId);
 
   const handleDirection = (direction: string) => {
     console.log(`Move camera ${cameraId} ${direction}`);
@@ -29,10 +37,15 @@ const CameraScreen = () => {
         { backgroundColor: colorPalette.background },
       ]}
     >
-      <CameraStream />
+      <CameraStream camera={camera} />
       <View style={cameraViewerStyles.content}>
         <View style={cameraViewerStyles.detailsWrapper}>
-          <Text style={[cameraViewerStyles.cameraName, { color: colorPalette.text }]}>
+          <Text
+            style={[
+              cameraViewerStyles.cameraName,
+              { color: colorPalette.text },
+            ]}
+          >
             Camera {cameraId}
           </Text>
           <Text style={{ color: colorPalette.secondary }}>
@@ -41,7 +54,12 @@ const CameraScreen = () => {
         </View>
 
         <View style={cameraViewerStyles.joystickWrapper}>
-          <Text style={[cameraViewerStyles.joystickLabel, { color: colorPalette.text }]}>
+          <Text
+            style={[
+              cameraViewerStyles.joystickLabel,
+              { color: colorPalette.text },
+            ]}
+          >
             Movement Joystick
           </Text>
           <View

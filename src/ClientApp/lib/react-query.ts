@@ -1,9 +1,11 @@
-import { UseMutationOptions, DefaultOptions } from '@tanstack/react-query';
+import { UseMutationOptions, DefaultOptions } from "@tanstack/react-query";
 
 export const queryConfig = {
   queries: {
-    refetchOnWindowFocus: false,
-    retry: false,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
+    retry: 2,
     staleTime: 1000 * 60,
   },
 } satisfies DefaultOptions;
@@ -13,11 +15,11 @@ export type ApiFnReturnType<FnType extends (...args: any) => Promise<any>> =
 
 export type QueryConfig<T extends (...args: any[]) => any> = Omit<
   ReturnType<T>,
-  'queryKey' | 'queryFn'
+  "queryKey" | "queryFn"
 >;
 
 export type MutationConfig<
-  MutationFnType extends (...args: any) => Promise<any>,
+  MutationFnType extends (...args: any) => Promise<any>
 > = UseMutationOptions<
   ApiFnReturnType<MutationFnType>,
   Error,
