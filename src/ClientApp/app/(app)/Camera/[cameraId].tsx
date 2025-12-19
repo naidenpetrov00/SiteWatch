@@ -1,13 +1,11 @@
-import { Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 import CameraStream from "@/features/cameras/components/CameraStream/CameraStream";
-import { ChannelType } from "@/features/cameras/types";
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import cameraViewerStyles from "@/features/cameras/components/CameraViewer.styles";
 import { useColorPalette } from "@/hooks/useColorPalette";
 import useGetCameraFromCacheOrApi from "@/features/cameras/hooks/useGetCameraFromCacheOrApi";
-import useGetRtspUrl from "@/features/cameras/hooks/useGetRtspUrl";
 import { useLocalSearchParams } from "expo-router";
 
 const joystickDirections = [
@@ -31,12 +29,13 @@ const CameraScreen = () => {
   };
 
   return (
-    <SafeAreaView
-      style={[
-        cameraViewerStyles.container,
-        { backgroundColor: colorPalette.background },
-      ]}
-    >
+    // <SafeAreaView
+    //   style={[
+    //     cameraViewerStyles.container,
+    //     { backgroundColor: colorPalette.background },
+    //   ]}
+    // >
+    <ScrollView>
       <CameraStream camera={camera} />
       <View style={cameraViewerStyles.content}>
         <View style={cameraViewerStyles.detailsWrapper}>
@@ -88,7 +87,8 @@ const CameraScreen = () => {
           </View>
         </View>
       </View>
-    </SafeAreaView>
+    </ScrollView>
+    // </SafeAreaView>
   );
 };
 

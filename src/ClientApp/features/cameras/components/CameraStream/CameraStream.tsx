@@ -1,9 +1,10 @@
 import React, { useRef } from "react";
-import { Text, View } from "react-native";
-import { VLCPlayer, VlCPlayerView } from "react-native-vlc-media-player";
+import { Text, View, useWindowDimensions } from "react-native";
 
 import { Camera } from "../../api/models";
 import { ChannelType } from "../../types";
+import LoadingState from "@/components/app/LoadingState";
+import { VLCPlayer } from "react-native-vlc-media-player";
 import { cameraStreamStyles } from "./CameraStream.styles";
 import { useColorPalette } from "@/hooks/useColorPalette";
 import useGetRtspUrl from "../../hooks/useGetRtspUrl";
@@ -14,37 +15,28 @@ interface CameraStreamProps {
 
 const CameraStream: React.FC<CameraStreamProps> = ({ camera }) => {
   const colorPalette = useColorPalette();
-  const rtsp = useGetRtspUrl(camera, ChannelType.Main);
+  const rtsp = useGetRtspUrl(camera, ChannelType.Sub);
+
+  const useIsLandscape = () => {
+    const { width, height } = useWindowDimensions();
+    return width > height;
+  };
 
   const renderCount = React.useRef(0);
   renderCount.current++;
 
   return (
-    <View
-      style={[
-        cameraStreamStyles.streamWrapper,
-        { borderColor: colorPalette.primary },
-      ]}
-    >
+    <View style={[cameraStreamStyles.streamWrapper]}>
       <VLCPlayer
         style={cameraStreamStyles.video}
         autoAspectRatio={true}
+        // muted={true}
         source={{
           uri: rtsp,
+          initOptions: ["--rtsp-tcp"],
         }}
         resizeMode="fill"
       />
-      {/*<VlCPlayerView*/}
-      {/*    autoplay={true}*/}
-      {/*    url="https://www.radiantmediaplayer.com/media/big-buck-bunny-360p.mp4"*/}
-      {/*    ggUrl=""*/}
-      {/*    showGG={true}*/}
-      {/*    showTitle={true}*/}
-      {/*    title="Big Buck Bunny"*/}
-      {/*    showBack={true}*/}
-      {/*    onLeftPress={() => {*/}
-      {/*    }}*/}
-      {/*/>*/}
       <Text
         style={[
           cameraStreamStyles.streamLabel,
@@ -58,3 +50,132 @@ const CameraStream: React.FC<CameraStreamProps> = ({ camera }) => {
 };
 
 export default CameraStream;
+
+
+// import React from "react";
+// import {
+//   Modal,
+//   Pressable,
+//   StatusBar,
+//   StyleSheet,
+//   useWindowDimensions,
+//   View,
+// } from "react-native";
+// import { VLCPlayer } from "react-native-vlc-media-player";
+// import * as ScreenOrientation from "expo-screen-orientation";
+
+// type Props = { rtsp: string };
+
+// export default function CameraStream({ rtsp }: Props) {
+//   const { width, height } = useWindowDimensions();
+//   const isLandscapeBySize = width > height;
+
+//   const [isFullscreen, setIsFullscreen] = React.useState(false);
+//   const [overlayVisible, setOverlayVisible] = React.useState(false);
+
+//   // Keep fullscreen state in sync with rotation
+//   React.useEffect(() => {
+//     setIsFullscreen(isLandscapeBySize);
+//     if (!isLandscapeBySize) setOverlayVisible(false);
+//   }, [isLandscapeBySize]);
+
+//   // Optional: lock orientation while fullscreen (feels like DMSS)
+//   React.useEffect(() => {
+//     let mounted = true;
+
+//     (async () => {
+//       if (!mounted) return;
+
+//       if (isFullscreen) {
+//         await ScreenOrientation.lockAsync(
+//           ScreenOrientation.OrientationLock.LANDSCAPE
+//         );
+//       } else {
+//         await ScreenOrientation.lockAsync(
+//           ScreenOrientation.OrientationLock.PORTRAIT_UP
+//         );
+//       }
+//     })();
+
+//     return () => {
+//       mounted = false;
+//     };
+//   }, [isFullscreen]);
+
+//   // Auto-hide overlay after 3s
+//   React.useEffect(() => {
+//     if (!overlayVisible) return;
+//     const t = setTimeout(() => setOverlayVisible(false), 3000);
+//     return () => clearTimeout(t);
+//   }, [overlayVisible]);
+
+//   const Player = (
+//     <Pressable
+//       style={isFullscreen ? styles.fullscreenWrap : styles.inlineWrap}
+//       onPress={() => setOverlayVisible((v) => !v)}
+//     >
+//       <VLCPlayer
+//         style={styles.video}
+//         source={{ uri: rtsp }}
+//         autoAspectRatio
+//         resizeMode="contain"
+//         initOptions={[
+//           "--rtsp-tcp",
+//           "--network-caching=300",
+//           "--rtsp-caching=300",
+//           "--live-caching=300",
+//           "--clock-jitter=0",
+//           "--clock-synchro=0",
+//         ]}
+//       />
+
+//       {/* Your DMSS-like overlay buttons */}
+//       {overlayVisible && (
+//         <View style={styles.overlay}>
+//           {/* put your buttons here */}
+//           {/* e.g. <PTZControls /> <BackButton /> <HDButton /> etc */}
+//         </View>
+//       )}
+//     </Pressable>
+//   );
+
+//   // LANDSCAPE: fullscreen modal
+//   if (isFullscreen) {
+//     return (
+//       <Modal visible animationType="fade" presentationStyle="fullScreen">
+//         <StatusBar hidden />
+//         {Player}
+//       </Modal>
+//     );
+//   }
+
+//   // PORTRAIT: inline
+//   return (
+//     <View>
+//       <StatusBar hidden={false} />
+//       {Player}
+//     </View>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   inlineWrap: {
+//     width: "100%",
+//     aspectRatio: 16 / 9,
+//     backgroundColor: "black",
+//   },
+//   fullscreenWrap: {
+//     flex: 1,
+//     backgroundColor: "black",
+//   },
+//   video: {
+//     width: "100%",
+//     height: "100%",
+//   },
+//   overlay: {
+//     ...StyleSheet.absoluteFillObject,
+//     justifyContent: "center",
+//     alignItems: "center",
+//     // backgroundColor: "rgba(0,0,0,0.2)", // optional dim
+//   },
+// });
