@@ -1,9 +1,8 @@
-import React, { useRef } from "react";
-import { Text, View, useWindowDimensions } from "react-native";
+import React, { useState } from "react";
+import { Text, View } from "react-native";
 
 import { Camera } from "../../api/models";
 import { ChannelType } from "../../types";
-import LoadingState from "@/components/app/LoadingState";
 import { VLCPlayer } from "react-native-vlc-media-player";
 import { cameraStreamStyles } from "./CameraStream.styles";
 import { useColorPalette } from "@/hooks/useColorPalette";
@@ -13,15 +12,11 @@ interface CameraStreamProps {
   camera: Camera;
 }
 
-const CameraStream: React.FC<CameraStreamProps> = ({ camera }) => {
+const CameraStream: React.FC<CameraStreamProps> = async ({ camera }) => {
   const colorPalette = useColorPalette();
   const rtsp = useGetRtspUrl(camera, ChannelType.Sub);
 
-  const useIsLandscape = () => {
-    const { width, height } = useWindowDimensions();
-    return width > height;
-  };
-
+  const [orientation, setOrientation] = useState();
   const renderCount = React.useRef(0);
   renderCount.current++;
 
@@ -30,7 +25,7 @@ const CameraStream: React.FC<CameraStreamProps> = ({ camera }) => {
       <VLCPlayer
         style={cameraStreamStyles.video}
         autoAspectRatio={true}
-        // muted={true}
+        muted={true}
         source={{
           uri: rtsp,
           initOptions: ["--rtsp-tcp"],
@@ -50,7 +45,6 @@ const CameraStream: React.FC<CameraStreamProps> = ({ camera }) => {
 };
 
 export default CameraStream;
-
 
 // import React from "react";
 // import {
