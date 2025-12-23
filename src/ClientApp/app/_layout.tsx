@@ -1,8 +1,11 @@
+import * as ScreenOrientation from "expo-screen-orientation";
+
 import { Slot, useNavigationContainerRef } from "expo-router";
 
 import AppProvider from "@/components/app/provider";
 import { Stack } from "expo-router";
 import { useAuth } from "@/store/auth_context";
+import { useEffect } from "react";
 import { useReactNavigationDevTools } from "@dev-plugins/react-navigation";
 
 const RootLayout = () => {
@@ -18,6 +21,9 @@ const RootLayout = () => {
 
 const Root = () => {
   const { isAuthenticated } = useAuth();
+  useEffect(() => {
+    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+  }, []);
 
   return (
     <Stack>
