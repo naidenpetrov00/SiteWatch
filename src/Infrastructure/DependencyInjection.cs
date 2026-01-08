@@ -3,6 +3,7 @@ using Application.SeedWork.Interfaces;
 using Ardalis.GuardClauses;
 using Domain.Entities;
 using Infrastructure.Cameras;
+using Infrastructure.Cameras.Services;
 using Infrastructure.Data;
 using Infrastructure.Data.Options;
 using Infrastructure.Email;

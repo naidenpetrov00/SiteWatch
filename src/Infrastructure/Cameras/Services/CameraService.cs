@@ -5,7 +5,7 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 
-namespace Infrastructure.Cameras;
+namespace Infrastructure.Cameras.Services;
 
 public class CameraService(IApplicationDbContext dbContext, IMapper mapper) : ICameraService
 {
