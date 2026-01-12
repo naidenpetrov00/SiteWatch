@@ -1,11 +1,14 @@
 import { Brand } from "../types";
 
-export interface Camera {
+export interface Camera extends CameraAuth {
   id: string;
   name: string;
   brand: Brand;
-  username: string;
-  password: string;
   ipAddress: string;
   port: string;
+}
+
+export interface CameraAuth {
+  username: string;
+  password: string;
 }

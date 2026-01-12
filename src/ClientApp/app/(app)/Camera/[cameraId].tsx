@@ -1,18 +1,20 @@
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 import CameraStream from "@/features/cameras/components/CameraStream/CameraStream";
+import { PtzDirection } from "@/features/cameras/utils";
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import cameraViewerStyles from "@/features/cameras/components/CameraViewer.styles";
+import { useStartPtzMovement } from "@/features/cameras/api/start-ptz-movement";
 import { useColorPalette } from "@/hooks/useColorPalette";
 import useGetCameraFromCacheOrApi from "@/features/cameras/hooks/useGetCameraFromCacheOrApi";
 import { useLocalSearchParams } from "expo-router";
 
-const joystickDirections = [
-  { label: "↑", key: "up" },
-  { label: "↓", key: "down" },
-  { label: "←", key: "left" },
-  { label: "→", key: "right" },
+const joystickDirections: { label: string; key: PtzDirection }[] = [
+  { label: "↑", key: "Up" },
+  { label: "↓", key: "Down" },
+  { label: "←", key: "Left" },
+  { label: "→", key: "Right" },
 ];
 
 const CameraScreen = () => {
@@ -23,9 +25,15 @@ const CameraScreen = () => {
   const colorPalette = useColorPalette();
 
   const camera = useGetCameraFromCacheOrApi(siteId, cameraId);
+  const { mutate: startPtzMovement } = useStartPtzMovement();
 
-  const handleDirection = (direction: string) => {
-    console.log(`Move camera ${cameraId} ${direction}`);
+  const handleDirection = (direction: PtzDirection) => {
+    startPtzMovement({
+      ipAddress: camera.ipAddress,
+      username: camera.username,
+      password: camera.password,
+      direction,
+    });
   };
 
   return (
