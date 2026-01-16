@@ -1,4 +1,4 @@
-import { Modal, Pressable, StatusBar } from "react-native";
+import { Modal, Pressable, StatusBar, View } from "react-native";
 import React, { useState } from "react";
 
 import OverlayControls from "./OverlayControls";
@@ -10,9 +10,10 @@ import usePlayerOrientation from "../../hooks/usePlayerOrientation";
 
 interface PlayerProps {
   rtsp: string;
+  joystick?: React.ReactNode;
 }
 
-const Player: React.FC<PlayerProps> = ({ rtsp }) => {
+const Player: React.FC<PlayerProps> = ({ rtsp, joystick }) => {
   const [isMuted, setIsMuted] = useState(true);
   const { isLandscape, toggleFullscreen } = usePlayerOrientation();
   const { overlayVisible, handleOverlayPress, onInteraction } =
@@ -48,6 +49,9 @@ const Player: React.FC<PlayerProps> = ({ rtsp }) => {
         setIsMuted={setIsMuted}
         onToggleFullscreen={toggleFullscreen}
       />
+      {isLandscape && joystick ? (
+        <View style={playerStyles.joystickOverlay}>{joystick}</View>
+      ) : null}
     </Pressable>
   );
 

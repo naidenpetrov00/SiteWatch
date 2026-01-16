@@ -6,12 +6,18 @@ import useGetRtspUrl from "../../hooks/useGetRtspUrl";
 
 interface CameraStreamProps {
   camera: Camera;
+  joystick?: React.ReactNode;
+  channel: ChannelType;
 }
 
-const CameraStream: React.FC<CameraStreamProps> = ({ camera }) => {
-  const rtsp = useGetRtspUrl(camera, ChannelType.Sub);
+const CameraStream: React.FC<CameraStreamProps> = ({
+  camera,
+  joystick,
+  channel,
+}) => {
+  const rtsp = useGetRtspUrl(camera, channel);
 
-  return <Player rtsp={rtsp} />;
+  return <Player rtsp={rtsp} joystick={joystick} />;
 };
 
 export default CameraStream;

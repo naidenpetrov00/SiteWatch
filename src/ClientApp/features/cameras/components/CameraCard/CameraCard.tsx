@@ -1,8 +1,13 @@
 import { Image, Text, View } from "react-native";
+import {
+  getCameraSnapshot,
+  useGetCameraSnapshot,
+} from "../../api/get-camera-snapshot";
 
 import { Camera } from "../../api/models";
 import Card from "@/components/ui/Card/Card";
 import React from "react";
+import { buildSnapshotBaseUrl } from "../../utils";
 import { cameraCardStyles } from "./CameraCard.styles";
 import { useColorPalette } from "@/hooks/useColorPalette";
 
@@ -13,6 +18,9 @@ type Props = {
 
 const CameraCard: React.FC<Props> = ({ camera, onPress }) => {
   const colorPalette = useColorPalette();
+
+  const snapshot = useGetCameraSnapshot();
+  const imageUrl = snapshot.data;
 
   return (
     <Card
@@ -28,7 +36,11 @@ const CameraCard: React.FC<Props> = ({ camera, onPress }) => {
       </View>
 
       <View style={cameraCardStyles.snapshotWrapper}>
-        <Image style={cameraCardStyles.snapshot} resizeMode="cover" />
+        <Image
+          style={cameraCardStyles.snapshot}
+          resizeMode="cover"
+          source={{ uri: imageUrl }}
+        />
       </View>
     </Card>
   );

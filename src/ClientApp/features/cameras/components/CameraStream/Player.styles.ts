@@ -22,4 +22,10 @@ export const playerStyles = StyleSheet.create({
     backgroundColor: "black",
     justifyContent: "center",
   },
+  joystickOverlay: {
+    position: "absolute",
+    right: 16,
+    bottom: 80,
+    zIndex: 2,
+  },
 });
