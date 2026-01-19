@@ -1,9 +1,9 @@
 import { StyleSheet } from "react-native";
 
 export const cameraCardStyles = StyleSheet.create({
-  card:{
-    borderBottomLeftRadius:0,
-    borderBottomRightRadius:0,
+  card: {
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     paddingTop: 8,
     paddingBottom: 0,
     paddingLeft: 0,
@@ -21,11 +21,9 @@ export const cameraCardStyles = StyleSheet.create({
   },
   snapshotWrapper: {
     width: "100%",
-    aspectRatio: 16 / 9, // "window" feel
-    backgroundColor: "#111",
+    aspectRatio: 16 / 9,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  snapshot: {
-    width: "100%",
-    height: "100%",
-  },
+  snapshot: { width: "100%", height: "100%" },
 });

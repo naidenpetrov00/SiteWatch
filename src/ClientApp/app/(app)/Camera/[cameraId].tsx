@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 
-import CameraHdCard from "@/features/cameras/components/CameraHdCard/CameraHdCard";
+import CameraHdCard from "@/features/cameras/components/CameraHdCard/CameraManagmentCard";
 import CameraJoystick from "@/features/cameras/components/CameraJoystick/CameraJoystick";
-import CameraManagmentCard from "@/features/cameras/components/CameraHdCard/CameraHdCard";
+import CameraManagmentCard from "@/features/cameras/components/CameraHdCard/CameraManagmentCard";
 import CameraStream from "@/features/cameras/components/CameraStream/CameraStream";
 import { ChannelType } from "@/features/cameras/types";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -45,7 +45,11 @@ const CameraScreen = () => {
             />
           }
         />
-        <CameraManagmentCard channel={channel} setChannel={setChannel} />
+        <CameraManagmentCard
+          channel={channel}
+          setChannel={setChannel}
+          camera={camera}
+        />
         <View style={cameraViewerStyles.content}>
           <View></View>
           <CameraJoystick camera={camera} />

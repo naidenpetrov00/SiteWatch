@@ -1,15 +1,13 @@
-import { Image, Text, View } from "react-native";
-import {
-  getCameraSnapshot,
-  useGetCameraSnapshot,
-} from "../../api/get-camera-snapshot";
+import { ActivityIndicator, Image, Text, View } from "react-native";
 
 import { Camera } from "../../api/models";
 import Card from "@/components/ui/Card/Card";
 import React from "react";
-import { buildSnapshotBaseUrl } from "../../utils";
 import { cameraCardStyles } from "./CameraCard.styles";
 import { useColorPalette } from "@/hooks/useColorPalette";
+import {
+  useGetCameraSnapshot,
+} from "../../api/get-camera-snapshot";
 
 type Props = {
   camera: Camera;
@@ -19,8 +17,17 @@ type Props = {
 const CameraCard: React.FC<Props> = ({ camera, onPress }) => {
   const colorPalette = useColorPalette();
 
-  const snapshot = useGetCameraSnapshot();
-  const imageUrl = snapshot.data;
+  const {
+    data: snapshotUri,
+    isLoading,
+    error,
+  } = useGetCameraSnapshot({
+    data: {
+      ipAddress: camera.ipAddress,
+      username: camera.username,
+      password: camera.password,
+    },
+  });
 
   return (
     <Card
@@ -36,11 +43,19 @@ const CameraCard: React.FC<Props> = ({ camera, onPress }) => {
       </View>
 
       <View style={cameraCardStyles.snapshotWrapper}>
-        <Image
-          style={cameraCardStyles.snapshot}
-          resizeMode="cover"
-          source={{ uri: imageUrl }}
-        />
+        {isLoading ? (
+          <ActivityIndicator color={colorPalette.primary} size={"large"} />
+        ) : error ? (
+          <Text>No Snapshot</Text>
+        ) : snapshotUri ? (
+          <Image
+            style={cameraCardStyles.snapshot}
+            resizeMode="cover"
+            source={{ uri: snapshotUri }}
+          />
+        ) : (
+          <Text>No snapshot</Text>
+        )}
       </View>
     </Card>
   );

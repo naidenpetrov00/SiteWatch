@@ -1,7 +1,8 @@
+import { blobToDataUrl, buildSnapshotBaseUrl } from "../utils";
+
 import DigestClient from "digest-fetch";
-import { MutationConfig } from "@/lib/react-query";
-import { buildSnapshotBaseUrl } from "../utils";
-import { useMutation } from "@tanstack/react-query";
+import { QueryConfig } from "@/lib/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 
 export const getCameraSnapshotSchema = z.object({
@@ -19,11 +20,12 @@ export const getCameraSnapshot = async ({
   username,
   password,
   channel = 1,
+  type = 0,
 }: GetCameraSnapshotInput): Promise<string> => {
   const client = new DigestClient(username, password);
   const query = new URLSearchParams({
     channel: String(channel),
-    type: String(channel),
+    type: String(type),
   }).toString();
   const url = buildSnapshotBaseUrl(ipAddress, query);
   const response = await client.fetch(url);
@@ -36,25 +38,26 @@ export const getCameraSnapshot = async ({
     );
   }
 
-  const arrayBuffer = await response.arrayBuffer();
-  const base64 = arrayBufferToBase64(arrayBuffer);
-
-  return `data:image/jpeg;base64,${base64}`;
-};
-
-const arrayBufferToBase64 = (buffer: ArrayBuffer) => {
-  return Buffer.from(buffer).toString("base64");
+  const blob = await response.blob();
+  return await blobToDataUrl(blob);
 };
 
 type UseGetCameraSnapshotOptions = {
-  mutationConfig?: MutationConfig<typeof getCameraSnapshot>;
+  data: GetCameraSnapshotInput;
+  queryConfig?: QueryConfig<typeof getCameraSnapshot>;
 };
 
 export const useGetCameraSnapshot = ({
-  mutationConfig,
-}: UseGetCameraSnapshotOptions = {}) => {
-  return useMutation({
-    mutationFn: (data) => getCameraSnapshot({ ...data }),
-    ...mutationConfig,
+  data,
+  queryConfig,
+}: UseGetCameraSnapshotOptions) => {
+  return useQuery({
+    queryKey: ["camera-snapshot", data.ipAddress],
+    queryFn: () => getCameraSnapshot(data),
+    retry: false,
+    refetchOnWindowFocus: false,
+    staleTime: 5_000,
+    gcTime: 20_000,
+    ...queryConfig,
   });
 };
