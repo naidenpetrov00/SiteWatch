@@ -1,9 +1,9 @@
 import { Modal, Pressable, StatusBar, View } from "react-native";
+import { PlaybackMethods, VLCPlayer } from "react-native-vlc-media-player";
 import React, { useState } from "react";
 
 import OverlayControls from "./OverlayControls";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { VLCPlayer } from "react-native-vlc-media-player";
 import { playerStyles } from "./Player.styles";
 import useOverlayVisibility from "../../hooks/useOverlayVisibility";
 import usePlayerOrientation from "../../hooks/usePlayerOrientation";
@@ -18,7 +18,7 @@ const Player: React.FC<PlayerProps> = ({ rtsp, joystick }) => {
   const { isLandscape, toggleFullscreen } = usePlayerOrientation();
   const { overlayVisible, handleOverlayPress, onInteraction } =
     useOverlayVisibility(isLandscape);
-
+    
   const playerContent = (
     <Pressable
       style={[
@@ -28,6 +28,7 @@ const Player: React.FC<PlayerProps> = ({ rtsp, joystick }) => {
       onPress={handleOverlayPress}
     >
       <VLCPlayer
+    
         style={[
           playerStyles.video,
           isLandscape && playerStyles.fullscreenVideo,
