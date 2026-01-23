@@ -1,18 +1,18 @@
-import React, { useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import React, { useRef, useState } from "react";
+import { ScrollView, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 
-import CameraHdCard from "@/features/cameras/components/CameraHdCard/CameraManagmentCard";
 import CameraJoystick from "@/features/cameras/components/CameraJoystick/CameraJoystick";
 import CameraManagmentCard from "@/features/cameras/components/CameraHdCard/CameraManagmentCard";
 import CameraStream from "@/features/cameras/components/CameraStream/CameraStream";
+import { PlayerHandle } from "@/features/cameras/components/CameraStream/Player";
 import { ChannelType } from "@/features/cameras/types";
-import { SafeAreaView } from "react-native-safe-area-context";
 import cameraViewerStyles from "@/features/cameras/components/CameraViewer.styles";
-import { useColorPalette } from "@/hooks/useColorPalette";
 import useGetCameraFromCacheOrApi from "@/features/cameras/hooks/useGetCameraFromCacheOrApi";
 
 const CameraScreen = () => {
+  const [isRecording, setIsRecording] = useState(false);
+  const playerRef = useRef<PlayerHandle>(null);
   const { cameraId, siteId } = useLocalSearchParams<{
     cameraId: string;
     siteId: string;
@@ -44,11 +44,15 @@ const CameraScreen = () => {
               joystickStyle={{ width: 180, height: 180, paddingVertical: 20 }}
             />
           }
+          isRecording={isRecording}
+          onRecordingChange={setIsRecording}
+          playerRef={playerRef}
         />
         <CameraManagmentCard
           channel={channel}
           setChannel={setChannel}
           camera={camera}
+          onToggleRecording={() => playerRef.current?.toggleRecording()}
         />
         <View style={cameraViewerStyles.content}>
           <View></View>
