@@ -1,6 +1,7 @@
+import { ChannelType, PlayerHandle } from "../../types";
+
 import { Camera } from "../../api/models";
-import { ChannelType } from "../../types";
-import Player, { PlayerHandle } from "./Player";
+import Player from "./Player";
 import React from "react";
 import useGetRtspUrl from "../../hooks/useGetRtspUrl";
 

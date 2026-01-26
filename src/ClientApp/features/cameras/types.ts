@@ -7,3 +7,7 @@ export enum Brand {
   Unknown = "Unknown",
   Dahua = "Dahua",
 }
+
+export interface PlayerHandle {
+  toggleRecording: () => Promise<void>;
+}

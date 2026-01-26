@@ -22,9 +22,6 @@ export const blobToDataUrl = (blob: Blob) =>
   });
 
 export async function saveSnapshot(dataUrl: string, cameraId: string | number) {
-  const perm = await MediaLibrary.requestPermissionsAsync();
-  if (perm.status !== "granted") return;
-
   const match = dataUrl.match(/^data:([^;]+);base64,(.*)$/);
   if (!match) throw new Error("Invalid data URL");
 

@@ -1,7 +1,7 @@
 import * as FileSystem from "expo-file-system/legacy";
 import * as MediaLibrary from "expo-media-library";
 
-import { Modal, Pressable, StatusBar, View } from "react-native";
+import { Alert, Modal, Pressable, StatusBar, View } from "react-native";
 import { PlaybackMethods, VLCPlayer } from "react-native-vlc-media-player";
 import React, {
   useCallback,
@@ -11,19 +11,21 @@ import React, {
 } from "react";
 
 import OverlayControls from "./OverlayControls";
+import { PlayerHandle } from "../../types";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { playerStyles } from "./Player.styles";
 import useOverlayVisibility from "../../hooks/useOverlayVisibility";
 import usePlayerOrientation from "../../hooks/usePlayerOrientation";
 
 const recordsDir = FileSystem.documentDirectory + "records/";
+const recordsDirFs = recordsDir.replace(/^file:\/\//, "");
 
-async function ensureDir() {
+const ensureDir = async () => {
   const info = await FileSystem.getInfoAsync(recordsDir);
   if (!info.exists) {
     await FileSystem.makeDirectoryAsync(recordsDir, { intermediates: true });
   }
-}
+};
 
 interface PlayerProps {
   rtsp: string;
@@ -32,37 +34,46 @@ interface PlayerProps {
   onRecordingChange?: (nextIsRecording: boolean) => void;
 }
 
-export interface PlayerHandle {
-  toggleRecording: () => Promise<void>;
-}
-
 const Player = React.forwardRef<PlayerHandle, PlayerProps>(
   ({ rtsp, joystick, isRecording, onRecordingChange }, ref) => {
     const playerRef = useRef<VLCPlayer>(null);
-    const recordingPathRef = useRef<string | null>(null);
     const [isMuted, setIsMuted] = useState(true);
     const { isLandscape, toggleFullscreen } = usePlayerOrientation();
     const { overlayVisible, handleOverlayPress, onInteraction } =
       useOverlayVisibility(isLandscape);
 
     const handleOnRecordingCreatedAsync = async (recordingPath: string) => {
-      console.log(`from handleOnRecordingCreatedAsync: ${recordingPath}`);
+      console.log("Recording created at:", recordingPath);
 
-      const perm = await MediaLibrary.requestPermissionsAsync();
-      if (perm.status !== "granted") return;
+      const normalizedPath = recordingPath.startsWith("file://")
+        ? recordingPath
+        : `file://${recordingPath}`;
 
-      const asset = await MediaLibrary.createAssetAsync(recordingPath);
+      const info = await FileSystem.getInfoAsync(normalizedPath);
+      if (!info.exists) {
+        console.warn("Recording file not found at:", normalizedPath);
+        return;
+      }
 
-      await MediaLibrary.createAlbumAsync("MyApp Videos", asset, false);
+      try {
+        const asset = await MediaLibrary.createAssetAsync(normalizedPath);
+        await MediaLibrary.createAlbumAsync("MyApp Videos", asset, false);
+        Alert.alert("Saved", "Snapshot saved to your device.");
+      } catch (error) {
+        console.warn("Failed to save recording:", error);
+      }
     };
+
     const handleToggleRecording = useCallback(async () => {
       if (!playerRef.current) return;
 
       if (!isRecording) {
         await ensureDir();
-        playerRef.current.startRecording(recordsDir); // ✅ directory
+        console.log("Starting recording to:", recordsDirFs);
+        playerRef.current.startRecording(recordsDirFs);
         onRecordingChange?.(true);
       } else {
+        console.log("Stopping recording.");
         playerRef.current.stopRecording();
         onRecordingChange?.(false);
       }
@@ -99,7 +110,7 @@ const Player = React.forwardRef<PlayerHandle, PlayerProps>(
           }}
           resizeMode="fill"
           onRecordingCreated={(path) => {
-            console.log("from onRecordingCreated:", path);
+            console.log("onRecordingCreated callback:", path);
             if (path) handleOnRecordingCreatedAsync(path);
           }}
         />
