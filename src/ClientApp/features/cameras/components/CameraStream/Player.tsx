@@ -31,11 +31,16 @@ interface PlayerProps {
   rtsp: string;
   joystick?: React.ReactNode;
   isRecording: boolean;
+  playerKey: number;
+  setPlayerKey: React.Dispatch<React.SetStateAction<number>>;
   onRecordingChange?: (nextIsRecording: boolean) => void;
 }
 
 const Player = React.forwardRef<PlayerHandle, PlayerProps>(
-  ({ rtsp, joystick, isRecording, onRecordingChange }, ref) => {
+  (
+    { rtsp, joystick, isRecording, playerKey, setPlayerKey, onRecordingChange },
+    ref,
+  ) => {
     const playerRef = useRef<VLCPlayer>(null);
     const [isMuted, setIsMuted] = useState(true);
     const { isLandscape, toggleFullscreen } = usePlayerOrientation();
@@ -58,6 +63,7 @@ const Player = React.forwardRef<PlayerHandle, PlayerProps>(
       try {
         const asset = await MediaLibrary.createAssetAsync(normalizedPath);
         await MediaLibrary.createAlbumAsync("MyApp Videos", asset, false);
+        setPlayerKey((prev) => prev + 1);
         Alert.alert("Saved", "Snapshot saved to your device.");
       } catch (error) {
         console.warn("Failed to save recording:", error);
@@ -96,6 +102,7 @@ const Player = React.forwardRef<PlayerHandle, PlayerProps>(
         onPress={handleOverlayPress}
       >
         <VLCPlayer
+          key={playerKey}
           ref={playerRef}
           style={[
             playerStyles.video,

@@ -12,6 +12,8 @@ interface CameraStreamProps {
   isRecording: boolean;
   onRecordingChange?: (nextIsRecording: boolean) => void;
   playerRef?: React.Ref<PlayerHandle>;
+  playerKey: number;
+  setPlayerKey: React.Dispatch<React.SetStateAction<number>>;
 }
 
 const CameraStream: React.FC<CameraStreamProps> = ({
@@ -21,11 +23,15 @@ const CameraStream: React.FC<CameraStreamProps> = ({
   isRecording,
   onRecordingChange,
   playerRef,
+  playerKey,
+  setPlayerKey,
 }) => {
   const rtsp = useGetRtspUrl(camera, channel);
 
   return (
     <Player
+      playerKey={playerKey}
+      setPlayerKey={setPlayerKey}
       ref={playerRef}
       rtsp={rtsp}
       joystick={joystick}

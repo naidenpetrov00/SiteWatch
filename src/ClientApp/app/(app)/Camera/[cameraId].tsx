@@ -11,6 +11,7 @@ import useGetCameraFromCacheOrApi from "@/features/cameras/hooks/useGetCameraFro
 
 const CameraScreen = () => {
   const [isRecording, setIsRecording] = useState(false);
+  const [playerKey, setPlayerKey] = useState(0);
   const playerRef = useRef<PlayerHandle>(null);
   const { cameraId, siteId } = useLocalSearchParams<{
     cameraId: string;
@@ -34,8 +35,10 @@ const CameraScreen = () => {
       />
       <ScrollView>
         <CameraStream
+        playerKey={playerKey}
           channel={channel}
           camera={camera}
+          setPlayerKey={setPlayerKey}
           joystick={
             <CameraJoystick
               camera={camera}
@@ -51,6 +54,7 @@ const CameraScreen = () => {
           channel={channel}
           setChannel={setChannel}
           camera={camera}
+          setPlayerKey={setPlayerKey}
           onToggleRecording={() => playerRef.current?.toggleRecording()}
         />
         <View style={cameraViewerStyles.content}>

@@ -1,5 +1,6 @@
-import { Alert, TouchableOpacity, View } from "react-native";
 import * as MediaLibrary from "expo-media-library";
+
+import { Alert, TouchableOpacity, View } from "react-native";
 
 import { Camera } from "@/features/cameras/api/models";
 import { ChannelType } from "../../types";
@@ -16,6 +17,7 @@ type CameraManagmentCardProps = {
   setChannel: React.Dispatch<React.SetStateAction<ChannelType>>;
   camera: Camera;
   onToggleRecording?: () => void;
+  setPlayerKey: React.Dispatch<React.SetStateAction<number>>;
 };
 
 const CameraManagmentCard = ({
@@ -23,6 +25,7 @@ const CameraManagmentCard = ({
   setChannel,
   camera,
   onToggleRecording,
+  setPlayerKey,
 }: CameraManagmentCardProps) => {
   const colorPalette = useColorPalette();
 
@@ -61,6 +64,7 @@ const CameraManagmentCard = ({
       }
 
       await saveSnapshot(dataUrl, camera.id);
+      setPlayerKey((prev) => prev + 1);
       Alert.alert("Saved", "Snapshot saved to your device.");
     } catch (e) {
       throw e;
