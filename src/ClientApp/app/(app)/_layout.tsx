@@ -6,7 +6,6 @@ export default function RootLayout() {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      {/*<Stack.Screen name="(app)" />*/}
       <Stack.Screen
         name="Site/[siteId]"
         options={{
@@ -14,7 +13,6 @@ export default function RootLayout() {
           title: "Site",
           headerBackTitle: "Sites",
           headerBackButtonDisplayMode: "default",
-          headerStyle: { backgroundColor: "#111" },
           headerTintColor: colorPalette.primary,
         }}
       />

@@ -1,11 +1,19 @@
-import {Stack} from "expo-router";
+import { Stack } from "expo-router";
+import { useColorPalette } from "@/hooks/useColorPalette";
 
 const CameraLayout = () => {
-    return (
-        <Stack screenOptions={{headerShown: true, headerTitle: "Camera", freezeOnBlur: true, }}>
+  const colorPalette = useColorPalette();
 
-        </Stack>
-    );
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: true,
+        headerTitle: "Camera",
+        freezeOnBlur: true,
+        headerTintColor: colorPalette.primary,
+      }}
+    ></Stack>
+  );
 };
 
 export default CameraLayout;
