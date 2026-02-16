@@ -1,7 +1,6 @@
-import { Href, HrefObject, router } from "expo-router";
+import { Href, router } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 
-import { NavigationOptions } from "expo-router/build/global-state/routing";
 import React from "react";
 import authPageTitleStyles from "./AuthPageTitle.styles";
 import { useColorPalette } from "@/hooks/useColorPalette";
@@ -10,12 +9,14 @@ interface IAuthPageTitleProps {
   title: string;
   description: string;
   href?: Href;
+  linkLabel?: string;
 }
 
 export const AuthPageTitle: React.FC<IAuthPageTitleProps> = ({
   title,
   description,
   href,
+  linkLabel,
 }) => {
   const colorPalette = useColorPalette();
   return (
@@ -23,20 +24,53 @@ export const AuthPageTitle: React.FC<IAuthPageTitleProps> = ({
       <Text style={[authPageTitleStyles.title, { color: colorPalette.text }]}>
         {title}
       </Text>
-      <Text
+      <View
         style={[
           authPageTitleStyles.subtitle,
-          { color: colorPalette.secondary },
         ]}
       >
-        {href ? (
+        {href && linkLabel ? (
+          <Text
+            style={[
+              authPageTitleStyles.subtitleText,
+              { color: colorPalette.placeholderText },
+            ]}
+          >
+            {description}{" "}
+            <Text
+              onPress={() => router.replace(href)}
+              style={[
+                authPageTitleStyles.subtitleText,
+                authPageTitleStyles.subtitleLinkText,
+                { color: colorPalette.primary },
+              ]}
+            >
+              {linkLabel}
+            </Text>
+          </Text>
+        ) : href ? (
           <Pressable onPress={() => router.replace(href)}>
-            <Text>{description}</Text>
+            <Text
+              style={[
+                authPageTitleStyles.subtitleText,
+                authPageTitleStyles.subtitleLinkText,
+                { color: colorPalette.primary },
+              ]}
+            >
+              {description}
+            </Text>
           </Pressable>
         ) : (
-          <Text>{description}</Text>
+          <Text
+            style={[
+              authPageTitleStyles.subtitleText,
+              { color: colorPalette.secondary },
+            ]}
+          >
+            {description}
+          </Text>
         )}
-      </Text>
+      </View>
     </View>
   );
 };

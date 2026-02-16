@@ -5,7 +5,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import {
+  Stack,
+  useGlobalSearchParams,
+  useLocalSearchParams,
+  useRouter,
+} from "expo-router";
 
 import CameraCard from "@/features/cameras/components/CameraCard/CameraCard";
 import LoadingState from "@/components/app/LoadingState";
@@ -15,7 +20,16 @@ import { useCamerasBySite } from "@/features/cameras/api/get-cameras-by-site";
 import { useColorPalette } from "@/hooks/useColorPalette";
 
 const Cameras = () => {
-  const { siteId } = useLocalSearchParams<{ siteId: string }>();
+  const localParams = useLocalSearchParams<{
+    siteId?: string;
+    siteName?: string;
+  }>();
+  const globalParams = useGlobalSearchParams<{
+    siteId?: string;
+    siteName?: string;
+  }>();
+  const siteId = localParams.siteId ?? globalParams.siteId;
+  const siteName = localParams.siteName ?? globalParams.siteName;
   const router = useRouter();
   const colorPalette = useColorPalette();
 
@@ -23,7 +37,6 @@ const Cameras = () => {
     data: cameras,
     isLoading,
     isRefetching,
-    isStale,
     refetch,
   } = useCamerasBySite({ siteId });
 
@@ -35,64 +48,70 @@ const Cameras = () => {
     return <LoadingState label="Loading cameras..." />;
   }
 
+  if (!siteId) {
+    return <LoadingState label="Loading site..." />;
+  }
+
   return (
-    <View
-      style={[
-        cameraStyles.container,
-        { backgroundColor: colorPalette.background },
-      ]}
-    >
-      <FlatList
-        data={cameras ?? []}
-        keyExtractor={(item) => item.id}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
-            tintColor={colorPalette.primary}
-            colors={[colorPalette.primary]}
-          />
-        }
-        contentContainerStyle={[
-          cameraStyles.listContent,
-          {
-            backgroundColor: colorPalette.background,
-            justifyContent: cameras?.length ? undefined : "center",
-          },
+    <>
+      <View
+        style={[
+          cameraStyles.container,
+          { backgroundColor: colorPalette.background },
         ]}
-        ListEmptyComponent={
-          <View style={cameraStyles.emptyState}>
-            <Text style={{ color: colorPalette.text, fontSize: 16 }}>
-              No cameras at this Site
-            </Text>
-            <TouchableOpacity
-              style={[
-                cameraStyles.addButton,
-                { backgroundColor: colorPalette.primary },
-              ]}
-              onPress={handleAddCamera}
-            >
-              <Text
-                style={{ color: colorPalette.background, fontWeight: "600" }}
-              >
-                Add camera
+      >
+        <FlatList
+          data={cameras ?? []}
+          keyExtractor={(item) => item.id}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetching}
+              onRefresh={refetch}
+              tintColor={colorPalette.primary}
+              colors={[colorPalette.primary]}
+            />
+          }
+          contentContainerStyle={[
+            cameraStyles.listContent,
+            {
+              backgroundColor: colorPalette.background,
+              justifyContent: cameras?.length ? undefined : "center",
+            },
+          ]}
+          ListEmptyComponent={
+            <View style={cameraStyles.emptyState}>
+              <Text style={{ color: colorPalette.text, fontSize: 16 }}>
+                No cameras at this Site
               </Text>
-            </TouchableOpacity>
-          </View>
-        }
-        renderItem={({ item }) => (
-          <CameraCard
-            camera={item}
-            onPress={() =>
-              router.push({
-                pathname: "/Camera/[cameraId]",
-                params: { cameraId: item.id, siteId },
-              })
-            }
-          />
-        )}
-      />
-    </View>
+              <TouchableOpacity
+                style={[
+                  cameraStyles.addButton,
+                  { backgroundColor: colorPalette.primary },
+                ]}
+                onPress={handleAddCamera}
+              >
+                <Text
+                  style={{ color: colorPalette.background, fontWeight: "600" }}
+                >
+                  Add camera
+                </Text>
+              </TouchableOpacity>
+            </View>
+          }
+          renderItem={({ item }) => (
+            <CameraCard
+              camera={item}
+              onPress={() =>
+                router.push({
+                  pathname: "/Camera/[cameraId]",
+                  params: { cameraId: item.id, siteId },
+                })
+              }
+            />
+          )}
+        />
+      </View>
+    </>
   );
 };
 

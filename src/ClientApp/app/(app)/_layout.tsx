@@ -8,13 +8,15 @@ export default function RootLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen
         name="Site/[siteId]"
-        options={{
+        options={({ route }) => ({
           headerShown: true,
-          title: "Site",
+          title:
+            ((route.params as { siteName?: string } | undefined)?.siteName ??
+              "Site"),
           headerBackTitle: "Sites",
           headerBackButtonDisplayMode: "default",
           headerTintColor: colorPalette.primary,
-        }}
+        })}
       />
     </Stack>
   );

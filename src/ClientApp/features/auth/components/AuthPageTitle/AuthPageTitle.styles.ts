@@ -13,8 +13,14 @@ const authPageTitleStyles = StyleSheet.create({
   },
   subtitle: {
     marginTop: 6,
+  },
+  subtitleText: {
     fontSize: 13,
     textAlign: "center",
+  },
+  subtitleLinkText: {
+    textDecorationLine: "underline",
+    fontWeight: "600",
   },
 });
 

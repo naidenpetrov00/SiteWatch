@@ -25,17 +25,22 @@ export const getCameraBySite = ({
   });
 
 type UseCamerasBySiteOptions = {
-  siteId: string;
+  siteId?: string;
   queryConfig?: QueryConfig<typeof getCameraBySite>;
 };
 
-export const useCamerasBySite = ({ siteId }: UseCamerasBySiteOptions) => {
+export const useCamerasBySite = ({
+  siteId,
+  queryConfig: customQueryConfig,
+}: UseCamerasBySiteOptions) => {
   const { accessToken } = useAuth();
   return useQuery({
     queryKey: ["cameras", siteId],
+    enabled: Boolean(siteId && accessToken),
     queryFn: () => {
-      return getCameraBySite({ siteId, accessToken: accessToken! });
+      return getCameraBySite({ siteId: siteId!, accessToken: accessToken! });
     },
     ...queryConfig,
+    ...customQueryConfig,
   });
 };

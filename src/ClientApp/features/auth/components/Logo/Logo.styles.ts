@@ -1,5 +1,4 @@
 import { StyleSheet } from "react-native";
-const RADIUS = 14;
 
 const logoStyles = StyleSheet.create({
   logoBadge: {

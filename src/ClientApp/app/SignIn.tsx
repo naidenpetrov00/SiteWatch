@@ -42,7 +42,8 @@ const SignIn = () => {
                             {/* Title + subtitle */}
                             <AuthPageTitle
                                 title={"Login"}
-                                description="No Account no Problem? Register here"
+                                description="No Account no Problem?"
+                                linkLabel="Register here"
                                 href={"/SignUp"}
                             />
 
