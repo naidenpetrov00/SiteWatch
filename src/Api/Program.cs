@@ -4,7 +4,6 @@ using Application;
 using DotNetEnv;
 using Infrastructure;
 using Infrastructure.SeedWork.Extension;
-using MyApp.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
