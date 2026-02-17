@@ -6,9 +6,10 @@ import { useColorPalette } from "@/hooks/useColorPalette";
 
 const LoginPageLogo = (props: SvgProps) => {
   const colorPalette = useColorPalette();
-  return (
-    <Svg
-      xmlns="http://www.w3.org/2000/svg"
+    return (
+        <Svg
+            // @ts-ignore
+            xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 230 167"
       {...props}
     >
