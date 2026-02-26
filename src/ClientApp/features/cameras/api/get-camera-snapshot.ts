@@ -27,8 +27,12 @@ export const getCameraSnapshot = async ({
     channel: String(channel),
     type: String(type),
   }).toString();
+    console.log(`username: ${username}, password: ${password}`);
+    console.log("before");
   const url = buildSnapshotBaseUrl(ipAddress, query);
+    console.log(`url: ${url}`);
   const response = await client.fetch(url);
+    console.log(`response: ${response}`);
 
   if (!response.ok) {
     const responseText = await response.text().catch(() => "");
