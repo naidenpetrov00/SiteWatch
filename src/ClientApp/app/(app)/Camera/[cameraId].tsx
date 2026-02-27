@@ -31,7 +31,6 @@ const CameraScreen = () => {
       <Stack.Screen
         options={{
           headerTitle: camera?.name,
-          headerRight:() => <HeaderButtons/> 
         }}
       />
       <ScrollView>
@@ -70,60 +69,3 @@ const CameraScreen = () => {
 };
 
 export default CameraScreen;
-
-import { Button, Host, HStack, Image } from "@expo/ui/swift-ui";
-import {
-  cornerRadius,
-  frame,
-  glassEffect,
-  padding,
-} from "@expo/ui/swift-ui/modifiers";
-
-function HeaderButtons() {
-  return (
-    <View style={{ paddingTop: 200, flex: 1, backgroundColor: "black" }}>
-      <Host matchContents>
-        <HStack spacing={12}>
-          <Button
-            onPress={() => console.log("Undo")}
-            modifiers={[
-              frame({ width: 44, height: 44 }),
-              cornerRadius(18),
-              glassEffect({ glass: { variant: "regular" } }),
-            ]}
-          >
-            <Image systemName="arrow.uturn.backward" />
-          </Button>
-
-          <HStack
-            spacing={0}
-            modifiers={[
-              cornerRadius(18),
-              glassEffect({ glass: { variant: "regular" } }),
-            ]}
-          >
-            <Button
-              onPress={() => console.log("Share")}
-              modifiers={[
-                frame({ height: 44, minWidth: 44 }),
-                padding({ horizontal: 12 }),
-              ]}
-            >
-              <Image systemName="square.and.arrow.up" />
-            </Button>
-
-            <Button
-              onPress={() => console.log("More")}
-              modifiers={[
-                frame({ height: 44, minWidth: 44 }),
-                padding({ horizontal: 12 }),
-              ]}
-            >
-              <Image systemName="ellipsis" />
-            </Button>
-          </HStack>
-        </HStack>
-      </Host>
-    </View>
-  );
-}
