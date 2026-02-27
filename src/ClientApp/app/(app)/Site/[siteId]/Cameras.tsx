@@ -104,7 +104,7 @@ const Cameras = () => {
               onPress={() =>
                 router.push({
                   pathname: "/Camera/[cameraId]",
-                  params: { cameraId: item.id, siteId, siteName },
+                  params: { cameraId: item.id, siteId },
                 })
               }
             />
