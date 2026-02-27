@@ -17,8 +17,10 @@ export default {
             NSAppTransportSecurity: {
                 NSAllowsArbitraryLoads: true,
                 NSAllowsArbitraryLoadsInWebContent: true,
+                NSAllowsLocalNetworking: true,
             },
-            NSLocalNetworkUsageDescription: "This App Need Access to local network"
+            NSLocalNetworkUsageDescription:
+                "Allow access to cameras and devices on your local network",
       },
     },
     android: {
