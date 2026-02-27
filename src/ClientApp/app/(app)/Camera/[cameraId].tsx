@@ -13,10 +13,9 @@ const CameraScreen = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [playerKey, setPlayerKey] = useState(0);
   const playerRef = useRef<PlayerHandle>(null);
-  const { cameraId, siteId, siteName } = useLocalSearchParams<{
+  const { cameraId, siteId } = useLocalSearchParams<{
     cameraId: string;
     siteId: string;
-    siteName?: string;
   }>();
   const [channel, setChannel] = useState(ChannelType.Sub);
   const camera = useGetCameraFromCacheOrApi(siteId, cameraId);
@@ -32,8 +31,6 @@ const CameraScreen = () => {
       <Stack.Screen
         options={{
           headerTitle: camera?.name,
-          headerBackTitle: siteName ?? "Cameras",
-          headerBackButtonDisplayMode: "default",
         }}
       />
       <ScrollView>
