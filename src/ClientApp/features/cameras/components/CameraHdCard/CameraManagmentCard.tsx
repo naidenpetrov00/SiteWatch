@@ -16,6 +16,7 @@ type CameraManagmentCardProps = {
   channel: ChannelType;
   setChannel: React.Dispatch<React.SetStateAction<ChannelType>>;
   camera: Camera;
+  isRecording: boolean;
   onToggleRecording?: () => void;
   setPlayerKey: React.Dispatch<React.SetStateAction<number>>;
 };
@@ -24,6 +25,7 @@ const CameraManagmentCard = ({
   channel,
   setChannel,
   camera,
+  isRecording,
   onToggleRecording,
   setPlayerKey,
 }: CameraManagmentCardProps) => {
@@ -105,9 +107,9 @@ const CameraManagmentCard = ({
           onPress={onToggleRecording}
         >
           <MaterialIcons
-            name="videocam"
+            name={isRecording ? "fiber-manual-record" : "videocam"}
             size={18}
-            color={colorPalette.background}
+            color={isRecording ? "#ff3b30" : colorPalette.background}
           />
         </TouchableOpacity>
         <TouchableOpacity
