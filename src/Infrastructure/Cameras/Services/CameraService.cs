@@ -3,6 +3,8 @@ using Application.SeedWork.Interfaces;
 using Ardalis.GuardClauses;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Domain.Entities;
+using Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Cameras.Services;
@@ -23,5 +25,14 @@ public class CameraService(IApplicationDbContext dbContext, IMapper mapper) : IC
         Guard.Against.NotFound(cameraId, result);
 
         return result;
+    }
+
+    public Task<bool> CreateCameraAsync(CameraName cameraName, CameraBrand cameraBrand,
+        CancellationToken cancellationToken,
+        string? username = null, string? password = null, string? ipAddress = null, int? port = null,
+        Guid? siteId = null)
+    {
+        var camera = Camera.Create(cameraName, cameraBrand, username, password, ipAddress, port, siteId);
+
     }
 }

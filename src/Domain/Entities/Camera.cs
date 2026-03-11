@@ -10,7 +10,8 @@ public sealed class Camera : BaseAuditableEntity
     public string? Username { get; private set; }
     public string? Password { get; private set; }
     public string? IpAddress { get; private set; }
-    public int Port { get; private set; } = 554;
+    public int? Port { get; private set; } = 554;
+    public Guid? SiteId { get; set; }
     public Site? Site { get; private set; }
 
     // ReSharper disable once UnusedMember.Local
@@ -24,7 +25,25 @@ public sealed class Camera : BaseAuditableEntity
         CameraBrand = cameraBrand;
     }
 
-    public static Camera Create(string name, CameraBrand cameraBrand) => new(name, cameraBrand);
+    public static Camera Create(
+        CameraName cameraName,
+        CameraBrand cameraBrand,
+        string? username = null,
+        string? password = null,
+        string? ipAddress = null,
+        int? port = null,
+        Guid? siteId = null) =>
+        new()
+        {
+            Id = Guid.NewGuid(),
+            CameraName = cameraName,
+            CameraBrand = cameraBrand,
+            Username = username,
+            Password = password,
+            IpAddress = ipAddress,
+            Port = port,
+            SiteId = siteId
+        };
 
     public void AddToSite(Site site) => Site = site;
     public void RemoveFromSite() => Site = null;
