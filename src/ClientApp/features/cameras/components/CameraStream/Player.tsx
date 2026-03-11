@@ -62,7 +62,7 @@ const Player = React.forwardRef<PlayerHandle, PlayerProps>(
 
       try {
         const asset = await MediaLibrary.createAssetAsync(normalizedPath);
-        await MediaLibrary.createAlbumAsync("MyApp Videos", asset, false);
+        await MediaLibrary.createAlbumAsync("Sites", asset, false);
         setPlayerKey((prev) => prev + 1);
         Alert.alert("Saved", "Snapshot saved to your device.");
       } catch (error) {
