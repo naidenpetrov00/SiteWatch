@@ -27,12 +27,16 @@ public class CameraService(IApplicationDbContext dbContext, IMapper mapper) : IC
         return result;
     }
 
-    public Task<bool> CreateCameraAsync(CameraName cameraName, CameraBrand cameraBrand,
+    public async Task<Camera> CreateCameraAsync(CameraName cameraName, CameraBrand cameraBrand,
         CancellationToken cancellationToken,
         string? username = null, string? password = null, string? ipAddress = null, int? port = null,
         Guid? siteId = null)
     {
         var camera = Camera.Create(cameraName, cameraBrand, username, password, ipAddress, port, siteId);
 
+        await dbContext.Cameras.AddAsync(camera, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return camera;
     }
 }

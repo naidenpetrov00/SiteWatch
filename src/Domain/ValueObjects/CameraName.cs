@@ -1,5 +1,6 @@
 using Ardalis.GuardClauses;
 using Domain.SeedWork;
+using System.Text.Json.Serialization;
 
 namespace Domain.ValueObjects;
 
@@ -7,6 +8,7 @@ public class CameraName : ValueObject
 {
     public string Value { get; }
 
+    [JsonConstructor]
     private CameraName(string value)
     {
         Guard.Against.NullOrWhiteSpace(value, nameof(value));

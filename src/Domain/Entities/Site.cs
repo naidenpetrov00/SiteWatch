@@ -6,6 +6,7 @@ namespace Domain.Entities;
 public sealed class Site : BaseAuditableEntity
 {
     private readonly HashSet<ApplicationUser> _users = [];
+    private readonly HashSet<Camera> _cameras = [];
 
     public Site(SiteName name, SiteAddress address)
     {
@@ -21,7 +22,7 @@ public sealed class Site : BaseAuditableEntity
     public SiteName Name { get; private set; } = null!;
     public SiteAddress Address { get; private set; } = null!;
     public IReadOnlyCollection<ApplicationUser> Users => _users;
-    public IReadOnlyCollection<Camera> Cameras { get; } = new List<Camera>();
+    public IReadOnlyCollection<Camera> Cameras => _cameras;
 
     public void AddUser(ApplicationUser user) => _users.Add(user);
 

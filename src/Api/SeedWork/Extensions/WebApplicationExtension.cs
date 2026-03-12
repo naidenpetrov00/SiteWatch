@@ -11,7 +11,7 @@ internal static class WebApplicationExtensions
         string? customGroupName = null
     )
     {
-        string groupName =
+        var groupName =
             customGroupName ?? Path.GetFileNameWithoutExtension(callerFilePath).ToLower();
         return app.MapGroup(groupName);
     }

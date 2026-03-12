@@ -6,6 +6,8 @@ namespace Infrastructure.Data.Configurations;
 
 public class CameraConfiguration : IEntityTypeConfiguration<Camera>
 {
+    private const int CredentialMaxLength = 50;
+
     public void Configure(EntityTypeBuilder<Camera> builder)
     {
         builder.HasOne(site => site.Site).WithMany(site => site.Cameras);
@@ -24,8 +26,8 @@ public class CameraConfiguration : IEntityTypeConfiguration<Camera>
         );
 
         builder.Property(c => c.IpAddress).HasMaxLength(39);
-        builder.Property(c => c.Port).HasMaxLength(5);
-        builder.Property(c => c.Username).HasMaxLength(10);
-        builder.Property(c => c.Password).HasMaxLength(10);
+        builder.Property(c => c.RtspPort).HasMaxLength(5);
+        builder.Property(c => c.Username).HasMaxLength(CredentialMaxLength);
+        builder.Property(c => c.Password).HasMaxLength(CredentialMaxLength);
     }
 }

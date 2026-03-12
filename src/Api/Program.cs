@@ -13,13 +13,17 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.AddApiServices(builder.Configuration);
 builder.Services.AddApplicationServices();
 
+if (builder.Environment.IsDevelopment())
+{
+    builder.WebHost.UseUrls("http://0.0.0.0:5293");
+}
+
 var app = builder.Build();
 app.UseCustomMiddleware();
 
 if (app.Environment.IsDevelopment())
 {
     await app.InitializeDatabaseAsync();
-    builder.WebHost.UseUrls("http://0.0.0.0:5293");
     app.MapOpenApi();
     app.MapScalarApiReferenceWithOptions();
     app.UseCors("DevCors");

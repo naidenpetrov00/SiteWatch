@@ -1,11 +1,10 @@
-using System.Windows.Input;
 using Application.SeedWork.Interfaces;
 using Domain.ValueObjects;
 using MediatR;
 
 namespace Application.Cameras.Commands;
 
-public class CreateCameraWithDetailsCommand : IRequest<bool>
+public class CreateCameraWithDetailsCommand : IRequest<Guid>
 {
     public required CameraName CameraName { get; init; }
     public required CameraBrand CameraBrand { get; init; }
@@ -17,13 +16,13 @@ public class CreateCameraWithDetailsCommand : IRequest<bool>
 }
 
 public class CreateCameraWithDetailsHandler(ICameraService cameraService)
-    : IRequestHandler<CreateCameraWithDetailsCommand, bool>
+    : IRequestHandler<CreateCameraWithDetailsCommand, Guid>
 {
-    private readonly ICameraService _cameraService = cameraService;
-
-    public async Task<bool> Handle(CreateCameraWithDetailsCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(CreateCameraWithDetailsCommand request, CancellationToken cancellationToken)
     {
-        return await _cameraService.CreateCameraAsync(request.CameraName, request.CameraBrand,
+        var camera = await cameraService.CreateCameraAsync(request.CameraName, request.CameraBrand,
             cancellationToken, request.Username, request.Password, request.IpAddress, request.Port, request.SiteId);
+
+        return camera.Id;
     }
 }

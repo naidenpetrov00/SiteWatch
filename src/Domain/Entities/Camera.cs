@@ -10,8 +10,9 @@ public sealed class Camera : BaseAuditableEntity
     public string? Username { get; private set; }
     public string? Password { get; private set; }
     public string? IpAddress { get; private set; }
-    public int? Port { get; private set; } = 554;
-    public Guid? SiteId { get; set; }
+    public int? RtspPort { get; private set; } = 554;
+    public int? PtzPort { get; private set; } = 443;
+    public Guid? SiteId { get; init; }
     public Site? Site { get; private set; }
 
     // ReSharper disable once UnusedMember.Local
@@ -41,7 +42,7 @@ public sealed class Camera : BaseAuditableEntity
             Username = username,
             Password = password,
             IpAddress = ipAddress,
-            Port = port,
+            RtspPort = port,
             SiteId = siteId
         };
 
@@ -49,7 +50,7 @@ public sealed class Camera : BaseAuditableEntity
     public void RemoveFromSite() => Site = null;
 
     public void UpdateIpAddress(string ipAddress) => IpAddress = ipAddress;
-    public void UpdatePort(int port) => Port = port;
+    public void UpdatePort(int port) => RtspPort = port;
 
     public void UpdateUsername(string username) => Username = username;
     public void UpdatePassword(string password) => Password = password;

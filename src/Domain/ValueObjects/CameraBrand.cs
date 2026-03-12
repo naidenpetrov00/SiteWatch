@@ -1,6 +1,7 @@
 using Ardalis.GuardClauses;
 using Domain.SeedWork;
 using Domain.SeedWork.Enums;
+using System.Text.Json.Serialization;
 
 namespace Domain.ValueObjects;
 
@@ -9,6 +10,7 @@ public class CameraBrand : ValueObject
     public Brand Brand { get; }
     public string Model { get; }
 
+    [JsonConstructor]
     private CameraBrand(Brand brand, string model)
     {
         Guard.Against.EnumOutOfRange(brand);

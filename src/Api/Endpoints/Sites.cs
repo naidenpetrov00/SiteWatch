@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Api.Endpoints;
 
-public class Site : EndpointGroupBase
+public class Sites : EndpointGroupBase
 {
     public override void Map(WebApplication app)
     {
