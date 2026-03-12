@@ -5,7 +5,7 @@ export interface Camera extends CameraAuth {
   name: string;
   brand: Brand;
   ipAddress: string;
-  port: string;
+  port: number;
 }
 
 export interface CameraAuth {

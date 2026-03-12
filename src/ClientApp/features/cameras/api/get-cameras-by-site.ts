@@ -17,10 +17,10 @@ export type GetCamerasBySiteContext = z.infer<
 >;
 
 export const getCameraBySite = ({
-  siteId: cameraId,
+  siteId,
   accessToken,
 }: GetCamerasBySiteContext): Promise<Camera[]> =>
-  api.get(paths.cameras.getBySiteId(cameraId), {
+  api.get(paths.cameras.getBySiteId(siteId), {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 

@@ -7,10 +7,11 @@ export const paths = {
         resendEmail: "/identity/sendVerification",
     },
     sites: {
-        getByUserId: (userId: string) => `/site/sitesByUser/${userId}`,
+        getByUserId: (userId: string) => `/sites/sitesByUser/${userId}`,
     },
     cameras: {
-        getBySiteId: (siteId: string) => `/camera/camerasBySite/${siteId}`,
-        getById: (cameraId: string) => `/camera/cameraById/${cameraId}`,
+        getBySiteId: (siteId: string) => `/cameras/site/${siteId}/cameras`,
+        getById: (cameraId: string) => `/cameras/${cameraId}`,
+        createWithDetails: "/cameras/withDetails",
     },
 };

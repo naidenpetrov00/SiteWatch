@@ -404,3 +404,7 @@ src/Api/.env
 *.iml
 /guidelines.md
 /sqlserver
+src/Infrastructure/Data/Migrations/20260312142018_Change Signature.cs
+src/Infrastructure/Data/Migrations/20260312142018_Change Signature.Designer.cs
+src/Infrastructure/Data/Migrations/20260312150122_Change Password Size.cs
+src/Infrastructure/Data/Migrations/20260312150122_Change Password Size.Designer.cs
