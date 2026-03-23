@@ -128,7 +128,10 @@ namespace Infrastructure.Data.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int?>("Port")
+                    b.Property<int?>("PtzPort")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RtspPort")
                         .HasMaxLength(5)
                         .HasColumnType("int");
 
