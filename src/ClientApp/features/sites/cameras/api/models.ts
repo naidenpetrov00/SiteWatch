@@ -1,0 +1,19 @@
+import { Brand } from "../types";
+
+export interface Camera extends CameraAuth {
+  id: string;
+  name: string;
+  brand: Brand;
+  ipAddress: string;
+  port: number;
+}
+
+export interface CameraAuth {
+  username: string;
+  password: string;
+}
+
+export interface CameraSnapshot extends CameraAuth {
+  ipAddress: string;
+  channel?: string;
+}

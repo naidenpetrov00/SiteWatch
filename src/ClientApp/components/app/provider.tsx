@@ -20,14 +20,14 @@ const AppProvider = ({ children }: AppProviderProps) => {
     () =>
       new QueryClient({
         defaultOptions: queryConfig,
-      })
+      }),
   );
   useReactQueryDevTools(queryClient);
 
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>{children}</AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
