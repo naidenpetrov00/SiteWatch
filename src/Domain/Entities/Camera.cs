@@ -49,8 +49,9 @@ public sealed class Camera : BaseAuditableEntity
     public void AddToSite(Site site) => Site = site;
     public void RemoveFromSite() => Site = null;
 
-    public void UpdateIpAddress(string ipAddress) => IpAddress = ipAddress;
-    public void UpdatePort(int port) => RtspPort = port;
+    public void UpdateIpAddress(string? ipAddress) => IpAddress = ipAddress;
+    public void UpdateRtspPort(int port) => RtspPort = port;
+    public void UpdatePtzPort(int port) => RtspPort = port;
 
     public void UpdateUsername(string username) => Username = username;
     public void UpdatePassword(string password) => Password = password;

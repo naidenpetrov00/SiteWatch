@@ -19,4 +19,6 @@ public interface ICameraService
         int? port = null,
         Guid? siteId = null
     );
+
+    Task UpdateAdrressCameraAsync(Guid cameraId, string? ipAddress, int ptzPort, CancellationToken cancellationToken);
 }
