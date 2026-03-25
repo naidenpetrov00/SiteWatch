@@ -11,7 +11,7 @@ export const buildPtzBaseUrl = (ipAddress: string, port: number, query: string) 
     `https://${ipAddress}:${port}/cgi-bin/ptz.cgi?${query}`;
 
 export const buildSnapshotBaseUrl = (ipAddress: string, port: number, query: string) =>
-    `https://${ipAddress}:${port}/cgi-bin/snapshot.cgi?${query}`;
+    `https://${ipAddress}/cgi-bin/snapshot.cgi?${query}`;
 
 export const blobToDataUrl = (blob: Blob) =>
     new Promise<string>((resolve, reject) => {
