@@ -1,17 +1,34 @@
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+
 import Details from "@/features/sites/info/component/Details/Details/Details";
 import React from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ScrollView } from "react-native";
 import Summary from "@/features/sites/info/component/Summary/Summary";
 import { useColorPalette } from "@/hooks/useColorPalette";
 
 const Info = () => {
   const colorPalette = useColorPalette();
+  const insets = useSafeAreaInsets();
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colorPalette.background }}>
-      <Summary />
-      <Details />
-    </SafeAreaView>
+    // <SafeAreaView>
+      <ScrollView
+        style={{
+          flex: 1,
+          backgroundColor: colorPalette.background,
+        }}
+        contentContainerStyle={{
+          paddingBottom: insets.bottom + 80,
+          paddingTop: 16,
+        }}
+      >
+        <Summary />
+        <Details />
+      </ScrollView>
+    // </SafeAreaView>
   );
 };
 

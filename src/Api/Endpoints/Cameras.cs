@@ -24,7 +24,7 @@ public class Cameras : EndpointGroupBase
         return TypedResults.Ok(camera);
     }
 
-    private async Task<NoContent> UpdateCameraIpAndPort(IMediator mediator, Guid cameraId,
+    private static async Task<NoContent> UpdateCameraIpAndPort(IMediator mediator, Guid cameraId,
         UpdateCameraIpAndPortCommand command)
     {
         command.Id = cameraId;
