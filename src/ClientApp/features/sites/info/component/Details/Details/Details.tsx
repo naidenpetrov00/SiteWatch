@@ -1,4 +1,5 @@
 import { Text, View } from "react-native";
+
 import DetailCard from "../../ui/DetailCard/DetailCard";
 import detailsStyles from "./Details.styles";
 import { useColorPalette } from "@/hooks/useColorPalette";
