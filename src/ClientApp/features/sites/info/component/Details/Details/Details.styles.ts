@@ -6,12 +6,13 @@ const detailsStyles = StyleSheet.create({
     paddingTop: 16,
   },
   grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
     gap: 12,
   },
-  gridItem: {
-    width: "48%",
+  row: {
+    gap: 12,
+  },
+  card: {
+    flex: 1,
   },
   label: {
     fontSize: 12,
