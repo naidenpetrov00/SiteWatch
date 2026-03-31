@@ -3,35 +3,10 @@ import { StyleSheet } from "react-native";
 export const HORIZONTAL_PADDING = 16;
 export const GRID_GAP = 12;
 
-export const siteImagesStyles =  StyleSheet.create({
+export const siteImagesStyles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: HORIZONTAL_PADDING,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-  },
-  subtitle: {
-    marginTop: 4,
-    marginBottom: 20,
-    fontSize: 14,
-  },
-  filters: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    marginBottom: 18,
-  },
-  filterChip: {
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  filterText: {
-    fontSize: 14,
-    fontWeight: "600",
   },
   galleryContent: {
     gap: GRID_GAP,

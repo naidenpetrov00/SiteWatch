@@ -5,11 +5,13 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import { GRID_GAP, HORIZONTAL_PADDING, siteImagesStyles } from "@/features/sites/info/images/component/index.styles";
+import { GRID_GAP, HORIZONTAL_PADDING, siteImagesStyles } from "@/features/sites/info/images/component/SiteImages.styles";
 import React, { useMemo, useState } from "react";
 
 import { FilterType } from "@/features/sites/info/images/component/types";
+import Filters from "@/features/sites/info/images/component/Filters/Filters";
 import { GALLERY_ITEMS } from "./dummyValues";
+import Header from "@/features/sites/info/images/component/Header/Header";
 import { useColorPalette } from "@/hooks/useColorPalette";
 import useGetSearchParams from "@/hooks/useGetSearchParams";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -47,49 +49,9 @@ const SiteImages = () => {
         },
       ]}
     >
-      <Text style={[siteImagesStyles.title, { color: colorPalette.text }]}>
-        Site Images
-      </Text>
-      <Text style={[siteImagesStyles.subtitle, { color: colorPalette.secondary }]}>
-        Site ID: {siteId ?? "Unknown"}
-      </Text>
+      <Header siteId={siteId}/>
 
-      <View style={siteImagesStyles.filters}>
-        {FILTERS.map((filter) => {
-          const isActive = filter === activeFilter;
-
-          return (
-            <Pressable
-              key={filter}
-              onPress={() => setActiveFilter(filter)}
-              style={[
-                siteImagesStyles.filterChip,
-                {
-                  backgroundColor: isActive
-                    ? colorPalette.primary
-                    : colorPalette.background,
-                  borderColor: isActive
-                    ? colorPalette.primary
-                    : colorPalette.secondary,
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  siteImagesStyles.filterText,
-                  {
-                    color: isActive
-                      ? colorPalette.contrastText
-                      : colorPalette.text,
-                  },
-                ]}
-              >
-                {filter}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+     <Filters test={""}/>
 
       <FlatList
         data={filteredImages}
