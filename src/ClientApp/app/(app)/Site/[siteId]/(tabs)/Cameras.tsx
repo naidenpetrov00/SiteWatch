@@ -5,12 +5,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import {
-  Stack,
-  useGlobalSearchParams,
-  useLocalSearchParams,
-  useRouter,
-} from "expo-router";
 
 import CameraCard from "@/features/cameras/components/CameraCard/CameraCard";
 import LoadingState from "@/components/app/LoadingState";
@@ -18,18 +12,17 @@ import React from "react";
 import cameraStyles from "@/features/cameras/components/Cameras.styles";
 import { useCamerasBySite } from "@/features/cameras/api/get-cameras-by-site";
 import { useColorPalette } from "@/hooks/useColorPalette";
+import useGetSearchParams from "@/hooks/useGetSearchParams";
+import {
+  useRouter,
+} from "expo-router";
 
 const Cameras = () => {
-  const localParams = useLocalSearchParams<{
+  const params = useGetSearchParams<{
     siteId?: string;
     siteName?: string;
   }>();
-  const globalParams = useGlobalSearchParams<{
-    siteId?: string;
-    siteName?: string;
-  }>();
-  const siteId = localParams.siteId ?? globalParams.siteId;
-  const siteName = localParams.siteName ?? globalParams.siteName;
+  const siteId = params.siteId;
   const router = useRouter();
   const colorPalette = useColorPalette();
 

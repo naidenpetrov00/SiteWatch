@@ -13,11 +13,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import VerifyEmailForm from "@/features/auth/components/VerifyEmailForm/VerifyEmailForm";
 import signUpStyles from "@/features/auth/components/SignUp.styles";
 import { useColorPalette } from "@/hooks/useColorPalette";
-import { useLocalSearchParams } from "expo-router";
+import useGetSearchParams from "@/hooks/useGetSearchParams";
 
 const VerifyEmail = () => {
   const colorPalette = useColorPalette();
-  const {email} = useLocalSearchParams<{email:string}>();
+  const {email} = useGetSearchParams<{email:string}>();
 
   return (
     <SafeAreaView

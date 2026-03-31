@@ -1,19 +1,20 @@
 import { ChannelType, PlayerHandle } from "@/features/cameras/types";
 import React, { useRef, useState } from "react";
 import { ScrollView, View } from "react-native";
-import { Stack, useLocalSearchParams } from "expo-router";
 
 import CameraJoystick from "@/features/cameras/components/CameraJoystick/CameraJoystick";
 import CameraManagmentCard from "@/features/cameras/components/CameraHdCard/CameraManagmentCard";
 import CameraStream from "@/features/cameras/components/CameraStream/CameraStream";
+import { Stack } from "expo-router";
 import cameraViewerStyles from "@/features/cameras/components/CameraViewer.styles";
 import useGetCameraFromCacheOrApi from "@/features/cameras/hooks/useGetCameraFromCacheOrApi";
+import useGetSearchParams from "@/hooks/useGetSearchParams";
 
 const CameraScreen = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [playerKey, setPlayerKey] = useState(0);
   const playerRef = useRef<PlayerHandle>(null);
-  const { cameraId, siteId } = useLocalSearchParams<{
+  const { cameraId, siteId } = useGetSearchParams<{
     cameraId: string;
     siteId: string;
   }>();

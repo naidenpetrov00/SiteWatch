@@ -1,10 +1,10 @@
 import { FlatList, Text, View } from "react-native";
-import { useGlobalSearchParams, useLocalSearchParams } from "expo-router";
 
 import DetailCard from "../../ui/DetailCard/DetailCard";
 import { DetailsCardItem } from "../../types";
 import detailsStyles from "./Details.styles";
 import { useColorPalette } from "@/hooks/useColorPalette";
+import useGetSearchParams from "@/hooks/useGetSearchParams";
 
 const detailCards: DetailsCardItem[] = [
   { label: "Images", value: "24", helper: "Galery", path: "Images" },
@@ -22,8 +22,8 @@ const detailCards: DetailsCardItem[] = [
 ];
 
 const Details = () => {
-  const localParams = useLocalSearchParams<{ siteId?: string }>();
-  const siteId = useGlobalSearchParams(siteId);
+  const localParams = useGetSearchParams<{ siteId?: string }>();
+  const siteId = localParams.siteId;
   const colorPalette = useColorPalette();
 
   return (
