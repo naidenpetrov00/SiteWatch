@@ -1,4 +1,4 @@
-import { FILTERS } from "@/app/(app)/Site/[siteId]/Images/SiteImages";
+import { FILTERS } from "./Filters/Filters";
 
 export type FilterType = (typeof FILTERS)[number];
 

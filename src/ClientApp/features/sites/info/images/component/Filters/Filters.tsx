@@ -1,13 +1,17 @@
-import { View } from "react-native";
+import { Pressable, Text, View } from "react-native";
+
+import { FilterType } from "../types";
 import { filtersStyles } from "./Filters.styles";
 import { useColorPalette } from "@/hooks/useColorPalette";
-import { useEffect } from "react";
+
+export const FILTERS = ["All", "Pipes", "Electical Scheme"] as const;
 
 interface IFilters {
-  test: string;
+  activeFilter: FilterType;
+  setActiveFilter: React.Dispatch<React.SetStateAction<FilterType>>;
 }
 
-const Filters = ({ test }: IFilters) => {
+const Filters = ({ activeFilter, setActiveFilter }: IFilters) => {
   const colorPalette = useColorPalette();
 
   return (
