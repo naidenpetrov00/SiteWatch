@@ -32,3 +32,10 @@ services:
       interval: 10s
       timeout: 10s
       retries: 3
+  blob.sitewatch:
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    container_name: blob.sitewatch
+    ports: ["10000:10000"]
+    volumes:
+      - ./azurelite-data/data:/data
+    command: "azurite-blob --blobHost 0.0.0.0 -l /data"
