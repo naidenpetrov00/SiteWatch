@@ -4,7 +4,6 @@ using Application.SeedWork.Enums;
 using Application.SeedWork.Interfaces;
 using Ardalis.GuardClauses;
 using Domain.Entities;
-using Infrastructure.Data.Options;
 using Infrastructure.SeedWork.Options;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;

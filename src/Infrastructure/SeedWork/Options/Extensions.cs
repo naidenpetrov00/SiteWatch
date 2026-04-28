@@ -1,8 +1,7 @@
-﻿
-using Ardalis.GuardClauses;
+﻿using Ardalis.GuardClauses;
 using Microsoft.Extensions.Configuration;
 
-namespace Infrastructure.Data.Options;
+namespace Infrastructure.SeedWork.Options;
 public static class Extensions
 {
     public static TOptions GetOptions<TOptions>(this IConfiguration configuration)

@@ -1,7 +1,6 @@
 using System.Reflection;
 using System.Text;
 using Ardalis.GuardClauses;
-using Infrastructure.Data.Options;
 using Infrastructure.SeedWork.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;

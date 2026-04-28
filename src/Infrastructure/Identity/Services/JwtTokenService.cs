@@ -3,7 +3,6 @@ using System.Security.Claims;
 using System.Text;
 using Ardalis.GuardClauses;
 using Domain.Entities;
-using Infrastructure.Data.Options;
 using Infrastructure.SeedWork.Options;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
