@@ -4,7 +4,7 @@ using Application.Sites.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 
-namespace Api.Endpoints;
+namespace Api.Endpoints.Sites;
 
 public class Sites : EndpointGroupBase
 {

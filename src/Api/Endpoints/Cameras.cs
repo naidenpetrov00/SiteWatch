@@ -25,7 +25,7 @@ public class Cameras : EndpointGroupBase
     }
 
     private static async Task<NoContent> UpdateCameraIpAndPort(IMediator mediator, Guid cameraId,
-        UpdateCameraIpAndPortCommand command)
+        UpdateCameraIpAndPort command)
     {
         command.Id = cameraId;
         await mediator.Send(command);
@@ -40,7 +40,7 @@ public class Cameras : EndpointGroupBase
     }
 
     private static async Task<IResult> CreateCameraWithDetails(IMediator mediator,
-        CreateCameraWithDetailsCommand command)
+        CreateCameraWithDetails command)
     {
         var cameraId = await mediator.Send(command);
         return TypedResults.Created($"/cameraById/{cameraId}", new { id = cameraId });

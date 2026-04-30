@@ -3,7 +3,7 @@ using FluentValidation;
 
 namespace Application.Cameras.Commands;
 
-internal class UpdateCameraIpAndPortValidator : AbstractValidator<UpdateCameraIpAndPortCommand>
+internal class UpdateCameraIpAndPortValidator : AbstractValidator<UpdateCameraIpAndPort>
 {
     internal UpdateCameraIpAndPortValidator()
     {

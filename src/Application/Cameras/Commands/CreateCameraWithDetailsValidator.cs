@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Application.Cameras.Commands;
 
 internal class CreateCameraWithDetailsValidator
-    : AbstractValidator<CreateCameraWithDetailsCommand>
+    : AbstractValidator<CreateCameraWithDetails>
 {
     private readonly IApplicationDbContext _dbContext;
 
