@@ -1,4 +1,4 @@
-namespace Application.Sites.Files.Commands;
+namespace Application.Sites.Images.Commands;
 
 public record UploadedFile
 {

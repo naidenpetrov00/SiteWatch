@@ -7,12 +7,10 @@ namespace Infrastructure.Storage;
 
 internal sealed class BlobService(BlobServiceClient blobServiceClient) : IBlobService
 {
-    private const string ContainerName = "files";
-
-    public async Task<Guid> UploadAsync(Stream stream, string contentType,
+    public async Task<Guid> UploadAsync(Stream stream, string contentType, BlobContainerName blobContainerName,
         CancellationToken cancellationToken = default)
     {
-        var containerClient = blobServiceClient.GetBlobContainerClient(ContainerName);
+        var containerClient = blobServiceClient.GetBlobContainerClient(blobContainerName.ToString());
         var fileId = Guid.NewGuid();
         var blobClient = containerClient.GetBlobClient(fileId.ToString());
 
@@ -22,9 +20,10 @@ internal sealed class BlobService(BlobServiceClient blobServiceClient) : IBlobSe
         return fileId;
     }
 
-    public async Task<FileResponse> DownloadAsync(Guid fileId, CancellationToken cancellationToken = default)
+    public async Task<FileResponse> DownloadAsync(Guid fileId, BlobContainerName blobContainerName,
+        CancellationToken cancellationToken = default)
     {
-        var containerClient = blobServiceClient.GetBlobContainerClient(ContainerName);
+        var containerClient = blobServiceClient.GetBlobContainerClient(blobContainerName.ToString());
         var blobClient = containerClient.GetBlobClient(fileId.ToString());
 
         var response = await blobClient.DownloadContentAsync(cancellationToken: cancellationToken);
@@ -32,9 +31,10 @@ internal sealed class BlobService(BlobServiceClient blobServiceClient) : IBlobSe
         return new FileResponse(response.Value.Content.ToStream(), response.Value.Details.ContentType);
     }
 
-    public async Task DeleteAsync(Guid fileId, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(Guid fileId, BlobContainerName blobContainerName,
+        CancellationToken cancellationToken = default)
     {
-        var containerClient = blobServiceClient.GetBlobContainerClient(ContainerName);
+        var containerClient = blobServiceClient.GetBlobContainerClient(blobContainerName.ToString());
         var blobClient = containerClient.GetBlobClient(fileId.ToString());
 
         await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
