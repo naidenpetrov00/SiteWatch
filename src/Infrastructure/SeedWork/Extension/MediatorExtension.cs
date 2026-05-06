@@ -2,6 +2,7 @@
 using Domain.SeedWork;
 using Infrastructure.Data;
 using MediatR;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Infrastructure.SeedWork.Extension;
 internal static class MediatorExtensions
@@ -13,11 +14,12 @@ internal static class MediatorExtensions
     {
         var entities = dbContext
             .ChangeTracker.Entries<BaseEntity>()
-            .Where(entr => entr.Entity.Events is not null && entr.Entity.Events.Count != 0);
+            .Where(entry => entry.Entity.Events.Count != 0);
 
-        var events = entities.SelectMany(entity => entity.Entity.Events).ToList();
+        var entityEntries = entities as EntityEntry<BaseEntity>[] ?? entities.ToArray();
+        var events = entityEntries.SelectMany(entity => entity.Entity.Events).ToList();
 
-        entities.ToList().ForEach(entity => entity.Entity.ClearDomainEvents());
+        entityEntries.ToList().ForEach(entity => entity.Entity.ClearDomainEvents());
 
         foreach (var domainEvent in events)
             await mediator.Publish(domainEvent);

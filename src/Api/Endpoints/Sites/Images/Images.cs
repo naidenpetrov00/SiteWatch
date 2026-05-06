@@ -31,7 +31,7 @@ public class Images : EndpointGroupBase
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<Guid>> AddImageToSite(IMediator mediator, [FromForm] IFormFile file)
+    private static async Task<Ok<UploadedImageResult>> AddImageToSite(IMediator mediator, [FromForm] IFormFile file)
     {
         await using var stream = file.OpenReadStream();
         var uploadedFile = new UploadedFile { Stream = stream, ContentType = file.ContentType };
