@@ -172,6 +172,37 @@ namespace Infrastructure.Data.Migrations
                     b.ToTable("Sites");
                 });
 
+            modelBuilder.Entity("Domain.Entities.SiteImage", b =>
+                {
+                    b.Property<Guid>("SiteId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ImageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("LastModified")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ThumbnailImageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("SiteId", "ImageId");
+
+                    b.ToTable("SiteImages");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
@@ -424,6 +455,17 @@ namespace Infrastructure.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Domain.Entities.SiteImage", b =>
+                {
+                    b.HasOne("Domain.Entities.Site", "Site")
+                        .WithMany("Images")
+                        .HasForeignKey("SiteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Site");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -478,6 +520,8 @@ namespace Infrastructure.Data.Migrations
             modelBuilder.Entity("Domain.Entities.Site", b =>
                 {
                     b.Navigation("Cameras");
+
+                    b.Navigation("Images");
                 });
 #pragma warning restore 612, 618
         }

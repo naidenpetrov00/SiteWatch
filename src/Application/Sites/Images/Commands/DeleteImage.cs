@@ -13,6 +13,6 @@ public class DeleteImageHandler(IBlobService blobService) : IRequestHandler<Dele
 {
     public async Task Handle(DeleteImageCommand request, CancellationToken cancellationToken)
     {
-        await blobService.DeleteAsync(request.FileId, BlobContainerName.Images, cancellationToken);
+        await blobService.DeleteImageAsync(request.FileId, BlobContainerName.Images, cancellationToken);
     }
 }

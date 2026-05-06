@@ -7,6 +7,7 @@ public sealed class Site : BaseAuditableEntity
 {
     private readonly HashSet<ApplicationUser> _users = [];
     private readonly HashSet<Camera> _cameras = [];
+    private readonly HashSet<SiteImage> _images = [];
 
     public Site(SiteName name, SiteAddress address)
     {
@@ -23,7 +24,9 @@ public sealed class Site : BaseAuditableEntity
     public SiteAddress Address { get; private set; } = null!;
     public IReadOnlyCollection<ApplicationUser> Users => _users;
     public IReadOnlyCollection<Camera> Cameras => _cameras;
+    public IReadOnlyCollection<SiteImage> Images => _images;
 
+    public void AddImage(SiteImage image) => _images.Add(image);
     public void AddUser(ApplicationUser user) => _users.Add(user);
 
     public void AddUserRange(List<ApplicationUser> users)

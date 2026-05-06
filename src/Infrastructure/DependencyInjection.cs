@@ -36,7 +36,6 @@ public static class DependencyInjection
         );
 
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
-        services.AddSingleton<IBlobService, BlobService>();
         var blobStorageConnectionString = Guard.Against.NullOrEmpty(
             configuration.GetOptions<BlobStorageOptions>().ConnectionString);
         services.AddSingleton<BlobServiceClient>(_ =>
@@ -45,12 +44,13 @@ public static class DependencyInjection
         services.AddScoped<IApplicationDbContext>(provider =>
             provider.GetRequiredService<ApplicationDbContext>()
         );
+        services.AddScoped<IImagesService, ImagesService>();
         services.AddScoped<ApplicationDbContextInitialiser>();
+        services.AddScoped<IBlobService, BlobImagesService>();
         services.AddScoped<IEmailService, EmailService>();
-
-        services.AddTransient<IIdentityService, IdentityService>();
-        services.AddTransient<ISiteService, SiteService>();
-        services.AddTransient<ICameraService, CameraService>();
+        services.AddScoped<IIdentityService, IdentityService>();
+        services.AddScoped<ISiteService, SiteService>();
+        services.AddScoped<ICameraService, CameraService>();
 
         services
             .AddIdentity<ApplicationUser, IdentityRole>(options => { options.User.RequireUniqueEmail = true; })

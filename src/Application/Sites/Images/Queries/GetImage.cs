@@ -12,5 +12,5 @@ public sealed record GetImageQuery : IRequest<FileResponse>
 public class GetImageHandler(IBlobService blobService) : IRequestHandler<GetImageQuery, FileResponse>
 {
     public async Task<FileResponse> Handle(GetImageQuery request, CancellationToken cancellationToken) =>
-        await blobService.DownloadAsync(request.FileId, BlobContainerName.Images,cancellationToken);
+        await blobService.DownloadImageAsync(request.FileId, BlobContainerName.Images,cancellationToken);
 }

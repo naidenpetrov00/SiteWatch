@@ -12,7 +12,7 @@ public sealed class Camera : BaseAuditableEntity
     public string? IpAddress { get; private set; }
     public int? RtspPort { get; private set; } = 554;
     public int? PtzPort { get; private set; } = 443;
-    public Guid? SiteId { get; init; }
+    public Guid? SiteId { get; private set; }
     public Site? Site { get; private set; }
 
     // ReSharper disable once UnusedMember.Local
@@ -51,7 +51,7 @@ public sealed class Camera : BaseAuditableEntity
 
     public void UpdateIpAddress(string? ipAddress) => IpAddress = ipAddress;
     public void UpdateRtspPort(int port) => RtspPort = port;
-    public void UpdatePtzPort(int port) => RtspPort = port;
+    public void UpdatePtzPort(int port) => PtzPort = port;
 
     public void UpdateUsername(string username) => Username = username;
     public void UpdatePassword(string password) => Password = password;

@@ -17,6 +17,7 @@ public class Images : EndpointGroupBase
         group.MapPost("/", AddImageToSite).DisableAntiforgery();
         group.MapGet("/{imageId:guid}", GetImageFromSite);
         group.MapDelete("/{imageId:guid}", DeleteImageFromSite);
+        group.MapGet("/{siteId:guid}", GetImagesIdsBySiteId);
     }
 
     private static async Task<FileStreamHttpResult> GetImageFromSite(IMediator mediator, Guid imageId)
@@ -38,5 +39,11 @@ public class Images : EndpointGroupBase
         var fileId = await mediator.Send(new AddImageCommand { File = uploadedFile });
 
         return TypedResults.Ok(fileId);
+    }
+
+    private static async Task<Ok<List<SiteImageIdsDto>>> GetImagesIdsBySiteId(IMediator mediator, Guid siteId)
+    {
+        var imagesIds = await mediator.Send(new GetImagesIdsBySiteIdQuery { SiteId = siteId });
+        return TypedResults.Ok(imagesIds);
     }
 }

@@ -12,6 +12,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     : IdentityDbContext<ApplicationUser>(options), IApplicationDbContext
 {
     public DbSet<Site> Sites => Set<Site>();
+    public DbSet<SiteImage> SiteImages => Set<SiteImage>();
     public DbSet<Camera> Cameras => Set<Camera>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -12,6 +12,6 @@ public sealed record AddImageCommand : IRequest<UploadedImageResult>
 public class AddImageHandler(IBlobService blobService) : IRequestHandler<AddImageCommand, UploadedImageResult>
 {
     public Task<UploadedImageResult> Handle(AddImageCommand request, CancellationToken cancellationToken)
-        => blobService.UploadAsync(request.File.Stream, request.File.ContentType, BlobContainerName.Images,
+        => blobService.UploadImageAsync(request.File.Stream, request.File.ContentType, BlobContainerName.Images,
             cancellationToken);
 }
