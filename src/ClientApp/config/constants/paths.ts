@@ -14,4 +14,7 @@ export const paths = {
         getById: (cameraId: string) => `/cameras/${cameraId}`,
         createWithDetails: "/cameras/withDetails",
     },
+    images: {
+        getIdsBySiteId: (siteId: string) => `/images/images${siteId}`,
+    },
 };
