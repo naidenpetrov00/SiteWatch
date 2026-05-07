@@ -9,4 +9,7 @@ public interface IImagesService
         CancellationToken cancellationToken = default);
 
     Task<List<SiteImageIdsDto>> GetImagesIdsBySiteId(Guid siteId);
+
+    Task AddImageIdsToSiteAsync(Guid requestSiteId, Guid resultOriginalFileId, Guid resultThumbnailFileId,
+        CancellationToken cancellationToken);
 }

@@ -9,7 +9,6 @@ public class SiteConfiguration : IEntityTypeConfiguration<Site>
     public void Configure(EntityTypeBuilder<Site> builder)
     {
         builder.HasMany(site => site.Users).WithMany(user => user.Sites);
-        builder.HasMany(site => site.Images).WithOne(image => image.Site).OnDelete(DeleteBehavior.Cascade);
         builder.OwnsOne(
             s => s.Name,
             n => { n.Property(p => p.Value).HasColumnName("Name").HasMaxLength(100).IsRequired(); }

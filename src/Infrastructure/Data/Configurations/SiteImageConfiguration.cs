@@ -9,5 +9,8 @@ public class SiteImageConfiguration : IEntityTypeConfiguration<SiteImage>
     public void Configure(EntityTypeBuilder<SiteImage> builder)
     {
         builder.HasKey(si => new { si.SiteId, si.ImageId });
+
+        builder.HasOne(si => si.Site).WithMany(s => s.Images).HasForeignKey(si => si.SiteId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

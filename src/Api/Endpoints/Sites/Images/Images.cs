@@ -14,10 +14,10 @@ public class Images : EndpointGroupBase
     {
         // var group = app.MapGroupCustom().RequireAuthorization();
         var group = app.MapGroupCustom();
-        group.MapPost("/", AddImageToSite).DisableAntiforgery();
+        group.MapPost("/{siteId:guid}", AddImageToSite).DisableAntiforgery();
         group.MapGet("/{imageId:guid}", GetImageFromSite);
         group.MapDelete("/{imageId:guid}", DeleteImageFromSite);
-        group.MapGet("/{siteId:guid}", GetImagesIdsBySiteId);
+        group.MapGet("/images{siteId:guid}", GetImagesIdsBySiteId);
     }
 
     private static async Task<FileStreamHttpResult> GetImageFromSite(IMediator mediator, Guid imageId)
@@ -32,11 +32,12 @@ public class Images : EndpointGroupBase
         return TypedResults.NoContent();
     }
 
-    private static async Task<Ok<UploadedImageResult>> AddImageToSite(IMediator mediator, [FromForm] IFormFile file)
+    private static async Task<Ok<UploadedImageResult>> AddImageToSite(IMediator mediator, [FromForm] IFormFile file,
+        Guid siteId)
     {
         await using var stream = file.OpenReadStream();
         var uploadedFile = new UploadedFile { Stream = stream, ContentType = file.ContentType };
-        var fileId = await mediator.Send(new AddImageCommand { File = uploadedFile });
+        var fileId = await mediator.Send(new AddImageCommand { File = uploadedFile, SiteId = siteId });
 
         return TypedResults.Ok(fileId);
     }

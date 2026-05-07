@@ -1,5 +1,6 @@
 using Application.SeedWork.Interfaces;
 using Application.Sites.Images.Queries;
+using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
@@ -34,8 +35,16 @@ public class ImagesService(IApplicationDbContext dbContext) : IImagesService
     }
 
 
-    public  Task<List<SiteImageIdsDto>> GetImagesIdsBySiteId(Guid siteId) => dbContext.SiteImages
+    public Task<List<SiteImageIdsDto>> GetImagesIdsBySiteId(Guid siteId) => dbContext.SiteImages
         .AsNoTracking()
         .Where(siteImage => siteImage.SiteId == siteId)
         .Select(siteImage => new SiteImageIdsDto(siteImage.ImageId, siteImage.ThumbnailImageId)).ToListAsync();
+
+    public async Task AddImageIdsToSiteAsync(Guid requestSiteId, Guid resultOriginalFileId, Guid resultThumbnailFileId,
+        CancellationToken cancellationToken = default)
+    {
+        dbContext.SiteImages.Add(new SiteImage(requestSiteId, resultOriginalFileId, resultThumbnailFileId));
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
 }
