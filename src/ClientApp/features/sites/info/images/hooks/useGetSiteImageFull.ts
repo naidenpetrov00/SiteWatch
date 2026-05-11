@@ -2,20 +2,20 @@ import type { QueryConfig } from "@/lib/react-query";
 
 import { getSiteImage, useGetSiteImage } from "./useGetSiteImage";
 
-type UseGetSiteImageThumbnailOptions = {
+type UseGetSiteImageFullOptions = {
   imageId?: string;
   queryConfig?: QueryConfig<typeof getSiteImage>;
 };
 
-export const useGetSiteImageThumbnail = ({
+export const useGetSiteImageFull = ({
   imageId,
   queryConfig: customQueryConfig,
-}: UseGetSiteImageThumbnailOptions) => {
+}: UseGetSiteImageFullOptions) => {
   return useGetSiteImage({
     imageId,
-    queryKey: "site-image-thumbnail",
+    queryKey: "site-image-full",
     queryConfig: customQueryConfig,
   });
 };
 
-export default useGetSiteImageThumbnail;
+export default useGetSiteImageFull;

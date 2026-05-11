@@ -1,8 +1,9 @@
 import * as ScreenOrientation from "expo-screen-orientation";
 
-import { Slot, useNavigationContainerRef } from "expo-router";
+import { useNavigationContainerRef } from "expo-router";
 
 import AppProvider from "@/components/app/provider";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Stack } from "expo-router";
 import { useAuth } from "@/store/auth_context";
 import { useEffect } from "react";
@@ -13,9 +14,11 @@ const RootLayout = () => {
 
   useReactNavigationDevTools(navigationRef);
   return (
-    <AppProvider>
-      <Root />
-    </AppProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AppProvider>
+        <Root />
+      </AppProvider>
+    </GestureHandlerRootView>
   );
 };
 

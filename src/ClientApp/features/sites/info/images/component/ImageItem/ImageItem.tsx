@@ -1,4 +1,4 @@
-import { ActivityIndicator, Image, Text, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, Text, View } from "react-native";
 
 import type { SiteImageIds } from "../../types";
 import { siteImagesStyles } from "../SiteImages.styles";
@@ -8,9 +8,10 @@ import { useGetSiteImageThumbnail } from "../../hooks/useGetSiteImageThumbnail";
 interface IImageItem {
   tileWidth: number;
   item: SiteImageIds;
+  onPress: (item: SiteImageIds, thumbnailUri: string) => void;
 }
 
-const ImageItem = ({ tileWidth, item }: IImageItem) => {
+const ImageItem = ({ tileWidth, item, onPress }: IImageItem) => {
   const colorPalette = useColorPalette();
   const {
     data: thumbnailUri,
@@ -21,7 +22,13 @@ const ImageItem = ({ tileWidth, item }: IImageItem) => {
   });
 
   return (
-    <View
+    <Pressable
+      disabled={!thumbnailUri}
+      onPress={() => {
+        if (thumbnailUri) {
+          onPress(item, thumbnailUri);
+        }
+      }}
       style={[
         siteImagesStyles.galleryTile,
         {
@@ -56,7 +63,7 @@ const ImageItem = ({ tileWidth, item }: IImageItem) => {
           </Text>
         </View>
       ) : null}
-    </View>
+    </Pressable>
   );
 };
 
