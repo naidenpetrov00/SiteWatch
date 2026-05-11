@@ -15,25 +15,26 @@ export const siteImagesStyles = StyleSheet.create({
     gap: GRID_GAP,
   },
   galleryTile: {
-    height: 170,
-    borderRadius: 18,
+    aspectRatio: 1,
+    borderRadius: 8,
     overflow: "hidden",
-    justifyContent: "flex-end",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  tileOverlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    padding: 14,
-    backgroundColor: "rgba(255,255,255,0.22)",
+  galleryImage: {
+    width: "100%",
+    height: "100%",
   },
-  tileCategory: {
-    fontSize: 12,
+  tilePlaceholder: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 12,
+  },
+  tilePlaceholderText: {
+    fontSize: 13,
     fontWeight: "600",
-    marginBottom: 6,
-  },
-  tileTitle: {
-    fontSize: 16,
-    fontWeight: "700",
+    textAlign: "center",
   },
   emptyState: {
     borderWidth: 1,

@@ -4,13 +4,16 @@ import {
   HORIZONTAL_PADDING,
   siteImagesStyles,
 } from "../SiteImages.styles";
+import { useCallback, useMemo } from "react";
 
 import EmptyImageItem from "../EmptyImageItems";
 import { FilterType } from "../types";
 import ImageItem from "../ImageItem/ImageItem";
 import { useGetSiteImageIdsBySiteId } from "../../hooks/useGetSiteImageIdsBySiteId";
-import { useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const MIN_TILE_WIDTH = 150;
 
 interface IImages {
   activeFilter: FilterType;
@@ -20,10 +23,19 @@ interface IImages {
 const Images = ({ activeFilter, siteId }: IImages) => {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { data: siteImageIds = [] } = useGetSiteImageIdsBySiteId({ siteId });
-  const numColumns = width >= 900 ? 4 : width >= 600 ? 3 : 2;
+  const queryClient = useQueryClient();
+  const {
+    data: siteImageIds = [],
+    isRefetching,
+    refetch,
+  } = useGetSiteImageIdsBySiteId({ siteId });
+  const availableWidth = width - HORIZONTAL_PADDING * 2;
+  const numColumns = Math.max(
+    1,
+    Math.floor((availableWidth + GRID_GAP) / (MIN_TILE_WIDTH + GRID_GAP)),
+  );
   const tileWidth =
-    (width - HORIZONTAL_PADDING * 2 - GRID_GAP * (numColumns - 1)) / numColumns;
+    (availableWidth - GRID_GAP * (numColumns - 1)) / numColumns;
 
   const filteredImages = useMemo(() => {
     if (activeFilter === "All") {
@@ -32,6 +44,13 @@ const Images = ({ activeFilter, siteId }: IImages) => {
 
     return [];
   }, [activeFilter, siteImageIds]);
+
+  const handleRefresh = useCallback(async () => {
+    await queryClient.invalidateQueries({
+      queryKey: ["site-image-thumbnail"],
+    });
+    await refetch();
+  }, [queryClient, refetch]);
 
   return (
     <FlatList
@@ -47,8 +66,13 @@ const Images = ({ activeFilter, siteId }: IImages) => {
         siteImagesStyles.galleryContent,
         { paddingBottom: insets.bottom + 24 },
       ]}
+      initialNumToRender={numColumns * 3}
+      maxToRenderPerBatch={numColumns * 3}
+      windowSize={5}
       renderItem={({ item }) => <ImageItem tileWidth={tileWidth} item={item} />}
       ListEmptyComponent={<EmptyImageItem />}
+      refreshing={isRefetching}
+      onRefresh={handleRefresh}
     />
   );
 };

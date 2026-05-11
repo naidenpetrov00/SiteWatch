@@ -1,6 +1,6 @@
-import { QueryConfig, queryConfig } from "@/lib/react-query";
+import { queryConfig, type QueryConfig } from "@/lib/react-query";
 
-import { SiteImageIds } from "../types";
+import type { SiteImageIds } from "../types";
 import { api } from "@/lib/api-client";
 import { paths } from "@/config/constants/paths";
 import { useAuth } from "@/store/auth_context";
