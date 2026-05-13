@@ -1,19 +1,34 @@
-import { Text, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, Text, View } from "react-native";
 
-import { SiteImageIds } from "../../types";
+import type { SiteImageIds } from "../../types";
 import { siteImagesStyles } from "../SiteImages.styles";
 import { useColorPalette } from "@/hooks/useColorPalette";
+import { useGetSiteImageThumbnail } from "../../hooks/useGetSiteImageThumbnail";
 
 interface IImageItem {
   tileWidth: number;
   item: SiteImageIds;
+  onPress: (item: SiteImageIds, thumbnailUri: string) => void;
 }
 
-const ImageItem = ({ tileWidth, item }: IImageItem) => {
+const ImageItem = ({ tileWidth, item, onPress }: IImageItem) => {
   const colorPalette = useColorPalette();
+  const {
+    data: thumbnailUri,
+    isError,
+    isLoading,
+  } = useGetSiteImageThumbnail({
+    imageId: item.thumbnailId,
+  });
 
   return (
-    <View
+    <Pressable
+      disabled={!thumbnailUri}
+      onPress={() => {
+        if (thumbnailUri) {
+          onPress(item, thumbnailUri);
+        }
+      }}
       style={[
         siteImagesStyles.galleryTile,
         {
@@ -22,20 +37,33 @@ const ImageItem = ({ tileWidth, item }: IImageItem) => {
         },
       ]}
     >
-      <View style={siteImagesStyles.tileOverlay}>
-        <Text
-          style={[siteImagesStyles.tileCategory, { color: colorPalette.text }]}
-        >
-          Thumbnail ID
-        </Text>
-        <Text
-          style={[siteImagesStyles.tileTitle, { color: colorPalette.text }]}
-          numberOfLines={2}
-        >
-          {item.thumbnailId}
-        </Text>
-      </View>
-    </View>
+      {thumbnailUri ? (
+        <Image
+          source={{ uri: thumbnailUri }}
+          resizeMode="cover"
+          style={siteImagesStyles.galleryImage}
+        />
+      ) : null}
+
+      {isLoading ? (
+        <View style={siteImagesStyles.tilePlaceholder}>
+          <ActivityIndicator color={colorPalette.primary} />
+        </View>
+      ) : null}
+
+      {isError ? (
+        <View style={siteImagesStyles.tilePlaceholder}>
+          <Text
+            style={[
+              siteImagesStyles.tilePlaceholderText,
+              { color: colorPalette.secondary },
+            ]}
+          >
+            Image unavailable
+          </Text>
+        </View>
+      ) : null}
+    </Pressable>
   );
 };
 

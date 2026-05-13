@@ -405,9 +405,4 @@ src/Api/.env
 /guidelines.md
 /sqlserver
 src/Infrastructure/Data/Migrations
-azurelite-data/data/__azurite_db_blob__.json
-azurelite-data/data/__azurite_db_blob_extent__.json
-azurelite-data/data/AzuriteConfig
-azurelite-data/data/__blobstorage__/74620f86-74cc-40fb-b86a-68dd1771e038
-azurelite-data/data/__blobstorage__/bec46918-a6f8-423c-aeb3-efe9a5bcd183
-azurelite-data/data/__blobstorage__/cb363aef-10c1-4a1a-9dad-9e5e19f8f6d6
+azurelite-data/

@@ -16,5 +16,6 @@ export const paths = {
     },
     images: {
         getIdsBySiteId: (siteId: string) => `/images/images${siteId}`,
+        getById: (imageId: string) => `/images/${imageId}`,
     },
 };
