@@ -1,4 +1,5 @@
 using Application.Sites.Images.Queries;
+using Domain.SeedWork.Enums;
 
 namespace Application.SeedWork.Interfaces;
 
@@ -11,5 +12,6 @@ public interface IImagesService
     Task<List<SiteImageIdsDto>> GetImagesIdsBySiteId(Guid siteId);
 
     Task AddImageIdsToSiteAsync(Guid requestSiteId, Guid resultOriginalFileId, Guid resultThumbnailFileId,
+        ImageCategory category,
         CancellationToken cancellationToken);
 }

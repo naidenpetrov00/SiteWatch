@@ -160,27 +160,29 @@ public class ApplicationDbContextInitialiser(
         {
             logger.LogInformation("Starting database initialization...");
 
-            if (!await dbContext.Database.CanConnectAsync())
-            {
-                await dbContext.Database.EnsureCreatedAsync();
-                logger.LogInformation("Database created via EnsureCreated.");
+            // if (!await dbContext.Database.CanConnectAsync())
+            // {
+            //     await dbContext.Database.EnsureCreatedAsync();
+            //     logger.LogInformation("Database created via EnsureCreated.");
 
-                // Verify connectivity after creation
-                if (!await dbContext.Database.CanConnectAsync())
-                {
-                    logger.LogError(
-                        "Database could not be created or connected after EnsureCreated."
-                    );
-                    return;
-                }
-            }
-            else
-            {
-                await dbContext.Database.MigrateAsync();
-                logger.LogInformation("Applied pending migrations.");
-            }
+            //     // Verify connectivity after creation
+            //     if (!await dbContext.Database.CanConnectAsync())
+            //     {
+            //         logger.LogError(
+            //             "Database could not be created or connected after EnsureCreated."
+            //         );
+            //         return;
+            //     }
+            // }
+            // else
+            // {
+            //     // await dbContext.Database.MigrateAsync();
+            //     // logger.LogInformation("Applied pending migrations.");
+            // }
 
-            // await ClearSeedDataAsync();
+
+            await dbContext.Database.MigrateAsync();
+            logger.LogInformation("Applied pending migrations.");
 
             var users = await AddUsers();
             await AddSites(users);

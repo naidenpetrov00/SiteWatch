@@ -1,2 +1,2 @@
 # SiteWatch
-DDD ASP.NET API with React Native App
+CLean Architecture ASP.NET API with Custom Bulletproof React Native App
