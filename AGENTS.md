@@ -1,0 +1,69 @@
+# Main Agent Instructions
+
+## Response Style
+
+- Be concise by default.
+- Do not over-explain.
+- If the user asks a yes/no question, answer with "Yes" or "No" first, then add only minimal context if needed.
+- Do not provide long explanations unless explicitly requested.
+- When explaining completed work, summarize only key changes.
+- When planning, use the shortest useful plan possible.
+- Prefer 2–4 bullets maximum.
+- Avoid repetition and unnecessary background context.
+- Do not include tutorials unless requested.
+- If the answer is obvious from the code, keep responses short.
+
+## Repository Guidelines
+
+### Context Usage
+
+- When the user explicitly provides files as context, prefer using only those files.
+- Do not scan the repository unnecessarily.
+- Do not search unrelated folders unless required for correctness.
+- If additional files are needed, explain briefly why before loading them.
+
+### Information Sources
+
+- Prefer repository context first.
+- Use relevant MCP servers next when repo context is insufficient.
+- Do not ask before using MCP when limited official documentation lookup is clearly relevant.
+- Use web last, mainly for current external facts or when MCP does not cover the topic.
+- Ask before using web search unless the user explicitly requests external/current information.
+- Prefer official or primary sources for framework and platform questions.
+- Prefer existing repository patterns unless they clearly conflict with framework best practices, correctness, maintainability, security, or performance.
+- If an existing pattern appears problematic or outdated, briefly explain the concern before following or changing it.
+- Use MCP documentation to validate uncertain framework/library usage when repository patterns may be incorrect.
+- Do not blindly replicate repository patterns without considering correctness and maintainability.
+
+### Project Overview
+
+SiteWatch is split into:
+
+- .NET Clean Architecture backend under `src/`
+- Expo React Native client under `src/ClientApp/`
+
+### Global Rules
+
+- Do not build, run, or launch projects unless explicitly asked.
+- Do not commit secrets or environment-specific values.
+- Keep changes scoped and avoid unrelated formatting or churn.
+- Follow existing repository naming and formatting conventions.
+- Prefer existing patterns over introducing new abstractions.
+- Read only the minimum relevant files required for the task.
+
+### Specialized Guidance
+
+Load specialized instructions only when relevant to the current task.
+
+- `docs/agents/core.md` → shared repository conventions and layout
+- `docs/agents/backend.md` → `Api` / `Application` / `Domain` / `Infrastructure`
+- `docs/agents/frontend.md` → Expo Router and React Native
+- `docs/agents/testing.md` → tests and QA
+- `docs/agents/deployment.md` → environment and release concerns
+
+### Instruction Loading Rules
+
+- Do not load all instruction files automatically.
+- Load only instructions relevant to the current task/module.
+- Prefer folder-local instructions when available.
+- Avoid unnecessary repository-wide scans.

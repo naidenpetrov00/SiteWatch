@@ -180,6 +180,9 @@ namespace Infrastructure.Data.Migrations
                     b.Property<Guid>("ImageId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("Category")
+                        .HasColumnType("int");
+
                     b.Property<DateTimeOffset>("Created")
                         .HasColumnType("datetimeoffset");
 
