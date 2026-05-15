@@ -67,6 +67,7 @@ SeedWork/
  BaseAuditableEntity.cs
  BaseEntity.cs
  BaseEvent.cs
+ Enums/Brand.cs
  Enums/
   Brand.cs
   ImageCategory.cs
