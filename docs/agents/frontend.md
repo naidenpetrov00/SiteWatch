@@ -10,5 +10,6 @@
 ## Conventions
 - Keep feature logic inside the owning feature folder.
 - Keep route composition in `app/` and shared UI in `components/ui/` if the shared ui is shared only in feature add it in the feature `components/ui`.
+- If shared UI is only used within a feature, keep it in that feature's `components/ui/`.
 - Use feature-first naming and keep styling and state close to the owning screen or feature.
 - Treat `android/` and other generated client folders as machine-managed output.
