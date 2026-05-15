@@ -2,6 +2,7 @@ using Api.SeedWork;
 using Api.SeedWork.Extensions;
 using Application.Sites.Images.Commands;
 using Application.Sites.Images.Queries;
+using Domain.SeedWork.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -33,11 +34,13 @@ public class Images : EndpointGroupBase
     }
 
     private static async Task<Ok<UploadedImageResult>> AddImageToSite(IMediator mediator, [FromForm] IFormFile file,
+        [FromForm] ImageCategory category,
         Guid siteId)
     {
         await using var stream = file.OpenReadStream();
         var uploadedFile = new UploadedFile { Stream = stream, ContentType = file.ContentType };
-        var fileId = await mediator.Send(new AddImageCommand { File = uploadedFile, SiteId = siteId });
+        var fileId = await mediator.Send(new AddImageCommand
+            (siteId, uploadedFile, category));
 
         return TypedResults.Ok(fileId);
     }
