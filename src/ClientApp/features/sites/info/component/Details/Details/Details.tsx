@@ -8,6 +8,7 @@ import useGetSearchParams from "@/hooks/useGetSearchParams";
 
 const detailCards: DetailsCardItem[] = [
   { label: "Images", value: "24", helper: "Galery", path: "Images" },
+  { label: "Videos", value: "—", helper: "Galery", path: "Videos" },
   {
     label: "People On Site",
     value: "27",

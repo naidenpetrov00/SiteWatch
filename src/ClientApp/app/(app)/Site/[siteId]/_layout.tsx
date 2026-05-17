@@ -19,6 +19,7 @@ export default function SiteLayout() {
         })}
       />
       <Stack.Screen name="Images" />
+      <Stack.Screen name="Videos" />
     </Stack>
   );
 }
