@@ -6,9 +6,8 @@
 - Do not over-explain.
 - If the user asks a yes/no question, answer with "Yes" or "No" first, then add only minimal context if needed.
 - Do not provide long explanations unless explicitly requested.
+- When planing explain more of the patterns tech and code you will use rather then just long text explaining the details. Keep the Details shorter and on point
 - When explaining completed work, summarize only key changes.
-- When planning, use the shortest useful plan possible.
-- Prefer 2–4 bullets maximum.
 - Avoid repetition and unnecessary background context.
 - Do not include tutorials unless requested.
 - If the answer is obvious from the code, keep responses short.

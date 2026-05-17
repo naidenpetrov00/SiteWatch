@@ -69,6 +69,7 @@ Data/
   CameraConfiguration.cs
   SiteConfiguration.cs
   SiteImageConfiguration.cs
+  SiteVideoConfiguration.cs
  Migrations/
   20251110140927_Init.cs
   20251110140927_Init.Designer.cs
@@ -90,6 +91,7 @@ Data/
   20260506143357_AddSiteImage.Designer.cs
   20260515130047_MetaData To SitePhoto.cs
   20260515130047_MetaData To SitePhoto.Designer.cs
+  20260517150000_AddSiteVideo.cs
   ApplicationDbContextModelSnapshot.cs
 DependencyInjection.cs
 Email/
@@ -118,7 +120,10 @@ SeedWork/Options/
 Sites/Services/
  ImagesService.cs
  SiteService.cs
-Storage/BlobImagesService.cs
+ VideosService.cs
+Storage/
+ BlobImagesService.cs
+ BlobVideosService.cs
 
 [metadataReferences]
 ../../../../dotnet/packs/Microsoft.AspNetCore.App.Ref/9.0.4/ref/net9.0/

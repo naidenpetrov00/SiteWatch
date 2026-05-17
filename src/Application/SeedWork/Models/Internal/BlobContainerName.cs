@@ -7,6 +7,7 @@ public sealed record BlobContainerName
     private BlobContainerName(string value) => Value = value;
 
     public static BlobContainerName Images { get; } = new("images");
+    public static BlobContainerName Videos { get; } = new("videos");
     public static BlobContainerName Files { get; } = new("files");
 
     public override string ToString() => Value;

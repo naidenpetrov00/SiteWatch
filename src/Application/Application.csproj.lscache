@@ -109,6 +109,8 @@ SeedWork/
   IImagesService.cs
   ISiteService.cs
   IUser.cs
+  IVideosBlobService.cs
+  IVideosService.cs
  Models/
   External/WeatherDto.cs
   Internal/
@@ -131,6 +133,16 @@ Sites/Queries/
  SitesByUser.cs
  SitesByUserQueryValidator.cs
  SitesDto.cs
+Sites/Videos/Commands/
+ AddVideo.cs
+ AddVideoValidator.cs
+ DeleteVideo.cs
+ UploadedFile.cs
+ UploadedVideoResult.cs
+Sites/Videos/Queries/
+ GetVideo.cs
+ GetVideosIdsBySiteId.cs
+ SiteVideoIdsDto.cs
 
 [metadataReferences]
 ../../../../dotnet/packs/Microsoft.NETCore.App.Ref/9.0.4/ref/net9.0/

@@ -45,8 +45,10 @@ public static class DependencyInjection
             provider.GetRequiredService<ApplicationDbContext>()
         );
         services.AddScoped<IImagesService, ImagesService>();
+        services.AddScoped<IVideosService, VideosService>();
         services.AddScoped<ApplicationDbContextInitialiser>();
         services.AddScoped<IBlobService, BlobImagesService>();
+        services.AddScoped<IVideosBlobService, BlobVideosService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<ISiteService, SiteService>();

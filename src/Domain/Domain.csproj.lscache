@@ -58,6 +58,7 @@ Entities/
  Camera.cs
  Site.cs
  SiteImage.cs
+ SiteVideo.cs
 GlobalUsings.cs
 obj/Debug/net9.0/
  .NETCoreApp,Version=v9.0.AssemblyAttributes.cs
@@ -67,10 +68,10 @@ SeedWork/
  BaseAuditableEntity.cs
  BaseEntity.cs
  BaseEvent.cs
- Enums/Brand.cs
  Enums/
   Brand.cs
   ImageCategory.cs
+  VideoCategory.cs
  IAgregateRoot.cs
  IRepository.cs
  ValueObject.cs
