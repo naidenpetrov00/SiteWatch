@@ -15,6 +15,7 @@ public interface IVideosService
         Guid requestSiteId,
         Guid resultVideoFileId,
         Guid resultSnapshotFileId,
+        int? durationSeconds,
         VideoCategory category,
         CancellationToken cancellationToken);
 

@@ -21,6 +21,10 @@ export const siteVideosStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  galleryImage: {
+    width: "100%",
+    height: "100%",
+  },
   tilePlaceholder: {
     ...StyleSheet.absoluteFillObject,
     alignItems: "center",

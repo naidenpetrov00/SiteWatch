@@ -53,7 +53,7 @@ const Cameras = () => {
           { backgroundColor: colorPalette.background },
         ]}
       >
-        <FlatList
+        <FlatList<NonNullable<typeof cameras>[number]>
           data={cameras ?? []}
           keyExtractor={(item) => item.id}
           refreshControl={

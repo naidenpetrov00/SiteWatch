@@ -89,6 +89,7 @@ public class VideosService(IApplicationDbContext dbContext) : IVideosService
         .Select(siteVideo => new SiteVideoIdsDto(
             siteVideo.VideoId,
             siteVideo.SnapshotId,
+            siteVideo.DurationSeconds,
             siteVideo.Category))
         .ToListAsync();
 
@@ -96,6 +97,7 @@ public class VideosService(IApplicationDbContext dbContext) : IVideosService
         Guid requestSiteId,
         Guid resultVideoFileId,
         Guid resultSnapshotFileId,
+        int? durationSeconds,
         VideoCategory category,
         CancellationToken cancellationToken = default)
     {
@@ -103,6 +105,7 @@ public class VideosService(IApplicationDbContext dbContext) : IVideosService
             requestSiteId,
             resultVideoFileId,
             resultSnapshotFileId,
+            durationSeconds,
             category));
 
         await dbContext.SaveChangesAsync(cancellationToken);

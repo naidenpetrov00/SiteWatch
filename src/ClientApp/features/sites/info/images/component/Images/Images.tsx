@@ -72,7 +72,7 @@ const Images = ({ activeFilter, siteId }: IImages) => {
 
   return (
     <>
-      <FlatList
+      <FlatList<SiteImageIds>
         data={filteredImages}
         key={`${numColumns}-${activeFilter}`}
         keyExtractor={(item) => item.imageId}

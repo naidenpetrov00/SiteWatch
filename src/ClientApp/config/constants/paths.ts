@@ -18,4 +18,9 @@ export const paths = {
         getIdsBySiteId: (siteId: string) => `/images/images${siteId}`,
         getById: (imageId: string) => `/images/${imageId}`,
     },
+    videos: {
+        getIdsBySiteId: (siteId: string) => `/videos/site/${siteId}`,
+        getById: (videoId: string) => `/videos/${videoId}`,
+        getSnapshotById: (snapshotId: string) => `/videos/snapshot/${snapshotId}`,
+    },
 };

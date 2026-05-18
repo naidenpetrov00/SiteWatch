@@ -29,7 +29,7 @@ const Details = () => {
 
   return (
     <View style={detailsStyles.container}>
-      <FlatList
+      <FlatList<DetailsCardItem>
         data={detailCards}
         keyExtractor={(card) => card.label}
         numColumns={2}

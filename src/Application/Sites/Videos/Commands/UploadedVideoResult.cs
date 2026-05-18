@@ -2,4 +2,5 @@ namespace Application.Sites.Videos.Commands;
 
 public sealed record UploadedVideoResult(
     Guid VideoFileId,
-    Guid SnapshotFileId);
+    Guid SnapshotFileId,
+    int? DurationSeconds);

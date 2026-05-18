@@ -26,6 +26,7 @@ public class AddVideoHandler(IVideosBlobService blobService, IVideosService vide
             request.SiteId,
             result.VideoFileId,
             result.SnapshotFileId,
+            result.DurationSeconds,
             request.Category,
             cancellationToken);
 

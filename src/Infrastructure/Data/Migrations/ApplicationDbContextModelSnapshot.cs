@@ -214,6 +214,9 @@ namespace Infrastructure.Data.Migrations
                     b.Property<Guid>("VideoId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int?>("DurationSeconds")
+                        .HasColumnType("int");
+
                     b.Property<int>("Category")
                         .HasColumnType("int");
 

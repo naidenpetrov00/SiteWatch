@@ -1,0 +1,50 @@
+import { Image, Text, View } from "react-native";
+
+import type { SiteVideoIds } from "../../types";
+import { siteVideosStyles } from "../Videos/Videos.styles";
+
+interface IVideoItem {
+  tileWidth: number;
+  item: SiteVideoIds & { snapshotUri: string };
+}
+
+const formatDuration = (durationSeconds?: number | null) => {
+  if (durationSeconds == null || Number.isNaN(durationSeconds)) {
+    return null;
+  }
+
+  const totalSeconds = Math.max(0, Math.round(durationSeconds));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const secondsLabel = seconds.toString().padStart(2, "0");
+
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, "0")}:${secondsLabel}`;
+  }
+
+  return `${minutes}:${secondsLabel}`;
+};
+
+const VideoItem = ({ tileWidth, item }: IVideoItem) => {
+  const durationLabel = formatDuration(item.durationSeconds);
+
+  return (
+    <View style={[siteVideosStyles.galleryTile, { width: tileWidth }]}>
+      <Image
+        source={{ uri: item.snapshotUri }}
+        resizeMode="cover"
+        style={siteVideosStyles.galleryImage}
+      />
+      {durationLabel ? (
+        <View style={siteVideosStyles.durationOverlay} pointerEvents="none">
+          <View style={siteVideosStyles.durationBadge}>
+            <Text style={siteVideosStyles.durationText}>{durationLabel}</Text>
+          </View>
+        </View>
+      ) : null}
+    </View>
+  );
+};
+
+export default VideoItem;

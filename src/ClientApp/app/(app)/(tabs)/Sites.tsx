@@ -36,7 +36,7 @@ const Sites = () => {
         paddingHorizontal: 24,
       }}
     >
-      <FlatList
+      <FlatList<Site>
         data={sites}
         keyExtractor={(item) => item.id}
         refreshControl={
