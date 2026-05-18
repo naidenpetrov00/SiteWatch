@@ -49,4 +49,20 @@ public class ImagesService(IApplicationDbContext dbContext) : IImagesService
 
         await dbContext.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task DeleteImageIdFromSiteAsync(Guid imageId, CancellationToken cancellationToken = default)
+    {
+        var siteImage = await dbContext.SiteImages.FirstOrDefaultAsync(si => si.ImageId == imageId, cancellationToken);
+
+        if (siteImage is null)
+        {
+            return;
+        }
+
+        var site = await dbContext.Sites.FirstAsync(s => s.Id == siteImage.SiteId, cancellationToken);
+        site.RemoveImage(siteImage);
+        dbContext.SiteImages.Remove(siteImage);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
 }

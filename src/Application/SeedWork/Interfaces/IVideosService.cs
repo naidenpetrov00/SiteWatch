@@ -17,4 +17,6 @@ public interface IVideosService
         Guid resultSnapshotFileId,
         VideoCategory category,
         CancellationToken cancellationToken);
+
+    Task<Guid?> DeleteVideoIdFromSiteAsync(Guid videoId, CancellationToken cancellationToken = default);
 }

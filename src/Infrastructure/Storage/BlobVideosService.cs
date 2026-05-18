@@ -32,7 +32,8 @@ internal sealed class BlobVideosService(BlobServiceClient blobServiceClient, IVi
         buffer.Position = 0;
         await using var snapshotStream = await videosService.CreateSnapshotAsync(buffer, cancellationToken);
         var snapshotFileId = Guid.NewGuid();
-        var snapshotBlobClient = containerClient.GetBlobClient(snapshotFileId.ToString());
+        var snapshotContainerClient = blobServiceClient.GetBlobContainerClient(BlobContainerName.Images.ToString());
+        var snapshotBlobClient = snapshotContainerClient.GetBlobClient(snapshotFileId.ToString());
 
         await snapshotBlobClient.UploadAsync(
             snapshotStream,
@@ -64,5 +65,13 @@ internal sealed class BlobVideosService(BlobServiceClient blobServiceClient, IVi
         var blobClient = containerClient.GetBlobClient(fileId.ToString());
 
         await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
+        var snapshotId = await videosService.DeleteVideoIdFromSiteAsync(fileId, cancellationToken);
+
+        if (snapshotId is not null)
+        {
+            var snapshotContainerClient = blobServiceClient.GetBlobContainerClient(BlobContainerName.Images.ToString());
+            var snapshotBlobClient = snapshotContainerClient.GetBlobClient(snapshotId.Value.ToString());
+            await snapshotBlobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
+        }
     }
 }

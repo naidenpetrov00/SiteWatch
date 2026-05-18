@@ -107,4 +107,22 @@ public class VideosService(IApplicationDbContext dbContext) : IVideosService
 
         await dbContext.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<Guid?> DeleteVideoIdFromSiteAsync(Guid videoId, CancellationToken cancellationToken = default)
+    {
+        var siteVideo = await dbContext.SiteVideos.FirstOrDefaultAsync(sv => sv.VideoId == videoId, cancellationToken);
+
+        if (siteVideo is null)
+        {
+            return null;
+        }
+
+        var snapshotId = siteVideo.SnapshotId;
+        var site = await dbContext.Sites.FirstAsync(s => s.Id == siteVideo.SiteId, cancellationToken);
+        site.RemoveVideo(siteVideo);
+        dbContext.SiteVideos.Remove(siteVideo);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return snapshotId;
+    }
 }

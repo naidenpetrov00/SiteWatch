@@ -34,6 +34,12 @@
 - Use MCP documentation to validate uncertain framework/library usage when repository patterns may be incorrect.
 - Do not blindly replicate repository patterns without considering correctness and maintainability.
 
+### File-Scoped Tasks
+
+If the user provides an explicit set of files and says the context is complete, treat those files as sufficient context.
+Do not search the repository or load unrelated files unless a blocker is discovered in the provided files.
+Limit work to the specified files unless the user asks for broader changes.
+
 ### Project Overview
 
 SiteWatch is split into:

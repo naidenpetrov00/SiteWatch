@@ -29,7 +29,9 @@ public sealed class Site : BaseAuditableEntity
     public IReadOnlyCollection<SiteVideo> Videos => _videos;
 
     public void AddImage(SiteImage image) => _images.Add(image);
+    public void RemoveImage(SiteImage image) => _images.Remove(image);
     public void AddVideo(SiteVideo video) => _videos.Add(video);
+    public void RemoveVideo(SiteVideo video) => _videos.Remove(video);
     public void AddUser(ApplicationUser user) => _users.Add(user);
 
     public void AddUserRange(List<ApplicationUser> users)

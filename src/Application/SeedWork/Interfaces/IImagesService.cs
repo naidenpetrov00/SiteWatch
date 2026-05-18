@@ -14,4 +14,6 @@ public interface IImagesService
     Task AddImageIdsToSiteAsync(Guid requestSiteId, Guid resultOriginalFileId, Guid resultThumbnailFileId,
         ImageCategory category,
         CancellationToken cancellationToken);
+
+    Task DeleteImageIdFromSiteAsync(Guid imageId, CancellationToken cancellationToken = default);
 }

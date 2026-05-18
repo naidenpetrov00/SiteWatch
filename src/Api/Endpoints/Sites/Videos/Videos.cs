@@ -16,6 +16,7 @@ public class Videos : EndpointGroupBase
         var group = app.MapGroupCustom();
         group.MapPost("/{siteId:guid}", AddVideoToSite).DisableAntiforgery();
         group.MapGet("/{videoId:guid}", GetVideoFromSite);
+        group.MapGet("/snapshot/{snapshotId:guid}", GetVideoSnapshotFromSite);
         group.MapDelete("/{videoId:guid}", DeleteVideoFromSite);
         group.MapGet("/site/{siteId:guid}", GetVideosIdsBySiteId);
     }
@@ -23,6 +24,12 @@ public class Videos : EndpointGroupBase
     private static async Task<FileStreamHttpResult> GetVideoFromSite(IMediator mediator, Guid videoId)
     {
         var fileResponse = await mediator.Send(new GetVideoQuery { FileId = videoId });
+        return TypedResults.File(fileResponse.Stream, fileResponse.ContentType);
+    }
+
+    private static async Task<FileStreamHttpResult> GetVideoSnapshotFromSite(IMediator mediator, Guid snapshotId)
+    {
+        var fileResponse = await mediator.Send(new GetVideoSnapshotQuery { SnapshotId = snapshotId });
         return TypedResults.File(fileResponse.Stream, fileResponse.ContentType);
     }
 

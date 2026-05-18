@@ -55,5 +55,6 @@ internal sealed class BlobImagesService(BlobServiceClient blobServiceClient, IIm
         var blobClient = containerClient.GetBlobClient(fileId.ToString());
 
         await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
+        await imagesService.DeleteImageIdFromSiteAsync(fileId, cancellationToken);
     }
 }
