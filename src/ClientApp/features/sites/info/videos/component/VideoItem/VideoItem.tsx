@@ -10,7 +10,7 @@ interface IVideoItem {
 
 const formatDuration = (durationSeconds?: number | null) => {
   if (durationSeconds == null || Number.isNaN(durationSeconds)) {
-    return null;
+    return "0:00";
   }
 
   const totalSeconds = Math.max(0, Math.round(durationSeconds));
@@ -36,13 +36,11 @@ const VideoItem = ({ tileWidth, item }: IVideoItem) => {
         resizeMode="cover"
         style={siteVideosStyles.galleryImage}
       />
-      {durationLabel ? (
-        <View style={siteVideosStyles.durationOverlay} pointerEvents="none">
-          <View style={siteVideosStyles.durationBadge}>
-            <Text style={siteVideosStyles.durationText}>{durationLabel}</Text>
-          </View>
+      <View style={siteVideosStyles.durationOverlay} pointerEvents="none">
+        <View style={siteVideosStyles.durationBadge}>
+          <Text style={siteVideosStyles.durationText}>{durationLabel}</Text>
         </View>
-      ) : null}
+      </View>
     </View>
   );
 };
