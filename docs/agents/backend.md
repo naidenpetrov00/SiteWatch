@@ -15,4 +15,4 @@
 ## Notes
 - Keep dependencies pointing inward.
 - Do not place infrastructure concerns in `Domain` or request handling logic in `Infrastructure`.
-- Do not write database migrations by hand alone or update the `DbContext` snapshot manually; create them with the manual `add migration` command and keep the generated files as the source of truth.
+- Do not write database migrations by hand or update the `DbContext` snapshot manually; those files should only be changed through the normal migration workflow.
