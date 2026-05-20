@@ -1,11 +1,12 @@
-import { Image, Text, View } from "react-native";
+import { Image, Pressable, Text, View } from "react-native";
 
-import type { SiteVideoIds } from "../../types";
+import type { VisibleSiteVideo } from "../../types";
 import { siteVideosStyles } from "../Videos/Videos.styles";
 
 interface IVideoItem {
   tileWidth: number;
-  item: SiteVideoIds & { snapshotUri: string };
+  item: VisibleSiteVideo;
+  onPress: (item: VisibleSiteVideo) => void;
 }
 
 const formatDuration = (durationSeconds?: number | null) => {
@@ -26,11 +27,19 @@ const formatDuration = (durationSeconds?: number | null) => {
   return `${minutes}:${secondsLabel}`;
 };
 
-const VideoItem = ({ tileWidth, item }: IVideoItem) => {
+const VideoItem = ({ tileWidth, item, onPress }: IVideoItem) => {
   const durationLabel = formatDuration(item.durationSeconds);
 
   return (
-    <View style={[siteVideosStyles.galleryTile, { width: tileWidth }]}>
+    <Pressable
+      accessibilityRole="button"
+      onPress={() => onPress(item)}
+      style={({ pressed }) => [
+        siteVideosStyles.galleryTile,
+        { width: tileWidth },
+        pressed ? siteVideosStyles.galleryTilePressed : null,
+      ]}
+    >
       <Image
         source={{ uri: item.snapshotUri }}
         resizeMode="cover"
@@ -41,7 +50,7 @@ const VideoItem = ({ tileWidth, item }: IVideoItem) => {
           <Text style={siteVideosStyles.durationText}>{durationLabel}</Text>
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 };
 

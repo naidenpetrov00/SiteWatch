@@ -26,6 +26,9 @@ export const siteVideosStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  galleryTilePressed: {
+    opacity: 0.84,
+  },
   galleryImage: {
     width: "100%",
     height: "100%",

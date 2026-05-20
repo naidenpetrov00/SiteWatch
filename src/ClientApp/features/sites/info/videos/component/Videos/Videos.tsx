@@ -4,11 +4,12 @@ import {
   HORIZONTAL_PADDING,
   siteVideosStyles,
 } from "./Videos.styles";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 
 import EmptyVideoItem from "../EmptyVideoItems";
 import { FilterType } from "../types";
-import type { SiteVideoIds } from "../../types";
+import type { VisibleSiteVideo } from "../../types";
+import VideoPreviewModal from "../VideoPreviewModal/VideoPreviewModal";
 import VideoItem from "../VideoItem/VideoItem";
 import { useGetSiteVideoIdsBySiteId } from "../../hooks/useGetSiteVideoIdsBySiteId";
 import { getSiteVideoSnapshot } from "../../hooks/useGetSiteVideoSnapshot";
@@ -16,10 +17,6 @@ import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const MIN_TILE_WIDTH = 150;
-
-type VisibleSiteVideo = SiteVideoIds & {
-  snapshotUri: string;
-};
 
 interface IVideos {
   activeFilter: FilterType;
@@ -30,6 +27,9 @@ const Videos = ({ activeFilter, siteId }: IVideos) => {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const queryClient = useQueryClient();
+  const [selectedVideo, setSelectedVideo] = useState<VisibleSiteVideo | null>(
+    null,
+  );
   const {
     data: siteVideoIds = [],
     isRefetching,
@@ -84,28 +84,49 @@ const Videos = ({ activeFilter, siteId }: IVideos) => {
     await refetch();
   }, [queryClient, refetch]);
 
+  const handleVideoPress = useCallback((video: VisibleSiteVideo) => {
+    setSelectedVideo(video);
+  }, []);
+
+  const handleClosePreview = useCallback(() => {
+    setSelectedVideo(null);
+  }, []);
+
   return (
-    <FlatList<VisibleSiteVideo>
-      data={filteredVideos}
-      key={`${numColumns}-${activeFilter}`}
-      keyExtractor={(item) => item.videoId}
-      numColumns={numColumns}
-      showsVerticalScrollIndicator={false}
-      columnWrapperStyle={
-        numColumns > 1 ? siteVideosStyles.columnWrapper : undefined
-      }
-      contentContainerStyle={[
-        siteVideosStyles.galleryContent,
-        { paddingBottom: insets.bottom + 24 },
-      ]}
-      initialNumToRender={numColumns * 3}
-      maxToRenderPerBatch={numColumns * 3}
-      windowSize={5}
-      renderItem={({ item }) => <VideoItem tileWidth={tileWidth} item={item} />}
-      ListEmptyComponent={showEmptyState ? <EmptyVideoItem /> : null}
-      refreshing={isRefetching}
-      onRefresh={handleRefresh}
-    />
+    <>
+      <FlatList<VisibleSiteVideo>
+        data={filteredVideos}
+        key={`${numColumns}-${activeFilter}`}
+        keyExtractor={(item) => item.videoId}
+        numColumns={numColumns}
+        showsVerticalScrollIndicator={false}
+        columnWrapperStyle={
+          numColumns > 1 ? siteVideosStyles.columnWrapper : undefined
+        }
+        contentContainerStyle={[
+          siteVideosStyles.galleryContent,
+          { paddingBottom: insets.bottom + 24 },
+        ]}
+        initialNumToRender={numColumns * 3}
+        maxToRenderPerBatch={numColumns * 3}
+        windowSize={5}
+        renderItem={({ item }) => (
+          <VideoItem
+            tileWidth={tileWidth}
+            item={item}
+            onPress={handleVideoPress}
+          />
+        )}
+        ListEmptyComponent={showEmptyState ? <EmptyVideoItem /> : null}
+        refreshing={isRefetching}
+        onRefresh={handleRefresh}
+      />
+      <VideoPreviewModal
+        onClose={handleClosePreview}
+        video={selectedVideo}
+        visible={selectedVideo !== null}
+      />
+    </>
   );
 };
 

@@ -32,6 +32,7 @@ export default {
       ],
     },
     plugins: [
+      "expo-video",
       [
         "expo-screen-orientation",
         {

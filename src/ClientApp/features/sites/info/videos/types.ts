@@ -4,3 +4,7 @@ export type SiteVideoIds = {
   durationSeconds: number | null;
   category: string;
 };
+
+export type VisibleSiteVideo = SiteVideoIds & {
+  snapshotUri: string;
+};
