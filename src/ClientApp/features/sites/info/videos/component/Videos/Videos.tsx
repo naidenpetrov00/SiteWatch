@@ -4,7 +4,7 @@ import {
   HORIZONTAL_PADDING,
   siteVideosStyles,
 } from "./Videos.styles";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import EmptyVideoItem from "../EmptyVideoItems";
 import { FilterType } from "../types";
@@ -13,6 +13,7 @@ import VideoPreviewModal from "../VideoPreviewModal/VideoPreviewModal";
 import VideoItem from "../VideoItem/VideoItem";
 import { useGetSiteVideoIdsBySiteId } from "../../hooks/useGetSiteVideoIdsBySiteId";
 import { getSiteVideoSnapshot } from "../../hooks/useGetSiteVideoSnapshot";
+import { useSiteVideoPreviewCache } from "../../hooks/useSiteVideoPreviewCache";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -27,6 +28,7 @@ const Videos = ({ activeFilter, siteId }: IVideos) => {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const queryClient = useQueryClient();
+  const previewCache = useSiteVideoPreviewCache({ siteId });
   const [selectedVideo, setSelectedVideo] = useState<VisibleSiteVideo | null>(
     null,
   );
@@ -92,6 +94,10 @@ const Videos = ({ activeFilter, siteId }: IVideos) => {
     setSelectedVideo(null);
   }, []);
 
+  useEffect(() => {
+    setSelectedVideo(null);
+  }, [siteId]);
+
   return (
     <>
       <FlatList<VisibleSiteVideo>
@@ -124,6 +130,7 @@ const Videos = ({ activeFilter, siteId }: IVideos) => {
       <VideoPreviewModal
         onClose={handleClosePreview}
         video={selectedVideo}
+        previewCache={previewCache}
         visible={selectedVideo !== null}
       />
     </>

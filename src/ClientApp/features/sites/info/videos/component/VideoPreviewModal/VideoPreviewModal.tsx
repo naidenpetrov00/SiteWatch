@@ -10,22 +10,25 @@ import { VideoView, useVideoPlayer } from "expo-video";
 import { useEffect, useState } from "react";
 
 import { SafeAreaView } from "react-native-safe-area-context";
+import VideoPreviewHeader from "./VideoPreviewHeader";
+import type { VisibleSiteVideo } from "../../types";
 import { useColorPalette } from "@/hooks/useColorPalette";
 import { useGetSiteVideoFull } from "../../hooks/useGetSiteVideoFull";
+import type { SiteVideoPreviewCache } from "../../hooks/useSiteVideoPreviewCache";
 import { videoPreviewModalStyles } from "./VideoPreviewModal.styles";
-import type { VisibleSiteVideo } from "../../types";
-import VideoPreviewHeader from "./VideoPreviewHeader";
 
 interface IVideoPreviewModal {
   video: VisibleSiteVideo | null;
   visible: boolean;
   onClose: () => void;
+  previewCache: SiteVideoPreviewCache;
 }
 
 interface IVideoPreviewModalContent {
   video: VisibleSiteVideo;
   visible: boolean;
   onClose: () => void;
+  previewCache: SiteVideoPreviewCache;
 }
 
 interface IVideoPreviewPlayer {
@@ -60,9 +63,11 @@ const VideoPreviewModalContent = ({
   video,
   visible,
   onClose,
+  previewCache,
 }: IVideoPreviewModalContent) => {
   const colorPalette = useColorPalette();
   const { error, isFetching, uri: videoUri } = useGetSiteVideoFull({
+    cache: previewCache,
     videoId: visible ? video.videoId : undefined,
     visible,
   });
@@ -105,7 +110,12 @@ const VideoPreviewModalContent = ({
   );
 };
 
-const VideoPreviewModal = ({ video, visible, onClose }: IVideoPreviewModal) => {
+const VideoPreviewModal = ({
+  video,
+  visible,
+  onClose,
+  previewCache,
+}: IVideoPreviewModal) => {
   if (!video) {
     return null;
   }
@@ -115,6 +125,7 @@ const VideoPreviewModal = ({ video, visible, onClose }: IVideoPreviewModal) => {
       onClose={onClose}
       video={video}
       visible={visible}
+      previewCache={previewCache}
     />
   );
 };
