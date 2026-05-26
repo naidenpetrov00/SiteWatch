@@ -167,6 +167,11 @@ namespace Infrastructure.Data.Migrations
                     b.Property<string>("LastModifiedBy")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("MediaPolicy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("MediaPolicy");
+
                     b.HasKey("Id");
 
                     b.ToTable("Sites");

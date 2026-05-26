@@ -8,7 +8,7 @@ namespace Application.Sites.Videos.Commands;
 public sealed record AddVideoCommand(
     Guid SiteId,
     UploadedFile File,
-    VideoCategory Category = VideoCategory.Other)
+    VideoCategory? Category)
     : IRequest<UploadedVideoResult>;
 
 public class AddVideoHandler(IVideosBlobService blobService, IVideosService videosService)
@@ -27,7 +27,7 @@ public class AddVideoHandler(IVideosBlobService blobService, IVideosService vide
             result.VideoFileId,
             result.SnapshotFileId,
             result.DurationSeconds,
-            request.Category,
+            request.Category!.Value,
             cancellationToken);
 
         return result;

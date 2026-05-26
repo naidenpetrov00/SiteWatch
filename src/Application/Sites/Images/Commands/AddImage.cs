@@ -8,7 +8,7 @@ namespace Application.Sites.Images.Commands;
 public sealed record AddImageCommand(
     Guid SiteId,
     UploadedFile File,
-    ImageCategory Category = ImageCategory.Other)
+    ImageCategory? Category)
     : IRequest<UploadedImageResult>;
 
 public class AddImageHandler(IBlobService blobService, IImagesService imagesService)
@@ -21,7 +21,7 @@ public class AddImageHandler(IBlobService blobService, IImagesService imagesServ
             cancellationToken);
 
         await imagesService.AddImageIdsToSiteAsync(request.SiteId, result.OriginalFileId, result.ThumbnailFileId,
-            request.Category,
+            request.Category!.Value,
             cancellationToken);
 
         return result;

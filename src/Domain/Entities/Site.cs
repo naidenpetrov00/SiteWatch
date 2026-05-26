@@ -1,3 +1,4 @@
+using Ardalis.GuardClauses;
 using Domain.SeedWork;
 using Domain.ValueObjects;
 
@@ -10,10 +11,11 @@ public sealed class Site : BaseAuditableEntity
     private readonly HashSet<SiteImage> _images = [];
     private readonly HashSet<SiteVideo> _videos = [];
 
-    public Site(SiteName name, SiteAddress address)
+    public Site(SiteName name, SiteAddress address, SiteMediaPolicy? mediaPolicy = null)
     {
         Name = name;
         Address = address;
+        MediaPolicy = mediaPolicy ?? SiteMediaPolicy.Regular();
     }
 
     // ReSharper disable once UnusedMember.Local
@@ -23,10 +25,14 @@ public sealed class Site : BaseAuditableEntity
 
     public SiteName Name { get; private set; } = null!;
     public SiteAddress Address { get; private set; } = null!;
+    public SiteMediaPolicy MediaPolicy { get; private set; } = null!;
     public IReadOnlyCollection<ApplicationUser> Users => _users;
     public IReadOnlyCollection<Camera> Cameras => _cameras;
     public IReadOnlyCollection<SiteImage> Images => _images;
     public IReadOnlyCollection<SiteVideo> Videos => _videos;
+
+    public void ChangeMediaPolicy(SiteMediaPolicy mediaPolicy) =>
+        MediaPolicy = Guard.Against.Null(mediaPolicy);
 
     public void AddImage(SiteImage image) => _images.Add(image);
     public void RemoveImage(SiteImage image) => _images.Remove(image);

@@ -42,7 +42,7 @@ public class Videos : EndpointGroupBase
     private static async Task<Ok<UploadedVideoResult>> AddVideoToSite(
         IMediator mediator,
         [FromForm] IFormFile file,
-        [FromForm] VideoCategory category,
+        [FromForm] VideoCategory? category,
         Guid siteId)
     {
         await using var stream = file.OpenReadStream();
