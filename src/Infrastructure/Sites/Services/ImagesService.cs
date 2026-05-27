@@ -39,7 +39,11 @@ public class ImagesService(IApplicationDbContext dbContext) : IImagesService
     public Task<List<SiteImageIdsDto>> GetImagesIdsBySiteId(Guid siteId) => dbContext.SiteImages
         .AsNoTracking()
         .Where(siteImage => siteImage.SiteId == siteId)
-        .Select(siteImage => new SiteImageIdsDto(siteImage.ImageId, siteImage.ThumbnailImageId)).ToListAsync();
+        .Select(siteImage => new SiteImageIdsDto(
+            siteImage.ImageId,
+            siteImage.ThumbnailImageId,
+            siteImage.Category.ToString()))
+        .ToListAsync();
 
     public async Task AddImageIdsToSiteAsync(Guid requestSiteId, Guid resultOriginalFileId, Guid resultThumbnailFileId,
         ImageCategory category,

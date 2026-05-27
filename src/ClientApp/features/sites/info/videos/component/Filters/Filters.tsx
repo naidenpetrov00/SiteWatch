@@ -4,19 +4,18 @@ import { FilterType } from "../types";
 import { filtersStyles } from "./Filters.styles";
 import { useColorPalette } from "@/hooks/useColorPalette";
 
-export const FILTERS = ["All", "Pipes", "Electical Scheme"] as const;
-
 interface IFilters {
   activeFilter: FilterType;
+  filters: readonly FilterType[];
   setActiveFilter: React.Dispatch<React.SetStateAction<FilterType>>;
 }
 
-const Filters = ({ activeFilter, setActiveFilter }: IFilters) => {
+const Filters = ({ activeFilter, filters, setActiveFilter }: IFilters) => {
   const colorPalette = useColorPalette();
 
   return (
     <View style={filtersStyles.filters}>
-      {FILTERS.map((filter) => {
+      {filters.map((filter) => {
         const isActive = filter === activeFilter;
 
         return (

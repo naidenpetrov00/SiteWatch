@@ -1,10 +1,10 @@
-import { FILTERS } from "./Filters/Filters";
+import type { MediaCategory, MediaFilter } from "../../media-types";
 
-export type FilterType = (typeof FILTERS)[number];
+export type FilterType = MediaFilter;
 
 export type GalleryItem = {
   id: string;
   title: string;
-  category: Exclude<FilterType, "All">;
+  category: MediaCategory;
   color: string;
 };

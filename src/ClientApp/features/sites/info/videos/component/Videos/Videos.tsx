@@ -4,7 +4,7 @@ import {
   HORIZONTAL_PADDING,
   siteVideosStyles,
 } from "./Videos.styles";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import EmptyVideoItem from "../EmptyVideoItems";
 import { FilterType } from "../types";
@@ -16,6 +16,7 @@ import { getSiteVideoSnapshot } from "../../hooks/useGetSiteVideoSnapshot";
 import { useSiteVideoPreviewCache } from "../../hooks/useSiteVideoPreviewCache";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ALL_FILTER } from "@/features/sites/info/media-types";
 
 const MIN_TILE_WIDTH = 150;
 
@@ -44,37 +45,42 @@ const Videos = ({ activeFilter, siteId }: IVideos) => {
     Math.floor((availableWidth + GRID_GAP) / (MIN_TILE_WIDTH + GRID_GAP)),
   );
   const tileWidth = (availableWidth - GRID_GAP * (numColumns - 1)) / numColumns;
+  const visibleVideos = useMemo(
+    () =>
+      activeFilter === ALL_FILTER
+        ? siteVideoIds
+        : siteVideoIds.filter((video) => video.category === activeFilter),
+    [activeFilter, siteVideoIds],
+  );
 
   const snapshotQueries = useQueries({
-    queries: siteVideoIds.map((video) => ({
+    queries: visibleVideos.map((video) => ({
       queryKey: ["video-snapshot", video.snapshotId],
-      enabled: Boolean(video.snapshotId) && activeFilter === "All",
+      enabled: Boolean(video.snapshotId),
       queryFn: () => getSiteVideoSnapshot({ snapshotId: video.snapshotId }),
       retry: false,
     })),
   });
 
-  const filteredVideos =
-    activeFilter === "All"
-      ? siteVideoIds.flatMap<VisibleSiteVideo>((video, index) => {
-          const snapshotQuery = snapshotQueries[index];
+  const filteredVideos = visibleVideos.flatMap<VisibleSiteVideo>(
+    (video, index) => {
+      const snapshotQuery = snapshotQueries[index];
 
-          if (!snapshotQuery || snapshotQuery.status !== "success") {
-            return [];
-          }
+      if (!snapshotQuery || snapshotQuery.status !== "success") {
+        return [];
+      }
 
-          return [
-            {
-              ...video,
-              snapshotUri: snapshotQuery.data,
-            },
-          ];
-        })
-      : [];
+      return [
+        {
+          ...video,
+          snapshotUri: snapshotQuery.data,
+        },
+      ];
+    },
+  );
 
   const isResolvingSnapshots =
-    activeFilter === "All" &&
-    siteVideoIds.length > 0 &&
+    visibleVideos.length > 0 &&
     snapshotQueries.some((query) => query.isPending || query.isFetching);
 
   const showEmptyState = !isResolvingSnapshots && filteredVideos.length === 0;

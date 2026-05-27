@@ -90,7 +90,7 @@ public class VideosService(IApplicationDbContext dbContext) : IVideosService
             siteVideo.VideoId,
             siteVideo.SnapshotId,
             siteVideo.DurationSeconds,
-            siteVideo.Category))
+            siteVideo.Category.ToString()))
         .ToListAsync();
 
     public async Task AddVideoIdsToSiteAsync(

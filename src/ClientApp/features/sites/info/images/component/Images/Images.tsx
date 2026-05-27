@@ -4,7 +4,7 @@ import {
   HORIZONTAL_PADDING,
   siteImagesStyles,
 } from "../SiteImages.styles";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import EmptyImageItem from "../EmptyImageItems";
 import { FilterType } from "../types";
@@ -14,6 +14,7 @@ import type { SiteImageIds } from "../../types";
 import { useGetSiteImageIdsBySiteId } from "../../hooks/useGetSiteImageIdsBySiteId";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ALL_FILTER } from "@/features/sites/info/media-types";
 
 const MIN_TILE_WIDTH = 150;
 
@@ -46,11 +47,11 @@ const Images = ({ activeFilter, siteId }: IImages) => {
   const tileWidth = (availableWidth - GRID_GAP * (numColumns - 1)) / numColumns;
 
   const filteredImages = useMemo(() => {
-    if (activeFilter === "All") {
+    if (activeFilter === ALL_FILTER) {
       return siteImageIds;
     }
 
-    return [];
+    return siteImageIds.filter((image) => image.category === activeFilter);
   }, [activeFilter, siteImageIds]);
 
   const handleRefresh = useCallback(async () => {
@@ -69,6 +70,10 @@ const Images = ({ activeFilter, siteId }: IImages) => {
     },
     [],
   );
+
+  useEffect(() => {
+    setSelectedImage(null);
+  }, [siteId]);
 
   return (
     <>
@@ -107,7 +112,7 @@ const Images = ({ activeFilter, siteId }: IImages) => {
           visible
           onClose={() => setSelectedImage(null)}
           enableSwipeToClose={false}
-      />
+        />
       ) : null}
     </>
   );
