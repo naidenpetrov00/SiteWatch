@@ -9,6 +9,7 @@ public sealed class Site : BaseAuditableEntity
     private readonly HashSet<ApplicationUser> _users = [];
     private readonly HashSet<Camera> _cameras = [];
     private readonly HashSet<SiteImage> _images = [];
+    private readonly HashSet<SiteFile> _files = [];
     private readonly HashSet<SiteVideo> _videos = [];
 
     public Site(SiteName name, SiteAddress address, SiteMediaPolicy? mediaPolicy = null)
@@ -29,6 +30,7 @@ public sealed class Site : BaseAuditableEntity
     public IReadOnlyCollection<ApplicationUser> Users => _users;
     public IReadOnlyCollection<Camera> Cameras => _cameras;
     public IReadOnlyCollection<SiteImage> Images => _images;
+    public IReadOnlyCollection<SiteFile> Files => _files;
     public IReadOnlyCollection<SiteVideo> Videos => _videos;
 
     public void ChangeMediaPolicy(SiteMediaPolicy mediaPolicy) =>
@@ -36,6 +38,8 @@ public sealed class Site : BaseAuditableEntity
 
     public void AddImage(SiteImage image) => _images.Add(image);
     public void RemoveImage(SiteImage image) => _images.Remove(image);
+    public void AddFile(SiteFile file) => _files.Add(file);
+    public void RemoveFile(SiteFile file) => _files.Remove(file);
     public void AddVideo(SiteVideo video) => _videos.Add(video);
     public void RemoveVideo(SiteVideo video) => _videos.Remove(video);
     public void AddUser(ApplicationUser user) => _users.Add(user);

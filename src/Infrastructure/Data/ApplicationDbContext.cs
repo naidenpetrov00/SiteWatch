@@ -13,6 +13,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
 {
     public DbSet<Site> Sites => Set<Site>();
     public DbSet<SiteImage> SiteImages => Set<SiteImage>();
+    public DbSet<SiteFile> SiteFiles => Set<SiteFile>();
     public DbSet<SiteVideo> SiteVideos => Set<SiteVideo>();
     public DbSet<Camera> Cameras => Set<Camera>();
 

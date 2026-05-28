@@ -7,6 +7,7 @@ public interface IApplicationDbContext
 {
     DbSet<Site> Sites { get; }
     DbSet<SiteImage> SiteImages { get; }
+    DbSet<SiteFile> SiteFiles { get; }
     DbSet<SiteVideo> SiteVideos { get; }
     DbSet<Camera> Cameras { get; }
 
