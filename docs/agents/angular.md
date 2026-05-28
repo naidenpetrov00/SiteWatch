@@ -74,6 +74,8 @@ If multiple features need the same code, move it to shared.
 
 When asked where a file should go, answer using this architecture.
 
+For UI work, prefer `@angular/material` components where they fit the requirement, unless the user explicitly asks for another UI library or component type.
+
 Before creating a file, decide what it is:
 
 - app-wide infrastructure -> core
