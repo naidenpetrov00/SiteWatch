@@ -61,7 +61,7 @@
             color="primary"
             type="submit"
             class="login-page__submit"
-            [disabled]="loginForm.invalid"
+            [disabled]="loginForm.invalid || isSubmitting()"
           >
             Sign in
           </button>
