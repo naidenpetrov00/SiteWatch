@@ -13,6 +13,7 @@
 - Prefer existing folder patterns over introducing new ones.
 - Keep reads targeted: open only files directly needed to answer the task.
 - Prefer the smallest relevant context set before expanding to nearby files or docs.
+- While planning, if anything is not 100% certain, ask the user before proceeding.
 
 ## Commit Style
 - Use short imperative commits with prefixes such as `feat:`, `fix:`, and `refactor:`.

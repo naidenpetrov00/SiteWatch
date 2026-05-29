@@ -3,6 +3,7 @@ using Api.SeedWork.Extensions;
 using Application.Identity.Commands;
 using Application.Identity.Commands.Email;
 using Application.Identity.Commands.ResetPassword;
+using Application.Identity.Commands.SetAdministratorClaim;
 using Application.Identity.Commands.SignIn;
 using Application.Identity.Commands.SignUp;
 using MediatR;
@@ -23,6 +24,7 @@ public class Identity : EndpointGroupBase
         group.MapPost("/verifyEmail", VerifyEmail);
         group.MapPost("/sendResetVerification", SendResetPasswordEmail);
         group.MapPost("/resetPassword", ResetPassword);
+        group.MapPost("/assignAdministrator/{userId}", AssignAdministrator);
     }
 
     public async Task<Results<Ok<IdentityResultWithEmail>, BadRequest<string[]>>> SignUp(
@@ -93,6 +95,20 @@ public class Identity : EndpointGroupBase
     )
     {
         var result = await mediator.Send(command);
+        if (result.Result.Succeeded)
+            return TypedResults.NoContent();
+
+        return TypedResults.BadRequest(result.Result.Errors);
+    }
+
+    public async Task<Results<NoContent, BadRequest<string[]>>> AssignAdministrator(
+        IMediator mediator,
+        [FromRoute] string userId
+    )
+    {
+        var command = new SetAdministratorClaimCommand { UserId = userId };
+        var result = await mediator.Send(command);
+
         if (result.Result.Succeeded)
             return TypedResults.NoContent();
 

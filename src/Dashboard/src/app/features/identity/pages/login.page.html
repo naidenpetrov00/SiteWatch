@@ -1,1 +1,72 @@
-<main class="login-page"></main>
+<main class="login-page">
+  <section
+    class="login-page__shell"
+    aria-labelledby="sign-in-title"
+    aria-describedby="sign-in-description sign-in-status"
+  >
+    <header class="login-page__intro">
+      <p class="login-page__eyebrow">SiteWatch dashboard</p>
+      <h1 id="sign-in-title" class="login-page__title">Sign in</h1>
+      <p id="sign-in-description" class="login-page__subtitle">
+        Use your verified email address and password to continue.
+      </p>
+    </header>
+
+    <mat-card class="login-page__card">
+      <mat-card-content class="login-page__content">
+        <p id="sign-in-status" class="login-page__status" aria-live="polite">
+          @if (serverErrorMessage(); as errorMessage) {
+            <span class="login-page__status--error" role="alert">{{ errorMessage }}</span>
+          }
+        </p>
+
+        <form
+          class="login-page__form"
+          [formGroup]="loginForm"
+          (ngSubmit)="onSubmit()"
+          novalidate
+        >
+          <mat-form-field appearance="outline" class="login-page__field">
+            <mat-label>Email</mat-label>
+            <input
+              matInput
+              type="email"
+              formControlName="email"
+              autocomplete="email"
+              inputmode="email"
+            />
+            @if (emailControl.touched && emailControl.hasError('required')) {
+              <mat-error>Email is required.</mat-error>
+            }
+            @if (emailControl.touched && emailControl.hasError('email')) {
+              <mat-error>Enter a valid email address.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="login-page__field">
+            <mat-label>Password</mat-label>
+            <input
+              matInput
+              type="password"
+              formControlName="password"
+              autocomplete="current-password"
+            />
+            @if (passwordControl.touched && passwordControl.hasError('required')) {
+              <mat-error>Password is required.</mat-error>
+            }
+          </mat-form-field>
+
+          <button
+            mat-flat-button
+            color="primary"
+            type="submit"
+            class="login-page__submit"
+            [disabled]="loginForm.invalid"
+          >
+            Sign in
+          </button>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  </section>
+</main>

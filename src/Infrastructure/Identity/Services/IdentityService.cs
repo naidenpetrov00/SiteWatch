@@ -3,12 +3,14 @@ using Application.Identity.Queries.Users;
 using Application.SeedWork.Enums;
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models;
+using Application.SeedWork.Security;
 using AutoMapper;
 using Domain.Entities;
 using Infrastructure.Identity.Extensions;
 using Infrastructure.Identity.Extensions.cs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using System.Security.Claims;
 
 namespace Infrastructure.Identity.Services;
 
@@ -44,6 +46,16 @@ public class IdentityService(
             return new IdentityResultOnly { Result = result.ToApplicationResult() };
         }
 
+        var claimResult = await userManager.AddClaimAsync(
+            user,
+            new Claim(UserClaimTypes.UserType, UserClaimTypes.Client)
+        );
+        if (!claimResult.Succeeded)
+        {
+            await userManager.DeleteAsync(user);
+            return new IdentityResultOnly { Result = claimResult.ToApplicationResult() };
+        }
+
         var emailVerificationToken = GenerateVerificationToken();
         await emailService.SendVerifyEmailAsync(user, user.Email!, emailVerificationToken);
 
@@ -71,6 +83,42 @@ public class IdentityService(
         var result = await authorizationService.AuthorizeAsync(principal, policyName);
 
         return result.Succeeded;
+    }
+
+    public async Task<IdentityResultModel> AssignAdministratorClaimAsync(string userId)
+    {
+        var user = await userManager.FindByIdAsync(userId);
+
+        if (user is null)
+        {
+            return new IdentityResultOnly
+            {
+                Result = Result.Failure([IdentityResultErrors.UserNotFoundById]),
+            };
+        }
+
+        var claims = await userManager.GetClaimsAsync(user);
+        var userTypeClaims = claims.Where(c => c.Type == UserClaimTypes.UserType).ToList();
+
+        if (userTypeClaims.Count > 0)
+        {
+            var removeResult = await userManager.RemoveClaimsAsync(user, userTypeClaims);
+            if (!removeResult.Succeeded)
+            {
+                return new IdentityResultOnly { Result = removeResult.ToApplicationResult() };
+            }
+        }
+
+        var addResult = await userManager.AddClaimAsync(
+            user,
+            new Claim(UserClaimTypes.UserType, UserClaimTypes.Administrator)
+        );
+        if (!addResult.Succeeded)
+        {
+            return new IdentityResultOnly { Result = addResult.ToApplicationResult() };
+        }
+
+        return new IdentityResultOnly { Result = Result.Success() };
     }
 
     public async Task<Result> DeleteUserAsync(string userId)
