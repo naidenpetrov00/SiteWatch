@@ -35,7 +35,10 @@ public static class DependencyInjection
             options.UseSqlServer(mssqlConnectionString)
         );
 
-        services.AddSingleton<IJwtTokenService, JwtTokenService>();
+        services.AddScoped<IJwtTokenService, JwtTokenService>();
+        services.AddScoped<IIdentityAuthenticationService, IdentityAuthenticationService>();
+        services.AddScoped<IIdentityVerificationService, IdentityVerificationService>();
+        services.AddScoped<IIdentityUserService, IdentityUserService>();
         var blobStorageConnectionString = Guard.Against.NullOrEmpty(
             configuration.GetOptions<BlobStorageOptions>().ConnectionString);
         services.AddSingleton<BlobServiceClient>(_ =>

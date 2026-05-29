@@ -14,6 +14,13 @@ public interface IIdentityService
 
     Task<bool> AuthorizeAsync(string userId, string policyName);
 
+    Task<IdentityResultModel> AssignAdministratorClaimAsync(string userId);
+
+    Task<IdentityResultModel> CheckAdministratorPasswordAsync(
+        ApplicationUser user,
+        string password
+    );
+
     Task<IdentityResultModel> CreateUserAsync(string userName, string email, string password);
 
     Task<Result> DeleteUserAsync(string userId);

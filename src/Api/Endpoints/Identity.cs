@@ -1,8 +1,10 @@
 using Api.SeedWork;
 using Api.SeedWork.Extensions;
 using Application.Identity.Commands;
+using Application.Identity.Commands.DashboardSignIn;
 using Application.Identity.Commands.Email;
 using Application.Identity.Commands.ResetPassword;
+using Application.Identity.Commands.SetAdministratorClaim;
 using Application.Identity.Commands.SignIn;
 using Application.Identity.Commands.SignUp;
 using MediatR;
@@ -16,6 +18,7 @@ public class Identity : EndpointGroupBase
     public override void Map(WebApplication app)
     {
         var group = app.MapGroupCustom();
+        var dashboardGroup = app.MapGroupCustom(customGroupName: "dashboard");
 
         group.MapPost("/signUp", SignUp);
         group.MapPost("/signIn", SignIn);
@@ -23,6 +26,8 @@ public class Identity : EndpointGroupBase
         group.MapPost("/verifyEmail", VerifyEmail);
         group.MapPost("/sendResetVerification", SendResetPasswordEmail);
         group.MapPost("/resetPassword", ResetPassword);
+        group.MapPost("/assignAdministrator/{userId}", AssignAdministrator);
+        dashboardGroup.MapPost("/signIn", DashboardSignIn);
     }
 
     public async Task<Results<Ok<IdentityResultWithEmail>, BadRequest<string[]>>> SignUp(
@@ -42,6 +47,18 @@ public class Identity : EndpointGroupBase
     public async Task<Results<Ok<IdentityResultWithUserToken>, BadRequest<string[]>>> SignIn(
         IMediator mediator,
         [FromBody] SignInCommand command
+    )
+    {
+        var result = await mediator.Send(command);
+        if (result.Result.Succeeded && result is IdentityResultWithUserToken resultWithToken)
+            return TypedResults.Ok(resultWithToken);
+
+        return TypedResults.BadRequest(result.Result.Errors);
+    }
+
+    public async Task<Results<Ok<IdentityResultWithUserToken>, BadRequest<string[]>>> DashboardSignIn(
+        IMediator mediator,
+        [FromBody] DashboardSignInCommand command
     )
     {
         var result = await mediator.Send(command);
@@ -93,6 +110,20 @@ public class Identity : EndpointGroupBase
     )
     {
         var result = await mediator.Send(command);
+        if (result.Result.Succeeded)
+            return TypedResults.NoContent();
+
+        return TypedResults.BadRequest(result.Result.Errors);
+    }
+
+    public async Task<Results<NoContent, BadRequest<string[]>>> AssignAdministrator(
+        IMediator mediator,
+        [FromRoute] string userId
+    )
+    {
+        var command = new SetAdministratorClaimCommand { UserId = userId };
+        var result = await mediator.Send(command);
+
         if (result.Result.Succeeded)
             return TypedResults.NoContent();
 

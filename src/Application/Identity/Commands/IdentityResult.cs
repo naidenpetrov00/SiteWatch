@@ -38,6 +38,7 @@ public class IdentityResultWithUser : IdentityResultModel
 public static class IdentityResultErrors
 {
     public static string UserNotFound => "User with this Email doesnt exist";
+    public static string UserNotFoundById => "User with this Id doesnt exist";
     public static string InvalidCredentials => "Invalid email or password";
     public static string EmailAlreadyRegistered => "Email already registered";
     public static string TokenNotValid => "Invlaid email verification token";

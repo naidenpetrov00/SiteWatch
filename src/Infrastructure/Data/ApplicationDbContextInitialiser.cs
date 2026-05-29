@@ -1,9 +1,11 @@
-﻿using Domain.Entities;
+﻿using Application.SeedWork.Security;
+using Domain.Entities;
 using Domain.SeedWork.Enums;
 using Domain.ValueObjects;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Security.Claims;
 
 namespace Infrastructure.Data;
 
@@ -35,6 +37,15 @@ public class ApplicationDbContextInitialiser(
         };
         await userManager.CreateAsync(user1, "Test@123");
         await userManager.CreateAsync(user2, "Test@123");
+
+        await userManager.AddClaimAsync(
+            user1,
+            new Claim(UserClaimTypes.UserType, UserClaimTypes.Administrator)
+        );
+        await userManager.AddClaimAsync(
+            user2,
+            new Claim(UserClaimTypes.UserType, UserClaimTypes.Administrator)
+        );
         return [user1, user2];
     }
 

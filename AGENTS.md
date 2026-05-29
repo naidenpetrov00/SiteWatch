@@ -11,6 +11,7 @@
 - Avoid repetition and unnecessary background context.
 - Do not include tutorials unless requested.
 - If the answer is obvious from the code, keep responses short.
+- While planning, if anything is not 100% certain, ask the user before proceeding.
 
 ## Repository Guidelines
 

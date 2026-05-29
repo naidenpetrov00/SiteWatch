@@ -1,0 +1,75 @@
+<div class="dashboard-shell">
+  <mat-toolbar class="dashboard-shell__toolbar" color="primary">
+    <a class="dashboard-shell__brand" routerLink="/" aria-label="SiteWatch dashboard home">
+      <span class="dashboard-shell__brand-mark">SW</span>
+      <span class="dashboard-shell__brand-text">SiteWatch Dashboard</span>
+    </a>
+
+    <nav
+      class="dashboard-shell__nav"
+      aria-label="Dashboard navigation"
+      routerLinkActive="dashboard-shell__nav--active"
+      [routerLinkActiveOptions]="{ exact: false }"
+    >
+      <a
+        routerLink="/invoices"
+        class="dashboard-shell__nav-tracker"
+        aria-hidden="true"
+        tabindex="-1"
+      ></a>
+      <a
+        routerLink="/scan-invoice"
+        class="dashboard-shell__nav-tracker"
+        aria-hidden="true"
+        tabindex="-1"
+      ></a>
+      <button
+        mat-button
+        [matMenuTriggerFor]="invoiceMenu"
+        class="dashboard-shell__nav-button"
+        aria-label="Invoice management menu"
+      >
+        Invoice Management
+        <mat-icon>expand_more</mat-icon>
+      </button>
+    </nav>
+
+    <span class="dashboard-shell__spacer"></span>
+
+    <button
+      mat-icon-button
+      [matMenuTriggerFor]="accountMenu"
+      class="dashboard-shell__account-button"
+      aria-label="Account menu"
+    >
+      <mat-icon>person</mat-icon>
+    </button>
+  </mat-toolbar>
+
+  <mat-menu #invoiceMenu="matMenu">
+    <a
+      mat-menu-item
+      routerLink="/invoices"
+      routerLinkActive="dashboard-shell__menu-item--active"
+      [routerLinkActiveOptions]="{ exact: true }"
+    >
+      Invoices
+    </a>
+    <a
+      mat-menu-item
+      routerLink="/scan-invoice"
+      routerLinkActive="dashboard-shell__menu-item--active"
+      [routerLinkActiveOptions]="{ exact: true }"
+    >
+      Scan Invoice
+    </a>
+  </mat-menu>
+
+  <mat-menu #accountMenu="matMenu">
+    <button mat-menu-item type="button" (click)="logOut()">Log Out</button>
+  </mat-menu>
+
+  <div class="dashboard-shell__content">
+    <router-outlet />
+  </div>
+</div>
