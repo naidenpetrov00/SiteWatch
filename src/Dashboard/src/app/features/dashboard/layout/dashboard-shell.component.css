@@ -1,0 +1,117 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.dashboard-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background:
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.12), transparent 32%),
+    linear-gradient(180deg, var(--mat-sys-surface-container-low), var(--mat-sys-surface));
+}
+
+.dashboard-shell__toolbar {
+  display: flex;
+  gap: 12px;
+  padding-inline: 20px;
+  min-height: 72px;
+  background: color-mix(in srgb, var(--mat-sys-primary) 12%, var(--mat-sys-surface));
+  color: var(--mat-sys-on-surface);
+  border-bottom: 1px solid color-mix(in srgb, var(--mat-sys-outline) 30%, transparent);
+}
+
+.dashboard-shell__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: inherit;
+  text-decoration: none;
+  min-width: 0;
+}
+
+.dashboard-shell__brand-mark {
+  width: 40px;
+  height: 40px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.dashboard-shell__brand-text {
+  font-size: 1rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.dashboard-shell__nav {
+  display: flex;
+  align-items: center;
+}
+
+.dashboard-shell__nav-tracker {
+  display: none;
+}
+
+.dashboard-shell__nav-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.dashboard-shell__nav--active .dashboard-shell__nav-button {
+  background: color-mix(in srgb, var(--mat-sys-primary) 18%, var(--mat-sys-surface));
+  color: var(--mat-sys-primary);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mat-sys-primary) 38%, transparent);
+}
+
+.dashboard-shell__nav--active .dashboard-shell__nav-button mat-icon {
+  color: inherit;
+}
+
+.dashboard-shell__menu-item--active {
+  background: color-mix(in srgb, var(--mat-sys-primary) 14%, var(--mat-sys-surface));
+  color: var(--mat-sys-primary);
+  font-weight: 600;
+}
+
+.dashboard-shell__menu-item--active .mat-mdc-menu-item-text {
+  font-weight: 600;
+}
+
+.dashboard-shell__spacer {
+  flex: 1 1 auto;
+}
+
+.dashboard-shell__account-button {
+  margin-left: auto;
+}
+
+.dashboard-shell__content {
+  padding: 24px;
+}
+
+@media (max-width: 599px) {
+  .dashboard-shell__toolbar {
+    padding-inline: 12px;
+  }
+
+  .dashboard-shell__brand-text {
+    display: none;
+  }
+
+  .dashboard-shell__content {
+    padding: 16px;
+  }
+}
