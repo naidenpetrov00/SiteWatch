@@ -2,26 +2,38 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Ardalis.GuardClauses;
+using Application.SeedWork.Security;
 using Domain.Entities;
 using Infrastructure.SeedWork.Options;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Infrastructure.Identity.Services;
 
-public class JwtTokenService(IConfiguration configuration) : IJwtTokenService
+public class JwtTokenService(
+    IConfiguration configuration,
+    UserManager<ApplicationUser> userManager
+) : IJwtTokenService
 {
     private readonly IConfiguration _configuration = configuration;
+    private readonly UserManager<ApplicationUser> _userManager = userManager;
 
-    public string GenerateToken(ApplicationUser user)
+    public async Task<string> GenerateTokenAsync(ApplicationUser user)
     {
-        var claims = new[]
+        var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.NameId, user.Id),
             new Claim(JwtRegisteredClaimNames.Email, user.Email!),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            // Add more claims as needed (e.g., roles)
         };
+
+        var userClaims = await _userManager.GetClaimsAsync(user);
+        var userTypeClaim = userClaims.FirstOrDefault(c => c.Type == UserClaimTypes.UserType);
+        if (userTypeClaim is not null)
+        {
+            claims.Add(new Claim(UserClaimTypes.UserType, userTypeClaim.Value));
+        }
 
         var options = Guard.Against.Null(_configuration.GetOptions<JwtOptions>());
         var issuerFromConfiguration = Guard.Against.Null(options.Issuer);

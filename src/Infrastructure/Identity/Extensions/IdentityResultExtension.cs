@@ -1,7 +1,7 @@
 using Application.SeedWork.Models;
 using Microsoft.AspNetCore.Identity;
 
-namespace Infrastructure.Identity.Extensions.cs;
+namespace Infrastructure.Identity.Extensions;
 
 public static class IdentityResultExtension
 {
