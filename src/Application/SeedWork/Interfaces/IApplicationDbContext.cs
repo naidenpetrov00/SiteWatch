@@ -9,6 +9,7 @@ public interface IApplicationDbContext
     DbSet<SiteImage> SiteImages { get; }
     DbSet<SiteFile> SiteFiles { get; }
     DbSet<SiteVideo> SiteVideos { get; }
+    DbSet<InvoiceDocument> InvoiceDocuments { get; }
     DbSet<Camera> Cameras { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);

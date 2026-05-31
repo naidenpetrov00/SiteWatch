@@ -149,6 +149,114 @@ namespace Infrastructure.Data.Migrations
                     b.ToTable("Cameras");
                 });
 
+            modelBuilder.Entity("Domain.Entities.InvoiceDocument", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DocumentType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ExtractionStatus")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("FileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<DateTimeOffset>("LastModified")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("SiteId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FileId")
+                        .IsUnique();
+
+                    b.HasIndex("SiteId");
+
+                    b.ToTable("InvoiceDocuments");
+                });
+
+            modelBuilder.Entity("Domain.Entities.InvoiceLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("InvoiceDocumentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("LineNumber")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Total")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InvoiceDocumentId");
+
+                    b.ToTable("InvoiceLine");
+                });
+
+            modelBuilder.Entity("Domain.Entities.InvoiceReviewIssue", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("InvoiceDocumentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsResolved")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InvoiceDocumentId");
+
+                    b.ToTable("InvoiceReviewIssue");
+                });
+
             modelBuilder.Entity("Domain.Entities.Site", b =>
                 {
                     b.Property<Guid>("Id")
@@ -175,6 +283,44 @@ namespace Infrastructure.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Sites");
+                });
+
+            modelBuilder.Entity("Domain.Entities.SiteFile", b =>
+                {
+                    b.Property<Guid>("SiteId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("FileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("LastModified")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("SiteId", "FileId");
+
+                    b.ToTable("SiteFiles");
                 });
 
             modelBuilder.Entity("Domain.Entities.SiteImage", b =>
@@ -453,6 +599,39 @@ namespace Infrastructure.Data.Migrations
                     b.Navigation("Site");
                 });
 
+            modelBuilder.Entity("Domain.Entities.InvoiceDocument", b =>
+                {
+                    b.HasOne("Domain.Entities.Site", "Site")
+                        .WithMany("Invoices")
+                        .HasForeignKey("SiteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Site");
+                });
+
+            modelBuilder.Entity("Domain.Entities.InvoiceLine", b =>
+                {
+                    b.HasOne("Domain.Entities.InvoiceDocument", "InvoiceDocument")
+                        .WithMany("Lines")
+                        .HasForeignKey("InvoiceDocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("InvoiceDocument");
+                });
+
+            modelBuilder.Entity("Domain.Entities.InvoiceReviewIssue", b =>
+                {
+                    b.HasOne("Domain.Entities.InvoiceDocument", "InvoiceDocument")
+                        .WithMany("ReviewIssues")
+                        .HasForeignKey("InvoiceDocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("InvoiceDocument");
+                });
+
             modelBuilder.Entity("Domain.Entities.Site", b =>
                 {
                     b.OwnsOne("Domain.ValueObjects.SiteAddress", "Address", b1 =>
@@ -498,6 +677,17 @@ namespace Infrastructure.Data.Migrations
 
                     b.Navigation("Name")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Domain.Entities.SiteFile", b =>
+                {
+                    b.HasOne("Domain.Entities.Site", "Site")
+                        .WithMany("Files")
+                        .HasForeignKey("SiteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Site");
                 });
 
             modelBuilder.Entity("Domain.Entities.SiteImage", b =>
@@ -573,11 +763,22 @@ namespace Infrastructure.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Domain.Entities.InvoiceDocument", b =>
+                {
+                    b.Navigation("Lines");
+
+                    b.Navigation("ReviewIssues");
+                });
+
             modelBuilder.Entity("Domain.Entities.Site", b =>
                 {
                     b.Navigation("Cameras");
 
+                    b.Navigation("Files");
+
                     b.Navigation("Images");
+
+                    b.Navigation("Invoices");
 
                     b.Navigation("Videos");
                 });

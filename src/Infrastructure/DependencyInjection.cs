@@ -4,6 +4,7 @@ using Ardalis.GuardClauses;
 using Azure.Storage.Blobs;
 using Domain.Entities;
 using Infrastructure.Cameras.Services;
+using Infrastructure.InvoiceExtraction;
 using Infrastructure.Data;
 using Infrastructure.Email;
 using Infrastructure.Identity.Services;
@@ -58,6 +59,8 @@ public static class DependencyInjection
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<ISiteService, SiteService>();
         services.AddScoped<ICameraService, CameraService>();
+        services.AddScoped<IInvoiceExtractor, OpenRouterInvoiceExtractor>();
+        services.AddScoped<IInvoiceFileStorage, LocalInvoiceFileStorage>();
 
         services
             .AddIdentity<ApplicationUser, IdentityRole>(options => { options.User.RequireUniqueEmail = true; })

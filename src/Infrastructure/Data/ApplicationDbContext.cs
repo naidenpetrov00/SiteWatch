@@ -15,6 +15,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<SiteImage> SiteImages => Set<SiteImage>();
     public DbSet<SiteFile> SiteFiles => Set<SiteFile>();
     public DbSet<SiteVideo> SiteVideos => Set<SiteVideo>();
+    public DbSet<InvoiceDocument> InvoiceDocuments => Set<InvoiceDocument>();
     public DbSet<Camera> Cameras => Set<Camera>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

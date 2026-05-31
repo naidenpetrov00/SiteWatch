@@ -9,6 +9,7 @@ public sealed record BlobContainerName
     public static BlobContainerName Images { get; } = new("images");
     public static BlobContainerName Videos { get; } = new("videos");
     public static BlobContainerName Files { get; } = new("files");
+    public static BlobContainerName Invoices { get; } = new("invoices");
 
     public override string ToString() => Value;
 }
