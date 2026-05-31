@@ -8,19 +8,65 @@ public class InvoiceDocumentConfiguration : IEntityTypeConfiguration<InvoiceDocu
 {
     public void Configure(EntityTypeBuilder<InvoiceDocument> builder)
     {
-        builder.HasIndex(i => i.FileId).IsUnique();
+        builder.ToTable("InvoiceDocuments");
+
         builder.HasIndex(i => i.SiteId);
+        builder.HasIndex(i => i.StoredFilePath).IsUnique();
 
-        builder.Property(i => i.FileName)
-            .HasMaxLength(512);
-
-        builder.Property(i => i.ContentType)
-            .HasMaxLength(128);
-
-        builder.HasOne(i => i.Site)
-            .WithMany(s => s.Invoices)
+        builder.HasOne<Site>()
+            .WithMany()
             .HasForeignKey(i => i.SiteId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Property(i => i.OriginalFileName)
+            .HasMaxLength(512)
+            .IsRequired();
+
+        builder.Property(i => i.StoredFilePath)
+            .HasMaxLength(1024)
+            .IsRequired();
+
+        builder.Property(i => i.SupplierName)
+            .HasMaxLength(256);
+
+        builder.Property(i => i.SupplierEik)
+            .HasMaxLength(32);
+
+        builder.Property(i => i.SupplierVatNumber)
+            .HasMaxLength(32);
+
+        builder.Property(i => i.BuyerName)
+            .HasMaxLength(256);
+
+        builder.Property(i => i.InvoiceNumber)
+            .HasMaxLength(128);
+
+        builder.Property(i => i.Currency)
+            .HasMaxLength(8);
+
+        builder.Property(i => i.RawExtractionJson)
+            .HasColumnType("nvarchar(max)");
+
+        builder.Property(i => i.DocumentType)
+            .HasConversion<int>();
+
+        builder.Property(i => i.Status)
+            .HasConversion<int>();
+
+        builder.Property(i => i.NetTotal)
+            .HasPrecision(18, 2);
+
+        builder.Property(i => i.VatTotal)
+            .HasPrecision(18, 2);
+
+        builder.Property(i => i.GrossTotal)
+            .HasPrecision(18, 2);
+
+        builder.Property(i => i.OverallConfidence)
+            .HasPrecision(9, 6);
+
+        builder.Property(i => i.CreatedAt)
+            .IsRequired();
 
         builder.HasMany(i => i.Lines)
             .WithOne(il => il.InvoiceDocument)

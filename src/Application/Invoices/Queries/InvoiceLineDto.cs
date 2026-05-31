@@ -2,8 +2,12 @@ namespace Application.Invoices.Queries;
 
 public sealed record InvoiceLineDto(
     Guid Id,
-    int LineNumber,
-    string? Description,
-    decimal Quantity,
-    decimal UnitPrice,
-    decimal Total);
+    string? ProductCode,
+    string? ProductName,
+    decimal? Quantity,
+    string? Unit,
+    decimal? UnitPrice,
+    decimal? Discount,
+    decimal? VatRate,
+    decimal? LineTotal,
+    decimal? Confidence);

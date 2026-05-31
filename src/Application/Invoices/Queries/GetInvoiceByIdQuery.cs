@@ -13,7 +13,9 @@ public class GetInvoiceByIdQuery : IRequest<InvoiceDetailsDto?>
 public class GetInvoiceByIdQueryHandler(IApplicationDbContext dbContext)
     : IRequestHandler<GetInvoiceByIdQuery, InvoiceDetailsDto?>
 {
-    public async Task<InvoiceDetailsDto?> Handle(GetInvoiceByIdQuery request, CancellationToken cancellationToken)
+    public async Task<InvoiceDetailsDto?> Handle(
+        GetInvoiceByIdQuery request,
+        CancellationToken cancellationToken)
     {
         var invoice = await dbContext.InvoiceDocuments
             .AsNoTracking()
@@ -30,29 +32,49 @@ public class GetInvoiceByIdQueryHandler(IApplicationDbContext dbContext)
 
         return new InvoiceDetailsDto(
             invoice.Id,
-            invoice.SiteId,
-            invoice.FileId,
-            invoice.FileName,
-            invoice.ContentType,
+            invoice.OriginalFileName,
+            invoice.StoredFilePath,
+            invoice.Status.ToString(),
             invoice.DocumentType.ToString(),
-            invoice.ExtractionStatus.ToString(),
-            invoice.Created,
+            invoice.SupplierName,
+            invoice.SupplierEik,
+            invoice.SupplierVatNumber,
+            invoice.BuyerName,
+            invoice.InvoiceNumber,
+            invoice.InvoiceDate,
+            invoice.Currency,
+            invoice.NetTotal,
+            invoice.VatTotal,
+            invoice.GrossTotal,
+            invoice.OverallConfidence,
+            invoice.RawExtractionJson,
+            invoice.CreatedAt,
+            invoice.ProcessedAt,
+            invoice.ApprovedAt,
             invoice.Lines
-                .OrderBy(x => x.LineNumber)
+                .OrderBy(x => x.Id)
                 .Select(x => new InvoiceLineDto(
                     x.Id,
-                    x.LineNumber,
-                    x.Description,
+                    x.ProductCode,
+                    x.ProductName,
                     x.Quantity,
+                    x.Unit,
                     x.UnitPrice,
-                    x.Total))
+                    x.Discount,
+                    x.VatRate,
+                    x.LineTotal,
+                    x.Confidence))
                 .ToArray(),
             invoice.ReviewIssues
+                .OrderBy(x => x.Id)
                 .Select(x => new InvoiceReviewIssueDto(
                     x.Id,
-                    x.Code,
-                    x.Message,
-                    x.IsResolved))
+                    x.FieldPath,
+                    x.ExtractedValue,
+                    x.Reason,
+                    x.Confidence,
+                    x.CorrectedValue,
+                    x.Resolved))
                 .ToArray());
     }
 }

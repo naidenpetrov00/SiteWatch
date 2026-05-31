@@ -2,10 +2,15 @@ namespace Application.Invoices.Queries;
 
 public sealed record InvoiceSummaryDto(
     Guid InvoiceId,
-    Guid SiteId,
-    Guid FileId,
-    string FileName,
-    string ContentType,
+    string OriginalFileName,
+    string Status,
     string DocumentType,
-    string ExtractionStatus,
-    DateTimeOffset Created);
+    string? SupplierName,
+    string? InvoiceNumber,
+    DateTimeOffset? InvoiceDate,
+    string? Currency,
+    decimal? GrossTotal,
+    decimal? OverallConfidence,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset? ProcessedAt,
+    DateTimeOffset? ApprovedAt);

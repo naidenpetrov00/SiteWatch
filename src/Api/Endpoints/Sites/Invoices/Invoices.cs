@@ -55,7 +55,7 @@ public class Invoices : EndpointGroupBase
 
     private static async Task<NoContent> ApproveInvoice(IMediator mediator, Guid siteId, Guid invoiceId)
     {
-        mediator.Send(new ApproveInvoiceCommand { SiteId = siteId, InvoiceId = invoiceId });
+        await mediator.Send(new ApproveInvoiceCommand { SiteId = siteId, InvoiceId = invoiceId });
         return TypedResults.NoContent();
     }
 }

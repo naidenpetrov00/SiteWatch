@@ -11,7 +11,6 @@ public sealed class Site : BaseAuditableEntity
     private readonly HashSet<SiteImage> _images = [];
     private readonly HashSet<SiteFile> _files = [];
     private readonly HashSet<SiteVideo> _videos = [];
-    private readonly HashSet<InvoiceDocument> _invoices = [];
 
     public Site(SiteName name, SiteAddress address, SiteMediaPolicy? mediaPolicy = null)
     {
@@ -33,7 +32,6 @@ public sealed class Site : BaseAuditableEntity
     public IReadOnlyCollection<SiteImage> Images => _images;
     public IReadOnlyCollection<SiteFile> Files => _files;
     public IReadOnlyCollection<SiteVideo> Videos => _videos;
-    public IReadOnlyCollection<InvoiceDocument> Invoices => _invoices;
 
     public void ChangeMediaPolicy(SiteMediaPolicy mediaPolicy) =>
         MediaPolicy = Guard.Against.Null(mediaPolicy);
@@ -44,8 +42,6 @@ public sealed class Site : BaseAuditableEntity
     public void RemoveFile(SiteFile file) => _files.Remove(file);
     public void AddVideo(SiteVideo video) => _videos.Add(video);
     public void RemoveVideo(SiteVideo video) => _videos.Remove(video);
-    public void AddInvoice(InvoiceDocument invoice) => _invoices.Add(invoice);
-    public void RemoveInvoice(InvoiceDocument invoice) => _invoices.Remove(invoice);
     public void AddUser(ApplicationUser user) => _users.Add(user);
 
     public void AddUserRange(List<ApplicationUser> users)

@@ -9,11 +9,15 @@ public sealed class InvoiceLine : BaseEntity
     }
 
     public Guid InvoiceDocumentId { get; private set; }
-    public int LineNumber { get; private set; }
-    public string? Description { get; private set; }
-    public decimal Quantity { get; private set; }
-    public decimal UnitPrice { get; private set; }
-    public decimal Total { get; private set; }
+    public string? ProductCode { get; private set; }
+    public string? ProductName { get; private set; }
+    public decimal? Quantity { get; private set; }
+    public string? Unit { get; private set; }
+    public decimal? UnitPrice { get; private set; }
+    public decimal? Discount { get; private set; }
+    public decimal? VatRate { get; private set; }
+    public decimal? LineTotal { get; private set; }
+    public decimal? Confidence { get; private set; }
 
     public InvoiceDocument InvoiceDocument { get; private set; } = null!;
 }

@@ -53,6 +53,7 @@ SiteWatch is split into:
 - Do not build, run, or launch projects unless explicitly asked.
 - Do not generate or plan testing unless the user explicitly asks for it.
 - Do not create, generate, or modify EF migrations or snapshot files unless the user explicitly asks for that work.
+- Treat EF migrations and the model snapshot as off-limits by default. If a change seems to require them, stop and ask first rather than editing them.
 - Do not commit secrets or environment-specific values.
 - Keep changes scoped and avoid unrelated formatting or churn.
 - Follow existing repository naming and formatting conventions.

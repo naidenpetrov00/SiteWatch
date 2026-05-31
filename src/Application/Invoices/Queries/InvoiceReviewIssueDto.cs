@@ -2,6 +2,9 @@ namespace Application.Invoices.Queries;
 
 public sealed record InvoiceReviewIssueDto(
     Guid Id,
-    string Code,
-    string Message,
-    bool IsResolved);
+    string FieldPath,
+    string? ExtractedValue,
+    string Reason,
+    decimal? Confidence,
+    string? CorrectedValue,
+    bool Resolved);

@@ -155,48 +155,88 @@ namespace Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("ContentType")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
-                    b.Property<DateTimeOffset>("Created")
+                    b.Property<DateTimeOffset?>("ApprovedAt")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<string>("BuyerName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Currency")
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)");
 
                     b.Property<int>("DocumentType")
                         .HasColumnType("int");
 
-                    b.Property<int>("ExtractionStatus")
-                        .HasColumnType("int");
+                    b.Property<decimal?>("GrossTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
-                    b.Property<Guid>("FileId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<DateTimeOffset?>("InvoiceDate")
+                        .HasColumnType("datetimeoffset");
 
-                    b.Property<string>("FileName")
+                    b.Property<string>("InvoiceNumber")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<decimal?>("NetTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("OriginalFileName")
                         .IsRequired()
                         .HasMaxLength(512)
                         .HasColumnType("nvarchar(512)");
 
-                    b.Property<DateTimeOffset>("LastModified")
+                    b.Property<decimal?>("OverallConfidence")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("decimal(9,6)");
+
+                    b.Property<DateTimeOffset?>("ProcessedAt")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<string>("LastModifiedBy")
+                    b.Property<string>("RawExtractionJson")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("SiteId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("Id");
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
-                    b.HasIndex("FileId")
-                        .IsUnique();
+                    b.Property<string>("StoredFilePath")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
+                    b.Property<string>("SupplierEik")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("SupplierName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("SupplierVatNumber")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<decimal?>("VatTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
 
                     b.HasIndex("SiteId");
 
-                    b.ToTable("InvoiceDocuments");
+                    b.HasIndex("StoredFilePath")
+                        .IsUnique();
+
+                    b.ToTable("InvoiceDocuments", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.InvoiceLine", b =>
@@ -205,29 +245,50 @@ namespace Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<decimal?>("Confidence")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("decimal(9,6)");
+
+                    b.Property<decimal?>("Discount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<Guid>("InvoiceDocumentId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("LineNumber")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("Quantity")
+                    b.Property<decimal?>("LineTotal")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<decimal>("Total")
+                    b.Property<string>("ProductCode")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("ProductName")
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<decimal?>("Quantity")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("decimal(18,6)");
+
+                    b.Property<string>("Unit")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<decimal?>("UnitPrice")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<decimal>("UnitPrice")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<decimal?>("VatRate")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("decimal(9,6)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("InvoiceDocumentId");
 
-                    b.ToTable("InvoiceLine");
+                    b.ToTable("InvoiceLines", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.InvoiceReviewIssue", b =>
@@ -236,25 +297,36 @@ namespace Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Code")
-                        .IsRequired()
+                    b.Property<decimal?>("Confidence")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("decimal(9,6)");
+
+                    b.Property<string>("CorrectedValue")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ExtractedValue")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FieldPath")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<Guid>("InvoiceDocumentId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<bool>("IsResolved")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Message")
+                    b.Property<string>("Reason")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("Resolved")
+                        .HasColumnType("bit");
 
                     b.HasKey("Id");
 
                     b.HasIndex("InvoiceDocumentId");
 
-                    b.ToTable("InvoiceReviewIssue");
+                    b.ToTable("InvoiceReviewIssues", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.Site", b =>
@@ -601,13 +673,11 @@ namespace Infrastructure.Data.Migrations
 
             modelBuilder.Entity("Domain.Entities.InvoiceDocument", b =>
                 {
-                    b.HasOne("Domain.Entities.Site", "Site")
-                        .WithMany("Invoices")
+                    b.HasOne("Domain.Entities.Site", null)
+                        .WithMany()
                         .HasForeignKey("SiteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Site");
                 });
 
             modelBuilder.Entity("Domain.Entities.InvoiceLine", b =>
@@ -777,8 +847,6 @@ namespace Infrastructure.Data.Migrations
                     b.Navigation("Files");
 
                     b.Navigation("Images");
-
-                    b.Navigation("Invoices");
 
                     b.Navigation("Videos");
                 });

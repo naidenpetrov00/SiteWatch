@@ -22,7 +22,9 @@ public class UploadInvoiceCommandHandler(
 {
     public async Task<Guid> Handle(UploadInvoiceCommand request, CancellationToken cancellationToken)
     {
-        var site = await dbContext.Sites.FirstAsync(site => site.Id == request.SiteId, cancellationToken);
+        _ = request.ContentLength;
+
+        await dbContext.Sites.FirstAsync(site => site.Id == request.SiteId, cancellationToken);
 
         var fileId = await invoiceFileStorage.UploadAsync(
             request.Stream,
@@ -33,12 +35,10 @@ public class UploadInvoiceCommandHandler(
         var documentType = DetermineDocumentType(request.ContentType, request.FileName);
         var invoice = InvoiceDocument.Create(
             request.SiteId,
-            fileId,
             request.FileName,
-            request.ContentType,
+            fileId.ToString(),
             documentType);
 
-        site.AddInvoice(invoice);
         dbContext.InvoiceDocuments.Add(invoice);
 
         try

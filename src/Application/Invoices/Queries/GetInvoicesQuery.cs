@@ -12,21 +12,28 @@ public class GetInvoicesQuery : IRequest<List<InvoiceSummaryDto>>
 public class GetInvoicesQueryHandler(IApplicationDbContext dbContext)
     : IRequestHandler<GetInvoicesQuery, List<InvoiceSummaryDto>>
 {
-    public async Task<List<InvoiceSummaryDto>> Handle(GetInvoicesQuery request, CancellationToken cancellationToken)
+    public async Task<List<InvoiceSummaryDto>> Handle(
+        GetInvoicesQuery request,
+        CancellationToken cancellationToken)
     {
         var invoices = await dbContext.InvoiceDocuments
             .AsNoTracking()
             .Where(x => x.SiteId == request.SiteId)
-            .OrderByDescending(x => x.Created)
+            .OrderByDescending(x => x.CreatedAt)
             .Select(x => new InvoiceSummaryDto(
                 x.Id,
-                x.SiteId,
-                x.FileId,
-                x.FileName,
-                x.ContentType,
+                x.OriginalFileName,
+                x.Status.ToString(),
                 x.DocumentType.ToString(),
-                x.ExtractionStatus.ToString(),
-                x.Created))
+                x.SupplierName,
+                x.InvoiceNumber,
+                x.InvoiceDate,
+                x.Currency,
+                x.GrossTotal,
+                x.OverallConfidence,
+                x.CreatedAt,
+                x.ProcessedAt,
+                x.ApprovedAt))
             .ToListAsync(cancellationToken);
 
         return invoices;
