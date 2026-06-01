@@ -48,7 +48,7 @@ internal sealed class FakeInvoiceExtractor : IInvoiceExtractor
 
         var result = new InvoiceExtractionResult
         {
-            DocumentType = "Pdf",
+            DocumentType = InvoiceExtractionDocumentType.Invoice,
             SupplierName = "Acme Supplies Ltd",
             SupplierEik = "123456789",
             SupplierVatNumber = "BG123456789",

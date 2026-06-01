@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models.External;
+using Application.SeedWork.Exceptions;
 using Ardalis.GuardClauses;
 using Domain.Entities;
 using Domain.SeedWork.Enums;
@@ -125,10 +126,7 @@ public sealed class InvoiceProcessingService(
                 invoiceId,
                 siteId);
 
-            await PersistFailureAsync(
-                invoiceDocument,
-                ex.Message,
-                cancellationToken);
+            await PersistFailureAsync(invoiceDocument, ex, cancellationToken);
             throw;
         }
     }
@@ -171,6 +169,12 @@ public sealed class InvoiceProcessingService(
         {
             errorMessage = exception.Message,
             exceptionType = exception.GetType().FullName,
+            rawResponse = exception is OpenRouterInvoiceExtractionException openRouterException
+                ? openRouterException.RawResponse
+                : null,
+            statusCode = exception is OpenRouterInvoiceExtractionException statusException
+                ? statusException.StatusCode
+                : null,
             occurredAt = DateTimeOffset.UtcNow
         });
 

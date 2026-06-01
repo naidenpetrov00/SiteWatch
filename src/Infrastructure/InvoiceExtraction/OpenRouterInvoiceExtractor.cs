@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Application.SeedWork.Exceptions;
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models.External;
 using Ardalis.GuardClauses;
@@ -45,6 +46,25 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
         var normalizedFile = await NormalizeInputAsync(stream, contentType, cancellationToken);
         var pdfDataUrl = $"data:application/pdf;base64,{Convert.ToBase64String(normalizedFile.Content)}";
 
+        var responseContent = await SendExtractionRequestAsync(
+            apiKey,
+            model,
+            parserEngine,
+            normalizedFile.FileName,
+            pdfDataUrl,
+            cancellationToken);
+
+        return ParseExtractionResult(responseContent);
+    }
+
+    private async Task<string> SendExtractionRequestAsync(
+        string apiKey,
+        string model,
+        string parserEngine,
+        string fileName,
+        string pdfDataUrl,
+        CancellationToken cancellationToken)
+    {
         var requestBody = new
         {
             model,
@@ -56,13 +76,13 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
                     role = "system",
                     content = """
                     You extract invoice-like documents into strict JSON.
-                    Return only one JSON object and no markdown, prose, or code fences.
-                    Do not guess unclear values. Use null for anything missing, ambiguous, or unreadable.
+                    Return only one JSON object.
+                    Do not guess unclear values. Use null for missing or unreadable values.
                     Preserve product names exactly as written.
                     Extract every visible product or service line.
-                    Detect the document type as Invoice, Receipt, Offer, or Unknown.
+                    Detect document type as Invoice, Receipt, Offer, or Unknown.
                     Add issues for unclear, suspicious, or contradictory fields.
-                    Set confidence values between 0 and 1 when possible.
+                    Return confidence in extracted values between 0 and 1 so that if there is missunderstood answer i will review and update it.
                     """
                 },
                 new
@@ -126,11 +146,10 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
                             - documentType must be one of Invoice, Receipt, Offer, Unknown.
                             - Use null for missing values.
                             - Do not infer values that are not explicitly supported by the document.
-                            - Preserve the original product names and descriptions.
+                            - Preserve original product names and descriptions.
                             - Include all visible product lines.
                             - Flag suspicious totals, missing identifiers, unclear dates, and ambiguous supplier or buyer data in issues.
                             - If a value is uncertain, prefer null and add an issue instead of guessing.
-                            - Use the OpenRouter file parser output and the configured model to fill the schema above.
                             """
                         },
                         new
@@ -138,7 +157,7 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
                             type = "file",
                             file = new
                             {
-                                filename = normalizedFile.FileName,
+                                filename = fileName,
                                 file_data = pdfDataUrl
                             }
                         }
@@ -147,7 +166,13 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
             },
             response_format = new
             {
-                type = "json_object"
+                type = "json_schema",
+                json_schema = new
+                {
+                    name = "invoice_extraction_result",
+                    strict = true,
+                    schema = BuildInvoiceExtractionSchema()
+                }
             },
             plugins = new object[]
             {
@@ -177,23 +202,176 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
 
         if (!response.IsSuccessStatusCode)
         {
-            throw new InvalidOperationException(
-                $"OpenRouter invoice extraction failed with status code {(int)response.StatusCode}: {responseContent}");
+            throw new OpenRouterInvoiceExtractionException(
+                $"OpenRouter invoice extraction failed with status code {(int)response.StatusCode}.",
+                responseContent,
+                (int)response.StatusCode);
         }
 
-        var completion = JsonSerializer.Deserialize<OpenRouterChatCompletionResponse>(
-            responseContent,
-            JsonSerializerOptions);
+        return responseContent;
+    }
+
+    private static InvoiceExtractionResult? ParseExtractionResult(string responseContent)
+    {
+        OpenRouterChatCompletionResponse? completion;
+        try
+        {
+            completion = JsonSerializer.Deserialize<OpenRouterChatCompletionResponse>(
+                responseContent,
+                JsonSerializerOptions);
+        }
+        catch (JsonException ex)
+        {
+            throw new OpenRouterInvoiceExtractionException(
+                "OpenRouter returned an invalid response envelope.",
+                responseContent,
+                innerException: ex);
+        }
 
         var content = NormalizeJsonContent(completion?.Choices.FirstOrDefault()?.Message?.Content);
         if (string.IsNullOrWhiteSpace(content))
         {
-            return null;
+            throw new OpenRouterInvoiceExtractionException(
+                "OpenRouter returned an empty extraction payload.",
+                responseContent);
         }
 
-        var extractionResult = JsonSerializer.Deserialize<InvoiceExtractionResult>(content, JsonSerializerOptions);
-        return extractionResult is null ? null : extractionResult with { RawJson = content };
+        try
+        {
+            var extractionResult = JsonSerializer.Deserialize<InvoiceExtractionResult>(content, JsonSerializerOptions);
+            return extractionResult is null ? null : extractionResult with { RawJson = content };
+        }
+        catch (JsonException ex)
+        {
+            throw new OpenRouterInvoiceExtractionException(
+                "OpenRouter returned invalid invoice JSON.",
+                responseContent,
+                innerException: ex);
+        }
     }
+
+    private static object BuildInvoiceExtractionSchema()
+        => new
+        {
+            type = "object",
+            additionalProperties = false,
+            required = new[]
+            {
+                "documentType",
+                "documentTypeConfidence",
+                "supplierName",
+                "supplierNameConfidence",
+                "supplierEik",
+                "supplierEikConfidence",
+                "supplierVatNumber",
+                "supplierVatNumberConfidence",
+                "buyerName",
+                "buyerNameConfidence",
+                "invoiceNumber",
+                "invoiceNumberConfidence",
+                "invoiceDate",
+                "invoiceDateConfidence",
+                "currency",
+                "currencyConfidence",
+                "netTotal",
+                "netTotalConfidence",
+                "vatTotal",
+                "vatTotalConfidence",
+                "grossTotal",
+                "grossTotalConfidence",
+                "overallConfidence",
+                "items",
+                "issues"
+            },
+            properties = new
+            {
+                documentType = new { type = "string", @enum = new[] { "Invoice", "Receipt", "Offer", "Unknown" } },
+                documentTypeConfidence = NullableNumberSchema(),
+                supplierName = NullableStringSchema(),
+                supplierNameConfidence = NullableNumberSchema(),
+                supplierEik = NullableStringSchema(),
+                supplierEikConfidence = NullableNumberSchema(),
+                supplierVatNumber = NullableStringSchema(),
+                supplierVatNumberConfidence = NullableNumberSchema(),
+                buyerName = NullableStringSchema(),
+                buyerNameConfidence = NullableNumberSchema(),
+                invoiceNumber = NullableStringSchema(),
+                invoiceNumberConfidence = NullableNumberSchema(),
+                invoiceDate = NullableDateTimeStringSchema(),
+                invoiceDateConfidence = NullableNumberSchema(),
+                currency = NullableStringSchema(),
+                currencyConfidence = NullableNumberSchema(),
+                netTotal = NullableNumberSchema(),
+                netTotalConfidence = NullableNumberSchema(),
+                vatTotal = NullableNumberSchema(),
+                vatTotalConfidence = NullableNumberSchema(),
+                grossTotal = NullableNumberSchema(),
+                grossTotalConfidence = NullableNumberSchema(),
+                overallConfidence = NullableNumberSchema(),
+                items = new
+                {
+                    type = "array",
+                    items = new
+                    {
+                        type = "object",
+                        additionalProperties = false,
+                        required = new[]
+                        {
+                            "productCode",
+                            "productName",
+                            "quantity",
+                            "unit",
+                            "unitPrice",
+                            "discount",
+                            "vatRate",
+                            "lineTotal",
+                            "confidence"
+                        },
+                        properties = new
+                        {
+                            productCode = NullableStringSchema(),
+                            productName = NullableStringSchema(),
+                            quantity = NullableNumberSchema(),
+                            unit = NullableStringSchema(),
+                            unitPrice = NullableNumberSchema(),
+                            discount = NullableNumberSchema(),
+                            vatRate = NullableNumberSchema(),
+                            lineTotal = NullableNumberSchema(),
+                            confidence = NullableNumberSchema()
+                        }
+                    }
+                },
+                issues = new
+                {
+                    type = "array",
+                    items = new
+                    {
+                        type = "object",
+                        additionalProperties = false,
+                        required = new[]
+                        {
+                            "fieldPath",
+                            "extractedValue",
+                            "reason",
+                            "confidence"
+                        },
+                        properties = new
+                        {
+                            fieldPath = new { type = "string" },
+                            extractedValue = NullableStringSchema(),
+                            reason = new { type = "string" },
+                            confidence = NullableNumberSchema()
+                        }
+                    }
+                }
+            }
+        };
+
+    private static object NullableStringSchema() => new { type = new[] { "string", "null" } };
+
+    private static object NullableNumberSchema() => new { type = new[] { "number", "null" } };
+
+    private static object NullableDateTimeStringSchema() => new { type = new[] { "string", "null" }, format = "date-time" };
 
     private static async Task<NormalizedInput> NormalizeInputAsync(
         Stream stream,
@@ -207,26 +385,19 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
 
         if (normalizedContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
         {
-            using var image = await Image.LoadAsync(inputBytes, cancellationToken);
+            await using var inputStream = new MemoryStream(inputBytes);
+            using var image = await Image.LoadAsync(inputStream, cancellationToken);
             using var jpegStream = new MemoryStream();
             image.SaveAsJpeg(jpegStream);
 
-            var pdfBytes = CreateSinglePagePdf(jpegStream.ToArray(), image.Width, image.Height);
-            return new NormalizedInput(pdfBytes, "invoice.pdf");
+            return new NormalizedInput(CreateSinglePagePdf(jpegStream.ToArray(), image.Width, image.Height), "invoice.pdf");
         }
 
         return new NormalizedInput(inputBytes, "invoice.pdf");
     }
 
     private static string NormalizeContentType(string contentType)
-    {
-        if (string.IsNullOrWhiteSpace(contentType))
-        {
-            return "application/pdf";
-        }
-
-        return contentType.Split(';', 2)[0].Trim();
-    }
+        => string.IsNullOrWhiteSpace(contentType) ? "application/pdf" : contentType.Split(';', 2)[0].Trim();
 
     private static string? NormalizeJsonContent(string? content)
     {
@@ -270,15 +441,8 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
             3,
             $"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {width} {height}] /Resources << /XObject << /Im0 5 0 R >> >> /Contents 4 0 R >>\n");
 
-        var contentBytes = Encoding.ASCII.GetBytes(
-            $"q\n{width} 0 0 {height} 0 0 cm\n/Im0 Do\nQ\n");
-        WriteStreamObject(
-            pdfStream,
-            offsets,
-            4,
-            $"<< /Length {contentBytes.Length} >>\n",
-            contentBytes);
-
+        var contentBytes = Encoding.ASCII.GetBytes($"q\n{width} 0 0 {height} 0 0 cm\n/Im0 Do\nQ\n");
+        WriteStreamObject(pdfStream, offsets, 4, $"<< /Length {contentBytes.Length} >>\n", contentBytes);
         WriteStreamObject(
             pdfStream,
             offsets,
@@ -289,7 +453,6 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
         var xrefPosition = pdfStream.Position;
         WriteAscii(pdfStream, $"xref\n0 {offsets.Count + 1}\n");
         WriteAscii(pdfStream, "0000000000 65535 f \n");
-
         foreach (var offset in offsets)
         {
             WriteAscii(pdfStream, $"{offset:0000000000} 00000 n \n");
