@@ -6,7 +6,7 @@ public class OpenRouterOptions
 
     public string BaseUrl { get; set; } = "https://openrouter.ai/api/v1";
 
-    public string Model { get; set; } = "deepseek/deepseek-v3.2";
+    public string Model { get; set; } = "google/gemma-4-26b-a4b-it";
 
     public string PdfParserEngine { get; set; } = "mistral-ocr";
 }

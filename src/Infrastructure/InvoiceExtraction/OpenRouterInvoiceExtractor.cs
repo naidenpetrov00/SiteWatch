@@ -65,6 +65,39 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
         string pdfDataUrl,
         CancellationToken cancellationToken)
     {
+        try
+        {
+            return await SendExtractionRequestAsync(
+                apiKey,
+                model,
+                parserEngine,
+                fileName,
+                pdfDataUrl,
+                BuildResponseFormat("json_schema"),
+                cancellationToken);
+        }
+        catch (OpenRouterInvoiceExtractionException ex) when (TryFallbackToJsonObject(ex))
+        {
+            return await SendExtractionRequestAsync(
+                apiKey,
+                model,
+                parserEngine,
+                fileName,
+                pdfDataUrl,
+                BuildResponseFormat("json_object"),
+                cancellationToken);
+        }
+    }
+
+    private async Task<string> SendExtractionRequestAsync(
+        string apiKey,
+        string model,
+        string parserEngine,
+        string fileName,
+        string pdfDataUrl,
+        object? responseFormat,
+        CancellationToken cancellationToken)
+    {
         var requestBody = new
         {
             model,
@@ -82,7 +115,7 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
                     Extract every visible product or service line.
                     Detect document type as Invoice, Receipt, Offer, or Unknown.
                     Add issues for unclear, suspicious, or contradictory fields.
-                    Return confidence in extracted values between 0 and 1 so that if there is missunderstood answer i will review and update it.
+                    Return confidence in extracted values between 0 and 1.
                     """
                 },
                 new
@@ -94,62 +127,9 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
                         {
                             type = "text",
                             text = """
-                            Return a single JSON object with this shape:
-                            {
-                              "documentType": "Invoice|Receipt|Offer|Unknown",
-                              "documentTypeConfidence": 0.0,
-                              "supplierName": "string|null",
-                              "supplierNameConfidence": 0.0,
-                              "supplierEik": "string|null",
-                              "supplierEikConfidence": 0.0,
-                              "supplierVatNumber": "string|null",
-                              "supplierVatNumberConfidence": 0.0,
-                              "buyerName": "string|null",
-                              "buyerNameConfidence": 0.0,
-                              "invoiceNumber": "string|null",
-                              "invoiceNumberConfidence": 0.0,
-                              "invoiceDate": "ISO-8601 string|null",
-                              "invoiceDateConfidence": 0.0,
-                              "currency": "string|null",
-                              "currencyConfidence": 0.0,
-                              "netTotal": 0.0,
-                              "netTotalConfidence": 0.0,
-                              "vatTotal": 0.0,
-                              "vatTotalConfidence": 0.0,
-                              "grossTotal": 0.0,
-                              "grossTotalConfidence": 0.0,
-                              "overallConfidence": 0.0,
-                              "items": [
-                                {
-                                  "productCode": "string|null",
-                                  "productName": "string|null",
-                                  "quantity": 0.0,
-                                  "unit": "string|null",
-                                  "unitPrice": 0.0,
-                                  "discount": 0.0,
-                                  "vatRate": 0.0,
-                                  "lineTotal": 0.0,
-                                  "confidence": 0.0
-                                }
-                              ],
-                              "issues": [
-                                {
-                                  "fieldPath": "string",
-                                  "extractedValue": "string|null",
-                                  "reason": "string",
-                                  "confidence": 0.0
-                                }
-                              ]
-                            }
-
-                            Rules:
-                            - documentType must be one of Invoice, Receipt, Offer, Unknown.
-                            - Use null for missing values.
-                            - Do not infer values that are not explicitly supported by the document.
-                            - Preserve original product names and descriptions.
-                            - Include all visible product lines.
-                            - Flag suspicious totals, missing identifiers, unclear dates, and ambiguous supplier or buyer data in issues.
-                            - If a value is uncertain, prefer null and add an issue instead of guessing.
+                            Extract the document into the response schema.
+                            Missing values must be null.
+                            Do not guess.
                             """
                         },
                         new
@@ -164,16 +144,6 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
                     }
                 }
             },
-            response_format = new
-            {
-                type = "json_schema",
-                json_schema = new
-                {
-                    name = "invoice_extraction_result",
-                    strict = true,
-                    schema = BuildInvoiceExtractionSchema()
-                }
-            },
             plugins = new object[]
             {
                 new
@@ -183,8 +153,13 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
                     {
                         engine = parserEngine
                     }
+                },
+                new
+                {
+                    id = "response-healing"
                 }
             },
+            response_format = responseFormat,
             stream = false
         };
 
@@ -211,8 +186,171 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
         return responseContent;
     }
 
+    private static bool TryFallbackToJsonObject(OpenRouterInvoiceExtractionException exception)
+    {
+        if (exception.StatusCode is not (400 or 422))
+        {
+            return false;
+        }
+
+        return exception.RawResponse.Contains("response_format", StringComparison.OrdinalIgnoreCase) ||
+               exception.RawResponse.Contains("structured", StringComparison.OrdinalIgnoreCase) ||
+               exception.RawResponse.Contains("json_schema", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static object BuildResponseFormat(string type)
+        => type switch
+        {
+            "json_schema" => new
+            {
+                type = "json_schema",
+                json_schema = new
+                {
+                    name = "invoice_extraction_result",
+                    strict = true,
+                    schema = new
+                    {
+                        type = "object",
+                        additionalProperties = false,
+                        required = new[]
+                        {
+                            "documentType",
+                            "documentTypeConfidence",
+                            "supplierName",
+                            "supplierNameConfidence",
+                            "supplierEik",
+                            "supplierEikConfidence",
+                            "supplierVatNumber",
+                            "supplierVatNumberConfidence",
+                            "buyerName",
+                            "buyerNameConfidence",
+                            "invoiceNumber",
+                            "invoiceNumberConfidence",
+                            "invoiceDate",
+                            "invoiceDateConfidence",
+                            "currency",
+                            "currencyConfidence",
+                            "netTotal",
+                            "netTotalConfidence",
+                            "vatTotal",
+                            "vatTotalConfidence",
+                            "grossTotal",
+                            "grossTotalConfidence",
+                            "overallConfidence",
+                            "items",
+                            "issues",
+                            "rawJson"
+                        },
+                        properties = new
+                        {
+                            documentType = new { type = "string", @enum = new[] { "Invoice", "Receipt", "Offer", "Unknown" } },
+                            documentTypeConfidence = new { type = "number" },
+                            supplierName = new { type = new[] { "string", "null" } },
+                            supplierNameConfidence = new { type = new[] { "number", "null" } },
+                            supplierEik = new { type = new[] { "string", "null" } },
+                            supplierEikConfidence = new { type = new[] { "number", "null" } },
+                            supplierVatNumber = new { type = new[] { "string", "null" } },
+                            supplierVatNumberConfidence = new { type = new[] { "number", "null" } },
+                            buyerName = new { type = new[] { "string", "null" } },
+                            buyerNameConfidence = new { type = new[] { "number", "null" } },
+                            invoiceNumber = new { type = new[] { "string", "null" } },
+                            invoiceNumberConfidence = new { type = new[] { "number", "null" } },
+                            invoiceDate = new { type = new[] { "string", "null" } },
+                            invoiceDateConfidence = new { type = new[] { "number", "null" } },
+                            currency = new { type = new[] { "string", "null" } },
+                            currencyConfidence = new { type = new[] { "number", "null" } },
+                            netTotal = new { type = new[] { "number", "null" } },
+                            netTotalConfidence = new { type = new[] { "number", "null" } },
+                            vatTotal = new { type = new[] { "number", "null" } },
+                            vatTotalConfidence = new { type = new[] { "number", "null" } },
+                            grossTotal = new { type = new[] { "number", "null" } },
+                            grossTotalConfidence = new { type = new[] { "number", "null" } },
+                            overallConfidence = new { type = new[] { "number", "null" } },
+                            items = new
+                            {
+                                type = "array",
+                                items = new
+                                {
+                                    type = "object",
+                                    additionalProperties = false,
+                                    required = new[]
+                                    {
+                                        "productCode",
+                                        "productName",
+                                        "quantity",
+                                        "unit",
+                                        "unitPrice",
+                                        "discount",
+                                        "vatRate",
+                                        "lineTotal",
+                                        "confidence"
+                                    },
+                                    properties = new
+                                    {
+                                        productCode = new { type = new[] { "string", "null" } },
+                                        productName = new { type = new[] { "string", "null" } },
+                                        quantity = new { type = new[] { "number", "null" } },
+                                        unit = new { type = new[] { "string", "null" } },
+                                        unitPrice = new { type = new[] { "number", "null" } },
+                                        discount = new { type = new[] { "number", "null" } },
+                                        vatRate = new { type = new[] { "number", "null" } },
+                                        lineTotal = new { type = new[] { "number", "null" } },
+                                        confidence = new { type = new[] { "number", "null" } }
+                                    }
+                                }
+                            },
+                            issues = new
+                            {
+                                type = "array",
+                                items = new
+                                {
+                                    type = "object",
+                                    additionalProperties = false,
+                                    required = new[] { "fieldPath", "extractedValue", "reason", "confidence" },
+                                    properties = new
+                                    {
+                                        fieldPath = new { type = "string" },
+                                        extractedValue = new { type = new[] { "string", "null" } },
+                                        reason = new { type = "string" },
+                                        confidence = new { type = new[] { "number", "null" } }
+                                    }
+                                }
+                            },
+                            rawJson = new { type = new[] { "string", "null" } }
+                        }
+                    }
+                }
+            },
+            "json_object" => new
+            {
+                type = "json_object"
+            },
+            _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+        };
+
     private static InvoiceExtractionResult? ParseExtractionResult(string responseContent)
     {
+        using var rootDocument = JsonDocument.Parse(responseContent);
+        var root = rootDocument.RootElement;
+
+        if (root.TryGetProperty("error", out var errorElement))
+        {
+            var providerMessage = errorElement.TryGetProperty("message", out var messageElement) &&
+                                  messageElement.ValueKind == JsonValueKind.String
+                ? messageElement.GetString()
+                : "Provider returned error";
+            var providerCode = errorElement.TryGetProperty("code", out var codeElement) &&
+                               codeElement.ValueKind == JsonValueKind.Number &&
+                               codeElement.TryGetInt32(out var code)
+                ? (int?)code
+                : null;
+
+            throw new OpenRouterInvoiceExtractionException(
+                $"OpenRouter provider error: {providerMessage}",
+                responseContent,
+                providerCode);
+        }
+
         OpenRouterChatCompletionResponse? completion;
         try
         {
@@ -249,129 +387,6 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
                 innerException: ex);
         }
     }
-
-    private static object BuildInvoiceExtractionSchema()
-        => new
-        {
-            type = "object",
-            additionalProperties = false,
-            required = new[]
-            {
-                "documentType",
-                "documentTypeConfidence",
-                "supplierName",
-                "supplierNameConfidence",
-                "supplierEik",
-                "supplierEikConfidence",
-                "supplierVatNumber",
-                "supplierVatNumberConfidence",
-                "buyerName",
-                "buyerNameConfidence",
-                "invoiceNumber",
-                "invoiceNumberConfidence",
-                "invoiceDate",
-                "invoiceDateConfidence",
-                "currency",
-                "currencyConfidence",
-                "netTotal",
-                "netTotalConfidence",
-                "vatTotal",
-                "vatTotalConfidence",
-                "grossTotal",
-                "grossTotalConfidence",
-                "overallConfidence",
-                "items",
-                "issues"
-            },
-            properties = new
-            {
-                documentType = new { type = "string", @enum = new[] { "Invoice", "Receipt", "Offer", "Unknown" } },
-                documentTypeConfidence = NullableNumberSchema(),
-                supplierName = NullableStringSchema(),
-                supplierNameConfidence = NullableNumberSchema(),
-                supplierEik = NullableStringSchema(),
-                supplierEikConfidence = NullableNumberSchema(),
-                supplierVatNumber = NullableStringSchema(),
-                supplierVatNumberConfidence = NullableNumberSchema(),
-                buyerName = NullableStringSchema(),
-                buyerNameConfidence = NullableNumberSchema(),
-                invoiceNumber = NullableStringSchema(),
-                invoiceNumberConfidence = NullableNumberSchema(),
-                invoiceDate = NullableDateTimeStringSchema(),
-                invoiceDateConfidence = NullableNumberSchema(),
-                currency = NullableStringSchema(),
-                currencyConfidence = NullableNumberSchema(),
-                netTotal = NullableNumberSchema(),
-                netTotalConfidence = NullableNumberSchema(),
-                vatTotal = NullableNumberSchema(),
-                vatTotalConfidence = NullableNumberSchema(),
-                grossTotal = NullableNumberSchema(),
-                grossTotalConfidence = NullableNumberSchema(),
-                overallConfidence = NullableNumberSchema(),
-                items = new
-                {
-                    type = "array",
-                    items = new
-                    {
-                        type = "object",
-                        additionalProperties = false,
-                        required = new[]
-                        {
-                            "productCode",
-                            "productName",
-                            "quantity",
-                            "unit",
-                            "unitPrice",
-                            "discount",
-                            "vatRate",
-                            "lineTotal",
-                            "confidence"
-                        },
-                        properties = new
-                        {
-                            productCode = NullableStringSchema(),
-                            productName = NullableStringSchema(),
-                            quantity = NullableNumberSchema(),
-                            unit = NullableStringSchema(),
-                            unitPrice = NullableNumberSchema(),
-                            discount = NullableNumberSchema(),
-                            vatRate = NullableNumberSchema(),
-                            lineTotal = NullableNumberSchema(),
-                            confidence = NullableNumberSchema()
-                        }
-                    }
-                },
-                issues = new
-                {
-                    type = "array",
-                    items = new
-                    {
-                        type = "object",
-                        additionalProperties = false,
-                        required = new[]
-                        {
-                            "fieldPath",
-                            "extractedValue",
-                            "reason",
-                            "confidence"
-                        },
-                        properties = new
-                        {
-                            fieldPath = new { type = "string" },
-                            extractedValue = NullableStringSchema(),
-                            reason = new { type = "string" },
-                            confidence = NullableNumberSchema()
-                        }
-                    }
-                }
-            }
-        };
-
-    private static object NullableStringSchema() => new { type = new[] { "string", "null" } };
-
-    private static object NullableNumberSchema() => new { type = new[] { "number", "null" } };
-
-    private static object NullableDateTimeStringSchema() => new { type = new[] { "string", "null" }, format = "date-time" };
 
     private static async Task<NormalizedInput> NormalizeInputAsync(
         Stream stream,
