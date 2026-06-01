@@ -54,7 +54,6 @@ public sealed class InvoiceDocument : BaseEntity
     public void MarkFailed() => Status = InvoiceExtractionStatus.Failed;
 
     public void ApplyExtractionFields(
-        InvoiceDocumentType documentType,
         string? supplierName,
         string? supplierEik,
         string? supplierVatNumber,
@@ -67,7 +66,6 @@ public sealed class InvoiceDocument : BaseEntity
         decimal? grossTotal,
         decimal? overallConfidence)
     {
-        DocumentType = documentType;
         SupplierName = supplierName;
         SupplierEik = supplierEik;
         SupplierVatNumber = supplierVatNumber;

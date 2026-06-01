@@ -24,7 +24,7 @@ public sealed class InvoiceValidationService : IInvoiceValidationService
 
         var issues = new List<InvoiceValidationIssueResult>();
 
-        ValidateRequiredString(invoiceExtractionResult.DocumentType, "DocumentType", issues);
+        ValidateRequiredDocumentType(invoiceExtractionResult.DocumentType, "DocumentType", issues);
         ValidateRequiredString(invoiceExtractionResult.SupplierName, "SupplierName", issues);
         ValidateRequiredString(invoiceExtractionResult.InvoiceNumber, "InvoiceNumber", issues);
         ValidateRequiredDate(invoiceExtractionResult.InvoiceDate, "InvoiceDate", issues);
@@ -169,6 +169,21 @@ public sealed class InvoiceValidationService : IInvoiceValidationService
                 fieldPath,
                 value,
                 $"{fieldPath} is required.",
+                null));
+        }
+    }
+
+    private static void ValidateRequiredDocumentType(
+        InvoiceExtractionDocumentType value,
+        string fieldPath,
+        List<InvoiceValidationIssueResult> issues)
+    {
+        if (value == InvoiceExtractionDocumentType.Unknown)
+        {
+            issues.Add(new InvoiceValidationIssueResult(
+                fieldPath,
+                value.ToString(),
+                $"{fieldPath} is required and must be Invoice, Receipt, or Offer.",
                 null));
         }
     }

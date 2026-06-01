@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models.External;
 using Ardalis.GuardClauses;
@@ -17,6 +18,15 @@ public sealed class InvoiceProcessingService(
     ILogger<InvoiceProcessingService> logger)
     : IInvoiceProcessingService
 {
+    private static readonly JsonSerializerOptions JsonSerializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters =
+        {
+            new JsonStringEnumConverter()
+        }
+    };
+
     public async Task ProcessAsync(
         Guid siteId,
         Guid invoiceId,
@@ -63,7 +73,7 @@ public sealed class InvoiceProcessingService(
             var finalStatus = mappedIssues.Any()
                 ? InvoiceExtractionStatus.NeedsReview
                 : InvoiceExtractionStatus.Extracted;
-            var rawJson = extractedResult.RawJson ?? JsonSerializer.Serialize(extractedResult);
+            var rawJson = SerializeExtractionResult(extractedResult);
 
             await dbContext.InvoiceLines
                 .Where(x => x.InvoiceDocumentId == invoiceDocument.Id)
@@ -74,7 +84,6 @@ public sealed class InvoiceProcessingService(
                 .ExecuteDeleteAsync(cancellationToken);
 
             invoiceDocument.ApplyExtractionFields(
-                MapDocumentType(extractedResult.DocumentType, invoiceDocument.DocumentType),
                 extractedResult.SupplierName,
                 extractedResult.SupplierEik,
                 extractedResult.SupplierVatNumber,
@@ -205,8 +214,6 @@ public sealed class InvoiceProcessingService(
         return extractionIssues.Concat(validationIssues).ToArray();
     }
 
-    private static InvoiceDocumentType MapDocumentType(string? value, InvoiceDocumentType fallback)
-        => Enum.TryParse<InvoiceDocumentType>(value, true, out var documentType)
-            ? documentType
-            : fallback;
+    private static string SerializeExtractionResult(InvoiceExtractionResult extractedResult)
+        => extractedResult.RawJson ?? JsonSerializer.Serialize(extractedResult, JsonSerializerOptions);
 }
