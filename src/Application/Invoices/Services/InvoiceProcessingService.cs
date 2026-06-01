@@ -47,13 +47,10 @@ public sealed class InvoiceProcessingService(
 
             if (extractedResult is null)
             {
-                invoiceDocument.MarkFailed();
-                invoiceDocument.CompleteProcessing(
-                    InvoiceExtractionStatus.Failed,
-                    DateTimeOffset.UtcNow,
-                    null);
-
-                await dbContext.SaveChangesAsync(cancellationToken);
+                await PersistFailureAsync(
+                    invoiceDocument,
+                    "Invoice extraction returned no result.",
+                    cancellationToken);
                 return;
             }
 
@@ -96,6 +93,10 @@ public sealed class InvoiceProcessingService(
 
             await dbContext.SaveChangesAsync(cancellationToken);
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (DbUpdateConcurrencyException ex)
         {
             logger.LogError(
@@ -104,20 +105,65 @@ public sealed class InvoiceProcessingService(
                 invoiceId,
                 siteId);
 
+            await PersistFailureAsync(invoiceDocument, ex, cancellationToken);
             throw;
         }
-        catch
+        catch (Exception ex)
         {
-            invoiceDocument.MarkFailed();
-            invoiceDocument.CompleteProcessing(
-                InvoiceExtractionStatus.Failed,
-                DateTimeOffset.UtcNow,
-                invoiceDocument.RawExtractionJson);
+            logger.LogError(
+                ex,
+                "Unexpected failure while processing invoice {InvoiceId} for site {SiteId}",
+                invoiceId,
+                siteId);
 
-            await dbContext.SaveChangesAsync(cancellationToken);
+            await PersistFailureAsync(
+                invoiceDocument,
+                ex.Message,
+                cancellationToken);
             throw;
         }
     }
+
+    private async Task PersistFailureAsync(
+        InvoiceDocument invoiceDocument,
+        string errorMessage,
+        CancellationToken cancellationToken)
+    {
+        invoiceDocument.CompleteProcessing(
+            InvoiceExtractionStatus.Failed,
+            DateTimeOffset.UtcNow,
+            CreateFailurePayload(errorMessage));
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task PersistFailureAsync(
+        InvoiceDocument invoiceDocument,
+        Exception exception,
+        CancellationToken cancellationToken)
+    {
+        invoiceDocument.CompleteProcessing(
+            InvoiceExtractionStatus.Failed,
+            DateTimeOffset.UtcNow,
+            CreateFailurePayload(exception));
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private static string CreateFailurePayload(string errorMessage)
+        => JsonSerializer.Serialize(new
+        {
+            errorMessage,
+            occurredAt = DateTimeOffset.UtcNow
+        });
+
+    private static string CreateFailurePayload(Exception exception)
+        => JsonSerializer.Serialize(new
+        {
+            errorMessage = exception.Message,
+            exceptionType = exception.GetType().FullName,
+            occurredAt = DateTimeOffset.UtcNow
+        });
 
     private static IReadOnlyCollection<InvoiceLine> MapLines(
         Guid invoiceDocumentId,

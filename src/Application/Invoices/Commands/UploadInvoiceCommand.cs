@@ -6,7 +6,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Invoices.Commands;
 
-public class UploadInvoiceCommand : IRequest<Guid>
+public sealed record UploadInvoiceResult(
+    Guid InvoiceDocumentId,
+    string Status);
+
+public class UploadInvoiceCommand : IRequest<UploadInvoiceResult>
 {
     public Guid SiteId { get; init; }
     public required Stream Stream { get; init; }
@@ -17,10 +21,11 @@ public class UploadInvoiceCommand : IRequest<Guid>
 
 public class UploadInvoiceCommandHandler(
     IApplicationDbContext dbContext,
-    IInvoiceFileStorage invoiceFileStorage)
-    : IRequestHandler<UploadInvoiceCommand, Guid>
+    IInvoiceFileStorage invoiceFileStorage,
+    IMediator mediator)
+    : IRequestHandler<UploadInvoiceCommand, UploadInvoiceResult>
 {
-    public async Task<Guid> Handle(UploadInvoiceCommand request, CancellationToken cancellationToken)
+    public async Task<UploadInvoiceResult> Handle(UploadInvoiceCommand request, CancellationToken cancellationToken)
     {
         _ = request.ContentLength;
 
@@ -51,7 +56,24 @@ public class UploadInvoiceCommandHandler(
             throw;
         }
 
-        return invoice.Id;
+        try
+        {
+            await mediator.Send(new ProcessInvoiceCommand
+            {
+                SiteId = request.SiteId,
+                InvoiceId = invoice.Id
+            }, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch
+        {
+            // The processing service persists the failed state before rethrowing.
+        }
+
+        return new UploadInvoiceResult(invoice.Id, invoice.Status.ToString());
     }
 
     private static InvoiceDocumentType DetermineDocumentType(string contentType, string fileName)

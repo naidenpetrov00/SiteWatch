@@ -24,7 +24,7 @@ public class Invoices : EndpointGroupBase
     private static async Task<IResult> UploadInvoice(IMediator mediator, Guid siteId, [FromForm] IFormFile file)
     {
         await using var stream = file.OpenReadStream();
-        var invoiceId = await mediator.Send(new UploadInvoiceCommand
+        var result = await mediator.Send(new UploadInvoiceCommand
         {
             SiteId = siteId,
             Stream = stream,
@@ -33,7 +33,9 @@ public class Invoices : EndpointGroupBase
             ContentLength = file.Length
         });
 
-        return TypedResults.Created($"/sites/{siteId}/invoices/{invoiceId}", new { id = invoiceId });
+        return TypedResults.Created(
+            $"/sites/{siteId}/invoices/{result.InvoiceDocumentId}",
+            result);
     }
 
     private static async Task<Results<Ok<InvoiceDetailsDto>, NotFound>> GetInvoiceById(
