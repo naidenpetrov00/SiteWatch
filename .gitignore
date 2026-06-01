@@ -407,3 +407,4 @@ src/Api/.env
 src/Infrastructure/Data/Migrations
 azurelite-data/
 src/Dashboard/.angular/cache
+src/Api/appsettings.Development.json

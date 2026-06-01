@@ -59,7 +59,7 @@ internal sealed class FakeInvoiceExtractor : IInvoiceExtractor
             NetTotal = 100.00m,
             VatTotal = 20.00m,
             GrossTotal = 120.00m,
-            OverallConfidence = 0.50m,
+            OverallConfidence = 0.96m,
             Items = ImmutableArray.Create(
                 new InvoiceExtractionLineResult
                 {
@@ -71,7 +71,7 @@ internal sealed class FakeInvoiceExtractor : IInvoiceExtractor
                     Discount = 0.00m,
                     VatRate = 20.00m,
                     LineTotal = 100.00m,
-                    Confidence = 0.50m
+                    Confidence = 0.96m
                 }),
             Issues = ImmutableArray<InvoiceExtractionIssueResult>.Empty,
             RawJson = rawJson

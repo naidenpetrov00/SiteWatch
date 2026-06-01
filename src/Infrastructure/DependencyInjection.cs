@@ -60,7 +60,14 @@ public static class DependencyInjection
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<ISiteService, SiteService>();
         services.AddScoped<ICameraService, CameraService>();
-        services.AddScoped<IInvoiceExtractor, FakeInvoiceExtractor>();
+
+        var openRouterOptions = configuration.GetOptions<OpenRouterOptions>();
+        var openRouterBaseUrl = Guard.Against.NullOrEmpty(openRouterOptions.BaseUrl).TrimEnd('/') + "/";
+
+        services.AddHttpClient<IInvoiceExtractor, OpenRouterInvoiceExtractor>(client =>
+        {
+            client.BaseAddress = new Uri(openRouterBaseUrl);
+        });
         services.AddScoped<IInvoiceValidationService, InvoiceValidationService>();
         services.AddScoped<IInvoiceFileStorage, LocalInvoiceFileStorage>();
 
