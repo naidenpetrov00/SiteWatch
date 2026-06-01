@@ -1,5 +1,7 @@
-﻿using System.Reflection;
+using System.Reflection;
+using Application.Invoices.Services;
 using Application.SeedWork.Behaviours;
+using Application.SeedWork.Interfaces;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +18,7 @@ public static class DependencyInjection
 
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
         services.AddAutoMapper(cfg => { }, Assembly.GetExecutingAssembly());
+        services.AddScoped<IInvoiceProcessingService, InvoiceProcessingService>();
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());

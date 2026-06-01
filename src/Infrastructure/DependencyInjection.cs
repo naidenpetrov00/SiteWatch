@@ -1,13 +1,14 @@
 ﻿using System.Reflection;
+using Application.Invoices.Services;
 using Application.SeedWork.Interfaces;
 using Ardalis.GuardClauses;
 using Azure.Storage.Blobs;
 using Domain.Entities;
 using Infrastructure.Cameras.Services;
-using Infrastructure.InvoiceExtraction;
 using Infrastructure.Data;
 using Infrastructure.Email;
 using Infrastructure.Identity.Services;
+using Infrastructure.InvoiceExtraction;
 using Infrastructure.SeedWork.Options;
 using Infrastructure.Sites.Services;
 using Infrastructure.Storage;
@@ -59,7 +60,8 @@ public static class DependencyInjection
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<ISiteService, SiteService>();
         services.AddScoped<ICameraService, CameraService>();
-        services.AddScoped<IInvoiceExtractor, OpenRouterInvoiceExtractor>();
+        services.AddScoped<IInvoiceExtractor, FakeInvoiceExtractor>();
+        services.AddScoped<IInvoiceValidationService, InvoiceValidationService>();
         services.AddScoped<IInvoiceFileStorage, LocalInvoiceFileStorage>();
 
         services

@@ -17,4 +17,24 @@ public sealed class InvoiceReviewIssue : BaseEntity
     public bool Resolved { get; private set; }
 
     public InvoiceDocument InvoiceDocument { get; private set; } = null!;
+
+    public static InvoiceReviewIssue Create(
+        Guid invoiceDocumentId,
+        string fieldPath,
+        string? extractedValue,
+        string reason,
+        decimal? confidence,
+        string? correctedValue = null,
+        bool resolved = false)
+        => new()
+        {
+            Id = Guid.NewGuid(),
+            InvoiceDocumentId = invoiceDocumentId,
+            FieldPath = fieldPath,
+            ExtractedValue = extractedValue,
+            Reason = reason,
+            Confidence = confidence,
+            CorrectedValue = correctedValue,
+            Resolved = resolved
+        };
 }

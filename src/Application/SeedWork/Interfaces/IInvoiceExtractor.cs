@@ -1,10 +1,10 @@
-using Domain.Entities;
+using Application.SeedWork.Models.External;
 
 namespace Application.SeedWork.Interfaces;
 
 public interface IInvoiceExtractor
 {
-    Task<InvoiceDocument?> ExtractAsync(
+    Task<InvoiceExtractionResult?> ExtractAsync(
         Stream stream,
         string contentType,
         CancellationToken cancellationToken = default);

@@ -30,7 +30,7 @@ public class GetInvoiceByIdQueryHandler(IApplicationDbContext dbContext)
             return null;
         }
 
-        return new InvoiceDetailsDto(
+        var invoiceDocument = new InvoiceDocumentDto(
             invoice.Id,
             invoice.OriginalFileName,
             invoice.StoredFilePath,
@@ -50,31 +50,35 @@ public class GetInvoiceByIdQueryHandler(IApplicationDbContext dbContext)
             invoice.RawExtractionJson,
             invoice.CreatedAt,
             invoice.ProcessedAt,
-            invoice.ApprovedAt,
-            invoice.Lines
-                .OrderBy(x => x.Id)
-                .Select(x => new InvoiceLineDto(
-                    x.Id,
-                    x.ProductCode,
-                    x.ProductName,
-                    x.Quantity,
-                    x.Unit,
-                    x.UnitPrice,
-                    x.Discount,
-                    x.VatRate,
-                    x.LineTotal,
-                    x.Confidence))
-                .ToArray(),
-            invoice.ReviewIssues
-                .OrderBy(x => x.Id)
-                .Select(x => new InvoiceReviewIssueDto(
-                    x.Id,
-                    x.FieldPath,
-                    x.ExtractedValue,
-                    x.Reason,
-                    x.Confidence,
-                    x.CorrectedValue,
-                    x.Resolved))
-                .ToArray());
+            invoice.ApprovedAt);
+
+        var lines = invoice.Lines
+            .OrderBy(x => x.Id)
+            .Select(x => new InvoiceLineDto(
+                x.Id,
+                x.ProductCode,
+                x.ProductName,
+                x.Quantity,
+                x.Unit,
+                x.UnitPrice,
+                x.Discount,
+                x.VatRate,
+                x.LineTotal,
+                x.Confidence))
+            .ToArray();
+
+        var reviewIssues = invoice.ReviewIssues
+            .OrderBy(x => x.Id)
+            .Select(x => new InvoiceReviewIssueDto(
+                x.Id,
+                x.FieldPath,
+                x.ExtractedValue,
+                x.Reason,
+                x.Confidence,
+                x.CorrectedValue,
+                x.Resolved))
+            .ToArray();
+
+        return new InvoiceDetailsDto(invoiceDocument, lines, reviewIssues);
     }
 }

@@ -1,10 +1,10 @@
-using Domain.Entities;
+using Application.SeedWork.Models.External;
 
 namespace Application.SeedWork.Interfaces;
 
 public interface IInvoiceValidationService
 {
-    Task<List<InvoiceReviewIssue>> ValidateAsync(
-        InvoiceDocument invoiceDocument,
+    Task<InvoiceValidationResult> ValidateAsync(
+        InvoiceExtractionResult invoiceExtractionResult,
         CancellationToken cancellationToken = default);
 }

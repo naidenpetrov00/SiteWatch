@@ -4,7 +4,9 @@ using FluentValidation;
 
 namespace Api.SeedWork.Exceptions;
 
-internal sealed class ExceptionMiddleware(RequestDelegate next)
+internal sealed class ExceptionMiddleware(
+    RequestDelegate next,
+    ILogger<ExceptionMiddleware> logger)
 {
     public async Task InvokeAsync(HttpContext context)
     {
@@ -44,6 +46,12 @@ internal sealed class ExceptionMiddleware(RequestDelegate next)
         }
         catch (Exception ex)
         {
+            logger.LogError(
+                ex,
+                "Unhandled exception for {Method} {Path}",
+                context.Request.Method,
+                context.Request.Path);
+
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;
             context.Response.Headers.Append("content-type", "application/json");
 

@@ -18,6 +18,7 @@ public class Invoices : EndpointGroupBase
         group.MapGet("/{invoiceId:guid}", GetInvoiceById);
         group.MapGet("/", GetInvoices);
         group.MapPatch("/{invoiceId:guid}/approve", ApproveInvoice);
+        group.MapPatch("/{invoiceId:guid}/process", ProcessInvoice);
     }
 
     private static async Task<IResult> UploadInvoice(IMediator mediator, Guid siteId, [FromForm] IFormFile file)
@@ -56,6 +57,12 @@ public class Invoices : EndpointGroupBase
     private static async Task<NoContent> ApproveInvoice(IMediator mediator, Guid siteId, Guid invoiceId)
     {
         await mediator.Send(new ApproveInvoiceCommand { SiteId = siteId, InvoiceId = invoiceId });
+        return TypedResults.NoContent();
+    }
+
+    private static async Task<NoContent> ProcessInvoice(IMediator mediator, Guid siteId, Guid invoiceId)
+    {
+        await mediator.Send(new ProcessInvoiceCommand { SiteId = siteId, InvoiceId = invoiceId });
         return TypedResults.NoContent();
     }
 }

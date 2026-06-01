@@ -1,15 +1,15 @@
 using Application.SeedWork.Interfaces;
-using Domain.Entities;
+using Application.SeedWork.Models.External;
 
 namespace Infrastructure.InvoiceExtraction;
 
 internal sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
 {
-    public Task<InvoiceDocument?> ExtractAsync(
+    public Task<InvoiceExtractionResult?> ExtractAsync(
         Stream stream,
         string contentType,
         CancellationToken cancellationToken = default)
     {
-        return Task.FromResult<InvoiceDocument?>(null);
+        return Task.FromResult<InvoiceExtractionResult?>(null);
     }
 }

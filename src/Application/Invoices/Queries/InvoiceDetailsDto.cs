@@ -1,25 +1,6 @@
 namespace Application.Invoices.Queries;
 
 public sealed record InvoiceDetailsDto(
-    Guid InvoiceId,
-    string OriginalFileName,
-    string StoredFilePath,
-    string Status,
-    string DocumentType,
-    string? SupplierName,
-    string? SupplierEik,
-    string? SupplierVatNumber,
-    string? BuyerName,
-    string? InvoiceNumber,
-    DateTimeOffset? InvoiceDate,
-    string? Currency,
-    decimal? NetTotal,
-    decimal? VatTotal,
-    decimal? GrossTotal,
-    decimal? OverallConfidence,
-    string? RawExtractionJson,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? ProcessedAt,
-    DateTimeOffset? ApprovedAt,
-    IReadOnlyCollection<InvoiceLineDto> Lines,
-    IReadOnlyCollection<InvoiceReviewIssueDto> ReviewIssues);
+    InvoiceDocumentDto InvoiceDocument,
+    IReadOnlyCollection<InvoiceLineDto> InvoiceLines,
+    IReadOnlyCollection<InvoiceReviewIssueDto> InvoiceReviewIssues);

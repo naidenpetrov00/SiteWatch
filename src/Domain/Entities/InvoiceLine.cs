@@ -20,4 +20,30 @@ public sealed class InvoiceLine : BaseEntity
     public decimal? Confidence { get; private set; }
 
     public InvoiceDocument InvoiceDocument { get; private set; } = null!;
+
+    public static InvoiceLine Create(
+        Guid invoiceDocumentId,
+        string? productCode,
+        string? productName,
+        decimal? quantity,
+        string? unit,
+        decimal? unitPrice,
+        decimal? discount,
+        decimal? vatRate,
+        decimal? lineTotal,
+        decimal? confidence)
+        => new()
+        {
+            Id = Guid.NewGuid(),
+            InvoiceDocumentId = invoiceDocumentId,
+            ProductCode = productCode,
+            ProductName = productName,
+            Quantity = quantity,
+            Unit = unit,
+            UnitPrice = unitPrice,
+            Discount = discount,
+            VatRate = vatRate,
+            LineTotal = lineTotal,
+            Confidence = confidence
+        };
 }

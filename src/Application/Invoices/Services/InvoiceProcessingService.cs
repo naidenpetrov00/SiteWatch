@@ -1,0 +1,166 @@
+using System.Text.Json;
+using Application.SeedWork.Interfaces;
+using Application.SeedWork.Models.External;
+using Ardalis.GuardClauses;
+using Domain.Entities;
+using Domain.SeedWork.Enums;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
+namespace Application.Invoices.Services;
+
+public sealed class InvoiceProcessingService(
+    IApplicationDbContext dbContext,
+    IInvoiceFileStorage invoiceFileStorage,
+    IInvoiceExtractor invoiceExtractor,
+    IInvoiceValidationService invoiceValidationService,
+    ILogger<InvoiceProcessingService> logger)
+    : IInvoiceProcessingService
+{
+    public async Task ProcessAsync(
+        Guid siteId,
+        Guid invoiceId,
+        CancellationToken cancellationToken = default)
+    {
+        var invoiceDocument = await dbContext.InvoiceDocuments
+            .FirstOrDefaultAsync(
+                x => x.SiteId == siteId && x.Id == invoiceId,
+                cancellationToken);
+
+        if (invoiceDocument is null)
+        {
+            throw new NotFoundException(nameof(InvoiceDocument), invoiceId.ToString());
+        }
+
+        invoiceDocument.MarkProcessing();
+
+        try
+        {
+            var fileId = Guid.Parse(invoiceDocument.StoredFilePath);
+            var fileResponse = await invoiceFileStorage.DownloadAsync(fileId, cancellationToken);
+
+            await using var stream = fileResponse.Stream;
+            var extractedResult = await invoiceExtractor.ExtractAsync(
+                stream,
+                fileResponse.ContentType,
+                cancellationToken);
+
+            if (extractedResult is null)
+            {
+                invoiceDocument.MarkFailed();
+                invoiceDocument.CompleteProcessing(
+                    InvoiceExtractionStatus.Failed,
+                    DateTimeOffset.UtcNow,
+                    null);
+
+                await dbContext.SaveChangesAsync(cancellationToken);
+                return;
+            }
+
+            var validationResult = await invoiceValidationService.ValidateAsync(
+                extractedResult,
+                cancellationToken);
+
+            var mappedLines = MapLines(invoiceDocument.Id, extractedResult);
+            var mappedIssues = MapIssues(invoiceDocument.Id, extractedResult, validationResult);
+            var finalStatus = mappedIssues.Any()
+                ? InvoiceExtractionStatus.NeedsReview
+                : InvoiceExtractionStatus.Extracted;
+            var rawJson = extractedResult.RawJson ?? JsonSerializer.Serialize(extractedResult);
+
+            await dbContext.InvoiceLines
+                .Where(x => x.InvoiceDocumentId == invoiceDocument.Id)
+                .ExecuteDeleteAsync(cancellationToken);
+
+            await dbContext.InvoiceReviewIssues
+                .Where(x => x.InvoiceDocumentId == invoiceDocument.Id)
+                .ExecuteDeleteAsync(cancellationToken);
+
+            invoiceDocument.ApplyExtractionFields(
+                MapDocumentType(extractedResult.DocumentType, invoiceDocument.DocumentType),
+                extractedResult.SupplierName,
+                extractedResult.SupplierEik,
+                extractedResult.SupplierVatNumber,
+                extractedResult.BuyerName,
+                extractedResult.InvoiceNumber,
+                extractedResult.InvoiceDate,
+                extractedResult.Currency,
+                extractedResult.NetTotal,
+                extractedResult.VatTotal,
+                extractedResult.GrossTotal,
+                extractedResult.OverallConfidence);
+
+            dbContext.InvoiceLines.AddRange(mappedLines);
+            dbContext.InvoiceReviewIssues.AddRange(mappedIssues);
+            invoiceDocument.CompleteProcessing(finalStatus, DateTimeOffset.UtcNow, rawJson);
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            logger.LogError(
+                ex,
+                "Concurrency failure while processing invoice {InvoiceId} for site {SiteId}",
+                invoiceId,
+                siteId);
+
+            throw;
+        }
+        catch
+        {
+            invoiceDocument.MarkFailed();
+            invoiceDocument.CompleteProcessing(
+                InvoiceExtractionStatus.Failed,
+                DateTimeOffset.UtcNow,
+                invoiceDocument.RawExtractionJson);
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+            throw;
+        }
+    }
+
+    private static IReadOnlyCollection<InvoiceLine> MapLines(
+        Guid invoiceDocumentId,
+        InvoiceExtractionResult extractedResult)
+        => extractedResult.Items
+            .Select(x => InvoiceLine.Create(
+                invoiceDocumentId,
+                x.ProductCode,
+                x.ProductName,
+                x.Quantity,
+                x.Unit,
+                x.UnitPrice,
+                x.Discount,
+                x.VatRate,
+                x.LineTotal,
+                x.Confidence))
+            .ToArray();
+
+    private static IReadOnlyCollection<InvoiceReviewIssue> MapIssues(
+        Guid invoiceDocumentId,
+        InvoiceExtractionResult extractedResult,
+        InvoiceValidationResult validationResult)
+    {
+        var extractionIssues = extractedResult.Issues
+            .Select(issue => InvoiceReviewIssue.Create(
+                invoiceDocumentId,
+                issue.FieldPath,
+                issue.ExtractedValue,
+                issue.Reason,
+                issue.Confidence));
+
+        var validationIssues = validationResult.Issues.Select(issue => InvoiceReviewIssue.Create(
+            invoiceDocumentId,
+            issue.FieldPath,
+            issue.ExtractedValue,
+            issue.Reason,
+            issue.Confidence));
+
+        return extractionIssues.Concat(validationIssues).ToArray();
+    }
+
+    private static InvoiceDocumentType MapDocumentType(string? value, InvoiceDocumentType fallback)
+        => Enum.TryParse<InvoiceDocumentType>(value, true, out var documentType)
+            ? documentType
+            : fallback;
+}

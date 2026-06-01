@@ -49,14 +49,58 @@ public sealed class InvoiceDocument : BaseEntity
             CreatedAt = DateTimeOffset.UtcNow
         };
 
-    public void UpdateExtractionResult(
+    public void MarkProcessing() => Status = InvoiceExtractionStatus.Processing;
+
+    public void MarkFailed() => Status = InvoiceExtractionStatus.Failed;
+
+    public void ApplyExtractionFields(
+        InvoiceDocumentType documentType,
+        string? supplierName,
+        string? supplierEik,
+        string? supplierVatNumber,
+        string? buyerName,
+        string? invoiceNumber,
+        DateTimeOffset? invoiceDate,
+        string? currency,
+        decimal? netTotal,
+        decimal? vatTotal,
+        decimal? grossTotal,
+        decimal? overallConfidence)
+    {
+        DocumentType = documentType;
+        SupplierName = supplierName;
+        SupplierEik = supplierEik;
+        SupplierVatNumber = supplierVatNumber;
+        BuyerName = buyerName;
+        InvoiceNumber = invoiceNumber;
+        InvoiceDate = invoiceDate;
+        Currency = currency;
+        NetTotal = netTotal;
+        VatTotal = vatTotal;
+        GrossTotal = grossTotal;
+        OverallConfidence = overallConfidence;
+    }
+
+    public void CompleteProcessing(
         InvoiceExtractionStatus status,
         DateTimeOffset processedAt,
-        string? rawExtractionJson = null)
+        string? rawExtractionJson)
     {
         Status = status;
         ProcessedAt = processedAt;
         RawExtractionJson = rawExtractionJson;
+    }
+
+    public void ReplaceLines(IEnumerable<InvoiceLine> lines)
+    {
+        Lines.Clear();
+        Lines.AddRange(lines);
+    }
+
+    public void ReplaceReviewIssues(IEnumerable<InvoiceReviewIssue> reviewIssues)
+    {
+        ReviewIssues.Clear();
+        ReviewIssues.AddRange(reviewIssues);
     }
 
     public void Approve(DateTimeOffset approvedAt)

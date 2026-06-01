@@ -28,12 +28,8 @@ public class GetInvoicesQueryHandler(IApplicationDbContext dbContext)
                 x.SupplierName,
                 x.InvoiceNumber,
                 x.InvoiceDate,
-                x.Currency,
                 x.GrossTotal,
-                x.OverallConfidence,
-                x.CreatedAt,
-                x.ProcessedAt,
-                x.ApprovedAt))
+                x.CreatedAt))
             .ToListAsync(cancellationToken);
 
         return invoices;
