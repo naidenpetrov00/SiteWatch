@@ -3,11 +3,13 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Application.SeedWork.Exceptions;
+using Application.SeedWork.Converters;
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models.External;
 using Ardalis.GuardClauses;
 using Infrastructure.SeedWork.Options;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using SixLabors.ImageSharp;
 
 namespace Infrastructure.InvoiceExtraction;
@@ -19,16 +21,22 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
         PropertyNameCaseInsensitive = true,
         Converters =
         {
-            new JsonStringEnumConverter()
+            new JsonStringEnumConverter(),
+            new FlexibleDateTimeOffsetConverter()
         }
     };
 
     private readonly HttpClient httpClient;
     private readonly OpenRouterOptions openRouterOptions;
+    private readonly ILogger<OpenRouterInvoiceExtractor> logger;
 
-    public OpenRouterInvoiceExtractor(HttpClient httpClient, IConfiguration configuration)
+    public OpenRouterInvoiceExtractor(
+        HttpClient httpClient,
+        IConfiguration configuration,
+        ILogger<OpenRouterInvoiceExtractor> logger)
     {
         this.httpClient = httpClient;
+        this.logger = logger;
         openRouterOptions = configuration.GetOptions<OpenRouterOptions>();
     }
 
@@ -44,6 +52,13 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
             nameof(openRouterOptions.PdfParserEngine));
 
         var normalizedFile = await NormalizeInputAsync(stream, contentType, cancellationToken);
+        logger.LogDebug(
+            "OpenRouter extraction starting. Model={Model}, ParserEngine={ParserEngine}, File={FileName}, ContentType={ContentType}, Size={Size}",
+            model,
+            parserEngine,
+            normalizedFile.FileName,
+            contentType,
+            normalizedFile.Content.Length);
         var pdfDataUrl = $"data:application/pdf;base64,{Convert.ToBase64String(normalizedFile.Content)}";
 
         var responseContent = await SendExtractionRequestAsync(
@@ -54,7 +69,25 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
             pdfDataUrl,
             cancellationToken);
 
-        return ParseExtractionResult(responseContent);
+        var parsedText = ExtractAnnotationText(responseContent);
+        if (string.IsNullOrWhiteSpace(parsedText))
+        {
+            throw new OpenRouterInvoiceExtractionException(
+                "OpenRouter returned no OCR text annotations for the uploaded document.",
+                responseContent);
+        }
+
+        logger.LogDebug(
+            "OpenRouter OCR text preview: {Preview}",
+            parsedText.Length > 800 ? parsedText[..800] : parsedText);
+
+        var extractionResponseContent = await SendExtractionTextRequestAsync(
+            apiKey,
+            model,
+            parsedText,
+            cancellationToken);
+
+        return ParseExtractionResult(extractionResponseContent, parsedText);
     }
 
     private async Task<string> SendExtractionRequestAsync(
@@ -110,12 +143,29 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
                     content = """
                     You extract invoice-like documents into strict JSON.
                     Return only one JSON object.
-                    Do not guess unclear values. Use null for missing or unreadable values.
-                    Preserve product names exactly as written.
-                    Extract every visible product or service line.
+                    Read the entire parsed document carefully before answering.
+                    Use only values that are explicitly visible in the document text.
+                    Do not guess, infer, normalize, or fabricate any value.
+                    If a field is not clearly present in the OCR/text, return null.
+                    Never fill fields with generic example values, template values, or typical invoice defaults.
+                    If the document content is insufficient, return Unknown with null values.
+                    The document may be in Bulgarian. Interpret Bulgarian labels correctly.
+                    Map these common Bulgarian terms:
+                    - Получател means buyer
+                    - Доставчик means supplier
+                    - ЕИК means company identification number
+                    - ИН ДДС or ДДС No means VAT number
+                    - МОЛ means contact person or responsible person
+                    - Фактура means invoice
+                    - Оферта means offer
+                    - Касова бележка means receipt
+                    - Дата means date
+                    Preserve product names and descriptions exactly as written.
+                    Extract every visible product or service line, even if only partial.
                     Detect document type as Invoice, Receipt, Offer, or Unknown.
-                    Add issues for unclear, suspicious, or contradictory fields.
-                    Return confidence in extracted values between 0 and 1.
+                    Add issues for unclear, suspicious, contradictory, or partially visible fields.
+                    Return confidence in every extracted value between 0 and 1.
+                    If a field is present but uncertain, prefer null and add an issue rather than inventing a value.
                     """
                 },
                 new
@@ -127,9 +177,16 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
                         {
                             type = "text",
                             text = """
-                            Extract the document into the response schema.
-                            Missing values must be null.
-                            Do not guess.
+                            Extract the document into the response schema using the following rules:
+                            - Return all top-level invoice fields.
+                            - Return every line item you can identify.
+                            - Use null whenever a field is not explicitly visible in the OCR text.
+                            - If a value is partially visible, return null and add an issue unless the visible part is unambiguous.
+                            - Do not infer supplier, buyer, invoice number, dates, totals, or line items from logos, branding, or domain knowledge.
+                            - If the OCR text does not contain line items, return an empty array and add an issue explaining that no items were visible.
+                            - If the document uses Bulgarian labels, map them to the matching English field names.
+                            - Prefer null over wrong values.
+                            - Do not use placeholders or invented examples.
                             """
                         },
                         new
@@ -153,10 +210,6 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
                     {
                         engine = parserEngine
                     }
-                },
-                new
-                {
-                    id = "response-healing"
                 }
             },
             response_format = responseFormat,
@@ -174,6 +227,100 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
 
         using var response = await httpClient.SendAsync(request, cancellationToken);
         var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+        logger.LogDebug(
+            "OpenRouter response received. StatusCode={StatusCode}, Length={Length}",
+            (int)response.StatusCode,
+            responseContent.Length);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new OpenRouterInvoiceExtractionException(
+                $"OpenRouter invoice extraction failed with status code {(int)response.StatusCode}.",
+                responseContent,
+                (int)response.StatusCode);
+        }
+
+        return responseContent;
+    }
+
+    private async Task<string> SendExtractionTextRequestAsync(
+        string apiKey,
+        string model,
+        string parsedText,
+        CancellationToken cancellationToken)
+    {
+        var requestBody = new
+        {
+            model,
+            temperature = 0,
+            messages = new object[]
+            {
+                new
+                {
+                    role = "system",
+                    content = """
+                    You extract invoice-like documents into strict JSON.
+                    Return only one JSON object.
+                    Use only values that are explicitly visible in the OCR text.
+                    Do not guess, infer, normalize, or fabricate any value.
+                    If a field is not clearly present in the OCR text, return null.
+                    The document may be in Bulgarian. Interpret Bulgarian labels correctly.
+                    Map these common Bulgarian terms:
+                    - Получател means buyer
+                    - Доставчик means supplier
+                    - ЕИК means company identification number
+                    - ИН ДДС or ДДС No means VAT number
+                    - МОЛ means contact person or responsible person
+                    - Фактура means invoice
+                    - Оферта means offer
+                    - Касова бележка means receipt
+                    - Дата means date
+                    Preserve product names and descriptions exactly as written.
+                    Return confidence in every extracted value between 0 and 1.
+                    If a field is uncertain, prefer null and add an issue rather than inventing a value.
+                    """
+                },
+                new
+                {
+                    role = "user",
+                    content = new object[]
+                    {
+                        new
+                        {
+                            type = "text",
+                            text = """
+                            Extract the invoice data from the OCR text below.
+                            Return the data using the response schema.
+                            Only use values that are present in the OCR text.
+                            """
+                        },
+                        new
+                        {
+                            type = "text",
+                            text = parsedText
+                        }
+                    }
+                }
+            },
+            response_format = BuildResponseFormat("json_schema"),
+            stream = false
+        };
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions")
+        {
+            Content = new StringContent(
+                JsonSerializer.Serialize(requestBody),
+                Encoding.UTF8,
+                "application/json")
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+        logger.LogDebug(
+            "OpenRouter text extraction response received. StatusCode={StatusCode}, Length={Length}",
+            (int)response.StatusCode,
+            responseContent.Length);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -328,10 +475,29 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
         };
 
-    private static InvoiceExtractionResult? ParseExtractionResult(string responseContent)
+    private InvoiceExtractionResult? ParseExtractionResult(string responseContent, string? ocrText = null)
     {
         using var rootDocument = JsonDocument.Parse(responseContent);
         var root = rootDocument.RootElement;
+        var annotations = ExtractFileAnnotations(root);
+        if (annotations.Count > 0)
+        {
+            logger.LogDebug(
+                "OpenRouter returned {Count} file annotations. Hashes={Hashes}",
+                annotations.Count,
+                string.Join(", ", annotations.Select(annotation => annotation.Hash)));
+            foreach (var annotation in annotations)
+            {
+                logger.LogDebug(
+                    "OpenRouter annotation {Hash} text preview: {Preview}",
+                    annotation.Hash,
+                    annotation.Content.Length > 400 ? annotation.Content[..400] : annotation.Content);
+            }
+        }
+        else
+        {
+            logger.LogDebug("OpenRouter returned no file annotations.");
+        }
 
         if (root.TryGetProperty("error", out var errorElement))
         {
@@ -377,7 +543,17 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
         try
         {
             var extractionResult = JsonSerializer.Deserialize<InvoiceExtractionResult>(content, JsonSerializerOptions);
-            return extractionResult is null ? null : extractionResult with { RawJson = content };
+            if (extractionResult is null)
+            {
+                return null;
+            }
+
+            if (!string.IsNullOrWhiteSpace(ocrText))
+            {
+                extractionResult = MergeWithOcrFallback(extractionResult, ocrText);
+            }
+
+            return extractionResult with { RawJson = content };
         }
         catch (JsonException ex)
         {
@@ -438,6 +614,278 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
         }
 
         return normalized.Trim();
+    }
+
+    private static string ExtractAnnotationText(string responseContent)
+    {
+        using var rootDocument = JsonDocument.Parse(responseContent);
+        var root = rootDocument.RootElement;
+        var annotations = ExtractFileAnnotations(root);
+        if (annotations.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var builder = new StringBuilder();
+        foreach (var annotation in annotations)
+        {
+            if (string.IsNullOrWhiteSpace(annotation.Content))
+            {
+                continue;
+            }
+
+            if (builder.Length > 0)
+            {
+                builder.AppendLine();
+            }
+
+            builder.AppendLine(annotation.Content);
+        }
+
+        return builder.ToString().Trim();
+    }
+
+    private static InvoiceExtractionResult MergeWithOcrFallback(InvoiceExtractionResult extractionResult, string ocrText)
+    {
+        var fallback = TryExtractFallbackFields(ocrText);
+
+        return extractionResult with
+        {
+            SupplierName = extractionResult.SupplierName ?? fallback.SupplierName,
+            SupplierEik = extractionResult.SupplierEik ?? fallback.SupplierEik,
+            SupplierVatNumber = extractionResult.SupplierVatNumber ?? fallback.SupplierVatNumber,
+            BuyerName = extractionResult.BuyerName ?? fallback.BuyerName,
+            InvoiceNumber = extractionResult.InvoiceNumber ?? fallback.InvoiceNumber,
+            InvoiceDate = extractionResult.InvoiceDate ?? fallback.InvoiceDate,
+            Currency = extractionResult.Currency ?? fallback.Currency,
+            NetTotal = extractionResult.NetTotal ?? fallback.NetTotal,
+            VatTotal = extractionResult.VatTotal ?? fallback.VatTotal,
+            GrossTotal = extractionResult.GrossTotal ?? fallback.GrossTotal,
+            OverallConfidence = extractionResult.OverallConfidence ?? fallback.OverallConfidence
+        };
+    }
+
+    private static OcrFallbackFields TryExtractFallbackFields(string ocrText)
+    {
+        var lines = ocrText
+            .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        string? supplierName = null;
+        string? supplierEik = null;
+        string? supplierVatNumber = null;
+        string? buyerName = null;
+
+        foreach (var line in lines.Where(line => line.Contains('|')))
+        {
+            var cells = line
+                .Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(cell => !string.IsNullOrWhiteSpace(cell))
+                .ToArray();
+
+            if (cells.Length < 4)
+            {
+                continue;
+            }
+
+            for (var index = 0; index + 1 < cells.Length; index += 2)
+            {
+                var label = cells[index];
+                var value = cells[index + 1];
+
+                if (label.Contains("Получател", StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(buyerName))
+                {
+                    buyerName = value;
+                }
+                else if (label.Contains("Доставчик", StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(supplierName))
+                {
+                    supplierName = value;
+                }
+                else if (label.Equals("ЕИК", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (string.IsNullOrWhiteSpace(supplierEik))
+                    {
+                        supplierEik = value;
+                    }
+                }
+                else if (label.Contains("ИН ДДС", StringComparison.OrdinalIgnoreCase) ||
+                         label.Contains("ДДС", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (string.IsNullOrWhiteSpace(supplierVatNumber))
+                    {
+                        supplierVatNumber = value;
+                    }
+                }
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(supplierVatNumber) && !string.IsNullOrWhiteSpace(supplierEik))
+        {
+            supplierVatNumber = $"BG{supplierEik}";
+        }
+
+        var invoiceNumber = TryRegexValue(
+            ocrText,
+            @"(?:Фактура|Invoice)\s*(?:№|No\.?|Number)?\s*[:\-]?\s*([A-Z0-9\-\/]+)");
+
+        var invoiceDate = TryParseDate(
+            TryRegexValue(
+                ocrText,
+                @"(?:Дата|Date)\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})"));
+
+        var currency = TryRegexValue(ocrText, @"\b(BGN|EUR|USD|лв\.?|лв)\b");
+        if (string.Equals(currency, "лв", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(currency, "лв.", StringComparison.OrdinalIgnoreCase))
+        {
+            currency = "BGN";
+        }
+
+        var netTotal = TryParseDecimal(
+            TryRegexValue(ocrText, @"(?:Общо\s*без\s*ДДС|Net\s*total|Subtotal|Subtotal\s*[:\-]?)\s*([0-9]+(?:[.,][0-9]+)?)"));
+        var vatTotal = TryParseDecimal(
+            TryRegexValue(ocrText, @"(?:ДДС|VAT)\s*([0-9]+(?:[.,][0-9]+)?)"));
+        var grossTotal = TryParseDecimal(
+            TryRegexValue(ocrText, @"(?:Общо|Total\s*amount|Grand\s*total)\s*([0-9]+(?:[.,][0-9]+)?)"));
+
+        var overallConfidence = HasAnyFallbackValue(
+            supplierName,
+            supplierEik,
+            supplierVatNumber,
+            buyerName,
+            invoiceNumber,
+            invoiceDate,
+            currency,
+            netTotal,
+            vatTotal,
+            grossTotal)
+            ? 0.95m
+            : 0.0m;
+
+        return new OcrFallbackFields(
+            supplierName,
+            supplierEik,
+            supplierVatNumber,
+            buyerName,
+            invoiceNumber,
+            invoiceDate,
+            currency,
+            netTotal,
+            vatTotal,
+            grossTotal,
+            overallConfidence);
+    }
+
+    private static string? TryRegexValue(string input, string pattern)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(
+            input,
+            pattern,
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Multiline);
+        return match.Success && match.Groups.Count > 1 ? match.Groups[1].Value.Trim() : null;
+    }
+
+    private static DateTimeOffset? TryParseDate(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return DateTimeOffset.TryParse(value, out var parsed) ? parsed : null;
+    }
+
+    private static decimal? TryParseDecimal(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var normalized = value.Replace(" ", string.Empty).Replace(',', '.');
+        return decimal.TryParse(normalized, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var parsed)
+            ? parsed
+            : null;
+    }
+
+    private static bool HasAnyFallbackValue(params object?[] values)
+        => values.Any(value => value is not null && (!value.Equals(string.Empty)));
+
+    private static List<FileAnnotation> ExtractFileAnnotations(JsonElement root)
+    {
+        var annotations = new List<FileAnnotation>();
+        var seenHashes = new HashSet<string>(StringComparer.Ordinal);
+
+        if (root.TryGetProperty("choices", out var choicesElement) &&
+            choicesElement.ValueKind == JsonValueKind.Array &&
+            choicesElement.GetArrayLength() > 0)
+        {
+            var message = choicesElement[0].GetProperty("message");
+            if (message.TryGetProperty("annotations", out var successAnnotations))
+            {
+                CollectAnnotations(successAnnotations, annotations, seenHashes);
+            }
+        }
+
+        if (root.TryGetProperty("error", out var errorElement) &&
+            errorElement.TryGetProperty("metadata", out var metadataElement) &&
+            metadataElement.TryGetProperty("file_annotations", out var errorAnnotations))
+        {
+            CollectAnnotations(errorAnnotations, annotations, seenHashes);
+        }
+
+        return annotations;
+    }
+
+    private static void CollectAnnotations(
+        JsonElement annotationsElement,
+        ICollection<FileAnnotation> annotations,
+        ISet<string> seenHashes)
+    {
+        if (annotationsElement.ValueKind != JsonValueKind.Array)
+        {
+            return;
+        }
+
+        foreach (var annotationElement in annotationsElement.EnumerateArray())
+        {
+            if (!annotationElement.TryGetProperty("type", out var typeElement) ||
+                typeElement.ValueKind != JsonValueKind.String ||
+                !string.Equals(typeElement.GetString(), "file", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (!annotationElement.TryGetProperty("file", out var fileElement) ||
+                !fileElement.TryGetProperty("hash", out var hashElement) ||
+                hashElement.ValueKind != JsonValueKind.String)
+            {
+                continue;
+            }
+
+            var hash = hashElement.GetString();
+            if (string.IsNullOrWhiteSpace(hash) || !seenHashes.Add(hash))
+            {
+                continue;
+            }
+
+            var contentText = string.Empty;
+            if (fileElement.TryGetProperty("content", out var contentElement) &&
+                contentElement.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var part in contentElement.EnumerateArray())
+                {
+                    if (part.TryGetProperty("type", out var partType) &&
+                        partType.ValueKind == JsonValueKind.String &&
+                        string.Equals(partType.GetString(), "text", StringComparison.OrdinalIgnoreCase) &&
+                        part.TryGetProperty("text", out var textElement) &&
+                        textElement.ValueKind == JsonValueKind.String)
+                    {
+                        contentText += textElement.GetString();
+                    }
+                }
+            }
+
+            annotations.Add(new FileAnnotation(hash, contentText));
+        }
     }
 
     private static byte[] CreateSinglePagePdf(byte[] jpegBytes, int width, int height)
@@ -519,4 +967,19 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
     {
         public string? Content { get; init; }
     }
+
+    private sealed record FileAnnotation(string Hash, string Content);
+
+    private sealed record OcrFallbackFields(
+        string? SupplierName,
+        string? SupplierEik,
+        string? SupplierVatNumber,
+        string? BuyerName,
+        string? InvoiceNumber,
+        DateTimeOffset? InvoiceDate,
+        string? Currency,
+        decimal? NetTotal,
+        decimal? VatTotal,
+        decimal? GrossTotal,
+        decimal? OverallConfidence);
 }

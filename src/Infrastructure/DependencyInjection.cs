@@ -67,6 +67,7 @@ public static class DependencyInjection
         services.AddHttpClient<IInvoiceExtractor, OpenRouterInvoiceExtractor>(client =>
         {
             client.BaseAddress = new Uri(openRouterBaseUrl);
+            client.Timeout = TimeSpan.FromMinutes(5);
         });
         services.AddScoped<IInvoiceValidationService, InvoiceValidationService>();
         services.AddScoped<IInvoiceFileStorage, LocalInvoiceFileStorage>();
