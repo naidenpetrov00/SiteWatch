@@ -93,13 +93,23 @@ public sealed class InvoiceProcessingService(
                 extractedResult.InvoiceDate,
                 extractedResult.Currency,
                 extractedResult.NetTotal,
+                extractedResult.NetTotalBgn,
+                extractedResult.NetTotalEur,
                 extractedResult.VatTotal,
+                extractedResult.VatTotalBgn,
+                extractedResult.VatTotalEur,
                 extractedResult.GrossTotal,
+                extractedResult.GrossTotalBgn,
+                extractedResult.GrossTotalEur,
                 extractedResult.OverallConfidence);
 
             dbContext.InvoiceLines.AddRange(mappedLines);
             dbContext.InvoiceReviewIssues.AddRange(mappedIssues);
-            invoiceDocument.CompleteProcessing(finalStatus, DateTimeOffset.UtcNow, rawJson);
+            invoiceDocument.CompleteProcessing(
+                finalStatus,
+                DateTimeOffset.UtcNow,
+                rawJson,
+                extractedResult.RawOcrText);
 
             await dbContext.SaveChangesAsync(cancellationToken);
         }
@@ -152,7 +162,8 @@ public sealed class InvoiceProcessingService(
         invoiceDocument.CompleteProcessing(
             InvoiceExtractionStatus.Failed,
             DateTimeOffset.UtcNow,
-            CreateFailurePayload(exception));
+            CreateFailurePayload(exception),
+            GetRawOcrText(exception));
 
         await dbContext.SaveChangesAsync(cancellationToken);
     }
@@ -178,6 +189,11 @@ public sealed class InvoiceProcessingService(
             occurredAt = DateTimeOffset.UtcNow
         });
 
+    private static string? GetRawOcrText(Exception exception)
+        => exception is OpenRouterInvoiceExtractionException openRouterException
+            ? openRouterException.RawOcrText
+            : null;
+
     private static IReadOnlyCollection<InvoiceLine> MapLines(
         Guid invoiceDocumentId,
         InvoiceExtractionResult extractedResult)
@@ -188,11 +204,17 @@ public sealed class InvoiceProcessingService(
                 x.ProductName,
                 x.Quantity,
                 x.Unit,
-                x.UnitPrice,
-                x.Discount,
-                x.VatRate,
-                x.LineTotal,
-                x.Confidence))
+            x.UnitPrice,
+            x.UnitPriceBgn,
+            x.UnitPriceEur,
+            x.Discount,
+            x.DiscountBgn,
+            x.DiscountEur,
+            x.VatRate,
+            x.LineTotal,
+            x.LineTotalBgn,
+            x.LineTotalEur,
+            x.Confidence))
             .ToArray();
 
     private static IReadOnlyCollection<InvoiceReviewIssue> MapIssues(

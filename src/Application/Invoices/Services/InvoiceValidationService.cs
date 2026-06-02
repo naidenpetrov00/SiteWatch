@@ -80,7 +80,6 @@ public sealed class InvoiceValidationService : IInvoiceValidationService
         List<InvoiceValidationIssueResult> issues)
     {
         var linePrefix = $"Items[{lineIndex}]";
-
         if (line.Quantity is null)
         {
             issues.Add(new InvoiceValidationIssueResult(
@@ -88,73 +87,177 @@ public sealed class InvoiceValidationService : IInvoiceValidationService
                 null,
                 "Quantity is required for each line item.",
                 line.Confidence));
+            return;
         }
 
-        if (line.UnitPrice is null)
-        {
-            issues.Add(new InvoiceValidationIssueResult(
-                $"{linePrefix}.UnitPrice",
-                null,
-                "UnitPrice is required for each line item.",
-                line.Confidence));
-        }
+        ValidateLineAmount(
+            line,
+            lineIndex,
+            suffix: string.Empty,
+            line.UnitPrice,
+            line.LineTotal,
+            line.Confidence,
+            issues);
 
-        if (line.LineTotal is null)
-        {
-            issues.Add(new InvoiceValidationIssueResult(
-                $"{linePrefix}.LineTotal",
-                null,
-                "LineTotal is required for each line item.",
-                line.Confidence));
-        }
+        ValidateLineAmount(
+            line,
+            lineIndex,
+            suffix: "Bgn",
+            line.UnitPriceBgn,
+            line.LineTotalBgn,
+            line.UnitPriceBgnConfidence ?? line.LineTotalBgnConfidence ?? line.Confidence,
+            issues);
 
-        if (line.Quantity is null || line.UnitPrice is null || line.LineTotal is null) return;
-        var expected = line.Quantity.Value * line.UnitPrice.Value;
-        if (!ApproximatelyEqual(expected, line.LineTotal.Value))
-        {
-            issues.Add(new InvoiceValidationIssueResult(
-                $"{linePrefix}.LineTotal",
-                line.LineTotal.Value.ToString(CultureInfo.InvariantCulture),
-                "Quantity multiplied by UnitPrice must approximately equal LineTotal.",
-                line.Confidence));
-        }
+        ValidateLineAmount(
+            line,
+            lineIndex,
+            suffix: "Eur",
+            line.UnitPriceEur,
+            line.LineTotalEur,
+            line.UnitPriceEurConfidence ?? line.LineTotalEurConfidence ?? line.Confidence,
+            issues);
     }
 
     private static void ValidateTotals(
         InvoiceExtractionResult invoiceExtractionResult,
         List<InvoiceValidationIssueResult> issues)
     {
+        ValidateDocumentTotals(
+            invoiceExtractionResult,
+            suffix: string.Empty,
+            invoiceExtractionResult.NetTotal,
+            invoiceExtractionResult.VatTotal,
+            invoiceExtractionResult.GrossTotal,
+            invoiceExtractionResult.OverallConfidence,
+            issues);
+
+        ValidateDocumentTotals(
+            invoiceExtractionResult,
+            suffix: "Bgn",
+            invoiceExtractionResult.NetTotalBgn,
+            invoiceExtractionResult.VatTotalBgn,
+            invoiceExtractionResult.GrossTotalBgn,
+            invoiceExtractionResult.NetTotalBgnConfidence
+            ?? invoiceExtractionResult.VatTotalBgnConfidence
+            ?? invoiceExtractionResult.GrossTotalBgnConfidence
+            ?? invoiceExtractionResult.OverallConfidence,
+            issues);
+
+        ValidateDocumentTotals(
+            invoiceExtractionResult,
+            suffix: "Eur",
+            invoiceExtractionResult.NetTotalEur,
+            invoiceExtractionResult.VatTotalEur,
+            invoiceExtractionResult.GrossTotalEur,
+            invoiceExtractionResult.NetTotalEurConfidence
+            ?? invoiceExtractionResult.VatTotalEurConfidence
+            ?? invoiceExtractionResult.GrossTotalEurConfidence
+            ?? invoiceExtractionResult.OverallConfidence,
+            issues);
+    }
+
+    private static void ValidateLineAmount(
+        InvoiceExtractionLineResult line,
+        int lineIndex,
+        string suffix,
+        decimal? unitPrice,
+        decimal? lineTotal,
+        decimal? confidence,
+        List<InvoiceValidationIssueResult> issues)
+    {
+        var linePrefix = $"Items[{lineIndex}]";
+        var fieldUnitPrice = suffix.Length == 0 ? "UnitPrice" : $"UnitPrice{suffix}";
+        var fieldLineTotal = suffix.Length == 0 ? "LineTotal" : $"LineTotal{suffix}";
+
+        if (unitPrice is null && lineTotal is null)
+        {
+            return;
+        }
+
+        if (unitPrice is null)
+        {
+            issues.Add(new InvoiceValidationIssueResult(
+                $"{linePrefix}.{fieldUnitPrice}",
+                null,
+                $"{fieldUnitPrice} is required for each line item.",
+                confidence));
+        }
+
+        if (lineTotal is null)
+        {
+            issues.Add(new InvoiceValidationIssueResult(
+                $"{linePrefix}.{fieldLineTotal}",
+                null,
+                $"{fieldLineTotal} is required for each line item.",
+                confidence));
+        }
+
+        if (unitPrice is null || lineTotal is null)
+        {
+            return;
+        }
+
+        var expected = line.Quantity.Value * unitPrice.Value;
+        if (!ApproximatelyEqual(expected, lineTotal.Value))
+        {
+            issues.Add(new InvoiceValidationIssueResult(
+                $"{linePrefix}.{fieldLineTotal}",
+                lineTotal.Value.ToString(CultureInfo.InvariantCulture),
+                $"Quantity multiplied by {fieldUnitPrice} must approximately equal {fieldLineTotal}.",
+                confidence));
+        }
+    }
+
+    private static void ValidateDocumentTotals(
+        InvoiceExtractionResult invoiceExtractionResult,
+        string suffix,
+        decimal? netTotal,
+        decimal? vatTotal,
+        decimal? grossTotal,
+        decimal? confidence,
+        List<InvoiceValidationIssueResult> issues)
+    {
+        if (netTotal is null)
+        {
+            return;
+        }
+
         var items = invoiceExtractionResult.Items.IsDefault
             ? ImmutableArray<InvoiceExtractionLineResult>.Empty
             : invoiceExtractionResult.Items;
 
         var lineTotals = items
-            .Where(x => x.LineTotal is not null)
-            .Select(x => x.LineTotal!.Value)
+            .Select(line => suffix.Length == 0
+                ? line.LineTotal
+                : suffix == "Bgn"
+                    ? line.LineTotalBgn
+                    : line.LineTotalEur)
+            .Where(x => x is not null)
+            .Select(x => x!.Value)
             .Sum();
 
-        if (invoiceExtractionResult.NetTotal is not null && !ApproximatelyEqual(lineTotals, invoiceExtractionResult.NetTotal.Value))
+        if (!ApproximatelyEqual(lineTotals, netTotal.Value))
         {
             issues.Add(new InvoiceValidationIssueResult(
-                "NetTotal",
-                invoiceExtractionResult.NetTotal.Value.ToString(CultureInfo.InvariantCulture),
-                "Sum of line totals must approximately equal NetTotal.",
-                invoiceExtractionResult.OverallConfidence));
+                suffix.Length == 0 ? "NetTotal" : $"NetTotal{suffix}",
+                netTotal.Value.ToString(CultureInfo.InvariantCulture),
+                $"Sum of line totals must approximately equal {(suffix.Length == 0 ? "NetTotal" : $"NetTotal{suffix}")}.",
+                confidence));
         }
 
-        if (invoiceExtractionResult.NetTotal is not null &&
-            invoiceExtractionResult.VatTotal is not null &&
-            invoiceExtractionResult.GrossTotal is not null)
+        if (vatTotal is null || grossTotal is null)
         {
-            var expectedGrossTotal = invoiceExtractionResult.NetTotal.Value + invoiceExtractionResult.VatTotal.Value;
-            if (!ApproximatelyEqual(expectedGrossTotal, invoiceExtractionResult.GrossTotal.Value))
-            {
-                issues.Add(new InvoiceValidationIssueResult(
-                    "GrossTotal",
-                    invoiceExtractionResult.GrossTotal.Value.ToString(CultureInfo.InvariantCulture),
-                    "NetTotal plus VatTotal must approximately equal GrossTotal.",
-                    invoiceExtractionResult.OverallConfidence));
-            }
+            return;
+        }
+
+        var expectedGrossTotal = netTotal.Value + vatTotal.Value;
+        if (!ApproximatelyEqual(expectedGrossTotal, grossTotal.Value))
+        {
+            issues.Add(new InvoiceValidationIssueResult(
+                suffix.Length == 0 ? "GrossTotal" : $"GrossTotal{suffix}",
+                grossTotal.Value.ToString(CultureInfo.InvariantCulture),
+                $"{(suffix.Length == 0 ? "NetTotal" : $"NetTotal{suffix}")} plus {(suffix.Length == 0 ? "VatTotal" : $"VatTotal{suffix}")} must approximately equal {(suffix.Length == 0 ? "GrossTotal" : $"GrossTotal{suffix}")}.",
+                confidence));
         }
     }
 

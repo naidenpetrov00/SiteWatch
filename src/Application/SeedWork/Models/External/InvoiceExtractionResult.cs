@@ -38,13 +38,37 @@ public sealed record InvoiceExtractionResult
 
     public decimal? NetTotal { get; init; }
 
+    public decimal? NetTotalBgn { get; init; }
+
+    public decimal? NetTotalBgnConfidence { get; init; }
+
+    public decimal? NetTotalEur { get; init; }
+
+    public decimal? NetTotalEurConfidence { get; init; }
+
     public decimal? NetTotalConfidence { get; init; }
 
     public decimal? VatTotal { get; init; }
 
+    public decimal? VatTotalBgn { get; init; }
+
+    public decimal? VatTotalBgnConfidence { get; init; }
+
+    public decimal? VatTotalEur { get; init; }
+
+    public decimal? VatTotalEurConfidence { get; init; }
+
     public decimal? VatTotalConfidence { get; init; }
 
     public decimal? GrossTotal { get; init; }
+
+    public decimal? GrossTotalBgn { get; init; }
+
+    public decimal? GrossTotalBgnConfidence { get; init; }
+
+    public decimal? GrossTotalEur { get; init; }
+
+    public decimal? GrossTotalEurConfidence { get; init; }
 
     public decimal? GrossTotalConfidence { get; init; }
 
@@ -55,4 +79,6 @@ public sealed record InvoiceExtractionResult
     public ImmutableArray<InvoiceExtractionIssueResult> Issues { get; init; } = ImmutableArray<InvoiceExtractionIssueResult>.Empty;
 
     public string? RawJson { get; init; }
+
+    public string? RawOcrText { get; init; }
 }

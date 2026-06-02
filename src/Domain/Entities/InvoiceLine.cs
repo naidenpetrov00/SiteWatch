@@ -14,9 +14,15 @@ public sealed class InvoiceLine : BaseEntity
     public decimal? Quantity { get; private set; }
     public string? Unit { get; private set; }
     public decimal? UnitPrice { get; private set; }
+    public decimal? UnitPriceBgn { get; private set; }
+    public decimal? UnitPriceEur { get; private set; }
     public decimal? Discount { get; private set; }
+    public decimal? DiscountBgn { get; private set; }
+    public decimal? DiscountEur { get; private set; }
     public decimal? VatRate { get; private set; }
     public decimal? LineTotal { get; private set; }
+    public decimal? LineTotalBgn { get; private set; }
+    public decimal? LineTotalEur { get; private set; }
     public decimal? Confidence { get; private set; }
 
     public InvoiceDocument InvoiceDocument { get; private set; } = null!;
@@ -28,9 +34,15 @@ public sealed class InvoiceLine : BaseEntity
         decimal? quantity,
         string? unit,
         decimal? unitPrice,
+        decimal? unitPriceBgn,
+        decimal? unitPriceEur,
         decimal? discount,
+        decimal? discountBgn,
+        decimal? discountEur,
         decimal? vatRate,
         decimal? lineTotal,
+        decimal? lineTotalBgn,
+        decimal? lineTotalEur,
         decimal? confidence)
         => new()
         {
@@ -41,9 +53,15 @@ public sealed class InvoiceLine : BaseEntity
             Quantity = quantity,
             Unit = unit,
             UnitPrice = unitPrice,
+            UnitPriceBgn = unitPriceBgn,
+            UnitPriceEur = unitPriceEur,
             Discount = discount,
+            DiscountBgn = discountBgn,
+            DiscountEur = discountEur,
             VatRate = vatRate,
             LineTotal = lineTotal,
+            LineTotalBgn = lineTotalBgn,
+            LineTotalEur = lineTotalEur,
             Confidence = confidence
         };
 }

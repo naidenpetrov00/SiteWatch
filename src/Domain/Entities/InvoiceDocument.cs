@@ -22,10 +22,17 @@ public sealed class InvoiceDocument : BaseEntity
     public DateTimeOffset? InvoiceDate { get; private set; }
     public string? Currency { get; private set; }
     public decimal? NetTotal { get; private set; }
+    public decimal? NetTotalBgn { get; private set; }
+    public decimal? NetTotalEur { get; private set; }
     public decimal? VatTotal { get; private set; }
+    public decimal? VatTotalBgn { get; private set; }
+    public decimal? VatTotalEur { get; private set; }
     public decimal? GrossTotal { get; private set; }
+    public decimal? GrossTotalBgn { get; private set; }
+    public decimal? GrossTotalEur { get; private set; }
     public decimal? OverallConfidence { get; private set; }
     public string? RawExtractionJson { get; private set; }
+    public string? RawOcrText { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset? ProcessedAt { get; private set; }
     public DateTimeOffset? ApprovedAt { get; private set; }
@@ -62,8 +69,14 @@ public sealed class InvoiceDocument : BaseEntity
         DateTimeOffset? invoiceDate,
         string? currency,
         decimal? netTotal,
+        decimal? netTotalBgn,
+        decimal? netTotalEur,
         decimal? vatTotal,
+        decimal? vatTotalBgn,
+        decimal? vatTotalEur,
         decimal? grossTotal,
+        decimal? grossTotalBgn,
+        decimal? grossTotalEur,
         decimal? overallConfidence)
     {
         SupplierName = supplierName;
@@ -74,19 +87,27 @@ public sealed class InvoiceDocument : BaseEntity
         InvoiceDate = invoiceDate;
         Currency = currency;
         NetTotal = netTotal;
+        NetTotalBgn = netTotalBgn;
+        NetTotalEur = netTotalEur;
         VatTotal = vatTotal;
+        VatTotalBgn = vatTotalBgn;
+        VatTotalEur = vatTotalEur;
         GrossTotal = grossTotal;
+        GrossTotalBgn = grossTotalBgn;
+        GrossTotalEur = grossTotalEur;
         OverallConfidence = overallConfidence;
     }
 
     public void CompleteProcessing(
         InvoiceExtractionStatus status,
         DateTimeOffset processedAt,
-        string? rawExtractionJson)
+        string? rawExtractionJson,
+        string? rawOcrText = null)
     {
         Status = status;
         ProcessedAt = processedAt;
         RawExtractionJson = rawExtractionJson;
+        RawOcrText = rawOcrText;
     }
 
     public void ReplaceLines(IEnumerable<InvoiceLine> lines)

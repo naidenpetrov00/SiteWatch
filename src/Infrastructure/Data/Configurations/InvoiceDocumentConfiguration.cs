@@ -47,6 +47,9 @@ public class InvoiceDocumentConfiguration : IEntityTypeConfiguration<InvoiceDocu
         builder.Property(i => i.RawExtractionJson)
             .HasColumnType("nvarchar(max)");
 
+        builder.Property(i => i.RawOcrText)
+            .HasColumnType("nvarchar(max)");
+
         builder.Property(i => i.DocumentType)
             .HasConversion<int>();
 
@@ -56,10 +59,28 @@ public class InvoiceDocumentConfiguration : IEntityTypeConfiguration<InvoiceDocu
         builder.Property(i => i.NetTotal)
             .HasPrecision(18, 2);
 
+        builder.Property(i => i.NetTotalBgn)
+            .HasPrecision(18, 2);
+
+        builder.Property(i => i.NetTotalEur)
+            .HasPrecision(18, 2);
+
         builder.Property(i => i.VatTotal)
             .HasPrecision(18, 2);
 
+        builder.Property(i => i.VatTotalBgn)
+            .HasPrecision(18, 2);
+
+        builder.Property(i => i.VatTotalEur)
+            .HasPrecision(18, 2);
+
         builder.Property(i => i.GrossTotal)
+            .HasPrecision(18, 2);
+
+        builder.Property(i => i.GrossTotalBgn)
+            .HasPrecision(18, 2);
+
+        builder.Property(i => i.GrossTotalEur)
             .HasPrecision(18, 2);
 
         builder.Property(i => i.OverallConfidence)

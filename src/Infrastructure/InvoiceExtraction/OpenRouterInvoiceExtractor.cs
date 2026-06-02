@@ -2,8 +2,8 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Application.SeedWork.Exceptions;
 using Application.SeedWork.Converters;
+using Application.SeedWork.Exceptions;
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models.External;
 using Ardalis.GuardClauses;
@@ -59,9 +59,9 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
             normalizedFile.FileName,
             contentType,
             normalizedFile.Content.Length);
-        var pdfDataUrl = $"data:application/pdf;base64,{Convert.ToBase64String(normalizedFile.Content)}";
 
-        var responseContent = await SendExtractionRequestAsync(
+        var pdfDataUrl = $"data:application/pdf;base64,{Convert.ToBase64String(normalizedFile.Content)}";
+        var ocrResponseContent = await SendOcrRequestAsync(
             apiKey,
             model,
             parserEngine,
@@ -69,66 +69,33 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
             pdfDataUrl,
             cancellationToken);
 
-        var parsedText = ExtractAnnotationText(responseContent);
-        if (string.IsNullOrWhiteSpace(parsedText))
+        var rawOcrText = ExtractAnnotationText(ocrResponseContent);
+        if (string.IsNullOrWhiteSpace(rawOcrText))
         {
             throw new OpenRouterInvoiceExtractionException(
                 "OpenRouter returned no OCR text annotations for the uploaded document.",
-                responseContent);
+                ocrResponseContent);
         }
 
         logger.LogDebug(
             "OpenRouter OCR text preview: {Preview}",
-            parsedText.Length > 800 ? parsedText[..800] : parsedText);
+            rawOcrText.Length > 800 ? rawOcrText[..800] : rawOcrText);
 
-        var extractionResponseContent = await SendExtractionTextRequestAsync(
+        var extractionResponseContent = await SendExtractionRequestAsync(
             apiKey,
             model,
-            parsedText,
+            rawOcrText,
             cancellationToken);
 
-        return ParseExtractionResult(extractionResponseContent, parsedText);
+        return ParseExtractionResult(extractionResponseContent, rawOcrText);
     }
 
-    private async Task<string> SendExtractionRequestAsync(
+    private async Task<string> SendOcrRequestAsync(
         string apiKey,
         string model,
         string parserEngine,
         string fileName,
         string pdfDataUrl,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            return await SendExtractionRequestAsync(
-                apiKey,
-                model,
-                parserEngine,
-                fileName,
-                pdfDataUrl,
-                BuildResponseFormat("json_schema"),
-                cancellationToken);
-        }
-        catch (OpenRouterInvoiceExtractionException ex) when (TryFallbackToJsonObject(ex))
-        {
-            return await SendExtractionRequestAsync(
-                apiKey,
-                model,
-                parserEngine,
-                fileName,
-                pdfDataUrl,
-                BuildResponseFormat("json_object"),
-                cancellationToken);
-        }
-    }
-
-    private async Task<string> SendExtractionRequestAsync(
-        string apiKey,
-        string model,
-        string parserEngine,
-        string fileName,
-        string pdfDataUrl,
-        object? responseFormat,
         CancellationToken cancellationToken)
     {
         var requestBody = new
@@ -141,32 +108,10 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
                 {
                     role = "system",
                     content = """
-                    You extract invoice-like documents into strict JSON.
-                    Return only one JSON object.
-                    Read the entire parsed document carefully before answering.
-                    Use only values that are explicitly visible in the document text.
-                    Do not guess, infer, normalize, or fabricate any value.
-                    If a field is not clearly present in the OCR/text, return null.
-                    Never fill fields with generic example values, template values, or typical invoice defaults.
-                    If the document content is insufficient, return Unknown with null values.
-                    The document may be in Bulgarian. Interpret Bulgarian labels correctly.
-                    Map these common Bulgarian terms:
-                    - Получател means buyer
-                    - Доставчик means supplier
-                    - ЕИК means company identification number
-                    - ИН ДДС or ДДС No means VAT number
-                    - МОЛ means contact person or responsible person
-                    - Фактура means invoice
-                    - Оферта means offer
-                    - Касова бележка means receipt
-                    - Дата means date
-                    Preserve product names and descriptions exactly as written.
-                    Extract every visible product or service line, even if only partial.
-                    Detect document type as Invoice, Receipt, Offer, or Unknown.
-                    Add issues for unclear, suspicious, contradictory, or partially visible fields.
-                    Return confidence in every extracted value between 0 and 1.
-                    If the document shows both EUR and BGN for the same amount, use the EUR value for monetary fields.
-                    If a field is present but uncertain, prefer null and add an issue rather than inventing a value.
+                    You extract OCR text from invoice-like documents.
+                    Return only the text extracted from the uploaded file.
+                    Do not infer values or normalize the content.
+                    Preserve every visible amount and currency marker exactly as it appears.
                     """
                 },
                 new
@@ -177,19 +122,7 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
                         new
                         {
                             type = "text",
-                            text = """
-                            Extract the document into the response schema using the following rules:
-                            - Return all top-level invoice fields.
-                            - Return every line item you can identify.
-                            - Use null whenever a field is not explicitly visible in the OCR text.
-                            - If a value is partially visible, return null and add an issue unless the visible part is unambiguous.
-                            - Do not infer supplier, buyer, invoice number, dates, totals, or line items from logos, branding, or domain knowledge.
-                            - If the OCR text does not contain line items, return an empty array and add an issue explaining that no items were visible.
-                            - If the document uses Bulgarian labels, map them to the matching English field names.
-                            - If the OCR text shows both EUR and BGN for the same amount, choose the EUR amount for monetary fields.
-                            - Prefer null over wrong values.
-                            - Do not use placeholders or invented examples.
-                            """
+                            text = "Extract the OCR text from this document."
                         },
                         new
                         {
@@ -214,10 +147,81 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
                     }
                 }
             },
-            response_format = responseFormat,
+            response_format = new
+            {
+                type = "json_object"
+            },
             stream = false
         };
 
+        return await SendRequestAsync(apiKey, requestBody, null, cancellationToken);
+    }
+
+    private async Task<string> SendExtractionRequestAsync(
+        string apiKey,
+        string model,
+        string rawOcrText,
+        CancellationToken cancellationToken)
+    {
+        var requestBody = new
+        {
+            model,
+            temperature = 0,
+            messages = new object[]
+            {
+                new
+                {
+                    role = "system",
+                    content = """
+                    You extract invoice-like documents into strict JSON.
+                    Return only one JSON object.
+                    Use only values that are explicitly present in the provided OCR text.
+                    Do not guess, infer, normalize, or fabricate any value.
+                    If a field is not clearly present, return null.
+                    The document may be in Bulgarian. Interpret common labels correctly.
+                    If both BGN and EUR values are visible, extract both and keep them separate.
+                    Do not collapse converted amounts into a single currency.
+                    Preserve the visible primary amount in the legacy field and also populate the BGN and EUR amount fields when present.
+                    Return confidence in every extracted value between 0 and 1.
+                    """
+                },
+                new
+                {
+                    role = "user",
+                    content = new object[]
+                    {
+                        new
+                        {
+                            type = "text",
+                            text = """
+                            Extract the invoice data from the OCR text below.
+                            Return the data using the response schema.
+                            Use only values that are present in the OCR text.
+                            If both BGN and EUR are present on the document, populate both amount fields end to end.
+                            Prefer null over guessing when one side of the currency pair is missing.
+                            """
+                        },
+                        new
+                        {
+                            type = "text",
+                            text = rawOcrText
+                        }
+                    }
+                }
+            },
+            response_format = BuildResponseFormat(),
+            stream = false
+        };
+
+        return await SendRequestAsync(apiKey, requestBody, rawOcrText, cancellationToken);
+    }
+
+    private async Task<string> SendRequestAsync(
+        string apiKey,
+        object requestBody,
+        string? rawOcrText,
+        CancellationToken cancellationToken)
+    {
         using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions")
         {
             Content = new StringContent(
@@ -239,267 +243,187 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
             throw new OpenRouterInvoiceExtractionException(
                 $"OpenRouter invoice extraction failed with status code {(int)response.StatusCode}.",
                 responseContent,
-                (int)response.StatusCode);
+                (int)response.StatusCode,
+                rawOcrText: rawOcrText);
         }
 
         return responseContent;
     }
 
-    private async Task<string> SendExtractionTextRequestAsync(
-        string apiKey,
-        string model,
-        string parsedText,
-        CancellationToken cancellationToken)
-    {
-        var requestBody = new
+    private static object BuildResponseFormat()
+        => new
         {
-            model,
-            temperature = 0,
-            messages = new object[]
+            type = "json_schema",
+            json_schema = new
             {
-                new
+                name = "invoice_extraction_result",
+                strict = true,
+                schema = new
                 {
-                    role = "system",
-                    content = """
-                    You extract invoice-like documents into strict JSON.
-                    Return only one JSON object.
-                    Use only values that are explicitly visible in the OCR text.
-                    Do not guess, infer, normalize, or fabricate any value.
-                    If a field is not clearly present in the OCR text, return null.
-                    The document may be in Bulgarian. Interpret Bulgarian labels correctly.
-                    Map these common Bulgarian terms:
-                    - Получател means buyer
-                    - Доставчик means supplier
-                    - ЕИК means company identification number
-                    - ИН ДДС or ДДС No means VAT number
-                    - МОЛ means contact person or responsible person
-                    - Фактура means invoice
-                    - Оферта means offer
-                    - Касова бележка means receipt
-                    - Дата means date
-                    Preserve product names and descriptions exactly as written.
-                    Return confidence in every extracted value between 0 and 1.
-                    If a field is uncertain, prefer null and add an issue rather than inventing a value.
-                    """
-                },
-                new
-                {
-                    role = "user",
-                    content = new object[]
+                    type = "object",
+                    additionalProperties = false,
+                    required = new[]
                     {
-                        new
-                        {
-                            type = "text",
-                            text = """
-                            Extract the invoice data from the OCR text below.
-                            Return the data using the response schema.
-                            Only use values that are present in the OCR text.
-                            """
-                        },
-                        new
-                        {
-                            type = "text",
-                            text = parsedText
-                        }
-                    }
-                }
-            },
-            response_format = BuildResponseFormat("json_schema"),
-            stream = false
-        };
-
-        using var request = new HttpRequestMessage(HttpMethod.Post, "chat/completions")
-        {
-            Content = new StringContent(
-                JsonSerializer.Serialize(requestBody),
-                Encoding.UTF8,
-                "application/json")
-        };
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-
-        using var response = await httpClient.SendAsync(request, cancellationToken);
-        var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
-        logger.LogDebug(
-            "OpenRouter text extraction response received. StatusCode={StatusCode}, Length={Length}",
-            (int)response.StatusCode,
-            responseContent.Length);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new OpenRouterInvoiceExtractionException(
-                $"OpenRouter invoice extraction failed with status code {(int)response.StatusCode}.",
-                responseContent,
-                (int)response.StatusCode);
-        }
-
-        return responseContent;
-    }
-
-    private static bool TryFallbackToJsonObject(OpenRouterInvoiceExtractionException exception)
-    {
-        if (exception.StatusCode is not (400 or 422))
-        {
-            return false;
-        }
-
-        return exception.RawResponse.Contains("response_format", StringComparison.OrdinalIgnoreCase) ||
-               exception.RawResponse.Contains("structured", StringComparison.OrdinalIgnoreCase) ||
-               exception.RawResponse.Contains("json_schema", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static object BuildResponseFormat(string type)
-        => type switch
-        {
-            "json_schema" => new
-            {
-                type = "json_schema",
-                json_schema = new
-                {
-                    name = "invoice_extraction_result",
-                    strict = true,
-                    schema = new
+                        "documentType",
+                        "documentTypeConfidence",
+                        "supplierName",
+                        "supplierNameConfidence",
+                        "supplierEik",
+                        "supplierEikConfidence",
+                        "supplierVatNumber",
+                        "supplierVatNumberConfidence",
+                        "buyerName",
+                        "buyerNameConfidence",
+                        "invoiceNumber",
+                        "invoiceNumberConfidence",
+                        "invoiceDate",
+                        "invoiceDateConfidence",
+                        "currency",
+                        "currencyConfidence",
+                        "netTotal",
+                        "netTotalBgn",
+                        "netTotalBgnConfidence",
+                        "netTotalEur",
+                        "netTotalEurConfidence",
+                        "netTotalConfidence",
+                        "vatTotal",
+                        "vatTotalBgn",
+                        "vatTotalBgnConfidence",
+                        "vatTotalEur",
+                        "vatTotalEurConfidence",
+                        "vatTotalConfidence",
+                        "grossTotal",
+                        "grossTotalBgn",
+                        "grossTotalBgnConfidence",
+                        "grossTotalEur",
+                        "grossTotalEurConfidence",
+                        "grossTotalConfidence",
+                        "overallConfidence",
+                        "items",
+                        "issues",
+                        "rawJson"
+                    },
+                    properties = new
                     {
-                        type = "object",
-                        additionalProperties = false,
-                        required = new[]
+                        documentType = new { type = "string", @enum = new[] { "Invoice", "Receipt", "Offer", "Unknown" } },
+                        documentTypeConfidence = new { type = "number" },
+                        supplierName = new { type = new[] { "string", "null" } },
+                        supplierNameConfidence = new { type = new[] { "number", "null" } },
+                        supplierEik = new { type = new[] { "string", "null" } },
+                        supplierEikConfidence = new { type = new[] { "number", "null" } },
+                        supplierVatNumber = new { type = new[] { "string", "null" } },
+                        supplierVatNumberConfidence = new { type = new[] { "number", "null" } },
+                        buyerName = new { type = new[] { "string", "null" } },
+                        buyerNameConfidence = new { type = new[] { "number", "null" } },
+                        invoiceNumber = new { type = new[] { "string", "null" } },
+                        invoiceNumberConfidence = new { type = new[] { "number", "null" } },
+                        invoiceDate = new { type = new[] { "string", "null" } },
+                        invoiceDateConfidence = new { type = new[] { "number", "null" } },
+                        currency = new { type = new[] { "string", "null" } },
+                        currencyConfidence = new { type = new[] { "number", "null" } },
+                        netTotal = new { type = new[] { "number", "null" } },
+                        netTotalBgn = new { type = new[] { "number", "null" } },
+                        netTotalBgnConfidence = new { type = new[] { "number", "null" } },
+                        netTotalEur = new { type = new[] { "number", "null" } },
+                        netTotalEurConfidence = new { type = new[] { "number", "null" } },
+                        netTotalConfidence = new { type = new[] { "number", "null" } },
+                        vatTotal = new { type = new[] { "number", "null" } },
+                        vatTotalBgn = new { type = new[] { "number", "null" } },
+                        vatTotalBgnConfidence = new { type = new[] { "number", "null" } },
+                        vatTotalEur = new { type = new[] { "number", "null" } },
+                        vatTotalEurConfidence = new { type = new[] { "number", "null" } },
+                        vatTotalConfidence = new { type = new[] { "number", "null" } },
+                        grossTotal = new { type = new[] { "number", "null" } },
+                        grossTotalBgn = new { type = new[] { "number", "null" } },
+                        grossTotalBgnConfidence = new { type = new[] { "number", "null" } },
+                        grossTotalEur = new { type = new[] { "number", "null" } },
+                        grossTotalEurConfidence = new { type = new[] { "number", "null" } },
+                        grossTotalConfidence = new { type = new[] { "number", "null" } },
+                        overallConfidence = new { type = new[] { "number", "null" } },
+                        items = new
                         {
-                            "documentType",
-                            "documentTypeConfidence",
-                            "supplierName",
-                            "supplierNameConfidence",
-                            "supplierEik",
-                            "supplierEikConfidence",
-                            "supplierVatNumber",
-                            "supplierVatNumberConfidence",
-                            "buyerName",
-                            "buyerNameConfidence",
-                            "invoiceNumber",
-                            "invoiceNumberConfidence",
-                            "invoiceDate",
-                            "invoiceDateConfidence",
-                            "currency",
-                            "currencyConfidence",
-                            "netTotal",
-                            "netTotalConfidence",
-                            "vatTotal",
-                            "vatTotalConfidence",
-                            "grossTotal",
-                            "grossTotalConfidence",
-                            "overallConfidence",
-                            "items",
-                            "issues",
-                            "rawJson"
-                        },
-                        properties = new
-                        {
-                            documentType = new { type = "string", @enum = new[] { "Invoice", "Receipt", "Offer", "Unknown" } },
-                            documentTypeConfidence = new { type = "number" },
-                            supplierName = new { type = new[] { "string", "null" } },
-                            supplierNameConfidence = new { type = new[] { "number", "null" } },
-                            supplierEik = new { type = new[] { "string", "null" } },
-                            supplierEikConfidence = new { type = new[] { "number", "null" } },
-                            supplierVatNumber = new { type = new[] { "string", "null" } },
-                            supplierVatNumberConfidence = new { type = new[] { "number", "null" } },
-                            buyerName = new { type = new[] { "string", "null" } },
-                            buyerNameConfidence = new { type = new[] { "number", "null" } },
-                            invoiceNumber = new { type = new[] { "string", "null" } },
-                            invoiceNumberConfidence = new { type = new[] { "number", "null" } },
-                            invoiceDate = new { type = new[] { "string", "null" } },
-                            invoiceDateConfidence = new { type = new[] { "number", "null" } },
-                            currency = new { type = new[] { "string", "null" } },
-                            currencyConfidence = new { type = new[] { "number", "null" } },
-                            netTotal = new { type = new[] { "number", "null" } },
-                            netTotalConfidence = new { type = new[] { "number", "null" } },
-                            vatTotal = new { type = new[] { "number", "null" } },
-                            vatTotalConfidence = new { type = new[] { "number", "null" } },
-                            grossTotal = new { type = new[] { "number", "null" } },
-                            grossTotalConfidence = new { type = new[] { "number", "null" } },
-                            overallConfidence = new { type = new[] { "number", "null" } },
+                            type = "array",
                             items = new
                             {
-                                type = "array",
-                                items = new
+                                type = "object",
+                                additionalProperties = false,
+                                required = new[]
                                 {
-                                    type = "object",
-                                    additionalProperties = false,
-                                    required = new[]
-                                    {
-                                        "productCode",
-                                        "productName",
-                                        "quantity",
-                                        "unit",
-                                        "unitPrice",
-                                        "discount",
-                                        "vatRate",
-                                        "lineTotal",
-                                        "confidence"
-                                    },
-                                    properties = new
-                                    {
-                                        productCode = new { type = new[] { "string", "null" } },
-                                        productName = new { type = new[] { "string", "null" } },
-                                        quantity = new { type = new[] { "number", "null" } },
-                                        unit = new { type = new[] { "string", "null" } },
-                                        unitPrice = new { type = new[] { "number", "null" } },
-                                        discount = new { type = new[] { "number", "null" } },
-                                        vatRate = new { type = new[] { "number", "null" } },
-                                        lineTotal = new { type = new[] { "number", "null" } },
-                                        confidence = new { type = new[] { "number", "null" } }
-                                    }
+                                    "productCode",
+                                    "productName",
+                                    "quantity",
+                                    "unit",
+                                    "unitPrice",
+                                    "unitPriceBgn",
+                                    "unitPriceBgnConfidence",
+                                    "unitPriceEur",
+                                    "unitPriceEurConfidence",
+                                    "discount",
+                                    "discountBgn",
+                                    "discountBgnConfidence",
+                                    "discountEur",
+                                    "discountEurConfidence",
+                                    "vatRate",
+                                    "lineTotal",
+                                    "lineTotalBgn",
+                                    "lineTotalBgnConfidence",
+                                    "lineTotalEur",
+                                    "lineTotalEurConfidence",
+                                    "confidence"
+                                },
+                                properties = new
+                                {
+                                    productCode = new { type = new[] { "string", "null" } },
+                                    productName = new { type = new[] { "string", "null" } },
+                                    quantity = new { type = new[] { "number", "null" } },
+                                    unit = new { type = new[] { "string", "null" } },
+                                    unitPrice = new { type = new[] { "number", "null" } },
+                                    unitPriceBgn = new { type = new[] { "number", "null" } },
+                                    unitPriceBgnConfidence = new { type = new[] { "number", "null" } },
+                                    unitPriceEur = new { type = new[] { "number", "null" } },
+                                    unitPriceEurConfidence = new { type = new[] { "number", "null" } },
+                                    discount = new { type = new[] { "number", "null" } },
+                                    discountBgn = new { type = new[] { "number", "null" } },
+                                    discountBgnConfidence = new { type = new[] { "number", "null" } },
+                                    discountEur = new { type = new[] { "number", "null" } },
+                                    discountEurConfidence = new { type = new[] { "number", "null" } },
+                                    vatRate = new { type = new[] { "number", "null" } },
+                                    lineTotal = new { type = new[] { "number", "null" } },
+                                    lineTotalBgn = new { type = new[] { "number", "null" } },
+                                    lineTotalBgnConfidence = new { type = new[] { "number", "null" } },
+                                    lineTotalEur = new { type = new[] { "number", "null" } },
+                                    lineTotalEurConfidence = new { type = new[] { "number", "null" } },
+                                    confidence = new { type = new[] { "number", "null" } }
                                 }
-                            },
-                            issues = new
+                            }
+                        },
+                        issues = new
+                        {
+                            type = "array",
+                            items = new
                             {
-                                type = "array",
-                                items = new
+                                type = "object",
+                                additionalProperties = false,
+                                required = new[] { "fieldPath", "extractedValue", "reason", "confidence" },
+                                properties = new
                                 {
-                                    type = "object",
-                                    additionalProperties = false,
-                                    required = new[] { "fieldPath", "extractedValue", "reason", "confidence" },
-                                    properties = new
-                                    {
-                                        fieldPath = new { type = "string" },
-                                        extractedValue = new { type = new[] { "string", "null" } },
-                                        reason = new { type = "string" },
-                                        confidence = new { type = new[] { "number", "null" } }
-                                    }
+                                    fieldPath = new { type = "string" },
+                                    extractedValue = new { type = new[] { "string", "null" } },
+                                    reason = new { type = "string" },
+                                    confidence = new { type = new[] { "number", "null" } }
                                 }
-                            },
-                            rawJson = new { type = new[] { "string", "null" } }
-                        }
+                            }
+                        },
+                        rawJson = new { type = new[] { "string", "null" } }
                     }
                 }
-            },
-            "json_object" => new
-            {
-                type = "json_object"
-            },
-            _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+            }
         };
 
-    private InvoiceExtractionResult? ParseExtractionResult(string responseContent, string? ocrText = null)
+    private InvoiceExtractionResult? ParseExtractionResult(string responseContent, string? rawOcrText = null)
     {
         using var rootDocument = JsonDocument.Parse(responseContent);
         var root = rootDocument.RootElement;
-        var annotations = ExtractFileAnnotations(root);
-        if (annotations.Count > 0)
-        {
-            logger.LogDebug(
-                "OpenRouter returned {Count} file annotations. Hashes={Hashes}",
-                annotations.Count,
-                string.Join(", ", annotations.Select(annotation => annotation.Hash)));
-            foreach (var annotation in annotations)
-            {
-                logger.LogDebug(
-                    "OpenRouter annotation {Hash} text preview: {Preview}",
-                    annotation.Hash,
-                    annotation.Content.Length > 400 ? annotation.Content[..400] : annotation.Content);
-            }
-        }
-        else
-        {
-            logger.LogDebug("OpenRouter returned no file annotations.");
-        }
 
         if (root.TryGetProperty("error", out var errorElement))
         {
@@ -516,7 +440,8 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
             throw new OpenRouterInvoiceExtractionException(
                 $"OpenRouter provider error: {providerMessage}",
                 responseContent,
-                providerCode);
+                providerCode,
+                rawOcrText: rawOcrText);
         }
 
         OpenRouterChatCompletionResponse? completion;
@@ -531,15 +456,25 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
             throw new OpenRouterInvoiceExtractionException(
                 "OpenRouter returned an invalid response envelope.",
                 responseContent,
-                innerException: ex);
+                innerException: ex,
+                rawOcrText: rawOcrText);
         }
 
-        var content = NormalizeJsonContent(completion?.Choices.FirstOrDefault()?.Message?.Content);
+        if (completion is null)
+        {
+            throw new OpenRouterInvoiceExtractionException(
+                "OpenRouter returned an empty extraction payload.",
+                responseContent,
+                rawOcrText: rawOcrText);
+        }
+
+        var content = NormalizeJsonContent(completion.Choices.FirstOrDefault()?.Message?.Content);
         if (string.IsNullOrWhiteSpace(content))
         {
             throw new OpenRouterInvoiceExtractionException(
                 "OpenRouter returned an empty extraction payload.",
-                responseContent);
+                responseContent,
+                rawOcrText: rawOcrText);
         }
 
         try
@@ -547,22 +482,25 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
             var extractionResult = JsonSerializer.Deserialize<InvoiceExtractionResult>(content, JsonSerializerOptions);
             if (extractionResult is null)
             {
-                return null;
+                throw new OpenRouterInvoiceExtractionException(
+                    "OpenRouter returned an empty extraction payload.",
+                    responseContent,
+                    rawOcrText: rawOcrText);
             }
 
-            if (!string.IsNullOrWhiteSpace(ocrText))
+            return extractionResult with
             {
-                extractionResult = MergeWithOcrFallback(extractionResult, ocrText);
-            }
-
-            return extractionResult with { RawJson = content };
+                RawJson = content,
+                RawOcrText = rawOcrText
+            };
         }
         catch (JsonException ex)
         {
             throw new OpenRouterInvoiceExtractionException(
                 "OpenRouter returned invalid invoice JSON.",
                 responseContent,
-                innerException: ex);
+                innerException: ex,
+                rawOcrText: rawOcrText);
         }
     }
 
@@ -646,170 +584,6 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
 
         return builder.ToString().Trim();
     }
-
-    private static InvoiceExtractionResult MergeWithOcrFallback(InvoiceExtractionResult extractionResult, string ocrText)
-    {
-        var fallback = TryExtractFallbackFields(ocrText);
-
-        return extractionResult with
-        {
-            SupplierName = extractionResult.SupplierName ?? fallback.SupplierName,
-            SupplierEik = extractionResult.SupplierEik ?? fallback.SupplierEik,
-            SupplierVatNumber = extractionResult.SupplierVatNumber ?? fallback.SupplierVatNumber,
-            BuyerName = extractionResult.BuyerName ?? fallback.BuyerName,
-            InvoiceNumber = extractionResult.InvoiceNumber ?? fallback.InvoiceNumber,
-            InvoiceDate = extractionResult.InvoiceDate ?? fallback.InvoiceDate,
-            Currency = extractionResult.Currency ?? fallback.Currency,
-            NetTotal = extractionResult.NetTotal ?? fallback.NetTotal,
-            VatTotal = extractionResult.VatTotal ?? fallback.VatTotal,
-            GrossTotal = extractionResult.GrossTotal ?? fallback.GrossTotal,
-            OverallConfidence = extractionResult.OverallConfidence ?? fallback.OverallConfidence
-        };
-    }
-
-    private static OcrFallbackFields TryExtractFallbackFields(string ocrText)
-    {
-        var lines = ocrText
-            .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-        string? supplierName = null;
-        string? supplierEik = null;
-        string? supplierVatNumber = null;
-        string? buyerName = null;
-
-        foreach (var line in lines.Where(line => line.Contains('|')))
-        {
-            var cells = line
-                .Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Where(cell => !string.IsNullOrWhiteSpace(cell))
-                .ToArray();
-
-            if (cells.Length < 4)
-            {
-                continue;
-            }
-
-            for (var index = 0; index + 1 < cells.Length; index += 2)
-            {
-                var label = cells[index];
-                var value = cells[index + 1];
-
-                if (label.Contains("Получател", StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(buyerName))
-                {
-                    buyerName = value;
-                }
-                else if (label.Contains("Доставчик", StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(supplierName))
-                {
-                    supplierName = value;
-                }
-                else if (label.Equals("ЕИК", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (string.IsNullOrWhiteSpace(supplierEik))
-                    {
-                        supplierEik = value;
-                    }
-                }
-                else if (label.Contains("ИН ДДС", StringComparison.OrdinalIgnoreCase) ||
-                         label.Contains("ДДС", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (string.IsNullOrWhiteSpace(supplierVatNumber))
-                    {
-                        supplierVatNumber = value;
-                    }
-                }
-            }
-        }
-
-        if (string.IsNullOrWhiteSpace(supplierVatNumber) && !string.IsNullOrWhiteSpace(supplierEik))
-        {
-            supplierVatNumber = $"BG{supplierEik}";
-        }
-
-        var invoiceNumber = TryRegexValue(
-            ocrText,
-            @"(?:Фактура|Invoice)\s*(?:№|No\.?|Number)?\s*[:\-]?\s*([A-Z0-9\-\/]+)");
-
-        var invoiceDate = TryParseDate(
-            TryRegexValue(
-                ocrText,
-                @"(?:Дата|Date)\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})"));
-
-        var currency = TryRegexValue(ocrText, @"\b(BGN|EUR|USD|лв\.?|лв)\b");
-        if (string.Equals(currency, "лв", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(currency, "лв.", StringComparison.OrdinalIgnoreCase))
-        {
-            currency = "BGN";
-        }
-
-        var netTotal = TryParseDecimal(
-            TryRegexValue(ocrText, @"(?:Общо\s*без\s*ДДС|Net\s*total|Subtotal|Subtotal\s*[:\-]?)\s*([0-9]+(?:[.,][0-9]+)?)"));
-        var vatTotal = TryParseDecimal(
-            TryRegexValue(ocrText, @"(?:ДДС|VAT)\s*([0-9]+(?:[.,][0-9]+)?)"));
-        var grossTotal = TryParseDecimal(
-            TryRegexValue(ocrText, @"(?:Общо|Total\s*amount|Grand\s*total)\s*([0-9]+(?:[.,][0-9]+)?)"));
-
-        var overallConfidence = HasAnyFallbackValue(
-            supplierName,
-            supplierEik,
-            supplierVatNumber,
-            buyerName,
-            invoiceNumber,
-            invoiceDate,
-            currency,
-            netTotal,
-            vatTotal,
-            grossTotal)
-            ? 0.95m
-            : 0.0m;
-
-        return new OcrFallbackFields(
-            supplierName,
-            supplierEik,
-            supplierVatNumber,
-            buyerName,
-            invoiceNumber,
-            invoiceDate,
-            currency,
-            netTotal,
-            vatTotal,
-            grossTotal,
-            overallConfidence);
-    }
-
-    private static string? TryRegexValue(string input, string pattern)
-    {
-        var match = System.Text.RegularExpressions.Regex.Match(
-            input,
-            pattern,
-            System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Multiline);
-        return match.Success && match.Groups.Count > 1 ? match.Groups[1].Value.Trim() : null;
-    }
-
-    private static DateTimeOffset? TryParseDate(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return null;
-        }
-
-        return DateTimeOffset.TryParse(value, out var parsed) ? parsed : null;
-    }
-
-    private static decimal? TryParseDecimal(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return null;
-        }
-
-        var normalized = value.Replace(" ", string.Empty).Replace(',', '.');
-        return decimal.TryParse(normalized, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var parsed)
-            ? parsed
-            : null;
-    }
-
-    private static bool HasAnyFallbackValue(params object?[] values)
-        => values.Any(value => value is not null && (!value.Equals(string.Empty)));
 
     private static List<FileAnnotation> ExtractFileAnnotations(JsonElement root)
     {
@@ -971,17 +745,4 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
     }
 
     private sealed record FileAnnotation(string Hash, string Content);
-
-    private sealed record OcrFallbackFields(
-        string? SupplierName,
-        string? SupplierEik,
-        string? SupplierVatNumber,
-        string? BuyerName,
-        string? InvoiceNumber,
-        DateTimeOffset? InvoiceDate,
-        string? Currency,
-        decimal? NetTotal,
-        decimal? VatTotal,
-        decimal? GrossTotal,
-        decimal? OverallConfidence);
 }

@@ -25,13 +25,31 @@ public class InvoiceLineConfiguration : IEntityTypeConfiguration<InvoiceLine>
         builder.Property(i => i.UnitPrice)
             .HasPrecision(18, 2);
 
+        builder.Property(i => i.UnitPriceBgn)
+            .HasPrecision(18, 2);
+
+        builder.Property(i => i.UnitPriceEur)
+            .HasPrecision(18, 2);
+
         builder.Property(i => i.Discount)
+            .HasPrecision(18, 2);
+
+        builder.Property(i => i.DiscountBgn)
+            .HasPrecision(18, 2);
+
+        builder.Property(i => i.DiscountEur)
             .HasPrecision(18, 2);
 
         builder.Property(i => i.VatRate)
             .HasPrecision(9, 6);
 
         builder.Property(i => i.LineTotal)
+            .HasPrecision(18, 2);
+
+        builder.Property(i => i.LineTotalBgn)
+            .HasPrecision(18, 2);
+
+        builder.Property(i => i.LineTotalEur)
             .HasPrecision(18, 2);
 
         builder.Property(i => i.Confidence)

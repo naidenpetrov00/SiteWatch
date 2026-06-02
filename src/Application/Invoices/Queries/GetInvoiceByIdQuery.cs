@@ -44,10 +44,17 @@ public class GetInvoiceByIdQueryHandler(IApplicationDbContext dbContext)
             invoice.InvoiceDate,
             invoice.Currency,
             invoice.NetTotal,
+            invoice.NetTotalBgn,
+            invoice.NetTotalEur,
             invoice.VatTotal,
+            invoice.VatTotalBgn,
+            invoice.VatTotalEur,
             invoice.GrossTotal,
+            invoice.GrossTotalBgn,
+            invoice.GrossTotalEur,
             invoice.OverallConfidence,
             invoice.RawExtractionJson,
+            invoice.RawOcrText,
             invoice.CreatedAt,
             invoice.ProcessedAt,
             invoice.ApprovedAt);
@@ -61,9 +68,15 @@ public class GetInvoiceByIdQueryHandler(IApplicationDbContext dbContext)
                 x.Quantity,
                 x.Unit,
                 x.UnitPrice,
+                x.UnitPriceBgn,
+                x.UnitPriceEur,
                 x.Discount,
+                x.DiscountBgn,
+                x.DiscountEur,
                 x.VatRate,
                 x.LineTotal,
+                x.LineTotalBgn,
+                x.LineTotalEur,
                 x.Confidence))
             .ToArray();
 
