@@ -165,6 +165,7 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
                     Detect document type as Invoice, Receipt, Offer, or Unknown.
                     Add issues for unclear, suspicious, contradictory, or partially visible fields.
                     Return confidence in every extracted value between 0 and 1.
+                    If the document shows both EUR and BGN for the same amount, use the EUR value for monetary fields.
                     If a field is present but uncertain, prefer null and add an issue rather than inventing a value.
                     """
                 },
@@ -185,6 +186,7 @@ public sealed class OpenRouterInvoiceExtractor : IInvoiceExtractor
                             - Do not infer supplier, buyer, invoice number, dates, totals, or line items from logos, branding, or domain knowledge.
                             - If the OCR text does not contain line items, return an empty array and add an issue explaining that no items were visible.
                             - If the document uses Bulgarian labels, map them to the matching English field names.
+                            - If the OCR text shows both EUR and BGN for the same amount, choose the EUR amount for monetary fields.
                             - Prefer null over wrong values.
                             - Do not use placeholders or invented examples.
                             """
