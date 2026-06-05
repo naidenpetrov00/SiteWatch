@@ -8,7 +8,6 @@ using Infrastructure.Cameras.Services;
 using Infrastructure.Data;
 using Infrastructure.Email;
 using Infrastructure.Identity.Services;
-using Infrastructure.InvoiceExtraction;
 using Infrastructure.SeedWork.Options;
 using Infrastructure.Sites.Services;
 using Infrastructure.Storage;
@@ -60,16 +59,6 @@ public static class DependencyInjection
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<ISiteService, SiteService>();
         services.AddScoped<ICameraService, CameraService>();
-
-        var openRouterOptions = configuration.GetOptions<OpenRouterOptions>();
-        var openRouterBaseUrl = Guard.Against.NullOrEmpty(openRouterOptions.BaseUrl).TrimEnd('/') + "/";
-
-        services.AddHttpClient<IInvoiceExtractor, OpenRouterInvoiceExtractor>(client =>
-        {
-            client.BaseAddress = new Uri(openRouterBaseUrl);
-            client.Timeout = TimeSpan.FromMinutes(5);
-        });
-        services.AddScoped<IInvoiceValidationService, InvoiceValidationService>();
         services.AddScoped<IInvoiceFileStorage, LocalInvoiceFileStorage>();
 
         services

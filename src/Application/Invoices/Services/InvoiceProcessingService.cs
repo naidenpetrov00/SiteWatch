@@ -1,9 +1,6 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using Application.SeedWork.Interfaces;
-using Application.SeedWork.Models.External;
 using Application.SeedWork.Exceptions;
-using Ardalis.GuardClauses;
+using Application.SeedWork.Interfaces;
 using Domain.Entities;
 using Domain.SeedWork.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -13,21 +10,9 @@ namespace Application.Invoices.Services;
 
 public sealed class InvoiceProcessingService(
     IApplicationDbContext dbContext,
-    IInvoiceFileStorage invoiceFileStorage,
-    IInvoiceExtractor invoiceExtractor,
-    IInvoiceValidationService invoiceValidationService,
     ILogger<InvoiceProcessingService> logger)
     : IInvoiceProcessingService
 {
-    private static readonly JsonSerializerOptions JsonSerializerOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        Converters =
-        {
-            new JsonStringEnumConverter()
-        }
-    };
-
     public async Task ProcessAsync(
         Guid siteId,
         Guid invoiceId,
@@ -47,35 +32,6 @@ public sealed class InvoiceProcessingService(
 
         try
         {
-            var fileId = Guid.Parse(invoiceDocument.StoredFilePath);
-            var fileResponse = await invoiceFileStorage.DownloadAsync(fileId, cancellationToken);
-
-            await using var stream = fileResponse.Stream;
-            var extractedResult = await invoiceExtractor.ExtractAsync(
-                stream,
-                fileResponse.ContentType,
-                cancellationToken);
-
-            if (extractedResult is null)
-            {
-                await PersistFailureAsync(
-                    invoiceDocument,
-                    "Invoice extraction returned no result.",
-                    cancellationToken);
-                return;
-            }
-
-            var validationResult = await invoiceValidationService.ValidateAsync(
-                extractedResult,
-                cancellationToken);
-
-            var mappedLines = MapLines(invoiceDocument.Id, extractedResult);
-            var mappedIssues = MapIssues(invoiceDocument.Id, extractedResult, validationResult);
-            var finalStatus = mappedIssues.Any()
-                ? InvoiceExtractionStatus.NeedsReview
-                : InvoiceExtractionStatus.Extracted;
-            var rawJson = SerializeExtractionResult(extractedResult);
-
             await dbContext.InvoiceLines
                 .Where(x => x.InvoiceDocumentId == invoiceDocument.Id)
                 .ExecuteDeleteAsync(cancellationToken);
@@ -84,32 +40,11 @@ public sealed class InvoiceProcessingService(
                 .Where(x => x.InvoiceDocumentId == invoiceDocument.Id)
                 .ExecuteDeleteAsync(cancellationToken);
 
-            invoiceDocument.ApplyExtractionFields(
-                extractedResult.SupplierName,
-                extractedResult.SupplierEik,
-                extractedResult.SupplierVatNumber,
-                extractedResult.BuyerName,
-                extractedResult.InvoiceNumber,
-                extractedResult.InvoiceDate,
-                extractedResult.Currency,
-                extractedResult.NetTotal,
-                extractedResult.NetTotalBgn,
-                extractedResult.NetTotalEur,
-                extractedResult.VatTotal,
-                extractedResult.VatTotalBgn,
-                extractedResult.VatTotalEur,
-                extractedResult.GrossTotal,
-                extractedResult.GrossTotalBgn,
-                extractedResult.GrossTotalEur,
-                extractedResult.OverallConfidence);
-
-            dbContext.InvoiceLines.AddRange(mappedLines);
-            dbContext.InvoiceReviewIssues.AddRange(mappedIssues);
             invoiceDocument.CompleteProcessing(
-                finalStatus,
+                InvoiceExtractionStatus.Failed,
                 DateTimeOffset.UtcNow,
-                rawJson,
-                extractedResult.RawOcrText);
+                CreateFailurePayload(
+                    "Invoice extraction workflow is not wired in yet. A new processing flow will replace it."));
 
             await dbContext.SaveChangesAsync(cancellationToken);
         }
@@ -163,7 +98,7 @@ public sealed class InvoiceProcessingService(
             InvoiceExtractionStatus.Failed,
             DateTimeOffset.UtcNow,
             CreateFailurePayload(exception),
-            GetRawOcrText(exception));
+            null);
 
         await dbContext.SaveChangesAsync(cancellationToken);
     }
@@ -180,66 +115,6 @@ public sealed class InvoiceProcessingService(
         {
             errorMessage = exception.Message,
             exceptionType = exception.GetType().FullName,
-            rawResponse = exception is OpenRouterInvoiceExtractionException openRouterException
-                ? openRouterException.RawResponse
-                : null,
-            statusCode = exception is OpenRouterInvoiceExtractionException statusException
-                ? statusException.StatusCode
-                : null,
             occurredAt = DateTimeOffset.UtcNow
         });
-
-    private static string? GetRawOcrText(Exception exception)
-        => exception is OpenRouterInvoiceExtractionException openRouterException
-            ? openRouterException.RawOcrText
-            : null;
-
-    private static IReadOnlyCollection<InvoiceLine> MapLines(
-        Guid invoiceDocumentId,
-        InvoiceExtractionResult extractedResult)
-        => extractedResult.Items
-            .Select(x => InvoiceLine.Create(
-                invoiceDocumentId,
-                x.ProductCode,
-                x.ProductName,
-                x.Quantity,
-                x.Unit,
-            x.UnitPrice,
-            x.UnitPriceBgn,
-            x.UnitPriceEur,
-            x.Discount,
-            x.DiscountBgn,
-            x.DiscountEur,
-            x.VatRate,
-            x.LineTotal,
-            x.LineTotalBgn,
-            x.LineTotalEur,
-            x.Confidence))
-            .ToArray();
-
-    private static IReadOnlyCollection<InvoiceReviewIssue> MapIssues(
-        Guid invoiceDocumentId,
-        InvoiceExtractionResult extractedResult,
-        InvoiceValidationResult validationResult)
-    {
-        var extractionIssues = extractedResult.Issues
-            .Select(issue => InvoiceReviewIssue.Create(
-                invoiceDocumentId,
-                issue.FieldPath,
-                issue.ExtractedValue,
-                issue.Reason,
-                issue.Confidence));
-
-        var validationIssues = validationResult.Issues.Select(issue => InvoiceReviewIssue.Create(
-            invoiceDocumentId,
-            issue.FieldPath,
-            issue.ExtractedValue,
-            issue.Reason,
-            issue.Confidence));
-
-        return extractionIssues.Concat(validationIssues).ToArray();
-    }
-
-    private static string SerializeExtractionResult(InvoiceExtractionResult extractedResult)
-        => extractedResult.RawJson ?? JsonSerializer.Serialize(extractedResult, JsonSerializerOptions);
 }
