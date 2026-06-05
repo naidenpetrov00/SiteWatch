@@ -176,6 +176,14 @@ namespace Infrastructure.Data.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal?>("GrossTotalBgn")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("GrossTotalEur")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<DateTimeOffset?>("InvoiceDate")
                         .HasColumnType("datetimeoffset");
 
@@ -184,6 +192,14 @@ namespace Infrastructure.Data.Migrations
                         .HasColumnType("nvarchar(128)");
 
                     b.Property<decimal?>("NetTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("NetTotalBgn")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("NetTotalEur")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
@@ -200,6 +216,9 @@ namespace Infrastructure.Data.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("RawExtractionJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RawOcrText")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("SiteId")
@@ -229,6 +248,14 @@ namespace Infrastructure.Data.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal?>("VatTotalBgn")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("VatTotalEur")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("SiteId");
@@ -253,10 +280,26 @@ namespace Infrastructure.Data.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal?>("DiscountBgn")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("DiscountEur")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<Guid>("InvoiceDocumentId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal?>("LineTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("LineTotalBgn")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("LineTotalEur")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
@@ -277,6 +320,14 @@ namespace Infrastructure.Data.Migrations
                         .HasColumnType("nvarchar(64)");
 
                     b.Property<decimal?>("UnitPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("UnitPriceBgn")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("UnitPriceEur")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
