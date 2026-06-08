@@ -8,62 +8,67 @@
     <nav
       class="dashboard-shell__nav"
       aria-label="Dashboard navigation"
-      routerLinkActive="dashboard-shell__nav--active"
-      [routerLinkActiveOptions]="{ exact: false }"
     >
-      <a
-        routerLink="/invoices"
-        class="dashboard-shell__nav-tracker"
-        aria-hidden="true"
-        tabindex="-1"
-      ></a>
-      <a
-        routerLink="/scan-invoice"
-        class="dashboard-shell__nav-tracker"
-        aria-hidden="true"
-        tabindex="-1"
-      ></a>
-      <button
-        mat-button
-        [matMenuTriggerFor]="invoiceMenu"
-        class="dashboard-shell__nav-button"
-        aria-label="Invoice management menu"
+      <app-dashboard-dropdown
+        triggerLabel="Invoice Management"
+        triggerAriaLabel="Invoice management menu"
+        menuXPosition="after"
       >
-        Invoice Management
-        <mat-icon>expand_more</mat-icon>
-      </button>
+        <a
+          dashboardDropdownTracker
+          routerLink="/invoices"
+          class="dashboard-shell__nav-tracker"
+          aria-hidden="true"
+          tabindex="-1"
+        ></a>
+        <a
+          dashboardDropdownTracker
+          routerLink="/scan-invoice"
+          class="dashboard-shell__nav-tracker"
+          aria-hidden="true"
+          tabindex="-1"
+        ></a>
+        <a
+          dashboardDropdownItem
+          mat-menu-item
+          routerLink="/invoices"
+          routerLinkActive="dashboard-shell__menu-item--active"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          Invoices
+        </a>
+        <a
+          dashboardDropdownItem
+          mat-menu-item
+          routerLink="/scan-invoice"
+          routerLinkActive="dashboard-shell__menu-item--active"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          Scan Invoice
+        </a>
+      </app-dashboard-dropdown>
     </nav>
 
     <span class="dashboard-shell__spacer"></span>
 
+    <app-dashboard-dropdown
+      triggerLabel="Administration"
+      triggerAriaLabel="Administration menu"
+      menuXPosition="before"
+    >
+      <button dashboardDropdownItem mat-menu-item type="button">Manage Users</button>
+      <button dashboardDropdownItem mat-menu-item type="button">Add New User</button>
+    </app-dashboard-dropdown>
+
     <button
       mat-icon-button
-      [matMenuTriggerFor]="accountMenu"
       class="dashboard-shell__account-button"
       aria-label="Account menu"
+      [matMenuTriggerFor]="accountMenu"
     >
       <mat-icon>person</mat-icon>
     </button>
   </mat-toolbar>
-
-  <mat-menu #invoiceMenu="matMenu">
-    <a
-      mat-menu-item
-      routerLink="/invoices"
-      routerLinkActive="dashboard-shell__menu-item--active"
-      [routerLinkActiveOptions]="{ exact: true }"
-    >
-      Invoices
-    </a>
-    <a
-      mat-menu-item
-      routerLink="/scan-invoice"
-      routerLinkActive="dashboard-shell__menu-item--active"
-      [routerLinkActiveOptions]="{ exact: true }"
-    >
-      Scan Invoice
-    </a>
-  </mat-menu>
 
   <mat-menu #accountMenu="matMenu">
     <button mat-menu-item type="button" (click)="logOut()">Log Out</button>

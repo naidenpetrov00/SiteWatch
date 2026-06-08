@@ -1,0 +1,28 @@
+<div
+  class="dashboard-dropdown"
+  routerLinkActive="dashboard-dropdown--active"
+  [routerLinkActiveOptions]="{ exact: false }"
+>
+  <span class="dashboard-dropdown__trackers">
+    <ng-content select="[dashboardDropdownTracker]"></ng-content>
+  </span>
+
+  <button
+    mat-button
+    type="button"
+    class="dashboard-dropdown__button"
+    [matMenuTriggerFor]="menu"
+    (mouseenter)="openMenu()"
+    (mouseleave)="scheduleClose()"
+    (menuOpened)="attachPanelHoverListeners()"
+    (menuClosed)="detachPanelHoverListeners()"
+    [attr.aria-label]="triggerAriaLabel()"
+  >
+    <span class="dashboard-dropdown__label">{{ triggerLabel() }}</span>
+    <mat-icon>expand_more</mat-icon>
+  </button>
+
+  <mat-menu #menu="matMenu" [xPosition]="menuXPosition()">
+    <ng-content select="[dashboardDropdownItem]"></ng-content>
+  </mat-menu>
+</div>

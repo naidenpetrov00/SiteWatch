@@ -6,11 +6,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
+import { DashboardDropdownComponent } from './dashboard-dropdown.component';
 import { IdentityAuthService } from '../../identity/services/identity-auth.service';
 
 @Component({
   selector: 'app-dashboard-shell',
   imports: [
+    DashboardDropdownComponent,
     RouterLink,
     RouterLinkActive,
     RouterOutlet,
