@@ -1,20 +1,19 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
 
+import { CdkMenuModule } from '@angular/cdk/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
-import { DashboardDropdownComponent } from './dashboard-dropdown.component';
 import { IdentityAuthService } from '../../identity/services/identity-auth.service';
 
 @Component({
   selector: 'app-dashboard-shell',
   imports: [
-    DashboardDropdownComponent,
+    CdkMenuModule,
     RouterLink,
-    RouterLinkActive,
     RouterOutlet,
     MatButtonModule,
     MatIconModule,
