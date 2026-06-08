@@ -11,6 +11,7 @@
         mat-button
         type="button"
         class="dashboard-shell__nav-button"
+        [class.dashboard-shell__nav-button--active]="isInvoiceManagementActive()"
         aria-label="Invoice management menu"
         [cdkMenuTriggerFor]="invoiceMenu"
       >
@@ -23,6 +24,7 @@
         mat-button
         type="button"
         class="dashboard-shell__nav-button dashboard-shell__admin-button"
+        [class.dashboard-shell__nav-button--active]="isAdministrationActive()"
         aria-label="Administration menu"
         [cdkMenuTriggerFor]="administrationMenu"
       >
@@ -47,6 +49,8 @@
         cdkMenuItem
         class="dashboard-shell__menu-item"
         routerLink="/invoices"
+        routerLinkActive="dashboard-shell__menu-item--active"
+        [routerLinkActiveOptions]="{ exact: true }"
       >
         Invoices
       </a>
@@ -54,6 +58,8 @@
         cdkMenuItem
         class="dashboard-shell__menu-item"
         routerLink="/scan-invoice"
+        routerLinkActive="dashboard-shell__menu-item--active"
+        [routerLinkActiveOptions]="{ exact: true }"
       >
         Scan Invoice
       </a>
@@ -62,8 +68,15 @@
 
   <ng-template #administrationMenu>
     <div class="dashboard-shell__menu-panel" cdkMenu>
-      <button cdkMenuItem class="dashboard-shell__menu-item" type="button">Manage Users</button>
-      <button cdkMenuItem class="dashboard-shell__menu-item" type="button">Add New User</button>
+      <a
+        cdkMenuItem
+        class="dashboard-shell__menu-item"
+        routerLink="/manage-users"
+        routerLinkActive="dashboard-shell__menu-item--active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        Manage Users
+      </a>
     </div>
   </ng-template>
 

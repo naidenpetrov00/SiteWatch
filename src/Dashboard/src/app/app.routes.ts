@@ -39,6 +39,13 @@ export const routes: Routes = [
           import('./features/invoices/pages/scan-invoice.page').then(
             (m) => m.ScanInvoicePage
           )
+      },
+      {
+        path: 'manage-users',
+        loadComponent: () =>
+          import('./features/users/pages/manage-users.page').then(
+            (m) => m.ManageUsersPage
+          )
       }
     ]
   }

@@ -23,7 +23,8 @@ describe('DashboardShellComponent', () => {
         provideRouter([
           { path: 'sign-in', component: DummyComponent },
           { path: 'invoices', component: DummyComponent },
-          { path: 'scan-invoice', component: DummyComponent }
+          { path: 'scan-invoice', component: DummyComponent },
+          { path: 'manage-users', component: DummyComponent }
         ]),
         { provide: IdentityAuthService, useValue: authService }
       ]
@@ -77,7 +78,6 @@ describe('DashboardShellComponent', () => {
 
     const openedMenu = document.body.querySelector('.dashboard-shell__menu-panel');
     expect(openedMenu?.textContent).toContain('Manage Users');
-    expect(openedMenu?.textContent).toContain('Add New User');
 
     trigger.click();
     fixture.detectChanges();
