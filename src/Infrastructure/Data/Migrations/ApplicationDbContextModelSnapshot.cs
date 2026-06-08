@@ -177,6 +177,44 @@ namespace Infrastructure.Data.Migrations
                     b.ToTable("Sites");
                 });
 
+            modelBuilder.Entity("Domain.Entities.SiteFile", b =>
+                {
+                    b.Property<Guid>("SiteId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("FileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("LastModified")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("SiteId", "FileId");
+
+                    b.ToTable("SiteFiles");
+                });
+
             modelBuilder.Entity("Domain.Entities.SiteImage", b =>
                 {
                     b.Property<Guid>("SiteId")
@@ -500,6 +538,17 @@ namespace Infrastructure.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Domain.Entities.SiteFile", b =>
+                {
+                    b.HasOne("Domain.Entities.Site", "Site")
+                        .WithMany("Files")
+                        .HasForeignKey("SiteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Site");
+                });
+
             modelBuilder.Entity("Domain.Entities.SiteImage", b =>
                 {
                     b.HasOne("Domain.Entities.Site", "Site")
@@ -576,6 +625,8 @@ namespace Infrastructure.Data.Migrations
             modelBuilder.Entity("Domain.Entities.Site", b =>
                 {
                     b.Navigation("Cameras");
+
+                    b.Navigation("Files");
 
                     b.Navigation("Images");
 

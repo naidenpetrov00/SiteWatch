@@ -406,4 +406,4 @@ src/Api/.env
 /sqlserver
 src/Infrastructure/Data/Migrations
 azurelite-data/
-src/Dashboard/.angular/cache
+src/Dashboard/.angular/
