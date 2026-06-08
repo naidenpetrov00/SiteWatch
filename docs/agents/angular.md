@@ -75,6 +75,8 @@ If multiple features need the same code, move it to shared.
 When asked where a file should go, answer using this architecture.
 
 For UI work, prefer `@angular/material` components where they fit the requirement, unless the user explicitly asks for another UI library or component type.
+- Use clear `aria-label` and other accessible names for interactive elements, icon buttons, and custom controls whenever visible text is missing or not enough.
+- Build the app with SEO in mind: prefer semantic HTML, meaningful page titles, route-aware metadata, and content structure that is easy for search engines to understand.
 
 Before creating a file, decide what it is:
 

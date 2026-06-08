@@ -12,4 +12,6 @@
 - Keep route composition in `app/` and shared UI in `components/ui/` if the shared ui is shared only in feature add it in the feature `components/ui`.
 - If shared UI is only used within a feature, keep it in that feature's `components/ui/`.
 - Use feature-first naming and keep styling and state close to the owning screen or feature.
+- Use clear `aria-label`, `accessibilityLabel`, and other accessible names on interactive elements, icons, and controls whenever visible text is missing or ambiguous.
+- Build with SEO in mind from the start: use semantic structure, meaningful headings, descriptive text, and metadata-friendly routes/content that can be indexed well.
 - Treat `android/` and other generated client folders as machine-managed output.
