@@ -1,4 +1,5 @@
 using Application.Identity.Commands;
+using Application.Identity.Queries.DashboardUsers;
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models;
 using Domain.Entities;
@@ -13,7 +14,7 @@ public class IdentityService(
 {
     public Task<string?> GetUserNameAsync(string userId) => userService.GetUserNameAsync(userId);
 
-    public Task<List<ApplicationUser>> GetUsersAsync() => userService.GetUsersAsync();
+    public Task<List<DashboardUserDto>> GetUsersAsync() => userService.GetUsersAsync();
 
     public Task<IdentityResultModel> CreateUserAsync(
         string userName,

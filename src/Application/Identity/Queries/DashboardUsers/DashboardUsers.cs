@@ -29,7 +29,7 @@ public class DashboardUsersQueryHandler : IRequestHandler<DashboardUsersQuery, L
         var users = await _identityService.GetUsersAsync();
 
         return _mapper.Map<List<DashboardUserDto>>(
-            users.OrderBy(user => user.UserName).ThenBy(user => user.Email).ToList()
+            users.OrderBy(user => user.Username).ThenBy(user => user.Email).ToList()
         );
     }
 }

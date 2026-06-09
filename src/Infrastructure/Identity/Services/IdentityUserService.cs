@@ -8,13 +8,17 @@ using Infrastructure.Identity.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using Application.Identity.Queries.DashboardUsers;
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 
 namespace Infrastructure.Identity.Services;
 
 public class IdentityUserService(
     UserManager<ApplicationUser> userManager,
     IIdentityVerificationService verificationService,
-    IEmailService emailService
+    IEmailService emailService,
+    IMapper mapper
 ) : IIdentityUserService
 {
     public async Task<IdentityResultModel> AssignAdministratorClaimAsync(string userId)
@@ -105,7 +109,8 @@ public class IdentityUserService(
         return user?.UserName;
     }
 
-    public async Task<List<ApplicationUser>> GetUsersAsync() => await userManager.Users.ToListAsync();
+    public async Task<List<DashboardUserDto>> GetUsersAsync() => await userManager.Users
+        .AsNoTrackingWithIdentityResolution().ProjectTo<DashboardUserDto>(mapper.ConfigurationProvider).ToListAsync();
 
     public async Task<ApplicationUser?> FindUserByEmailAsync(string email) =>
         await userManager.FindByEmailAsync(email);
