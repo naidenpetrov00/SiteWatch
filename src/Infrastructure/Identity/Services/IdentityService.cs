@@ -13,6 +13,8 @@ public class IdentityService(
 {
     public Task<string?> GetUserNameAsync(string userId) => userService.GetUserNameAsync(userId);
 
+    public Task<List<ApplicationUser>> GetUsersAsync() => userService.GetUsersAsync();
+
     public Task<IdentityResultModel> CreateUserAsync(
         string userName,
         string email,
@@ -34,6 +36,9 @@ public class IdentityService(
 
     public Task<ApplicationUser?> FindUserByEmailAsync(string email) =>
         userService.FindUserByEmailAsync(email);
+
+    public Task UpdateLastLoginAtAsync(ApplicationUser user) =>
+        userService.UpdateLastLoginAtAsync(user);
 
     public Task<IdentityResultModel> CheckPasswordAsync(ApplicationUser user, string password) =>
         authenticationService.CheckPasswordAsync(user, password);

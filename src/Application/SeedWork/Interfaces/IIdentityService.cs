@@ -8,6 +8,8 @@ public interface IIdentityService
 {
     Task<string?> GetUserNameAsync(string userId);
 
+    Task<List<ApplicationUser>> GetUsersAsync();
+
     Task<ApplicationUser?> FindUserByEmailAsync(string email);
 
     Task<bool> IsInRoleAsync(string userId, string role);
@@ -26,6 +28,8 @@ public interface IIdentityService
     Task<Result> DeleteUserAsync(string userId);
 
     Task<IdentityResultModel> CheckPasswordAsync(ApplicationUser user, string password);
+
+    Task UpdateLastLoginAtAsync(ApplicationUser user);
 
     Task<IdentityResultModel> ConfirmEmailAsync(ApplicationUser user, string token);
 

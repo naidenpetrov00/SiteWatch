@@ -6,6 +6,7 @@ using Application.SeedWork.Security;
 using Domain.Entities;
 using Infrastructure.Identity.Extensions;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace Infrastructure.Identity.Services;
@@ -104,6 +105,8 @@ public class IdentityUserService(
         return user?.UserName;
     }
 
+    public async Task<List<ApplicationUser>> GetUsersAsync() => await userManager.Users.ToListAsync();
+
     public async Task<ApplicationUser?> FindUserByEmailAsync(string email) =>
         await userManager.FindByEmailAsync(email);
 
@@ -111,7 +114,22 @@ public class IdentityUserService(
     {
         var user = await FindByIdAsync(userId);
 
-        return user != null && await userManager.IsInRoleAsync(user, role);
+        if (user is null)
+        {
+            return false;
+        }
+
+        var claims = await userManager.GetClaimsAsync(user);
+
+        return claims.Any(claim =>
+            claim.Type == UserClaimTypes.UserType && claim.Value == role
+        );
+    }
+
+    public async Task UpdateLastLoginAtAsync(ApplicationUser user)
+    {
+        user.LastLoginAt = DateTimeOffset.UtcNow;
+        await userManager.UpdateAsync(user);
     }
 
     private Task<ApplicationUser?> FindByIdAsync(string userId) => userManager.FindByIdAsync(userId);

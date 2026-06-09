@@ -16,7 +16,11 @@ public interface IIdentityUserService
 
     Task<string?> GetUserNameAsync(string userId);
 
+    Task<List<ApplicationUser>> GetUsersAsync();
+
     Task<ApplicationUser?> FindUserByEmailAsync(string email);
 
     Task<bool> IsInRoleAsync(string userId, string role);
+
+    Task UpdateLastLoginAtAsync(ApplicationUser user);
 }

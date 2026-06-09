@@ -16,7 +16,8 @@ public class IdentityAuthenticationService(
     IAuthorizationService authorizationService,
     IJwtTokenService jwtTokenService,
     SignInManager<ApplicationUser> signInManager,
-    IMapper mapper
+    IMapper mapper,
+    IIdentityUserService userService
 ) : IIdentityAuthenticationService
 {
     public async Task<bool> AuthorizeAsync(string userId, string policyName)
@@ -43,6 +44,7 @@ public class IdentityAuthenticationService(
             return new IdentityResultOnly { Result = result.ToApplicationResult() };
         }
 
+        await userService.UpdateLastLoginAtAsync(user);
         return await CreateUserTokenResultAsync(user, result.ToApplicationResult());
     }
 
@@ -73,6 +75,7 @@ public class IdentityAuthenticationService(
             return new IdentityResultOnly { Result = result.ToApplicationResult() };
         }
 
+        await userService.UpdateLastLoginAtAsync(user);
         return await CreateUserTokenResultAsync(user, Result.Success());
     }
 
