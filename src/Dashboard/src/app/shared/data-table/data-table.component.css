@@ -76,6 +76,20 @@
   border: 1px solid rgba(15, 23, 42, 0.08);
 }
 
+.data-table__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.data-table__footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .data-table__table {
   min-width: 72rem;
   width: 100%;
@@ -98,6 +112,15 @@
 
   .data-table__actions {
     width: 100%;
+    justify-content: flex-start;
+  }
+
+  .data-table__footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .data-table__footer-actions {
     justify-content: flex-start;
   }
 }

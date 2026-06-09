@@ -17,6 +17,7 @@ import { MatTableModule } from '@angular/material/table';
 
 import {
   DataTableColumn,
+  DataTableExportRequest,
   DataTableFilterMode,
   DataTablePageState,
   DataTableState,
@@ -60,6 +61,7 @@ export class DataTableComponent<T extends object> {
 
   readonly tableStateChange = output<DataTableState<T>>();
   readonly searchRequested = output<DataTableState<T>>();
+  readonly exportRequested = output<DataTableExportRequest<T>>();
 
   readonly draftFilterState = signal<Record<string, string>>({});
   readonly appliedFilterState = signal<Record<string, string>>({});
@@ -219,6 +221,15 @@ export class DataTableComponent<T extends object> {
       pageIndex: 0
     }));
     this.searchRequested.emit(this.tableState());
+  }
+
+  onExportClick(): void {
+    this.exportRequested.emit({
+      scope: 'filteredRows',
+      columns: this.tableState().exportableColumns,
+      rows: this.filteredRows(),
+      state: this.tableState()
+    });
   }
 
   renderCell(row: T, column: DataTableColumn<T>): string {

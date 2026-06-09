@@ -118,12 +118,18 @@
     </table>
   </div>
 
-  <mat-paginator
-    [length]="filteredRows().length"
-    [pageIndex]="effectivePageIndex()"
-    [pageSize]="pageState().pageSize"
-    [pageSizeOptions]="pageSizeOptions()"
-    [showFirstLastButtons]="true"
-    (page)="onPageChange($event)"
-  ></mat-paginator>
+  <div class="data-table__footer">
+    <div class="data-table__footer-actions">
+      <app-action-button label="Export" (clicked)="onExportClick()"></app-action-button>
+    </div>
+
+    <mat-paginator
+      [length]="filteredRows().length"
+      [pageIndex]="effectivePageIndex()"
+      [pageSize]="pageState().pageSize"
+      [pageSizeOptions]="pageSizeOptions()"
+      [showFirstLastButtons]="true"
+      (page)="onPageChange($event)"
+    ></mat-paginator>
+  </div>
 </section>

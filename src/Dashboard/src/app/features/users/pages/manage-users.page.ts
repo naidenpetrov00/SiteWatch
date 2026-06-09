@@ -6,6 +6,7 @@ import {
   DataTableState
 } from '../../../shared/data-table/data-table.types';
 import { filterRows } from '../../../shared/data-table/data-table.utils';
+import { ActionButtonComponent } from '../../../shared/ui/action-button/action-button.component';
 
 interface ManageUsersRow {
   id: string;
@@ -91,7 +92,7 @@ const DUMMY_USERS: readonly ManageUsersRow[] = createDummyUsers();
 
 @Component({
   selector: 'app-manage-users-page',
-  imports: [DataTableComponent],
+  imports: [ActionButtonComponent, DataTableComponent],
   templateUrl: './manage-users.page.html',
   styleUrl: './manage-users.page.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -101,8 +102,8 @@ export class ManageUsersPage {
   readonly users = signal<readonly ManageUsersRow[]>(DUMMY_USERS);
   readonly tableState = signal<DataTableState<ManageUsersRow> | null>(null);
   readonly columns = USER_COLUMNS;
-  readonly pageSize = 5;
-  readonly pageSizeOptions = [5, 10, 25] as const;
+  readonly pageSize = 50;
+  readonly pageSizeOptions = [50, 100, 500] as const;
 
   readonly visibleUsersCount = computed(
     () => this.tableState()?.filteredRowsTotal ?? this.users().length
