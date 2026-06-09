@@ -1,9 +1,10 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 
 import { AuthApiService } from '../../../core/auth/services/auth-api.service';
 import { AuthSessionService } from '../../../core/auth/services/auth-session.service';
 import { AuthResult } from '../../../core/auth/auth.models';
+import { ApiError } from '../../../core/api/api-error';
 import {
   mapAuthErrors,
   mapDashboardSignInResult
@@ -21,7 +22,7 @@ export class IdentityAuthService {
 
   async signIn(email: string, password: string): Promise<AuthResult> {
     try {
-      const response = await this.authApi.signIn(email, password);
+      const response = await firstValueFrom(this.authApi.signIn(email, password));
       const result = mapDashboardSignInResult(response);
 
       if (result.succeeded && response.token) {
@@ -34,7 +35,7 @@ export class IdentityAuthService {
     } catch (error: unknown) {
       this.authSession.clearSession();
 
-      const payload = error instanceof HttpErrorResponse ? error.error : error;
+      const payload = error instanceof ApiError ? error.body : error;
 
       return {
         succeeded: false,

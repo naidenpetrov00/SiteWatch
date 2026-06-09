@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { Observable, of, throwError } from 'rxjs';
 
 import { IdentityAuthService } from './identity-auth.service';
 import { AuthApiService } from '../../../core/auth/services/auth-api.service';
@@ -6,17 +7,18 @@ import { AuthSessionService } from '../../../core/auth/services/auth-session.ser
 
 describe('IdentityAuthService', () => {
   let authApi: {
-    signIn: (email: string, password: string) => Promise<unknown>;
+    signIn: (email: string, password: string) => Observable<unknown>;
   };
   let service: IdentityAuthService;
   let authSession: AuthSessionService;
 
   beforeEach(() => {
     authApi = {
-      signIn: async () => ({
-        result: { succeeded: true, errors: [] },
-        token: 'jwt-token'
-      })
+      signIn: () =>
+        of({
+          result: { succeeded: true, errors: [] },
+          token: 'jwt-token'
+        })
     };
 
     sessionStorage.clear();
@@ -44,9 +46,10 @@ describe('IdentityAuthService', () => {
   });
 
   it('returns mapped validation errors', async () => {
-    authApi.signIn = async () => ({
-      result: { succeeded: false, errors: ['Invalid credentials'] }
-    });
+    authApi.signIn = () =>
+      of({
+        result: { succeeded: false, errors: ['Invalid credentials'] }
+      });
 
     const result = await service.signIn('test@example.com', 'password123');
 
@@ -59,7 +62,7 @@ describe('IdentityAuthService', () => {
   });
 
   it('falls back for malformed responses', async () => {
-    authApi.signIn = async () => null;
+    authApi.signIn = () => of(null);
 
     const result = await service.signIn('test@example.com', 'password123');
 
@@ -70,9 +73,7 @@ describe('IdentityAuthService', () => {
   });
 
   it('maps network failures to a stable error message', async () => {
-    authApi.signIn = async () => {
-      throw new Error('Network failure');
-    };
+    authApi.signIn = () => throwError(() => new Error('Network failure'));
 
     const result = await service.signIn('test@example.com', 'password123');
 
