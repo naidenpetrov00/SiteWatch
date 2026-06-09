@@ -1,0 +1,129 @@
+<section class="data-table" [attr.aria-label]="tableLabel()">
+  <div class="data-table__header">
+    <div>
+      <p class="data-table__eyebrow">{{ tableEyebrow() }}</p>
+      <h2 class="data-table__title">{{ tableLabel() }}</h2>
+      <p class="data-table__summary">
+        Showing {{ tableState().filteredRowsTotal }} of {{ tableState().rowsTotal }} records
+      </p>
+    </div>
+
+    <div class="data-table__actions">
+      <app-action-button label="Clear filters" (clicked)="clearFilters()"></app-action-button>
+
+      @if (filterApplyMode() === 'search') {
+        <app-action-button
+          label="Search"
+          variant="primary"
+          [disabled]="!hasPendingFilterChanges()"
+          (clicked)="applySearchFilters()"
+        ></app-action-button>
+      }
+
+      <button
+        mat-button
+        type="button"
+        class="data-table__toggle-button"
+        [attr.aria-expanded]="filtersVisible()"
+        (click)="toggleFiltersVisibility()"
+      >
+        {{ filtersVisible() ? 'Hide filters' : 'Show filters' }}
+      </button>
+    </div>
+  </div>
+
+  @if (filtersVisible() && filterableColumns().length > 0) {
+    <div class="data-table__filters" aria-label="Column filters">
+      @for (column of filterableColumns(); track column.key) {
+        <mat-form-field
+          appearance="outline"
+          subscriptSizing="dynamic"
+          class="data-table__filter-field"
+        >
+          <mat-label>{{ column.filter?.placeholder ?? column.label }}</mat-label>
+
+          @switch (column.filter?.kind) {
+            @case ('boolean') {
+              <mat-select
+                [value]="getFilterValue(column.key)"
+                (selectionChange)="onFilterValueChange(column.key, $event.value)"
+              >
+                <mat-option value="">All</mat-option>
+                <mat-option value="true">Yes</mat-option>
+                <mat-option value="false">No</mat-option>
+              </mat-select>
+            }
+            @case ('select') {
+              <mat-select
+                [value]="getFilterValue(column.key)"
+                (selectionChange)="onFilterValueChange(column.key, $event.value)"
+              >
+                <mat-option value="">All</mat-option>
+                @for (option of column.filter?.options ?? []; track option.value) {
+                  <mat-option [value]="option.value">{{ option.label }}</mat-option>
+                }
+              </mat-select>
+            }
+            @default {
+              <input
+                matInput
+                [type]="column.filter?.kind === 'number' ? 'number' : 'text'"
+                [value]="getFilterValue(column.key)"
+                (input)="onFilterValueChange(column.key, $any($event.target).value)"
+              />
+            }
+          }
+        </mat-form-field>
+      }
+    </div>
+  }
+
+  <div class="data-table__table-shell">
+    <table
+      mat-table
+      matSort
+      class="data-table__table"
+      [dataSource]="pagedRows()"
+      (matSortChange)="onSortChange($event)"
+    >
+      @for (column of columns(); track column.key) {
+        <ng-container [matColumnDef]="column.key">
+          <th
+            mat-header-cell
+            *matHeaderCellDef
+            [mat-sort-header]="column.key"
+            [disabled]="column.sortable === false"
+            [style.text-align]="column.align ?? 'start'"
+            [style.width]="column.width ?? null"
+          >
+            {{ column.label }}
+          </th>
+          <td
+            mat-cell
+            *matCellDef="let row"
+            [style.text-align]="column.align ?? 'start'"
+          >
+            {{ renderCell(row, column) }}
+          </td>
+        </ng-container>
+      }
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns(); sticky: true"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns()"></tr>
+      <tr class="mat-row data-table__empty-row" *matNoDataRow>
+        <td class="mat-cell" [attr.colspan]="displayedColumns().length">
+          {{ emptyMessage() }}
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <mat-paginator
+    [length]="filteredRows().length"
+    [pageIndex]="effectivePageIndex()"
+    [pageSize]="pageState().pageSize"
+    [pageSizeOptions]="pageSizeOptions()"
+    [showFirstLastButtons]="true"
+    (page)="onPageChange($event)"
+  ></mat-paginator>
+</section>
