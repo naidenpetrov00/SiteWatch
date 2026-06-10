@@ -1,5 +1,4 @@
 using Api.SeedWork;
-using Api.SeedWork.EndpointFilters;
 using Api.SeedWork.Extensions;
 using Application.Identity.Commands;
 using Application.Identity.Commands.DashboardSignIn;
@@ -8,7 +7,6 @@ using Application.Identity.Commands.ResetPassword;
 using Application.Identity.Commands.SetAdministratorClaim;
 using Application.Identity.Commands.SignIn;
 using Application.Identity.Commands.SignUp;
-using Application.Identity.Queries.DashboardUsers;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -30,7 +28,6 @@ public class Identity : EndpointGroupBase
         group.MapPost("/resetPassword", ResetPassword);
         group.MapPost("/assignAdministrator/{userId}", AssignAdministrator);
         dashboardGroup.MapPost("/signIn", DashboardSignIn);
-        dashboardGroup.MapGet("/users", GetDashboardUsers).AddEndpointFilter<AuthorizationFilter>();
     }
 
     public async Task<Results<Ok<IdentityResultWithEmail>, BadRequest<string[]>>> SignUp(
@@ -133,10 +130,4 @@ public class Identity : EndpointGroupBase
         return TypedResults.BadRequest(result.Result.Errors);
     }
 
-    private static async Task<Ok<List<DashboardUserDto>>> GetDashboardUsers(IMediator mediator)
-    {
-        var users = await mediator.Send(new DashboardUsersQuery());
-
-        return TypedResults.Ok(users);
-    }
 }

@@ -10,10 +10,6 @@
 
     <div class="manage-users-page__actions">
       <app-action-button label="Add User" variant="primary"></app-action-button>
-
-      <!-- <div class="manage-users-page__badge" aria-label="Visible users">
-        {{ visibleUsersCount() }} of {{ allUsers().length }} shown
-      </div> -->
     </div>
   </header>
 
@@ -23,6 +19,7 @@
     emptyMessage="No users match the current filters."
     filterApplyMode="search"
     [rows]="users()"
+    [rowsTotal]="allUsers().length"
     [columns]="columns"
     [pageSize]="pageSize"
     [pageSizeOptions]="pageSizeOptions"

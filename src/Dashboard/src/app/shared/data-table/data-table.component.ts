@@ -52,6 +52,7 @@ import { ActionButtonComponent } from '../ui/action-button/action-button.compone
 export class DataTableComponent<T extends object> {
   readonly columns = input.required<readonly DataTableColumn<T>[]>();
   readonly rows = input.required<readonly T[]>();
+  readonly rowsTotal = input<number | null>(null);
   readonly tableLabel = input('Data table');
   readonly tableEyebrow = input('Overview');
   readonly emptyMessage = input('No matching records found.');
@@ -76,6 +77,7 @@ export class DataTableComponent<T extends object> {
   });
 
   readonly displayedColumns = computed(() => this.columns().map((column) => column.key));
+  readonly totalRowsCount = computed(() => this.rowsTotal() ?? this.rows().length);
   readonly filterableColumns = computed(() =>
     this.columns().filter((column) => column.filter)
   );
@@ -109,7 +111,7 @@ export class DataTableComponent<T extends object> {
     return this.sortedRows().slice(startIndex, startIndex + pageState.pageSize);
   });
   readonly tableState = computed<DataTableState<T>>(() => ({
-    rowsTotal: this.rows().length,
+    rowsTotal: this.totalRowsCount(),
     filteredRowsTotal: this.filteredRows().length,
     page: {
       pageIndex: this.effectivePageIndex(),

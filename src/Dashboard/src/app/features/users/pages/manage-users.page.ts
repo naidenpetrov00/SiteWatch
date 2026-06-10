@@ -1,5 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  signal,
+  untracked
+} from '@angular/core';
 
+import { DashboardUser } from '../models/dashboard-user.model';
+import { DashboardUsersService } from '../services/dashboard-users.service';
 import { DataTableComponent } from '../../../shared/data-table/data-table.component';
 import {
   DataTableColumn,
@@ -8,25 +17,7 @@ import {
 import { filterRows } from '../../../shared/data-table/data-table.utils';
 import { ActionButtonComponent } from '../../../shared/ui/action-button/action-button.component';
 
-interface ManageUsersRow {
-  id: string;
-  userName: string;
-  normalizedUserName: string;
-  email: string;
-  normalizedEmail: string;
-  emailConfirmed: boolean;
-  passwordHash: string;
-  securityStamp: string;
-  concurrencyStamp: string;
-  phoneNumber: string | null;
-  phoneNumberConfirmed: boolean;
-  twoFactorEnabled: boolean;
-  lockoutEnd: string | null;
-  lockoutEnabled: boolean;
-  accessFailedCount: number;
-}
-
-const USER_COLUMNS: readonly DataTableColumn<ManageUsersRow>[] = [
+const USER_COLUMNS: readonly DataTableColumn<DashboardUser>[] = [
   {
     key: 'id',
     label: 'Id',
@@ -34,10 +25,10 @@ const USER_COLUMNS: readonly DataTableColumn<ManageUsersRow>[] = [
     filter: { kind: 'text', placeholder: 'Filter Id' }
   },
   {
-    key: 'userName',
-    label: 'User Name',
+    key: 'username',
+    label: 'Username',
     sortable: true,
-    filter: { kind: 'text', placeholder: 'Filter User Name' }
+    filter: { kind: 'text', placeholder: 'Filter Username' }
   },
   {
     key: 'email',
@@ -46,49 +37,39 @@ const USER_COLUMNS: readonly DataTableColumn<ManageUsersRow>[] = [
     filter: { kind: 'text', placeholder: 'Filter Email' }
   },
   {
-    key: 'emailConfirmed',
-    label: 'Email Confirmed',
-    sortable: true,
-    align: 'center',
-    filter: { kind: 'boolean', placeholder: 'Email Confirmed' }
-  },
-  {
     key: 'phoneNumber',
     label: 'Phone Number',
     sortable: true,
     filter: { kind: 'text', placeholder: 'Filter Phone Number' }
   },
   {
-    key: 'phoneNumberConfirmed',
-    label: 'Phone Confirmed',
+    key: 'isEmailConfirmed',
+    label: 'Is Email Confirmed',
+    sortable: true,
+    align: 'center',
+    filter: { kind: 'boolean', placeholder: 'Email Confirmed' }
+  },
+  {
+    key: 'isPhoneNumberConfirmed',
+    label: 'Is Phone Number Confirmed',
     sortable: true,
     align: 'center',
     filter: { kind: 'boolean', placeholder: 'Phone Confirmed' }
   },
   {
-    key: 'twoFactorEnabled',
-    label: 'Two Factor',
+    key: 'lastLoginAt',
+    label: 'Last Login At',
     sortable: true,
-    align: 'center',
-    filter: { kind: 'boolean', placeholder: 'Two Factor' }
-  },
-  {
-    key: 'lockoutEnabled',
-    label: 'Lockout Enabled',
-    sortable: true,
-    align: 'center',
-    filter: { kind: 'boolean', placeholder: 'Lockout Enabled' }
-  },
-  {
-    key: 'accessFailedCount',
-    label: 'Access Failed',
-    sortable: true,
-    align: 'end',
-    filter: { kind: 'number', placeholder: 'Filter Failed Count' }
+    filter: { kind: 'text', placeholder: 'Filter Last Login' },
+    displayFormatter: (value) => {
+      if (!value) {
+        return 'Never';
+      }
+
+      return new Date(String(value)).toLocaleString();
+    }
   }
 ] as const;
-
-const DUMMY_USERS: readonly ManageUsersRow[] = createDummyUsers();
 
 @Component({
   selector: 'app-manage-users-page',
@@ -98,64 +79,32 @@ const DUMMY_USERS: readonly ManageUsersRow[] = createDummyUsers();
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ManageUsersPage {
-  readonly allUsers = signal<readonly ManageUsersRow[]>(DUMMY_USERS);
-  readonly users = signal<readonly ManageUsersRow[]>(DUMMY_USERS);
-  readonly tableState = signal<DataTableState<ManageUsersRow> | null>(null);
+  private readonly dashboardUsersService = inject(DashboardUsersService);
+
+  readonly allUsers = signal<readonly DashboardUser[]>([]);
+  readonly users = signal<readonly DashboardUser[]>([]);
+  readonly tableState = signal<DataTableState<DashboardUser> | null>(null);
   readonly columns = USER_COLUMNS;
   readonly pageSize = 50;
   readonly pageSizeOptions = [50, 100, 500] as const;
 
-  readonly visibleUsersCount = computed(
-    () => this.tableState()?.filteredRowsTotal ?? this.users().length
-  );
+  constructor() {
+    effect(() => {
+      const dashboardUsers = this.dashboardUsersService.dashboardUsersQuery.data() ?? [];
+      const appliedFilters = untracked(
+        () => this.tableState()?.appliedFilters ?? {}
+      );
 
-  onTableStateChange(state: DataTableState<ManageUsersRow>): void {
+      this.allUsers.set(dashboardUsers);
+      this.users.set(filterRows(dashboardUsers, this.columns, appliedFilters));
+    });
+  }
+
+  onTableStateChange(state: DataTableState<DashboardUser>): void {
     this.tableState.set(state);
   }
 
-  onSearchRequested(state: DataTableState<ManageUsersRow>): void {
+  onSearchRequested(state: DataTableState<DashboardUser>): void {
     this.users.set(filterRows(this.allUsers(), this.columns, state.appliedFilters));
   }
-}
-
-function createDummyUsers(): ManageUsersRow[] {
-  const seeds = [
-    'alice.owens',
-    'brad.morris',
-    'carmen.ivanova',
-    'daniel.kovacs',
-    'elena.popova',
-    'filip.novak',
-    'georgia.petrov',
-    'ivan.dimitrov',
-    'lina.stoyanova',
-    'martin.georgiev',
-    'nikolay.todorov',
-    'olivia.hayes'
-  ];
-
-  return seeds.map((userName, index) => {
-    const id = `user-${index + 1}`;
-    const normalizedUserName = userName.toUpperCase();
-    const email = `${userName}@sitewatch.test`;
-    const normalizedEmail = email.toUpperCase();
-
-    return {
-      id,
-      userName,
-      normalizedUserName,
-      email,
-      normalizedEmail,
-      emailConfirmed: index % 2 === 0,
-      passwordHash: `hash-${index + 1}`,
-      securityStamp: `security-stamp-${index + 1}`,
-      concurrencyStamp: `concurrency-stamp-${index + 1}`,
-      phoneNumber: index % 3 === 0 ? `+359 88 100 0${index + 1}` : null,
-      phoneNumberConfirmed: index % 3 === 0,
-      twoFactorEnabled: index % 4 === 0,
-      lockoutEnd: null,
-      lockoutEnabled: index % 5 !== 0,
-      accessFailedCount: index % 3
-    } satisfies ManageUsersRow;
-  });
 }
