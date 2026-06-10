@@ -1,18 +1,27 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 
 import { LoginPage } from './login.page';
+import { IdentityAuthService } from '../services/identity-auth.service';
 
 describe('LoginPage', () => {
   let fixture: ComponentFixture<LoginPage>;
   let component: LoginPage;
+  const identityAuthService = {
+    signIn: async () => ({ succeeded: true, errors: [] }),
+    signInMutation: {
+      isPending: () => false
+    }
+  };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [LoginPage, NoopAnimationsModule],
-      providers: [provideHttpClient(), provideRouter([])]
+      providers: [
+        provideRouter([]),
+        { provide: IdentityAuthService, useValue: identityAuthService }
+      ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(LoginPage);

@@ -1,41 +1,59 @@
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import {
+  HttpTestingController,
+  provideHttpClientTesting
+} from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { Observable, of, throwError } from 'rxjs';
+import { QueryClient, provideTanStackQuery } from '@tanstack/angular-query-experimental';
 
-import { IdentityAuthService } from './identity-auth.service';
-import { AuthApiService } from '../../../core/auth/services/auth-api.service';
+import { buildApiUrl } from '../../../core/api/api-url';
+import { authInterceptor } from '../../../core/auth/auth.interceptor';
+import { SKIP_AUTH_INTERCEPTOR } from '../../../core/auth/auth-context';
 import { AuthSessionService } from '../../../core/auth/services/auth-session.service';
+import { IdentityAuthService } from './identity-auth.service';
 
 describe('IdentityAuthService', () => {
-  let authApi: {
-    signIn: (email: string, password: string) => Observable<unknown>;
-  };
   let service: IdentityAuthService;
   let authSession: AuthSessionService;
+  let httpTesting: HttpTestingController;
 
   beforeEach(() => {
-    authApi = {
-      signIn: () =>
-        of({
-          result: { succeeded: true, errors: [] },
-          token: 'jwt-token'
-        })
-    };
-
     sessionStorage.clear();
+
     TestBed.configureTestingModule({
       providers: [
-        IdentityAuthService,
         AuthSessionService,
-        { provide: AuthApiService, useValue: authApi }
+        IdentityAuthService,
+        provideTanStackQuery(new QueryClient()),
+        provideHttpClient(withInterceptors([authInterceptor])),
+        provideHttpClientTesting()
       ]
     });
 
     service = TestBed.inject(IdentityAuthService);
     authSession = TestBed.inject(AuthSessionService);
+    httpTesting = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpTesting.verify();
   });
 
   it('stores the token after a successful sign-in', async () => {
-    const result = await service.signIn('test@example.com', 'password123');
+    const signInPromise = service.signIn('test@example.com', 'password123');
+    const request = httpTesting.expectOne((httpRequest) =>
+      httpRequest.url === buildApiUrl('/dashboard/signIn')
+    );
+
+    expect(request.request.context.get(SKIP_AUTH_INTERCEPTOR)).toBeTrue();
+    expect(request.request.headers.has('Authorization')).toBeFalse();
+
+    request.flush({
+      result: { succeeded: true, errors: [] },
+      token: 'jwt-token'
+    });
+
+    const result = await signInPromise;
 
     expect(result).toEqual({
       succeeded: true,
@@ -46,12 +64,16 @@ describe('IdentityAuthService', () => {
   });
 
   it('returns mapped validation errors', async () => {
-    authApi.signIn = () =>
-      of({
-        result: { succeeded: false, errors: ['Invalid credentials'] }
-      });
+    const signInPromise = service.signIn('test@example.com', 'password123');
+    const request = httpTesting.expectOne((httpRequest) =>
+      httpRequest.url === buildApiUrl('/dashboard/signIn')
+    );
 
-    const result = await service.signIn('test@example.com', 'password123');
+    request.flush({
+      result: { succeeded: false, errors: ['Invalid credentials'] }
+    });
+
+    const result = await signInPromise;
 
     expect(result).toEqual({
       succeeded: false,
@@ -62,9 +84,14 @@ describe('IdentityAuthService', () => {
   });
 
   it('falls back for malformed responses', async () => {
-    authApi.signIn = () => of(null);
+    const signInPromise = service.signIn('test@example.com', 'password123');
+    const request = httpTesting.expectOne((httpRequest) =>
+      httpRequest.url === buildApiUrl('/dashboard/signIn')
+    );
 
-    const result = await service.signIn('test@example.com', 'password123');
+    request.flush(null);
+
+    const result = await signInPromise;
 
     expect(result).toEqual({
       succeeded: false,
@@ -73,9 +100,17 @@ describe('IdentityAuthService', () => {
   });
 
   it('maps network failures to a stable error message', async () => {
-    authApi.signIn = () => throwError(() => new Error('Network failure'));
+    const signInPromise = service.signIn('test@example.com', 'password123');
+    const request = httpTesting.expectOne((httpRequest) =>
+      httpRequest.url === buildApiUrl('/dashboard/signIn')
+    );
 
-    const result = await service.signIn('test@example.com', 'password123');
+    request.flush('Network failure', {
+      status: 500,
+      statusText: 'Server Error'
+    });
+
+    const result = await signInPromise;
 
     expect(result).toEqual({
       succeeded: false,
