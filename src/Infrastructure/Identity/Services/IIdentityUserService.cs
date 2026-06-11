@@ -17,7 +17,10 @@ public interface IIdentityUserService
 
     Task<string?> GetUserNameAsync(string userId);
 
-    Task<List<DashboardUserDto>> GetUsersAsync();
+    Task<PagedResult<DashboardUserDto>> GetUsersAsync(
+        DashboardUsersQuery query,
+        CancellationToken cancellationToken
+    );
 
     Task<ApplicationUser?> FindUserByEmailAsync(string email);
 

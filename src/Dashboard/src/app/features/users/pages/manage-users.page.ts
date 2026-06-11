@@ -3,8 +3,7 @@ import {
   Component,
   effect,
   inject,
-  signal,
-  untracked
+  signal
 } from '@angular/core';
 
 import { DashboardUser } from '../models/dashboard-user.model';
@@ -14,7 +13,6 @@ import {
   DataTableColumn,
   DataTableState
 } from '../../../shared/data-table/data-table.types';
-import { filterRows } from '../../../shared/data-table/data-table.utils';
 import { ActionButtonComponent } from '../../../shared/ui/action-button/action-button.component';
 
 const USER_COLUMNS: readonly DataTableColumn<DashboardUser>[] = [
@@ -81,8 +79,9 @@ const USER_COLUMNS: readonly DataTableColumn<DashboardUser>[] = [
 export class ManageUsersPage {
   private readonly dashboardUsersService = inject(DashboardUsersService);
 
-  readonly allUsers = signal<readonly DashboardUser[]>([]);
   readonly users = signal<readonly DashboardUser[]>([]);
+  readonly usersFilteredCount = signal(0);
+  readonly usersTotalCount = signal(0);
   readonly tableState = signal<DataTableState<DashboardUser> | null>(null);
   readonly columns = USER_COLUMNS;
   readonly pageSize = 50;
@@ -90,21 +89,29 @@ export class ManageUsersPage {
 
   constructor() {
     effect(() => {
-      const dashboardUsers = this.dashboardUsersService.dashboardUsersQuery.data() ?? [];
-      const appliedFilters = untracked(
-        () => this.tableState()?.appliedFilters ?? {}
-      );
+      const tableState = this.tableState();
 
-      this.allUsers.set(dashboardUsers);
-      this.users.set(filterRows(dashboardUsers, this.columns, appliedFilters));
+      if (!tableState) {
+        return;
+      }
+
+      this.dashboardUsersService.setTableState(tableState);
+    });
+
+    effect(() => {
+      const dashboardUsers = this.dashboardUsersService.dashboardUsersQuery.data();
+
+      if (!dashboardUsers) {
+        return;
+      }
+
+      this.users.set(dashboardUsers.items);
+      this.usersFilteredCount.set(dashboardUsers.filteredCount);
+      this.usersTotalCount.set(dashboardUsers.totalCount);
     });
   }
 
   onTableStateChange(state: DataTableState<DashboardUser>): void {
     this.tableState.set(state);
-  }
-
-  onSearchRequested(state: DataTableState<DashboardUser>): void {
-    this.users.set(filterRows(this.allUsers(), this.columns, state.appliedFilters));
   }
 }

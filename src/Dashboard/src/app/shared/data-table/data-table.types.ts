@@ -40,7 +40,7 @@ export interface DataTablePageState {
 }
 
 export interface DataTableState<T extends object> {
-  rowsTotal: number;
+  overallRowsTotal: number;
   filteredRowsTotal: number;
   page: DataTablePageState;
   sort: DataTableSortState;

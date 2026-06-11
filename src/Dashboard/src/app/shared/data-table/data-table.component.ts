@@ -25,11 +25,9 @@ import {
 } from './data-table.types';
 import {
   areFilterStatesEqual,
-  filterRows,
   formatCellValue,
   getColumnValue,
   normalizeFilterState,
-  sortRows
 } from './data-table.utils';
 import { ActionButtonComponent } from '../ui/action-button/action-button.component';
 
@@ -52,7 +50,8 @@ import { ActionButtonComponent } from '../ui/action-button/action-button.compone
 export class DataTableComponent<T extends object> {
   readonly columns = input.required<readonly DataTableColumn<T>[]>();
   readonly rows = input.required<readonly T[]>();
-  readonly rowsTotal = input<number | null>(null);
+  readonly filteredRowsTotal = input.required<number>();
+  readonly overallRowsTotal = input.required<number>();
   readonly tableLabel = input('Data table');
   readonly tableEyebrow = input('Overview');
   readonly emptyMessage = input('No matching records found.');
@@ -77,42 +76,23 @@ export class DataTableComponent<T extends object> {
   });
 
   readonly displayedColumns = computed(() => this.columns().map((column) => column.key));
-  readonly totalRowsCount = computed(() => this.rowsTotal() ?? this.rows().length);
+  readonly filteredRowsCount = computed(() => this.filteredRowsTotal());
+  readonly overallRowsCount = computed(() => this.overallRowsTotal());
   readonly filterableColumns = computed(() =>
     this.columns().filter((column) => column.filter)
   );
   readonly hasPendingFilterChanges = computed(
     () => !areFilterStatesEqual(this.draftFilterState(), this.appliedFilterState())
   );
-  readonly activeFilterState = computed(() =>
-    this.filterApplyMode() === 'search'
-      ? this.appliedFilterState()
-      : normalizeFilterState(this.draftFilterState())
-  );
-  readonly filteredRows = computed(() =>
-    this.filterApplyMode() === 'search'
-      ? [...this.rows()]
-      : filterRows(this.rows(), this.columns(), this.activeFilterState())
-  );
-  readonly sortedRows = computed(() =>
-    sortRows(this.filteredRows(), this.columns(), this.sortState())
-  );
   readonly effectivePageIndex = computed(() => {
     const pageState = this.pageState();
-    const totalPages = Math.max(1, Math.ceil(this.sortedRows().length / pageState.pageSize));
+    const totalPages = Math.max(1, Math.ceil(this.filteredRowsCount() / pageState.pageSize));
 
     return Math.min(pageState.pageIndex, totalPages - 1);
   });
-  readonly pagedRows = computed(() => {
-    const pageState = this.pageState();
-    const pageIndex = this.effectivePageIndex();
-    const startIndex = pageIndex * pageState.pageSize;
-
-    return this.sortedRows().slice(startIndex, startIndex + pageState.pageSize);
-  });
   readonly tableState = computed<DataTableState<T>>(() => ({
-    rowsTotal: this.totalRowsCount(),
-    filteredRowsTotal: this.filteredRows().length,
+    overallRowsTotal: this.overallRowsCount(),
+    filteredRowsTotal: this.filteredRowsCount(),
     page: {
       pageIndex: this.effectivePageIndex(),
       pageSize: this.pageState().pageSize
@@ -194,14 +174,11 @@ export class DataTableComponent<T extends object> {
 
   clearFilters(): void {
     this.draftFilterState.set({});
-
-    if (this.filterApplyMode() === 'instant') {
-      this.appliedFilterState.set({});
-      this.pageState.update((page) => ({
-        ...page,
-        pageIndex: 0
-      }));
-    }
+    this.appliedFilterState.set({});
+    this.pageState.update((page) => ({
+      ...page,
+      pageIndex: 0
+    }));
   }
 
   toggleFiltersVisibility(): void {
@@ -227,9 +204,9 @@ export class DataTableComponent<T extends object> {
 
   onExportClick(): void {
     this.exportRequested.emit({
-      scope: 'filteredRows',
+      scope: 'currentPage',
       columns: this.tableState().exportableColumns,
-      rows: this.filteredRows(),
+      rows: this.rows(),
       state: this.tableState()
     });
   }

@@ -14,7 +14,10 @@ public class IdentityService(
 {
     public Task<string?> GetUserNameAsync(string userId) => userService.GetUserNameAsync(userId);
 
-    public Task<List<DashboardUserDto>> GetUsersAsync() => userService.GetUsersAsync();
+    public Task<PagedResult<DashboardUserDto>> GetUsersAsync(
+        DashboardUsersQuery query,
+        CancellationToken cancellationToken
+    ) => userService.GetUsersAsync(query, cancellationToken);
 
     public Task<IdentityResultModel> CreateUserAsync(
         string userName,

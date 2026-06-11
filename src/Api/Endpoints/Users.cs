@@ -4,8 +4,10 @@ using Api.SeedWork.Extensions;
 using Application.Identity.Commands;
 using Application.Identity.Queries.DashboardUsers;
 using Application.Identity.Queries.Users;
+using Application.SeedWork.Models;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Endpoints;
 
@@ -35,9 +37,12 @@ public class Users : EndpointGroupBase
         return TypedResults.BadRequest(result.Result.Errors);
     }
 
-    private static async Task<Ok<List<DashboardUserDto>>> GetDashboardUsers(IMediator mediator)
+    private static async Task<Ok<PagedResult<DashboardUserDto>>> GetDashboardUsers(
+        IMediator mediator,
+        [AsParameters] DashboardUsersQuery query
+    )
     {
-        var users = await mediator.Send(new DashboardUsersQuery());
+        var users = await mediator.Send(query);
 
         return TypedResults.Ok(users);
     }

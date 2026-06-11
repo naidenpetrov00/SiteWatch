@@ -4,7 +4,7 @@
       <p class="data-table__eyebrow">{{ tableEyebrow() }}</p>
       <h2 class="data-table__title">{{ tableLabel() }}</h2>
       <p class="data-table__summary">
-        Showing {{ tableState().filteredRowsTotal }} of {{ totalRowsCount() }} records
+        Showing {{ filteredRowsCount() }} of {{ overallRowsCount() }} records
       </p>
     </div>
 
@@ -83,7 +83,9 @@
       mat-table
       matSort
       class="data-table__table"
-      [dataSource]="pagedRows()"
+      [dataSource]="rows()"
+      [matSortActive]="sortState().active"
+      [matSortDirection]="sortState().direction"
       (matSortChange)="onSortChange($event)"
     >
       @for (column of columns(); track column.key) {
@@ -124,7 +126,7 @@
     </div>
 
     <mat-paginator
-      [length]="filteredRows().length"
+      [length]="filteredRowsCount()"
       [pageIndex]="effectivePageIndex()"
       [pageSize]="pageState().pageSize"
       [pageSizeOptions]="pageSizeOptions()"

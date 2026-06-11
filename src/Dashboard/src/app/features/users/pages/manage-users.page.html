@@ -19,11 +19,11 @@
     emptyMessage="No users match the current filters."
     filterApplyMode="search"
     [rows]="users()"
-    [rowsTotal]="allUsers().length"
+    [filteredRowsTotal]="usersFilteredCount()"
+    [overallRowsTotal]="usersTotalCount()"
     [columns]="columns"
     [pageSize]="pageSize"
     [pageSizeOptions]="pageSizeOptions"
     (tableStateChange)="onTableStateChange($event)"
-    (searchRequested)="onSearchRequested($event)"
   />
 </main>

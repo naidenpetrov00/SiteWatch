@@ -1,14 +1,15 @@
 using Application.Identity.Commands;
+using Application.Identity.Queries.DashboardUsers;
 using Application.SeedWork.Enums;
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models;
 using Application.SeedWork.Security;
+using Application.SeedWork.Queries;
 using Domain.Entities;
 using Infrastructure.Identity.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using Application.Identity.Queries.DashboardUsers;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 
@@ -109,8 +110,18 @@ public class IdentityUserService(
         return user?.UserName;
     }
 
-    public async Task<List<DashboardUserDto>> GetUsersAsync() => await userManager.Users
-        .AsNoTrackingWithIdentityResolution().ProjectTo<DashboardUserDto>(mapper.ConfigurationProvider).ToListAsync();
+    public async Task<PagedResult<DashboardUserDto>> GetUsersAsync(
+        DashboardUsersQuery query,
+        CancellationToken cancellationToken
+    )
+        => await userManager.Users
+            .AsNoTracking()
+            .ToPagedResultAsync(
+                query,
+                DashboardUsersQuery.Table,
+                users => users.ProjectTo<DashboardUserDto>(mapper.ConfigurationProvider),
+                cancellationToken
+            );
 
     public async Task<ApplicationUser?> FindUserByEmailAsync(string email) =>
         await userManager.FindByEmailAsync(email);
