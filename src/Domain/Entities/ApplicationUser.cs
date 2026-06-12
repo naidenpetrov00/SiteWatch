@@ -6,6 +6,8 @@ public class ApplicationUser : IdentityUser
 {
     private readonly HashSet<Site> _sites = [];
 
+    public DateTimeOffset? LastLoginAt { get; set; }
+
     public virtual ICollection<Site> Sites => _sites;
 
     public void AddSite(Site site) => _sites.Add(site);

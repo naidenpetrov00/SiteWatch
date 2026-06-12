@@ -1,19 +1,25 @@
 using Application.Identity.Commands;
+using Application.Identity.Queries.DashboardUsers;
 using Application.SeedWork.Enums;
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models;
 using Application.SeedWork.Security;
+using Application.SeedWork.Queries;
 using Domain.Entities;
 using Infrastructure.Identity.Extensions;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 
 namespace Infrastructure.Identity.Services;
 
 public class IdentityUserService(
     UserManager<ApplicationUser> userManager,
     IIdentityVerificationService verificationService,
-    IEmailService emailService
+    IEmailService emailService,
+    IMapper mapper
 ) : IIdentityUserService
 {
     public async Task<IdentityResultModel> AssignAdministratorClaimAsync(string userId)
@@ -104,6 +110,19 @@ public class IdentityUserService(
         return user?.UserName;
     }
 
+    public async Task<PagedResult<DashboardUserDto>> GetUsersAsync(
+        DashboardUsersQuery query,
+        CancellationToken cancellationToken
+    )
+        => await userManager.Users
+            .AsNoTracking()
+            .ToPagedResultAsync(
+                query,
+                DashboardUsersQuery.Table,
+                users => users.ProjectTo<DashboardUserDto>(mapper.ConfigurationProvider),
+                cancellationToken
+            );
+
     public async Task<ApplicationUser?> FindUserByEmailAsync(string email) =>
         await userManager.FindByEmailAsync(email);
 
@@ -111,7 +130,22 @@ public class IdentityUserService(
     {
         var user = await FindByIdAsync(userId);
 
-        return user != null && await userManager.IsInRoleAsync(user, role);
+        if (user is null)
+        {
+            return false;
+        }
+
+        var claims = await userManager.GetClaimsAsync(user);
+
+        return claims.Any(claim =>
+            claim.Type == UserClaimTypes.UserType && claim.Value == role
+        );
+    }
+
+    public async Task UpdateLastLoginAtAsync(ApplicationUser user)
+    {
+        user.LastLoginAt = DateTimeOffset.UtcNow;
+        await userManager.UpdateAsync(user);
     }
 
     private Task<ApplicationUser?> FindByIdAsync(string userId) => userManager.FindByIdAsync(userId);

@@ -1,0 +1,22 @@
+@if (variant() === 'primary') {
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    class="action-button action-button--primary"
+    [disabled]="disabled()"
+    (click)="handleClick()"
+  >
+    {{ label() }}
+  </button>
+} @else {
+  <button
+    mat-stroked-button
+    type="button"
+    class="action-button action-button--secondary"
+    [disabled]="disabled()"
+    (click)="handleClick()"
+  >
+    {{ label() }}
+  </button>
+}

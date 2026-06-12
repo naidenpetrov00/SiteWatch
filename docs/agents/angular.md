@@ -75,6 +75,10 @@ If multiple features need the same code, move it to shared.
 When asked where a file should go, answer using this architecture.
 
 For UI work, prefer `@angular/material` components where they fit the requirement, unless the user explicitly asks for another UI library or component type.
+- Use semantic HTML in the correct order and structure: keep heading levels logical, use the right landmark elements, and match markup to the content hierarchy.
+- Use `aria-label` and other accessible names on every interactive element, icon button, and custom control that supports it whenever visible text is missing, ambiguous, or not present.
+- Use meaningful `alt` text for images. Describe the purpose of the image, not just that an image exists.
+- Build the app with SEO in mind: prefer semantic HTML, meaningful page titles, route-aware metadata, and content structure that is easy for search engines to understand.
 
 Before creating a file, decide what it is:
 

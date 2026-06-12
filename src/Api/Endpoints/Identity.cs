@@ -129,4 +129,5 @@ public class Identity : EndpointGroupBase
 
         return TypedResults.BadRequest(result.Result.Errors);
     }
+
 }

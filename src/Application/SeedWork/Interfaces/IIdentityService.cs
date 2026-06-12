@@ -1,4 +1,5 @@
 using Application.Identity.Commands;
+using Application.Identity.Queries.DashboardUsers;
 using Application.SeedWork.Models;
 using Domain.Entities;
 
@@ -7,6 +8,11 @@ namespace Application.SeedWork.Interfaces;
 public interface IIdentityService
 {
     Task<string?> GetUserNameAsync(string userId);
+
+    Task<PagedResult<DashboardUserDto>> GetUsersAsync(
+        DashboardUsersQuery query,
+        CancellationToken cancellationToken
+    );
 
     Task<ApplicationUser?> FindUserByEmailAsync(string email);
 
@@ -26,6 +32,8 @@ public interface IIdentityService
     Task<Result> DeleteUserAsync(string userId);
 
     Task<IdentityResultModel> CheckPasswordAsync(ApplicationUser user, string password);
+
+    Task UpdateLastLoginAtAsync(ApplicationUser user);
 
     Task<IdentityResultModel> ConfirmEmailAsync(ApplicationUser user, string token);
 

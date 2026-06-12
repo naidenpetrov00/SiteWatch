@@ -5,65 +5,80 @@
       <span class="dashboard-shell__brand-text">SiteWatch Dashboard</span>
     </a>
 
-    <nav
-      class="dashboard-shell__nav"
-      aria-label="Dashboard navigation"
-      routerLinkActive="dashboard-shell__nav--active"
-      [routerLinkActiveOptions]="{ exact: false }"
-    >
-      <a
-        routerLink="/invoices"
-        class="dashboard-shell__nav-tracker"
-        aria-hidden="true"
-        tabindex="-1"
-      ></a>
-      <a
-        routerLink="/scan-invoice"
-        class="dashboard-shell__nav-tracker"
-        aria-hidden="true"
-        tabindex="-1"
-      ></a>
+    <nav class="dashboard-shell__nav" aria-label="Dashboard navigation" cdkMenuBar>
       <button
+        cdkMenuItem
         mat-button
-        [matMenuTriggerFor]="invoiceMenu"
+        type="button"
         class="dashboard-shell__nav-button"
+        [class.dashboard-shell__nav-button--active]="isInvoiceManagementActive()"
         aria-label="Invoice management menu"
+        [cdkMenuTriggerFor]="invoiceMenu"
       >
-        Invoice Management
+        <span class="dashboard-shell__nav-label">Invoice Management</span>
+        <mat-icon>expand_more</mat-icon>
+      </button>
+      <span class="dashboard-shell__nav-spacer"></span>
+      <button
+        cdkMenuItem
+        mat-button
+        type="button"
+        class="dashboard-shell__nav-button dashboard-shell__admin-button"
+        [class.dashboard-shell__nav-button--active]="isAdministrationActive()"
+        aria-label="Administration menu"
+        [cdkMenuTriggerFor]="administrationMenu"
+      >
+        <span class="dashboard-shell__nav-label">Administration</span>
         <mat-icon>expand_more</mat-icon>
       </button>
     </nav>
 
-    <span class="dashboard-shell__spacer"></span>
-
     <button
       mat-icon-button
-      [matMenuTriggerFor]="accountMenu"
       class="dashboard-shell__account-button"
       aria-label="Account menu"
+      [matMenuTriggerFor]="accountMenu"
     >
       <mat-icon>person</mat-icon>
     </button>
   </mat-toolbar>
 
-  <mat-menu #invoiceMenu="matMenu">
-    <a
-      mat-menu-item
-      routerLink="/invoices"
-      routerLinkActive="dashboard-shell__menu-item--active"
-      [routerLinkActiveOptions]="{ exact: true }"
-    >
-      Invoices
-    </a>
-    <a
-      mat-menu-item
-      routerLink="/scan-invoice"
-      routerLinkActive="dashboard-shell__menu-item--active"
-      [routerLinkActiveOptions]="{ exact: true }"
-    >
-      Scan Invoice
-    </a>
-  </mat-menu>
+  <ng-template #invoiceMenu>
+    <div class="dashboard-shell__menu-panel" cdkMenu>
+      <a
+        cdkMenuItem
+        class="dashboard-shell__menu-item"
+        routerLink="/invoices"
+        routerLinkActive="dashboard-shell__menu-item--active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        Invoices
+      </a>
+      <a
+        cdkMenuItem
+        class="dashboard-shell__menu-item"
+        routerLink="/scan-invoice"
+        routerLinkActive="dashboard-shell__menu-item--active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        Scan Invoice
+      </a>
+    </div>
+  </ng-template>
+
+  <ng-template #administrationMenu>
+    <div class="dashboard-shell__menu-panel" cdkMenu>
+      <a
+        cdkMenuItem
+        class="dashboard-shell__menu-item"
+        routerLink="/manage-users"
+        routerLinkActive="dashboard-shell__menu-item--active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        Manage Users
+      </a>
+    </div>
+  </ng-template>
 
   <mat-menu #accountMenu="matMenu">
     <button mat-menu-item type="button" (click)="logOut()">Log Out</button>

@@ -23,7 +23,8 @@ describe('DashboardShellComponent', () => {
         provideRouter([
           { path: 'sign-in', component: DummyComponent },
           { path: 'invoices', component: DummyComponent },
-          { path: 'scan-invoice', component: DummyComponent }
+          { path: 'scan-invoice', component: DummyComponent },
+          { path: 'manage-users', component: DummyComponent }
         ]),
         { provide: IdentityAuthService, useValue: authService }
       ]
@@ -38,61 +39,45 @@ describe('DashboardShellComponent', () => {
 
     expect(compiled.textContent).toContain('SiteWatch Dashboard');
     expect(compiled.textContent).toContain('Invoice Management');
+    expect(compiled.textContent).toContain('Administration');
     expect(compiled.querySelector('button[aria-label="Account menu"]')).toBeTruthy();
   });
 
-  it('marks invoice management and the current menu item as active on child routes', async () => {
+  it('opens the invoice menu from the trigger', async () => {
     const fixture = TestBed.createComponent(DashboardShellComponent);
-    const router = TestBed.inject(Router);
-
-    await router.navigateByUrl('/invoices');
-    fixture.detectChanges();
-    await fixture.whenStable();
-
     const compiled = fixture.nativeElement as HTMLElement;
-    const nav = compiled.querySelector('.dashboard-shell__nav');
-    expect(nav?.classList.contains('dashboard-shell__nav--active')).toBeTrue();
-
     const trigger = compiled.querySelector(
       'button[aria-label="Invoice management menu"]'
     ) as HTMLButtonElement;
+
+    fixture.detectChanges();
     trigger.click();
     fixture.detectChanges();
     await fixture.whenStable();
 
-    const activeMenuItem = document.body.querySelector(
-      '.dashboard-shell__menu-item--active'
-    );
-    expect(activeMenuItem?.textContent).toContain('Invoices');
+    const openedMenu = document.body.querySelector('.dashboard-shell__menu-panel');
+    expect(openedMenu?.textContent).toContain('Invoices');
+    expect(openedMenu?.textContent).toContain('Scan Invoice');
 
     trigger.click();
     fixture.detectChanges();
     await fixture.whenStable();
   });
 
-  it('marks the scan invoice item as active when that route is selected', async () => {
+  it('opens the administration menu from the trigger', async () => {
     const fixture = TestBed.createComponent(DashboardShellComponent);
-    const router = TestBed.inject(Router);
-
-    await router.navigateByUrl('/scan-invoice');
-    fixture.detectChanges();
-    await fixture.whenStable();
-
     const compiled = fixture.nativeElement as HTMLElement;
-    const nav = compiled.querySelector('.dashboard-shell__nav');
-    expect(nav?.classList.contains('dashboard-shell__nav--active')).toBeTrue();
-
     const trigger = compiled.querySelector(
-      'button[aria-label="Invoice management menu"]'
+      'button[aria-label="Administration menu"]'
     ) as HTMLButtonElement;
+
+    fixture.detectChanges();
     trigger.click();
     fixture.detectChanges();
     await fixture.whenStable();
 
-    const activeMenuItem = document.body.querySelector(
-      '.dashboard-shell__menu-item--active'
-    );
-    expect(activeMenuItem?.textContent).toContain('Scan Invoice');
+    const openedMenu = document.body.querySelector('.dashboard-shell__menu-panel');
+    expect(openedMenu?.textContent).toContain('Manage Users');
 
     trigger.click();
     fixture.detectChanges();

@@ -1,0 +1,58 @@
+.manage-users-page {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.manage-users-page__header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.manage-users-page__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.manage-users-page__eyebrow {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(15, 23, 42, 0.58);
+}
+
+.manage-users-page h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  line-height: 1.1;
+}
+
+.manage-users-page__summary {
+  margin: 0.5rem 0 0;
+  color: rgba(15, 23, 42, 0.7);
+}
+
+.manage-users-page__badge {
+  flex: 0 0 auto;
+  padding: 0.65rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.08);
+  color: rgb(15, 23, 42);
+  font-weight: 700;
+}
+
+@media (max-width: 48rem) {
+  .manage-users-page__header {
+    flex-direction: column;
+    align-items: start;
+  }
+
+  .manage-users-page__actions {
+    align-items: flex-start;
+  }
+}

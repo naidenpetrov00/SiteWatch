@@ -1,4 +1,5 @@
 using Application.Identity.Commands;
+using Application.Identity.Queries.DashboardUsers;
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models;
 using Domain.Entities;
@@ -12,6 +13,11 @@ public class IdentityService(
 ) : IIdentityService
 {
     public Task<string?> GetUserNameAsync(string userId) => userService.GetUserNameAsync(userId);
+
+    public Task<PagedResult<DashboardUserDto>> GetUsersAsync(
+        DashboardUsersQuery query,
+        CancellationToken cancellationToken
+    ) => userService.GetUsersAsync(query, cancellationToken);
 
     public Task<IdentityResultModel> CreateUserAsync(
         string userName,
@@ -34,6 +40,9 @@ public class IdentityService(
 
     public Task<ApplicationUser?> FindUserByEmailAsync(string email) =>
         userService.FindUserByEmailAsync(email);
+
+    public Task UpdateLastLoginAtAsync(ApplicationUser user) =>
+        userService.UpdateLastLoginAtAsync(user);
 
     public Task<IdentityResultModel> CheckPasswordAsync(ApplicationUser user, string password) =>
         authenticationService.CheckPasswordAsync(user, password);

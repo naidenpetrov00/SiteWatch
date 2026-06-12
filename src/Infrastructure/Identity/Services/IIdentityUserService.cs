@@ -1,4 +1,5 @@
 using Application.Identity.Commands;
+using Application.Identity.Queries.DashboardUsers;
 using Application.SeedWork.Models;
 using Domain.Entities;
 
@@ -16,7 +17,14 @@ public interface IIdentityUserService
 
     Task<string?> GetUserNameAsync(string userId);
 
+    Task<PagedResult<DashboardUserDto>> GetUsersAsync(
+        DashboardUsersQuery query,
+        CancellationToken cancellationToken
+    );
+
     Task<ApplicationUser?> FindUserByEmailAsync(string email);
 
     Task<bool> IsInRoleAsync(string userId, string role);
+
+    Task UpdateLastLoginAtAsync(ApplicationUser user);
 }

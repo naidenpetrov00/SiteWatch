@@ -35,7 +35,7 @@ export class LoginPage {
   readonly emailControl = this.loginForm.controls.email;
   readonly passwordControl = this.loginForm.controls.password;
   readonly serverErrorMessage = signal<string | null>(null);
-  readonly isSubmitting = signal(false);
+  readonly isSubmitting = this.identityAuthService.signInMutation.isPending;
 
   async onSubmit(): Promise<void> {
     if (this.loginForm.invalid) {
@@ -44,8 +44,6 @@ export class LoginPage {
     }
 
     this.serverErrorMessage.set(null);
-
-    this.isSubmitting.set(true);
     try {
       const result = await this.identityAuthService.signIn(
         this.loginForm.controls.email.value,
@@ -60,8 +58,6 @@ export class LoginPage {
       this.serverErrorMessage.set(result.errors[0] ?? 'Unable to sign in.');
     } catch {
       this.serverErrorMessage.set('Unable to sign in.');
-    } finally {
-      this.isSubmitting.set(false);
     }
   }
 }
