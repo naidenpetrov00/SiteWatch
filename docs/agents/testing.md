@@ -11,7 +11,7 @@
 - Keep tests close to the feature they cover when practical.
 
 ## QA Notes
-- Do not generate or plan testing unless the user explicitly asks for it.
+- Anything that needs testing should be tested.
 - Do not create, generate, or modify EF migrations or snapshot files unless the user explicitly asks for that work.
-- If a change needs validation, describe the command or scenario instead of running it unless the user explicitly asks.
+- If a change needs validation, add or update the relevant tests instead of skipping coverage.
 - Note any coverage gaps or manual verification steps in the pull request summary.

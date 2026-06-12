@@ -12,6 +12,8 @@
 - Do not include tutorials unless requested.
 - If the answer is obvious from the code, keep responses short.
 - While planning, if anything is not 100% certain, ask the user before proceeding.
+- If a request is ambiguous or could be misunderstood, stop and ask for clarification before acting.
+- Do not assume user intent when details are unclear; double-check user-provided facts and call out likely mistakes or better options.
 
 ## Repository Guidelines
 
@@ -51,7 +53,7 @@ SiteWatch is split into:
 ### Global Rules
 
 - Do not build, run, or launch projects unless explicitly asked.
-- Do not generate or plan testing unless the user explicitly asks for it.
+- Anything that needs testing should be tested.
 - Do not create, generate, or modify EF migrations or snapshot files unless the user explicitly asks for that work.
 - Do not commit secrets or environment-specific values.
 - Keep changes scoped and avoid unrelated formatting or churn.

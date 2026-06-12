@@ -37,7 +37,7 @@ public class Users : EndpointGroupBase
         return TypedResults.BadRequest(result.Result.Errors);
     }
 
-    private static async Task<Ok<PagedResult<DashboardUserDto>>> GetDashboardUsers(
+private static async Task<Ok<PagedResult<DashboardUserDto>>> GetDashboardUsers(
         IMediator mediator,
         [AsParameters] DashboardUsersQuery query
     )
