@@ -1,0 +1,26 @@
+:host {
+  display: block;
+}
+
+.dialog-shell {
+  width: min(36rem, calc(100vw - 2rem));
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0.75rem 1rem 1rem;
+  overflow-x: clip;
+}
+
+.dialog-shell__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.dialog-shell__close-button {
+  margin-right: -0.25rem;
+  color: inherit;
+}
+
+.dialog-shell__content {
+  min-height: 8rem;
+  padding-top: 0.25rem;
+}

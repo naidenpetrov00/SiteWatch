@@ -9,7 +9,11 @@
     </div>
 
     <div class="manage-users-page__actions">
-      <app-action-button label="Add User" variant="primary"></app-action-button>
+      <app-action-button
+        label="Add User"
+        variant="primary"
+        (clicked)="openAddUserDialog()"
+      ></app-action-button>
     </div>
   </header>
 

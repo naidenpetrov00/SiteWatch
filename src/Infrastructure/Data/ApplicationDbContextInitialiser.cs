@@ -22,7 +22,7 @@ public class ApplicationDbContextInitialiser(
     ];
 
     private const string BulkSeedEmailDomain = "sitewatch.local";
-    private const int BulkSeedUserCount = 1000;
+    private const int BulkSeedUserCount = 5000;
 
     private async Task<List<ApplicationUser>> AddUsers()
     {

@@ -7,7 +7,7 @@ public class DashboardUsersQueryValidator : AbstractValidator<DashboardUsersQuer
     public DashboardUsersQueryValidator()
     {
         RuleFor(query => query.PageIndex).GreaterThanOrEqualTo(0);
-        RuleFor(query => query.PageSize).InclusiveBetween(1, 500);
+        RuleFor(query => query.PageSize).InclusiveBetween(1, 1000);
         RuleFor(query => query.SortActive)
             .Must(
                 sort =>
