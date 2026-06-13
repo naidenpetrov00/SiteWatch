@@ -99,15 +99,21 @@ public sealed class Person : BaseAuditableEntity
 
     public void RemoveAddress(PersonAddress address) => _addresses.Remove(Guard.Against.Null(address));
 
+    public void ClearAddresses() => _addresses.Clear();
+
     public void AddContact(PersonContact contact) => _contacts.Add(Guard.Against.Null(contact));
 
     public void RemoveContact(PersonContact contact) => _contacts.Remove(Guard.Against.Null(contact));
+
+    public void ClearContacts() => _contacts.Clear();
 
     public void AddBankAccount(PersonBankAccount bankAccount) =>
         _bankAccounts.Add(Guard.Against.Null(bankAccount));
 
     public void RemoveBankAccount(PersonBankAccount bankAccount) =>
         _bankAccounts.Remove(Guard.Against.Null(bankAccount));
+
+    public void ClearBankAccounts() => _bankAccounts.Clear();
 
     private void RefreshDerivedValues()
     {

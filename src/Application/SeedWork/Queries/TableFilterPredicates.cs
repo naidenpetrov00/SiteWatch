@@ -6,6 +6,22 @@ namespace Application.SeedWork.Queries;
 
 public static class TableFilterPredicates
 {
+    public static Expression<Func<TEntity, bool>>? GuidEquals<TEntity>(
+        Expression<Func<TEntity, Guid>> selector,
+        string? rawValue
+    )
+    {
+        var normalizedValue = Normalize(rawValue);
+        if (normalizedValue.Length == 0 || !Guid.TryParse(normalizedValue, out var parsedGuid))
+        {
+            return null;
+        }
+
+        var body = Expression.Equal(selector.Body, Expression.Constant(parsedGuid));
+
+        return Expression.Lambda<Func<TEntity, bool>>(body, selector.Parameters);
+    }
+
     public static Expression<Func<TEntity, bool>>? TextContains<TEntity>(
         Expression<Func<TEntity, string>> selector,
         string? rawValue

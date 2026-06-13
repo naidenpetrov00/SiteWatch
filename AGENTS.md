@@ -53,7 +53,7 @@ SiteWatch is split into:
 ### Global Rules
 
 - Do not build, run, or launch projects unless explicitly asked.
-- Anything that needs testing should be tested.
+- Do not generate or plan testing unless the user explicitly asks for it.
 - Do not create, generate, or modify EF migrations or snapshot files unless the user explicitly asks for that work.
 - Do not commit secrets or environment-specific values.
 - Keep changes scoped and avoid unrelated formatting or churn.
