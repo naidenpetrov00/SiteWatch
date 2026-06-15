@@ -1,0 +1,74 @@
+:host {
+  display: block;
+}
+
+.dialog-wizard-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.25rem 0 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.dialog-wizard-tabs__tab {
+  display: grid;
+  gap: 0.2rem;
+  align-content: start;
+  padding: 0.85rem 1rem 0.95rem;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: 0.95rem 0.95rem 0 0;
+  background: transparent;
+  color: rgba(15, 23, 42, 0.68);
+  text-align: left;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.dialog-wizard-tabs__tab:hover:not(:disabled) {
+  background: rgba(15, 23, 42, 0.04);
+  color: rgb(15, 23, 42);
+}
+
+.dialog-wizard-tabs__tab--active {
+  background: rgba(15, 23, 42, 0.06);
+  border-color: rgba(15, 23, 42, 0.12);
+  color: rgb(15, 23, 42);
+  transform: translateY(1px);
+}
+
+.dialog-wizard-tabs__tab--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dialog-wizard-tabs__label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.dialog-wizard-tabs__description {
+  font-size: 0.8rem;
+  line-height: 1.25;
+}
+
+@media (max-width: 48rem) {
+  .dialog-wizard-tabs {
+    gap: 0.35rem;
+  }
+
+  .dialog-wizard-tabs__tab {
+    flex: 1 1 calc(50% - 0.35rem);
+  }
+}
+
+@media (max-width: 36rem) {
+  .dialog-wizard-tabs__tab {
+    flex: 1 1 100%;
+    border-radius: 0.9rem;
+  }
+}

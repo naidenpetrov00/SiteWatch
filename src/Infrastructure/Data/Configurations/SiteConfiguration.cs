@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using System.Collections.Generic;
 
 namespace Infrastructure.Data.Configurations;
 
@@ -18,7 +19,7 @@ public class SiteConfiguration : IEntityTypeConfiguration<Site>
             value => SiteMediaPolicy.FromStorageValue(value));
 
         var mediaPolicyComparer = new ValueComparer<SiteMediaPolicy>(
-            (left, right) => left == right,
+            (left, right) => EqualityComparer<SiteMediaPolicy>.Default.Equals(left, right),
             mediaPolicy => mediaPolicy.GetHashCode(),
             mediaPolicy => SiteMediaPolicy.FromStorageValue(mediaPolicy.ToStorageValue()));
 

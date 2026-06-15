@@ -1,0 +1,19 @@
+<nav class="dialog-wizard-tabs" [attr.aria-label]="ariaLabel()">
+  @for (tab of tabs(); track tab.id) {
+    <button
+      type="button"
+      class="dialog-wizard-tabs__tab"
+      [class.dialog-wizard-tabs__tab--active]="selectedTabId() === tab.id"
+      [class.dialog-wizard-tabs__tab--disabled]="tab.disabled"
+      [disabled]="tab.disabled"
+      [attr.aria-pressed]="selectedTabId() === tab.id"
+      [attr.aria-disabled]="tab.disabled || null"
+      (click)="selectTab(tab.id)"
+    >
+      <span class="dialog-wizard-tabs__label">{{ tab.label }}</span>
+      @if (tab.description) {
+        <span class="dialog-wizard-tabs__description">{{ tab.description }}</span>
+      }
+    </button>
+  }
+</nav>

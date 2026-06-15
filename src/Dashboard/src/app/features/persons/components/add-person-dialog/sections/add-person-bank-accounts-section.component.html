@@ -1,0 +1,88 @@
+<section class="add-person-bank-accounts-section">
+  <div class="add-person-bank-accounts-section__header">
+    <div>
+      <p class="add-person-bank-accounts-section__eyebrow">Repeatable section</p>
+      <h3>Bank accounts</h3>
+      <p class="add-person-bank-accounts-section__summary">
+        Reserve space for the account list now so the final form can plug in later.
+      </p>
+    </div>
+
+    <button mat-stroked-button type="button" (click)="addRequested.emit()">
+      Add bank account
+    </button>
+  </div>
+
+  <div class="add-person-bank-accounts-section__list">
+    @for (bankAccountGroup of bankAccounts().controls; track $index; let index = $index) {
+      <mat-card class="add-person-bank-accounts-section__card">
+        <mat-card-content class="add-person-bank-accounts-section__card-content">
+          <div class="add-person-bank-accounts-section__repeatable-header">
+            <div>
+              <p class="add-person-bank-accounts-section__repeatable-eyebrow">
+                Bank account {{ index + 1 }}
+              </p>
+              <h4>Account details</h4>
+            </div>
+
+            <button
+              mat-icon-button
+              type="button"
+              aria-label="Remove bank account"
+              (click)="removeRequested.emit(index)"
+              [disabled]="bankAccounts().length === 1"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+
+          <div class="add-person-bank-accounts-section__grid" [formGroup]="bankAccountGroup">
+            <mat-form-field
+              appearance="outline"
+              class="add-person-bank-accounts-section__field add-person-bank-accounts-section__field--half"
+            >
+              <mat-label>IBAN</mat-label>
+              <input matInput formControlName="iban" />
+            </mat-form-field>
+
+            <mat-form-field
+              appearance="outline"
+              class="add-person-bank-accounts-section__field add-person-bank-accounts-section__field--half"
+            >
+              <mat-label>BIC</mat-label>
+              <input matInput formControlName="bic" />
+            </mat-form-field>
+
+            <mat-form-field
+              appearance="outline"
+              class="add-person-bank-accounts-section__field add-person-bank-accounts-section__field--half"
+            >
+              <mat-label>Bank name</mat-label>
+              <input matInput formControlName="bankName" />
+            </mat-form-field>
+
+            <mat-form-field
+              appearance="outline"
+              class="add-person-bank-accounts-section__field add-person-bank-accounts-section__field--full"
+            >
+              <mat-label>Details</mat-label>
+              <textarea matInput rows="3" formControlName="details"></textarea>
+            </mat-form-field>
+
+            <div
+              class="add-person-bank-accounts-section__field add-person-bank-accounts-section__field--checkbox"
+            >
+              <mat-checkbox formControlName="isPrimary">Primary account</mat-checkbox>
+            </div>
+
+            <div
+              class="add-person-bank-accounts-section__field add-person-bank-accounts-section__field--checkbox"
+            >
+              <mat-checkbox formControlName="isActive">Active</mat-checkbox>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+  </div>
+</section>

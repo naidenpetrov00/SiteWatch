@@ -119,6 +119,15 @@ export class ManageUsersPage {
   }
 
   openAddUserDialog(): void {
-    this.dialog.open(DialogShellComponent);
+    this.dialog.open(DialogShellComponent, {
+      autoFocus: false,
+      width: '36rem',
+      maxWidth: 'calc(100vw - 2rem)',
+      data: {
+        eyebrow: 'Administration',
+        title: 'Manage Users',
+        subtitle: 'Reusable dialog shell placeholder.'
+      }
+    });
   }
 }

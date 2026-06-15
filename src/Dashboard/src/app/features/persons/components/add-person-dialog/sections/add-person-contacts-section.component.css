@@ -1,0 +1,121 @@
+:host {
+  display: block;
+}
+
+.add-person-contacts-section {
+  display: grid;
+  gap: 1rem;
+}
+
+.add-person-contacts-section__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.add-person-contacts-section__eyebrow {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(15, 23, 42, 0.52);
+}
+
+.add-person-contacts-section__summary {
+  max-width: 60ch;
+  margin: 0.35rem 0 0;
+  color: rgba(15, 23, 42, 0.7);
+}
+
+.add-person-contacts-section__list {
+  display: grid;
+  gap: 1rem;
+}
+
+.add-person-contacts-section__card {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 1.25rem;
+  box-shadow: none;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.add-person-contacts-section__card-content {
+  display: grid;
+  gap: 1.25rem;
+  padding: 1.25rem;
+}
+
+.add-person-contacts-section__repeatable-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.add-person-contacts-section__repeatable-eyebrow {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(15, 23, 42, 0.52);
+}
+
+.add-person-contacts-section__repeatable-header h4 {
+  margin: 0.125rem 0 0;
+  font-size: 1.1rem;
+  line-height: 1.25;
+}
+
+.add-person-contacts-section__grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  align-items: start;
+}
+
+.add-person-contacts-section__field {
+  width: 100%;
+}
+
+.add-person-contacts-section__field--full {
+  grid-column: span 12;
+}
+
+.add-person-contacts-section__field--third {
+  grid-column: span 4;
+}
+
+.add-person-contacts-section__field--checkbox {
+  display: flex;
+  align-items: center;
+  min-height: 3.5rem;
+  grid-column: span 6;
+}
+
+@media (max-width: 48rem) {
+  .add-person-contacts-section__header,
+  .add-person-contacts-section__repeatable-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .add-person-contacts-section__field--third,
+  .add-person-contacts-section__field--checkbox {
+    grid-column: span 12;
+  }
+}
+
+@media (max-width: 36rem) {
+  .add-person-contacts-section__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .add-person-contacts-section__field--full,
+  .add-person-contacts-section__field--third,
+  .add-person-contacts-section__field--checkbox {
+    grid-column: auto;
+  }
+}

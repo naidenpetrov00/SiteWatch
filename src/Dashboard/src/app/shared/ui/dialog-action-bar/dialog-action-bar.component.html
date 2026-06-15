@@ -1,0 +1,26 @@
+<div class="dialog-action-bar">
+  <div class="dialog-action-bar__extras">
+    <ng-content select="[dialog-action-bar-extra]" />
+  </div>
+
+  <div class="dialog-action-bar__buttons">
+    @if (showCancel()) {
+      <button mat-button type="button" (click)="handleCancel()">
+        {{ cancelLabel() }}
+      </button>
+    }
+
+    @if (showSubmit()) {
+      <button
+        mat-flat-button
+        color="primary"
+        [type]="submitButtonType()"
+        [attr.form]="submitFormId()"
+        [disabled]="submitDisabled()"
+        (click)="handleSubmit()"
+      >
+        {{ submitLabel() }}
+      </button>
+    }
+  </div>
+</div>

@@ -1,0 +1,50 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.dialog-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.dialog-action-bar__extras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.dialog-action-bar__extras:empty {
+  display: none;
+}
+
+.dialog-action-bar__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+@media (max-width: 36rem) {
+  .dialog-action-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dialog-action-bar__buttons,
+  .dialog-action-bar__extras {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .dialog-action-bar__buttons button,
+  .dialog-action-bar__extras button {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+}

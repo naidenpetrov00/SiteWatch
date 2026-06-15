@@ -1,0 +1,105 @@
+<section class="add-person-primary-info-section">
+  <mat-card class="add-person-primary-info-section__card">
+    <mat-card-content class="add-person-primary-info-section__content" [formGroup]="personForm()">
+      <div class="add-person-primary-info-section__block">
+        <div class="add-person-primary-info-section__block-heading">
+          <p class="add-person-primary-info-section__eyebrow">Person type</p>
+          <h3>Identity details</h3>
+          <p class="add-person-primary-info-section__summary">
+            Choose whether this record represents a private person or a company.
+          </p>
+        </div>
+
+        <mat-button-toggle-group
+          class="add-person-primary-info-section__toggle-group"
+          formControlName="type"
+          aria-label="Person type"
+        >
+          @for (option of personTypeOptions; track option.value) {
+            <mat-button-toggle [value]="option.value">
+              {{ option.label }}
+            </mat-button-toggle>
+          }
+        </mat-button-toggle-group>
+      </div>
+
+      <div class="add-person-primary-info-section__body">
+        @if (personForm().controls.type.value === 'individual') {
+          <div class="add-person-primary-info-section__grid">
+            <mat-form-field
+              appearance="outline"
+              class="add-person-primary-info-section__field add-person-primary-info-section__field--third"
+            >
+              <mat-label>First name</mat-label>
+              <input matInput formControlName="firstName" autocomplete="given-name" />
+            </mat-form-field>
+
+            <mat-form-field
+              appearance="outline"
+              class="add-person-primary-info-section__field add-person-primary-info-section__field--third"
+            >
+              <mat-label>Middle name</mat-label>
+              <input matInput formControlName="middleName" autocomplete="additional-name" />
+            </mat-form-field>
+
+            <mat-form-field
+              appearance="outline"
+              class="add-person-primary-info-section__field add-person-primary-info-section__field--third"
+            >
+              <mat-label>Last name</mat-label>
+              <input matInput formControlName="lastName" autocomplete="family-name" />
+            </mat-form-field>
+
+            <mat-form-field
+              appearance="outline"
+              class="add-person-primary-info-section__field add-person-primary-info-section__field--half"
+            >
+              <mat-label>EGN</mat-label>
+              <input matInput formControlName="egn" inputmode="numeric" />
+            </mat-form-field>
+          </div>
+        } @else {
+          <div class="add-person-primary-info-section__grid">
+            <mat-form-field
+              appearance="outline"
+              class="add-person-primary-info-section__field add-person-primary-info-section__field--full"
+            >
+              <mat-label>Company name</mat-label>
+              <input matInput formControlName="companyName" autocomplete="organization" />
+            </mat-form-field>
+
+            <mat-form-field
+              appearance="outline"
+              class="add-person-primary-info-section__field add-person-primary-info-section__field--half"
+            >
+              <mat-label>EIK</mat-label>
+              <input matInput formControlName="eik" inputmode="numeric" />
+            </mat-form-field>
+
+            <div class="add-person-primary-info-section__field add-person-primary-info-section__vat-row">
+              <mat-form-field
+                appearance="outline"
+                class="add-person-primary-info-section__vat-country"
+              >
+                <mat-label>Country code</mat-label>
+                <mat-select formControlName="vatCountryCode">
+                  @for (option of vatCountryCodeOptions; track option.value) {
+                    <mat-option [value]="option.value">{{ option.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field
+                appearance="outline"
+                class="add-person-primary-info-section__vat-number"
+              >
+                <mat-label>VAT number</mat-label>
+                <input matInput formControlName="vatNumber" inputmode="numeric" />
+              </mat-form-field>
+            </div>
+          </div>
+        }
+      </div>
+    </mat-card-content>
+  </mat-card>
+</section>

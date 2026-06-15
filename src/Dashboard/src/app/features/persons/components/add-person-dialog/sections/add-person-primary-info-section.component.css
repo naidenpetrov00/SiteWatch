@@ -1,0 +1,129 @@
+:host {
+  display: block;
+}
+
+.add-person-primary-info-section {
+  display: grid;
+}
+
+.add-person-primary-info-section__card {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 1.25rem;
+  box-shadow: none;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.add-person-primary-info-section__content {
+  display: grid;
+  gap: 1.25rem;
+  padding: 1.25rem;
+}
+
+.add-person-primary-info-section__block {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.add-person-primary-info-section__block-heading h3 {
+  margin: 0.125rem 0 0;
+  font-size: 1.1rem;
+  line-height: 1.25;
+}
+
+.add-person-primary-info-section__eyebrow {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(15, 23, 42, 0.52);
+}
+
+.add-person-primary-info-section__summary {
+  max-width: 60ch;
+  margin: 0.35rem 0 0;
+  color: rgba(15, 23, 42, 0.7);
+}
+
+.add-person-primary-info-section__toggle-group {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  align-self: start;
+  overflow: hidden;
+  flex-wrap: nowrap;
+}
+
+.add-person-primary-info-section__toggle-group mat-button-toggle {
+  flex: 0 1 8.5rem;
+  min-width: 7rem;
+}
+
+.add-person-primary-info-section__body {
+  display: block;
+}
+
+.add-person-primary-info-section__grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  align-items: start;
+}
+
+.add-person-primary-info-section__field {
+  width: 100%;
+}
+
+.add-person-primary-info-section__field--full {
+  grid-column: span 12;
+}
+
+.add-person-primary-info-section__field--half {
+  grid-column: span 6;
+}
+
+.add-person-primary-info-section__field--third {
+  grid-column: span 4;
+}
+
+.add-person-primary-info-section__vat-row {
+  display: grid;
+  gap: 1rem;
+  grid-column: span 12;
+  grid-template-columns: 8rem minmax(0, 1fr);
+  align-items: start;
+}
+
+.add-person-primary-info-section__vat-country,
+.add-person-primary-info-section__vat-number {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 48rem) {
+  .add-person-primary-info-section__field--half,
+  .add-person-primary-info-section__field--third {
+    grid-column: span 12;
+  }
+
+  .add-person-primary-info-section__vat-row {
+    grid-template-columns: 1fr;
+    grid-column: span 12;
+  }
+}
+
+@media (max-width: 36rem) {
+  .add-person-primary-info-section__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .add-person-primary-info-section__field--full,
+  .add-person-primary-info-section__field--half,
+  .add-person-primary-info-section__field--third {
+    grid-column: auto;
+  }
+
+  .add-person-primary-info-section__vat-row {
+    grid-column: auto;
+  }
+}

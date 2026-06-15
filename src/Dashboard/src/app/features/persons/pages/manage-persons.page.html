@@ -1,0 +1,33 @@
+<main class="manage-persons-page">
+  <header class="manage-persons-page__header">
+    <div>
+      <p class="manage-persons-page__eyebrow">Administration</p>
+      <h1>Manage Persons</h1>
+      <p class="manage-persons-page__summary">
+        Review and filter the current dashboard persons.
+      </p>
+    </div>
+
+    <div class="manage-persons-page__actions">
+      <app-action-button
+        label="Add Person"
+        variant="primary"
+        (clicked)="openAddPersonDialog()"
+      ></app-action-button>
+    </div>
+  </header>
+
+  <app-data-table
+    tableEyebrow="Persons"
+    tableLabel="Manage Persons"
+    emptyMessage="No persons match the current filters."
+    filterApplyMode="search"
+    [rows]="persons()"
+    [filteredRowsTotal]="personsFilteredCount()"
+    [overallRowsTotal]="personsTotalCount()"
+    [columns]="columns"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="pageSizeOptions"
+    (tableStateChange)="onTableStateChange($event)"
+  />
+</main>

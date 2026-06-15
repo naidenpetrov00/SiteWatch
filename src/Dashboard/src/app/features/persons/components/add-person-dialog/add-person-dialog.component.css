@@ -1,0 +1,15 @@
+:host {
+  display: block;
+}
+
+.add-person-dialog__form {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.add-person-dialog__content {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}

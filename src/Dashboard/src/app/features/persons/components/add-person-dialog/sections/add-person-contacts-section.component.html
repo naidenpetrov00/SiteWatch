@@ -1,0 +1,78 @@
+<section class="add-person-contacts-section">
+  <div class="add-person-contacts-section__header">
+    <div>
+      <p class="add-person-contacts-section__eyebrow">Repeatable section</p>
+      <h3>Contacts</h3>
+      <p class="add-person-contacts-section__summary">
+        Store phone numbers, email addresses, or other contact methods as separate entries.
+      </p>
+    </div>
+
+    <button mat-stroked-button type="button" (click)="addRequested.emit()">
+      Add contact
+    </button>
+  </div>
+
+  <div class="add-person-contacts-section__list">
+    @for (contactGroup of contacts().controls; track $index; let index = $index) {
+      <mat-card class="add-person-contacts-section__card">
+        <mat-card-content class="add-person-contacts-section__card-content">
+          <div class="add-person-contacts-section__repeatable-header">
+            <div>
+              <p class="add-person-contacts-section__repeatable-eyebrow">Contact {{ index + 1 }}</p>
+              <h4>Communication details</h4>
+            </div>
+
+            <button
+              mat-icon-button
+              type="button"
+              aria-label="Remove contact"
+              (click)="removeRequested.emit(index)"
+              [disabled]="contacts().length === 1"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+
+          <div class="add-person-contacts-section__grid" [formGroup]="contactGroup">
+            <mat-form-field
+              appearance="outline"
+              class="add-person-contacts-section__field add-person-contacts-section__field--third"
+            >
+              <mat-label>Contact type</mat-label>
+              <mat-select formControlName="contactType">
+                @for (option of contactTypeOptions; track option.value) {
+                  <mat-option [value]="option.value">{{ option.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field
+              appearance="outline"
+              class="add-person-contacts-section__field add-person-contacts-section__field--third"
+            >
+              <mat-label>Value</mat-label>
+              <input matInput formControlName="value" />
+            </mat-form-field>
+
+            <mat-form-field
+              appearance="outline"
+              class="add-person-contacts-section__field add-person-contacts-section__field--full"
+            >
+              <mat-label>Details</mat-label>
+              <textarea matInput rows="3" formControlName="details"></textarea>
+            </mat-form-field>
+
+            <div class="add-person-contacts-section__field add-person-contacts-section__field--checkbox">
+              <mat-checkbox formControlName="isPrimary">Primary contact</mat-checkbox>
+            </div>
+
+            <div class="add-person-contacts-section__field add-person-contacts-section__field--checkbox">
+              <mat-checkbox formControlName="isActive">Active</mat-checkbox>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+  </div>
+</section>

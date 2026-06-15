@@ -1,0 +1,98 @@
+<section class="add-person-addresses-section">
+  <div class="add-person-addresses-section__header">
+    <div>
+      <p class="add-person-addresses-section__eyebrow">Repeatable section</p>
+      <h3>Addresses</h3>
+      <p class="add-person-addresses-section__summary">
+        Capture the main address first. Additional addresses can be added when needed.
+      </p>
+    </div>
+
+    <button mat-stroked-button type="button" (click)="addRequested.emit()">
+      Add address
+    </button>
+  </div>
+
+  <div class="add-person-addresses-section__list">
+    @for (addressGroup of addresses().controls; track $index; let index = $index) {
+      <mat-card class="add-person-addresses-section__card">
+        <mat-card-content class="add-person-addresses-section__card-content">
+          <div class="add-person-addresses-section__repeatable-header">
+            <div>
+              <p class="add-person-addresses-section__repeatable-eyebrow">Address {{ index + 1 }}</p>
+              <h4>Location details</h4>
+            </div>
+
+            <button
+              mat-icon-button
+              type="button"
+              aria-label="Remove address"
+              (click)="removeRequested.emit(index)"
+              [disabled]="addresses().length === 1"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+
+          <div class="add-person-addresses-section__grid" [formGroup]="addressGroup">
+            <mat-form-field
+              appearance="outline"
+              class="add-person-addresses-section__field add-person-addresses-section__field--full"
+            >
+              <mat-label>Address line</mat-label>
+              <input matInput formControlName="addressLine" />
+            </mat-form-field>
+
+            <mat-form-field
+              appearance="outline"
+              class="add-person-addresses-section__field add-person-addresses-section__field--full"
+            >
+              <mat-label>Additional line</mat-label>
+              <input matInput formControlName="additionalLine" />
+            </mat-form-field>
+
+            <mat-form-field
+              appearance="outline"
+              class="add-person-addresses-section__field add-person-addresses-section__field--third"
+            >
+              <mat-label>City</mat-label>
+              <input matInput formControlName="city" />
+            </mat-form-field>
+
+            <mat-form-field
+              appearance="outline"
+              class="add-person-addresses-section__field add-person-addresses-section__field--third"
+            >
+              <mat-label>Postal code</mat-label>
+              <input matInput formControlName="postalCode" />
+            </mat-form-field>
+
+            <mat-form-field
+              appearance="outline"
+              class="add-person-addresses-section__field add-person-addresses-section__field--third"
+            >
+              <mat-label>Country</mat-label>
+              <input matInput formControlName="country" />
+            </mat-form-field>
+
+            <mat-form-field
+              appearance="outline"
+              class="add-person-addresses-section__field add-person-addresses-section__field--full"
+            >
+              <mat-label>Details</mat-label>
+              <textarea matInput rows="3" formControlName="details"></textarea>
+            </mat-form-field>
+
+            <div class="add-person-addresses-section__field add-person-addresses-section__field--checkbox">
+              <mat-checkbox formControlName="isPrimary">Primary address</mat-checkbox>
+            </div>
+
+            <div class="add-person-addresses-section__field add-person-addresses-section__field--checkbox">
+              <mat-checkbox formControlName="isActive">Active</mat-checkbox>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+  </div>
+</section>
