@@ -6,6 +6,11 @@
       <p class="add-person-contacts-section__summary">
         Store phone numbers, email addresses, or other contact methods as separate entries.
       </p>
+      @if (contacts().touched && contacts().hasError('contactMultiplePrimary')) {
+        <p class="add-person-contacts-section__error" role="alert">
+          Only one contact can be marked as primary.
+        </p>
+      }
     </div>
 
     <button mat-stroked-button type="button" (click)="addRequested.emit()">
@@ -52,7 +57,7 @@
               class="add-person-contacts-section__field add-person-contacts-section__field--third"
             >
               <mat-label>Value</mat-label>
-              <input matInput formControlName="value" />
+              <input matInput formControlName="value" maxlength="256" />
             </mat-form-field>
 
             <mat-form-field
@@ -60,7 +65,7 @@
               class="add-person-contacts-section__field add-person-contacts-section__field--full"
             >
               <mat-label>Details</mat-label>
-              <textarea matInput rows="3" formControlName="details"></textarea>
+              <textarea matInput rows="3" formControlName="details" maxlength="500"></textarea>
             </mat-form-field>
 
             <div class="add-person-contacts-section__field add-person-contacts-section__field--checkbox">
@@ -70,6 +75,12 @@
             <div class="add-person-contacts-section__field add-person-contacts-section__field--checkbox">
               <mat-checkbox formControlName="isActive">Active</mat-checkbox>
             </div>
+
+            @if (contactGroup.touched && contactGroup.hasError('contactRowIncomplete')) {
+              <p class="add-person-contacts-section__error" role="alert">
+                Fill the contact value or clear the row.
+              </p>
+            }
           </div>
         </mat-card-content>
       </mat-card>

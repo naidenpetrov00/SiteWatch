@@ -2,8 +2,20 @@ import { FormArray, FormControl, FormGroup } from '@angular/forms';
 
 import { DialogWizardTabDefinition } from '../../../../shared/ui/dialog-wizard-tabs/dialog-wizard-tabs.types';
 
-export type AddPersonTypeOption = 'individual' | 'company';
-export type AddPersonContactTypeOption = 'phone' | 'email' | 'website' | 'other';
+export const PERSON_TYPES = {
+  individual: 0,
+  company: 1
+} as const;
+
+export const CONTACT_TYPES = {
+  phone: 0,
+  email: 1,
+  website: 2,
+  other: 3
+} as const;
+
+export type AddPersonTypeOption = (typeof PERSON_TYPES)[keyof typeof PERSON_TYPES];
+export type AddPersonContactTypeOption = (typeof CONTACT_TYPES)[keyof typeof CONTACT_TYPES];
 export type AddPersonVatCountryCodeOption = 'BG';
 export type AddPersonWizardTabId = 'primary-info' | 'addresses' | 'contacts' | 'bank-accounts';
 
@@ -60,18 +72,18 @@ export type AddPersonContactsFormArray = FormArray<AddPersonContactFormGroup>;
 export type AddPersonBankAccountsFormArray = FormArray<AddPersonBankAccountFormGroup>;
 
 export const PERSON_TYPE_OPTIONS = [
-  { value: 'individual', label: 'Individual' },
-  { value: 'company', label: 'Company' }
+  { value: PERSON_TYPES.individual, label: 'Individual' },
+  { value: PERSON_TYPES.company, label: 'Company' }
 ] as const satisfies readonly {
   value: AddPersonTypeOption;
   label: string;
 }[];
 
 export const CONTACT_TYPE_OPTIONS = [
-  { value: 'phone', label: 'Phone' },
-  { value: 'email', label: 'Email' },
-  { value: 'website', label: 'Website' },
-  { value: 'other', label: 'Other' }
+  { value: CONTACT_TYPES.phone, label: 'Phone' },
+  { value: CONTACT_TYPES.email, label: 'Email' },
+  { value: CONTACT_TYPES.website, label: 'Website' },
+  { value: CONTACT_TYPES.other, label: 'Other' }
 ] as const satisfies readonly {
   value: AddPersonContactTypeOption;
   label: string;

@@ -95,6 +95,13 @@
   grid-column: span 6;
 }
 
+.add-person-addresses-section__error {
+  margin: 0;
+  grid-column: span 12;
+  color: #b42318;
+  font-size: 0.875rem;
+}
+
 @media (max-width: 48rem) {
   .add-person-addresses-section__header,
   .add-person-addresses-section__repeatable-header {

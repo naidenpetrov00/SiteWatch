@@ -6,6 +6,11 @@
       <p class="add-person-bank-accounts-section__summary">
         Reserve space for the account list now so the final form can plug in later.
       </p>
+      @if (bankAccounts().touched && bankAccounts().hasError('bankAccountMultiplePrimary')) {
+        <p class="add-person-bank-accounts-section__error" role="alert">
+          Only one bank account can be marked as primary.
+        </p>
+      }
     </div>
 
     <button mat-stroked-button type="button" (click)="addRequested.emit()">
@@ -42,7 +47,7 @@
               class="add-person-bank-accounts-section__field add-person-bank-accounts-section__field--half"
             >
               <mat-label>IBAN</mat-label>
-              <input matInput formControlName="iban" />
+              <input matInput formControlName="iban" maxlength="34" />
             </mat-form-field>
 
             <mat-form-field
@@ -50,7 +55,7 @@
               class="add-person-bank-accounts-section__field add-person-bank-accounts-section__field--half"
             >
               <mat-label>BIC</mat-label>
-              <input matInput formControlName="bic" />
+              <input matInput formControlName="bic" maxlength="11" />
             </mat-form-field>
 
             <mat-form-field
@@ -58,7 +63,7 @@
               class="add-person-bank-accounts-section__field add-person-bank-accounts-section__field--half"
             >
               <mat-label>Bank name</mat-label>
-              <input matInput formControlName="bankName" />
+              <input matInput formControlName="bankName" maxlength="200" />
             </mat-form-field>
 
             <mat-form-field
@@ -66,7 +71,7 @@
               class="add-person-bank-accounts-section__field add-person-bank-accounts-section__field--full"
             >
               <mat-label>Details</mat-label>
-              <textarea matInput rows="3" formControlName="details"></textarea>
+              <textarea matInput rows="3" formControlName="details" maxlength="500"></textarea>
             </mat-form-field>
 
             <div
@@ -80,6 +85,12 @@
             >
               <mat-checkbox formControlName="isActive">Active</mat-checkbox>
             </div>
+
+            @if (bankAccountGroup.touched && bankAccountGroup.hasError('bankAccountRowIncomplete')) {
+              <p class="add-person-bank-accounts-section__error" role="alert">
+                Fill the IBAN or clear the row.
+              </p>
+            }
           </div>
         </mat-card-content>
       </mat-card>

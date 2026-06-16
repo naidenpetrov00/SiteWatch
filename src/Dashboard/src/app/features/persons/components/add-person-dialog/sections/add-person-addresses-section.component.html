@@ -6,6 +6,11 @@
       <p class="add-person-addresses-section__summary">
         Capture the main address first. Additional addresses can be added when needed.
       </p>
+      @if (addresses().touched && addresses().hasError('addressMultiplePrimary')) {
+        <p class="add-person-addresses-section__error" role="alert">
+          Only one address can be marked as primary.
+        </p>
+      }
     </div>
 
     <button mat-stroked-button type="button" (click)="addRequested.emit()">
@@ -40,7 +45,7 @@
               class="add-person-addresses-section__field add-person-addresses-section__field--full"
             >
               <mat-label>Address line</mat-label>
-              <input matInput formControlName="addressLine" />
+              <input matInput formControlName="addressLine" maxlength="200" />
             </mat-form-field>
 
             <mat-form-field
@@ -48,7 +53,7 @@
               class="add-person-addresses-section__field add-person-addresses-section__field--full"
             >
               <mat-label>Additional line</mat-label>
-              <input matInput formControlName="additionalLine" />
+              <input matInput formControlName="additionalLine" maxlength="200" />
             </mat-form-field>
 
             <mat-form-field
@@ -56,7 +61,7 @@
               class="add-person-addresses-section__field add-person-addresses-section__field--third"
             >
               <mat-label>City</mat-label>
-              <input matInput formControlName="city" />
+              <input matInput formControlName="city" maxlength="100" />
             </mat-form-field>
 
             <mat-form-field
@@ -64,7 +69,7 @@
               class="add-person-addresses-section__field add-person-addresses-section__field--third"
             >
               <mat-label>Postal code</mat-label>
-              <input matInput formControlName="postalCode" />
+              <input matInput formControlName="postalCode" maxlength="20" />
             </mat-form-field>
 
             <mat-form-field
@@ -72,7 +77,7 @@
               class="add-person-addresses-section__field add-person-addresses-section__field--third"
             >
               <mat-label>Country</mat-label>
-              <input matInput formControlName="country" />
+              <input matInput formControlName="country" maxlength="100" />
             </mat-form-field>
 
             <mat-form-field
@@ -80,7 +85,7 @@
               class="add-person-addresses-section__field add-person-addresses-section__field--full"
             >
               <mat-label>Details</mat-label>
-              <textarea matInput rows="3" formControlName="details"></textarea>
+              <textarea matInput rows="3" formControlName="details" maxlength="500"></textarea>
             </mat-form-field>
 
             <div class="add-person-addresses-section__field add-person-addresses-section__field--checkbox">
@@ -90,6 +95,12 @@
             <div class="add-person-addresses-section__field add-person-addresses-section__field--checkbox">
               <mat-checkbox formControlName="isActive">Active</mat-checkbox>
             </div>
+
+            @if (addressGroup.touched && addressGroup.hasError('addressRowIncomplete')) {
+              <p class="add-person-addresses-section__error" role="alert">
+                Fill the address line or clear the row.
+              </p>
+            }
           </div>
         </mat-card-content>
       </mat-card>

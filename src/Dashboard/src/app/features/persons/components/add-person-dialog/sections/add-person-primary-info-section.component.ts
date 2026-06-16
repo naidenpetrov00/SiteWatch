@@ -17,8 +17,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AddPersonDialogFormGroup,
   PERSON_TYPE_OPTIONS,
+  PERSON_TYPES,
   VAT_COUNTRY_CODE_OPTIONS
 } from '../add-person-dialog.types';
+import { ADD_PERSON_VALIDATION_LIMITS } from '../add-person-dialog.validators';
 
 @Component({
   selector: 'app-add-person-primary-info-section',
@@ -40,6 +42,8 @@ export class AddPersonPrimaryInfoSectionComponent implements OnInit {
   readonly personForm = input.required<AddPersonDialogFormGroup>();
   readonly personTypeOptions = PERSON_TYPE_OPTIONS;
   readonly vatCountryCodeOptions = VAT_COUNTRY_CODE_OPTIONS;
+  readonly personTypes = PERSON_TYPES;
+  readonly validationLimits = ADD_PERSON_VALIDATION_LIMITS;
 
   ngOnInit(): void {
     const personForm = this.personForm();

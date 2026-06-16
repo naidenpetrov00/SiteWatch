@@ -47,13 +47,13 @@
     </div>
   </form>
 
-  <app-dialog-action-bar
+    <app-dialog-action-bar
     dialog-shell-actions
     [cancelLabel]="'Cancel'"
     [submitLabel]="'Submit'"
     [submitFormId]="'add-person-dialog-form'"
     [submitButtonType]="'submit'"
-    [submitDisabled]="!canSubmit() || isCreatingPerson()"
+    [submitDisabled]="!personForm.valid || isCreatingPerson()"
     (cancel)="closeDialog()"
   />
 </app-dialog-shell>
