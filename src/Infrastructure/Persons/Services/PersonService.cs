@@ -35,11 +35,12 @@ public sealed class PersonService(ApplicationDbContext dbContext) : IPersonServi
 
     private static Person CreatePerson(PersonUpsertDto request) => request.Type switch
     {
-        PersonType.Company => Person.CreateCompany(request.CompanyName!, request.Eik!),
+        PersonType.Company => Person.CreateCompany(request.CompanyName!, request.Eik!, request.VatNumber!),
         PersonType.Individual => Person.CreateIndividual(
             request.FirstName!,
             request.LastName!,
             request.Egn!,
+            request.VatNumber!,
             request.MiddleName
         ),
         _ => throw new InvalidOperationException("Person type is required.")

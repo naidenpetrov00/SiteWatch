@@ -11,6 +11,7 @@ public abstract record PersonUpsertDto
     public string? CompanyName { get; init; }
     public string? Egn { get; init; }
     public string? Eik { get; init; }
+    public string? VatNumber { get; init; }
     public List<PersonAddressDto>? Addresses { get; init; }
     public List<PersonContactDto>? Contacts { get; init; }
     public List<PersonBankAccountDto>? BankAccounts { get; init; }

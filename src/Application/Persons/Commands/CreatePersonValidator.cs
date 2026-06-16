@@ -16,6 +16,7 @@ public abstract class PersonUpsertValidator<TRequest> : AbstractValidator<TReque
     protected PersonUpsertValidator()
     {
         RuleFor(x => x.Type).NotNull().IsInEnum();
+        RuleFor(x => x.VatNumber).NotEmpty().MaximumLength(20);
         RuleFor(x => x.Addresses)
             .Must(HaveAtMostOnePrimary)
             .When(x => x.Addresses is not null)

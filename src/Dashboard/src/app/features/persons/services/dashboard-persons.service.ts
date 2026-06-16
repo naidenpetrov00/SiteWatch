@@ -1,12 +1,23 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { injectQuery } from '@tanstack/angular-query-experimental';
+import {
+  injectMutation,
+  injectQuery,
+  QueryClient
+} from '@tanstack/angular-query-experimental';
 
 import { buildApiUrl } from '../../../core/api/api-url';
 import { DataTableState } from '../../../shared/data-table/data-table.types';
 import { DashboardPerson } from '../models/dashboard-person.model';
 import { DashboardPersonsResponse } from '../models/dashboard-persons-response.model';
+import {
+  CreateDashboardPersonRequest
+} from '../models/create-dashboard-person-request.model';
+
+interface CreateDashboardPersonResponse {
+  id: string;
+}
 
 interface DashboardPersonsQueryState {
   pageIndex: number;
@@ -29,6 +40,7 @@ const DEFAULT_QUERY_STATE: DashboardPersonsQueryState = {
 })
 export class DashboardPersonsService {
   private readonly http = inject(HttpClient);
+  private readonly queryClient = inject(QueryClient);
   private readonly queryState = signal<DashboardPersonsQueryState>(DEFAULT_QUERY_STATE);
 
   readonly dashboardPersonsQuery = injectQuery<DashboardPersonsResponse>(() => {
@@ -45,6 +57,21 @@ export class DashboardPersonsService {
     };
   });
 
+  readonly createPersonMutation = injectMutation<
+    CreateDashboardPersonResponse,
+    Error,
+    CreateDashboardPersonRequest
+  >(() => ({
+    mutationKey: ['persons', 'create'],
+    mutationFn: async (request: CreateDashboardPersonRequest) =>
+      firstValueFrom(this.http.post<CreateDashboardPersonResponse>(buildApiUrl('/persons'), request)),
+    onSuccess: async () => {
+      await this.queryClient.invalidateQueries({
+        queryKey: ['persons', 'dashboard']
+      });
+    }
+  }));
+
   setTableState(state: DataTableState<DashboardPerson>): void {
     const nextState = this.toQueryState(state);
 
@@ -53,6 +80,10 @@ export class DashboardPersonsService {
     }
 
     this.queryState.set(nextState);
+  }
+
+  createPerson(request: CreateDashboardPersonRequest): Promise<CreateDashboardPersonResponse> {
+    return this.createPersonMutation.mutateAsync(request);
   }
 
   private toQueryState(state: DataTableState<DashboardPerson>): DashboardPersonsQueryState {

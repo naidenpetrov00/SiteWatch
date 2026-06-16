@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { MatDialogRef } from '@angular/material/dialog';
 
+import { DashboardPersonsService } from '../../services/dashboard-persons.service';
 import { DialogActionBarComponent } from '../../../../shared/ui/dialog-action-bar/dialog-action-bar.component';
 import { DialogShellComponent } from '../../../../shared/ui/dialog-shell/dialog-shell.component';
 import {
@@ -22,6 +23,7 @@ import { AddPersonAddressesSectionComponent } from './sections/add-person-addres
 import { AddPersonBankAccountsSectionComponent } from './sections/add-person-bank-accounts-section.component';
 import { AddPersonContactsSectionComponent } from './sections/add-person-contacts-section.component';
 import { AddPersonPrimaryInfoSectionComponent } from './sections/add-person-primary-info-section.component';
+import { toCreateDashboardPersonRequest } from '../../utils/dashboard-person-request.mapper';
 
 @Component({
   selector: 'app-add-person-dialog',
@@ -42,6 +44,7 @@ import { AddPersonPrimaryInfoSectionComponent } from './sections/add-person-prim
 export class AddPersonDialogComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly dialogRef = inject(MatDialogRef<AddPersonDialogComponent>);
+  private readonly dashboardPersonsService = inject(DashboardPersonsService);
 
   readonly wizardTabs = ADD_PERSON_WIZARD_TABS;
   readonly dialogEyebrow = 'Administration';
@@ -49,11 +52,32 @@ export class AddPersonDialogComponent {
   readonly dialogSubtitle =
     'Capture the primary identity first, then move through addresses, contacts, and bank accounts.';
   readonly selectedTabId = signal<AddPersonWizardTabId>(this.wizardTabs[0].id);
+  readonly isCreatingPerson = () => this.dashboardPersonsService.createPersonMutation.isPending();
 
   readonly personForm = this.createPersonForm();
 
   closeDialog(): void {
     this.dialogRef.close();
+  }
+
+  canSubmit(): boolean {
+    return toCreateDashboardPersonRequest(this.personForm) !== null;
+  }
+
+  async submitPerson(): Promise<void> {
+    const request = toCreateDashboardPersonRequest(this.personForm);
+
+    if (!request) {
+      this.personForm.markAllAsTouched();
+      return;
+    }
+
+    try {
+      await this.dashboardPersonsService.createPerson(request);
+      this.dialogRef.close(true);
+    } catch {
+      // Keep the dialog open and let the form state remain intact.
+    }
   }
 
   setSelectedTab(tabId: string): void {

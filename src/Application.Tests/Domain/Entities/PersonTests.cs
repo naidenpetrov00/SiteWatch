@@ -8,7 +8,13 @@ public class PersonTests
     [Fact]
     public void CreateIndividual_TrimsInputAndBuildsNormalizedDisplayName()
     {
-        var person = Person.CreateIndividual("  Anna  ", "  Ivanova ", "1234567890", "  Maria ");
+        var person = Person.CreateIndividual(
+            "  Anna  ",
+            "  Ivanova ",
+            "1234567890",
+            "BG1234567890",
+            "  Maria "
+        );
 
         Assert.Equal("Anna", person.FirstName);
         Assert.Equal("Maria", person.MiddleName);
@@ -16,13 +22,13 @@ public class PersonTests
         Assert.Equal("Anna Maria Ivanova", person.DisplayName);
         Assert.Equal("1234567890", person.Egn);
         Assert.Equal("1234567890", person.SearchTaxIdentifier);
-        Assert.Equal("1234567890", person.VatNumber);
+        Assert.Equal("BG1234567890", person.VatNumber);
     }
 
     [Fact]
     public void CreateCompany_TrimsInputAndBuildsNormalizedDisplayName()
     {
-        var person = Person.CreateCompany("  Acme Ltd  ", "BG123456789");
+        var person = Person.CreateCompany("  Acme Ltd  ", "BG123456789", "BG123456789");
 
         Assert.Equal("Acme Ltd", person.CompanyName);
         Assert.Equal("Acme Ltd", person.DisplayName);
@@ -33,7 +39,13 @@ public class PersonTests
     [Fact]
     public void UpdateIndividual_InvalidEgn_DoesNotMutateExistingState()
     {
-        var person = Person.CreateIndividual("Anna", "Ivanova", "1234567890", "Maria");
+        var person = Person.CreateIndividual(
+            "Anna",
+            "Ivanova",
+            "1234567890",
+            "BG1234567890",
+            "Maria"
+        );
 
         var originalType = person.Type;
         var originalFirstName = person.FirstName;
@@ -47,7 +59,7 @@ public class PersonTests
         var originalSearchTaxIdentifier = person.SearchTaxIdentifier;
 
         Assert.Throws<ArgumentOutOfRangeException>(
-            () => person.UpdateIndividual("Changed", "Person", "12345", "Updated"));
+            () => person.UpdateIndividual("Changed", "Person", "12345", "BG1234567890", "Updated"));
 
         Assert.Equal(originalType, person.Type);
         Assert.Equal(originalFirstName, person.FirstName);
@@ -64,7 +76,7 @@ public class PersonTests
     [Fact]
     public void UpdateCompany_InvalidEik_DoesNotMutateExistingState()
     {
-        var person = Person.CreateCompany("Acme Ltd", "BG123456789");
+        var person = Person.CreateCompany("Acme Ltd", "BG123456789", "BG123456789");
 
         var originalType = person.Type;
         var originalFirstName = person.FirstName;
@@ -77,7 +89,8 @@ public class PersonTests
         var originalSearchName = person.SearchName;
         var originalSearchTaxIdentifier = person.SearchTaxIdentifier;
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => person.UpdateCompany("Changed Ltd", "12"));
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => person.UpdateCompany("Changed Ltd", "12", "BG123456789"));
 
         Assert.Equal(originalType, person.Type);
         Assert.Equal(originalFirstName, person.FirstName);

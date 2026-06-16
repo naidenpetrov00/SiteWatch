@@ -8,6 +8,7 @@
     class="add-person-dialog__form"
     [formGroup]="personForm"
     novalidate
+    (ngSubmit)="submitPerson()"
   >
     <app-dialog-wizard-tabs
       [tabs]="wizardTabs"
@@ -51,7 +52,8 @@
     [cancelLabel]="'Cancel'"
     [submitLabel]="'Submit'"
     [submitFormId]="'add-person-dialog-form'"
-    [submitDisabled]="true"
+    [submitButtonType]="'submit'"
+    [submitDisabled]="!canSubmit() || isCreatingPerson()"
     (cancel)="closeDialog()"
   />
 </app-dialog-shell>

@@ -33,21 +33,33 @@ public sealed class Person : BaseAuditableEntity
     [NotMapped]
     public string DisplayName => Type == PersonType.Company ? CompanyName! : BuildFullName();
 
-    public static Person CreateIndividual(string firstName, string lastName, string egn, string? middleName = null)
+    public static Person CreateIndividual(
+        string firstName,
+        string lastName,
+        string egn,
+        string vatNumber,
+        string? middleName = null
+    )
     {
         var person = new Person { Id = Guid.NewGuid() };
-        person.UpdateIndividual(firstName, lastName, egn, middleName);
+        person.UpdateIndividual(firstName, lastName, egn, vatNumber, middleName);
         return person;
     }
 
-    public static Person CreateCompany(string companyName, string eik)
+    public static Person CreateCompany(string companyName, string eik, string vatNumber)
     {
         var person = new Person { Id = Guid.NewGuid() };
-        person.UpdateCompany(companyName, eik);
+        person.UpdateCompany(companyName, eik, vatNumber);
         return person;
     }
 
-    public void UpdateIndividual(string firstName, string lastName, string egn, string? middleName = null)
+    public void UpdateIndividual(
+        string firstName,
+        string lastName,
+        string egn,
+        string vatNumber,
+        string? middleName = null
+    )
     {
         var normalizedFirstName = NormalizeRequiredName(firstName, nameof(firstName));
         var normalizedMiddleName = NormalizeOptionalName(middleName);
@@ -69,10 +81,10 @@ public sealed class Person : BaseAuditableEntity
         Egn = normalizedEgn;
         Eik = null;
 
-        RefreshDerivedValues();
+        RefreshDerivedValues(vatNumber);
     }
 
-    public void UpdateCompany(string companyName, string eik)
+    public void UpdateCompany(string companyName, string eik, string vatNumber)
     {
         var normalizedCompanyName = NormalizeRequiredName(companyName, nameof(companyName));
         var normalizedEik = NormalizeTaxIdentifier(Guard.Against.NullOrWhiteSpace(eik, nameof(eik)));
@@ -92,7 +104,7 @@ public sealed class Person : BaseAuditableEntity
         Egn = null;
         Eik = normalizedEik;
 
-        RefreshDerivedValues();
+        RefreshDerivedValues(vatNumber);
     }
 
     public void AddAddress(PersonAddress address) => _addresses.Add(Guard.Against.Null(address));
@@ -115,11 +127,11 @@ public sealed class Person : BaseAuditableEntity
 
     public void ClearBankAccounts() => _bankAccounts.Clear();
 
-    private void RefreshDerivedValues()
+    private void RefreshDerivedValues(string vatNumber)
     {
         SearchName = NormalizeSearchValue(BuildSearchName());
         SearchTaxIdentifier = NormalizeTaxIdentifier(Type == PersonType.Company ? Eik! : Egn!);
-        VatNumber = Type == PersonType.Company ? $"BG{Eik}" : Egn!;
+        VatNumber = NormalizeVatNumber(vatNumber);
     }
 
     private string BuildSearchName() => Type == PersonType.Company ? CompanyName! : BuildFullName();
@@ -138,6 +150,20 @@ public sealed class Person : BaseAuditableEntity
 
     private static string NormalizeTaxIdentifier(string value) =>
         new(value.Where(char.IsDigit).ToArray());
+
+    private static string NormalizeVatNumber(string vatNumber)
+    {
+        var normalizedVatNumber = Guard.Against.NullOrWhiteSpace(vatNumber, nameof(vatNumber)).Trim();
+        Guard.Against.OutOfRange(
+            normalizedVatNumber.Length,
+            nameof(vatNumber),
+            1,
+            20,
+            "VAT number must contain at most 20 characters."
+        );
+
+        return normalizedVatNumber;
+    }
 
     private static string NormalizeRequiredName(string value, string parameterName) =>
         Guard.Against.NullOrWhiteSpace(value, parameterName).Trim();
