@@ -31,7 +31,8 @@ import {
   createRepeatableRowValidator,
   createAtMostOnePrimaryValidator,
   digitsOnlyValidator,
-  requiredTextValidator
+  lettersOnlyValidator,
+  websiteValidator
 } from './add-person-dialog.validators';
 import { toCreateDashboardPersonRequest } from '../../utils/dashboard-person-request.mapper';
 
@@ -105,13 +106,7 @@ export class AddPersonDialogComponent implements OnInit {
   }
 
   removeAddress(index: number): void {
-    const addresses = this.personForm.controls.addresses;
-
-    if (addresses.length <= 1) {
-      return;
-    }
-
-    addresses.removeAt(index);
+    this.personForm.controls.addresses.removeAt(index);
   }
 
   addContact(): void {
@@ -119,13 +114,7 @@ export class AddPersonDialogComponent implements OnInit {
   }
 
   removeContact(index: number): void {
-    const contacts = this.personForm.controls.contacts;
-
-    if (contacts.length <= 1) {
-      return;
-    }
-
-    contacts.removeAt(index);
+    this.personForm.controls.contacts.removeAt(index);
   }
 
   addBankAccount(): void {
@@ -133,13 +122,7 @@ export class AddPersonDialogComponent implements OnInit {
   }
 
   removeBankAccount(index: number): void {
-    const bankAccounts = this.personForm.controls.bankAccounts;
-
-    if (bankAccounts.length <= 1) {
-      return;
-    }
-
-    bankAccounts.removeAt(index);
+    this.personForm.controls.bankAccounts.removeAt(index);
   }
 
   private configurePrimaryInfoValidators(): void {
@@ -155,12 +138,23 @@ export class AddPersonDialogComponent implements OnInit {
     const { firstName, middleName, lastName, companyName, egn, eik, vatNumber } = this.personForm.controls;
 
     if (type === this.personTypes.individual) {
-      firstName.setValidators([requiredTextValidator(), Validators.maxLength(this.validationLimits.firstName)]);
-      middleName.setValidators([Validators.maxLength(this.validationLimits.middleName)]);
-      lastName.setValidators([requiredTextValidator(), Validators.maxLength(this.validationLimits.lastName)]);
+      firstName.setValidators([
+        Validators.required,
+        lettersOnlyValidator(),
+        Validators.maxLength(this.validationLimits.firstName)
+      ]);
+      middleName.setValidators([
+        lettersOnlyValidator(),
+        Validators.maxLength(this.validationLimits.middleName)
+      ]);
+      lastName.setValidators([
+        Validators.required,
+        lettersOnlyValidator(),
+        Validators.maxLength(this.validationLimits.lastName)
+      ]);
       companyName.clearValidators();
       egn.setValidators([
-        requiredTextValidator(),
+        Validators.required,
         digitsOnlyValidator(),
         Validators.minLength(this.validationLimits.egnLength),
         Validators.maxLength(this.validationLimits.egnLength)
@@ -171,10 +165,14 @@ export class AddPersonDialogComponent implements OnInit {
       firstName.clearValidators();
       middleName.clearValidators();
       lastName.clearValidators();
-      companyName.setValidators([requiredTextValidator(), Validators.maxLength(this.validationLimits.companyName)]);
+      companyName.setValidators([
+        Validators.required,
+        lettersOnlyValidator(),
+        Validators.maxLength(this.validationLimits.companyName)
+      ]);
       egn.clearValidators();
       eik.setValidators([
-        requiredTextValidator(),
+        Validators.required,
         digitsOnlyValidator(),
         Validators.minLength(this.validationLimits.eikMinLength),
         Validators.maxLength(this.validationLimits.eikMaxLength)
@@ -221,13 +219,18 @@ export class AddPersonDialogComponent implements OnInit {
           validators: [Validators.maxLength(this.validationLimits.addressLine)]
         }),
         additionalLine: this.formBuilder.nonNullable.control('', {
-          validators: [Validators.maxLength(this.validationLimits.additionalLine)]
+          validators: [
+            Validators.maxLength(this.validationLimits.additionalLine)
+          ]
         }),
         city: this.formBuilder.nonNullable.control('', {
           validators: [Validators.maxLength(this.validationLimits.city)]
         }),
         postalCode: this.formBuilder.nonNullable.control('', {
-          validators: [Validators.maxLength(this.validationLimits.postalCode)]
+          validators: [
+            digitsOnlyValidator(),
+            Validators.maxLength(this.validationLimits.postalCode)
+          ]
         }),
         country: this.formBuilder.nonNullable.control('', {
           validators: [Validators.maxLength(this.validationLimits.country)]
@@ -237,35 +240,17 @@ export class AddPersonDialogComponent implements OnInit {
         }),
         isPrimary: this.formBuilder.nonNullable.control(false),
         isActive: this.formBuilder.nonNullable.control(true)
-      },
-      {
-        validators: [createRepeatableRowValidator({
-          errorKey: 'addressRowIncomplete',
-          requiredField: 'addressLine',
-          presenceDefaults: {
-            addressLine: '',
-            additionalLine: '',
-            city: '',
-            postalCode: '',
-            country: '',
-            details: '',
-            isPrimary: false,
-            isActive: true
-          }
-        })]
       }
     );
   }
 
   private createContactGroup(): AddPersonContactFormGroup {
-    return this.formBuilder.nonNullable.group(
+    const contactGroup = this.formBuilder.nonNullable.group(
       {
         contactType: this.formBuilder.nonNullable.control<AddPersonContactTypeOption>(
           CONTACT_TYPES.phone
         ),
-        value: this.formBuilder.nonNullable.control('', {
-          validators: [Validators.maxLength(this.validationLimits.contactValue)]
-        }),
+        value: this.formBuilder.nonNullable.control(''),
         details: this.formBuilder.nonNullable.control('', {
           validators: [Validators.maxLength(this.validationLimits.contactDetails)]
         }),
@@ -286,6 +271,9 @@ export class AddPersonDialogComponent implements OnInit {
         })]
       }
     );
+
+    this.configureContactValueValidators(contactGroup);
+    return contactGroup;
   }
 
   private createBankAccountGroup(): AddPersonBankAccountFormGroup {
@@ -321,5 +309,38 @@ export class AddPersonDialogComponent implements OnInit {
         })]
       }
     );
+  }
+
+  private configureContactValueValidators(contactGroup: AddPersonContactFormGroup): void {
+    const applyValidators = (contactType: AddPersonContactTypeOption): void => {
+      const valueControl = contactGroup.controls.value;
+
+      if (contactType === CONTACT_TYPES.phone) {
+        valueControl.setValidators([
+          digitsOnlyValidator(),
+          Validators.minLength(this.validationLimits.phoneValueMinLength),
+          Validators.maxLength(this.validationLimits.phoneValueMaxLength)
+        ]);
+      } else if (contactType === CONTACT_TYPES.email) {
+        valueControl.setValidators([
+          Validators.email,
+          Validators.maxLength(this.validationLimits.contactValue)
+        ]);
+      } else if (contactType === CONTACT_TYPES.website) {
+        valueControl.setValidators([
+          websiteValidator(),
+          Validators.maxLength(this.validationLimits.contactValue)
+        ]);
+      } else {
+        valueControl.setValidators([Validators.maxLength(this.validationLimits.contactValue)]);
+      }
+
+      valueControl.updateValueAndValidity({ emitEvent: false });
+    };
+
+    applyValidators(contactGroup.controls.contactType.value);
+    contactGroup.controls.contactType.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((contactType) => applyValidators(contactType));
   }
 }

@@ -35,7 +35,6 @@
               type="button"
               aria-label="Remove bank account"
               (click)="removeRequested.emit(index)"
-              [disabled]="bankAccounts().length === 1"
             >
               <mat-icon>delete</mat-icon>
             </button>

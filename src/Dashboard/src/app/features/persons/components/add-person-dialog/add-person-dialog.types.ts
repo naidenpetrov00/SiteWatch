@@ -17,6 +17,7 @@ export const CONTACT_TYPES = {
 export type AddPersonTypeOption = (typeof PERSON_TYPES)[keyof typeof PERSON_TYPES];
 export type AddPersonContactTypeOption = (typeof CONTACT_TYPES)[keyof typeof CONTACT_TYPES];
 export type AddPersonVatCountryCodeOption = 'BG';
+export type AddPersonPhoneCountryCodeOption = '359' | '1' | '44' | '49';
 export type AddPersonWizardTabId = 'primary-info' | 'addresses' | 'contacts' | 'bank-accounts';
 
 export interface AddPersonAddressFormControls {
@@ -91,6 +92,16 @@ export const CONTACT_TYPE_OPTIONS = [
 
 export const VAT_COUNTRY_CODE_OPTIONS = [{ value: 'BG', label: 'BG' }] as const satisfies readonly {
   value: AddPersonVatCountryCodeOption;
+  label: string;
+}[];
+
+export const PHONE_COUNTRY_CODE_OPTIONS = [
+  { value: '359', label: 'BG (+359)' },
+  { value: '1', label: 'US (+1)' },
+  { value: '44', label: 'UK (+44)' },
+  { value: '49', label: 'DE (+49)' }
+] as const satisfies readonly {
+  value: AddPersonPhoneCountryCodeOption;
   label: string;
 }[];
 

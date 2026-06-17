@@ -10,8 +10,11 @@ import { MatSelectModule } from '@angular/material/select';
 
 import {
   AddPersonContactsFormArray,
+  CONTACT_TYPES,
   CONTACT_TYPE_OPTIONS
 } from '../add-person-dialog.types';
+import { ADD_PERSON_VALIDATION_LIMITS } from '../add-person-dialog.validators';
+import { PersonPhoneInputComponent } from '../inputs/person-phone-input.component';
 
 @Component({
   selector: 'app-add-person-contacts-section',
@@ -23,7 +26,8 @@ import {
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
-    MatSelectModule
+    MatSelectModule,
+    PersonPhoneInputComponent
   ],
   templateUrl: './add-person-contacts-section.component.html',
   styleUrl: './add-person-contacts-section.component.css',
@@ -35,5 +39,7 @@ export class AddPersonContactsSectionComponent {
   readonly addRequested = output<void>();
   readonly removeRequested = output<number>();
 
+  readonly contactTypes = CONTACT_TYPES;
   readonly contactTypeOptions = CONTACT_TYPE_OPTIONS;
+  readonly validationLimits = ADD_PERSON_VALIDATION_LIMITS;
 }

@@ -4,7 +4,7 @@
       <p class="add-person-addresses-section__eyebrow">Repeatable section</p>
       <h3>Addresses</h3>
       <p class="add-person-addresses-section__summary">
-        Capture the main address first. Additional addresses can be added when needed.
+        Capture addresses only when needed. Additional addresses can be added later.
       </p>
       @if (addresses().touched && addresses().hasError('addressMultiplePrimary')) {
         <p class="add-person-addresses-section__error" role="alert">
@@ -33,7 +33,6 @@
               type="button"
               aria-label="Remove address"
               (click)="removeRequested.emit(index)"
-              [disabled]="addresses().length === 1"
             >
               <mat-icon>delete</mat-icon>
             </button>
@@ -46,6 +45,9 @@
             >
               <mat-label>Address line</mat-label>
               <input matInput formControlName="addressLine" maxlength="200" />
+              @if (addressGroup.controls.addressLine.touched && addressGroup.controls.addressLine.hasError('maxlength')) {
+                <mat-error>Address line must be at most 200 characters.</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field
@@ -53,7 +55,10 @@
               class="add-person-addresses-section__field add-person-addresses-section__field--full"
             >
               <mat-label>Additional line</mat-label>
-              <input matInput formControlName="additionalLine" maxlength="200" />
+              <input matInput formControlName="additionalLine" minlength="1" maxlength="200" />
+              @if (addressGroup.controls.additionalLine.touched && addressGroup.controls.additionalLine.hasError('maxlength')) {
+                <mat-error>Additional line must be at most 200 characters.</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field
@@ -61,7 +66,10 @@
               class="add-person-addresses-section__field add-person-addresses-section__field--third"
             >
               <mat-label>City</mat-label>
-              <input matInput formControlName="city" maxlength="100" />
+              <input matInput formControlName="city" minlength="1" maxlength="100" />
+              @if (addressGroup.controls.city.touched && addressGroup.controls.city.hasError('maxlength')) {
+                <mat-error>City must be at most 100 characters.</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field
@@ -69,7 +77,21 @@
               class="add-person-addresses-section__field add-person-addresses-section__field--third"
             >
               <mat-label>Postal code</mat-label>
-              <input matInput formControlName="postalCode" maxlength="20" />
+              <input
+                matInput
+                appPersonInputSanitizer="digits"
+                formControlName="postalCode"
+                autocomplete="postal-code"
+                inputmode="numeric"
+                minlength="1"
+                maxlength="20"
+              />
+              @if (addressGroup.controls.postalCode.touched && addressGroup.controls.postalCode.hasError('digitsOnly')) {
+                <mat-error>Postal code must contain digits only.</mat-error>
+              }
+              @if (addressGroup.controls.postalCode.touched && addressGroup.controls.postalCode.hasError('maxlength')) {
+                <mat-error>Postal code must be at most 20 digits.</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field
@@ -77,7 +99,10 @@
               class="add-person-addresses-section__field add-person-addresses-section__field--third"
             >
               <mat-label>Country</mat-label>
-              <input matInput formControlName="country" maxlength="100" />
+              <input matInput formControlName="country" minlength="1" maxlength="100" />
+              @if (addressGroup.controls.country.touched && addressGroup.controls.country.hasError('maxlength')) {
+                <mat-error>Country must be at most 100 characters.</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field
@@ -85,7 +110,10 @@
               class="add-person-addresses-section__field add-person-addresses-section__field--full"
             >
               <mat-label>Details</mat-label>
-              <textarea matInput rows="3" formControlName="details" maxlength="500"></textarea>
+              <textarea matInput rows="3" formControlName="details" minlength="1" maxlength="500"></textarea>
+              @if (addressGroup.controls.details.touched && addressGroup.controls.details.hasError('maxlength')) {
+                <mat-error>Details must be at most 500 characters.</mat-error>
+              }
             </mat-form-field>
 
             <div class="add-person-addresses-section__field add-person-addresses-section__field--checkbox">
@@ -95,12 +123,6 @@
             <div class="add-person-addresses-section__field add-person-addresses-section__field--checkbox">
               <mat-checkbox formControlName="isActive">Active</mat-checkbox>
             </div>
-
-            @if (addressGroup.touched && addressGroup.hasError('addressRowIncomplete')) {
-              <p class="add-person-addresses-section__error" role="alert">
-                Fill the address line or clear the row.
-              </p>
-            }
           </div>
         </mat-card-content>
       </mat-card>

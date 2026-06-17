@@ -1,4 +1,3 @@
-using Ardalis.GuardClauses;
 using Domain.SeedWork;
 
 namespace Domain.Entities;
@@ -24,7 +23,7 @@ public sealed class PersonAddress : BaseAuditableEntity
         {
             Id = Guid.NewGuid(),
             PersonId = personId,
-            AddressLine = Guard.Against.NullOrWhiteSpace(addressLine, nameof(addressLine)).Trim(),
+            AddressLine = addressLine?.Trim() ?? string.Empty,
             City = string.IsNullOrWhiteSpace(city) ? null : city.Trim(),
             PostalCode = string.IsNullOrWhiteSpace(postalCode) ? null : postalCode.Trim(),
             Country = string.IsNullOrWhiteSpace(country) ? null : country.Trim(),

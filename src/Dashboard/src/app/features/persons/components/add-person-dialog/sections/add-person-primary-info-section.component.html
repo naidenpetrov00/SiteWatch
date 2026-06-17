@@ -33,12 +33,17 @@
               <mat-label>First name</mat-label>
               <input
                 matInput
+                appPersonInputSanitizer="letters"
                 formControlName="firstName"
                 autocomplete="given-name"
+                minlength="1"
                 [attr.maxlength]="validationLimits.firstName"
               />
               @if (personForm().controls.firstName.touched && personForm().controls.firstName.hasError('required')) {
                 <mat-error>First name is required.</mat-error>
+              }
+              @if (personForm().controls.firstName.touched && personForm().controls.firstName.hasError('lettersOnly')) {
+                <mat-error>First name must contain letters only.</mat-error>
               }
               @if (personForm().controls.firstName.touched && personForm().controls.firstName.hasError('maxlength')) {
                 <mat-error>First name must be at most {{ validationLimits.firstName }} characters.</mat-error>
@@ -52,10 +57,15 @@
               <mat-label>Middle name</mat-label>
               <input
                 matInput
+                appPersonInputSanitizer="letters"
                 formControlName="middleName"
                 autocomplete="additional-name"
+                minlength="1"
                 [attr.maxlength]="validationLimits.middleName"
               />
+              @if (personForm().controls.middleName.touched && personForm().controls.middleName.hasError('lettersOnly')) {
+                <mat-error>Middle name must contain letters only.</mat-error>
+              }
               @if (personForm().controls.middleName.touched && personForm().controls.middleName.hasError('maxlength')) {
                 <mat-error>Middle name must be at most {{ validationLimits.middleName }} characters.</mat-error>
               }
@@ -68,12 +78,17 @@
               <mat-label>Last name</mat-label>
               <input
                 matInput
+                appPersonInputSanitizer="letters"
                 formControlName="lastName"
                 autocomplete="family-name"
+                minlength="1"
                 [attr.maxlength]="validationLimits.lastName"
               />
               @if (personForm().controls.lastName.touched && personForm().controls.lastName.hasError('required')) {
                 <mat-error>Last name is required.</mat-error>
+              }
+              @if (personForm().controls.lastName.touched && personForm().controls.lastName.hasError('lettersOnly')) {
+                <mat-error>Last name must contain letters only.</mat-error>
               }
               @if (personForm().controls.lastName.touched && personForm().controls.lastName.hasError('maxlength')) {
                 <mat-error>Last name must be at most {{ validationLimits.lastName }} characters.</mat-error>
@@ -87,8 +102,10 @@
               <mat-label>EGN</mat-label>
               <input
                 matInput
+                appPersonInputSanitizer="digits"
                 formControlName="egn"
                 inputmode="numeric"
+                minlength="1"
                 [attr.maxlength]="validationLimits.egnLength"
               />
               @if (personForm().controls.egn.touched && personForm().controls.egn.hasError('required')) {
@@ -114,12 +131,17 @@
               <mat-label>Company name</mat-label>
               <input
                 matInput
+                appPersonInputSanitizer="letters"
                 formControlName="companyName"
                 autocomplete="organization"
+                minlength="1"
                 [attr.maxlength]="validationLimits.companyName"
               />
               @if (personForm().controls.companyName.touched && personForm().controls.companyName.hasError('required')) {
                 <mat-error>Company name is required.</mat-error>
+              }
+              @if (personForm().controls.companyName.touched && personForm().controls.companyName.hasError('lettersOnly')) {
+                <mat-error>Company name must contain letters only.</mat-error>
               }
               @if (personForm().controls.companyName.touched && personForm().controls.companyName.hasError('maxlength')) {
                 <mat-error>Company name must be at most {{ validationLimits.companyName }} characters.</mat-error>
@@ -133,8 +155,10 @@
               <mat-label>EIK</mat-label>
               <input
                 matInput
+                appPersonInputSanitizer="digits"
                 formControlName="eik"
                 inputmode="numeric"
+                minlength="1"
                 [attr.maxlength]="validationLimits.eikMaxLength"
               />
               @if (personForm().controls.eik.touched && personForm().controls.eik.hasError('required')) {

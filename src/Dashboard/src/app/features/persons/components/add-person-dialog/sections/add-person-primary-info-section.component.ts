@@ -21,6 +21,7 @@ import {
   VAT_COUNTRY_CODE_OPTIONS
 } from '../add-person-dialog.types';
 import { ADD_PERSON_VALIDATION_LIMITS } from '../add-person-dialog.validators';
+import { PersonInputSanitizerDirective } from '../directives/person-input-sanitizer.directive';
 
 @Component({
   selector: 'app-add-person-primary-info-section',
@@ -30,7 +31,8 @@ import { ADD_PERSON_VALIDATION_LIMITS } from '../add-person-dialog.validators';
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSelectModule
+    MatSelectModule,
+    PersonInputSanitizerDirective
   ],
   templateUrl: './add-person-primary-info-section.component.html',
   styleUrl: './add-person-primary-info-section.component.css',

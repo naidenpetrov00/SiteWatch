@@ -6,7 +6,9 @@
 - Do not over-explain.
 - If the user asks a yes/no question, answer with "Yes" or "No" first, then add only minimal context if needed.
 - Do not provide long explanations unless explicitly requested.
-- When planing explain more of the patterns tech and code you will use rather then just long text explaining the details. Keep the Details shorter and on point
+- When planning, keep it concrete: describe the files, code paths, APIs, patterns, and technical approach you will use so I can spot overengineering or hallucination early. Keep the text short and technical.
+- Start with the simplest working solution. Add abstractions, layers, or alternatives only when they clearly improve clarity, reuse, maintainability, or correctness, or when the simple approach will not hold up.
+- If you want to add scope or complexity that I did not explicitly ask for, ask me before you draft or expand the plan.
 - When explaining completed work, summarize only key changes.
 - Avoid repetition and unnecessary background context.
 - Do not include tutorials unless requested.
@@ -59,6 +61,8 @@ SiteWatch is split into:
 - Keep changes scoped and avoid unrelated formatting or churn.
 - Follow existing repository naming and formatting conventions.
 - Prefer existing patterns over introducing new abstractions.
+- Only extract reusable helpers, directives, or components when the same behavior is clearly shared or the interaction is inherently reusable.
+- Avoid building layers for one-off validation or transformation logic.
 - Read only the minimum relevant files required for the task.
 
 ### Specialized Guidance

@@ -16,12 +16,18 @@ export const ADD_PERSON_VALIDATION_LIMITS = {
   country: 100,
   details: 500,
   contactValue: 256,
+  phoneValueMinLength: 8,
+  phoneValueMaxLength: 15,
   contactDetails: 500,
   iban: 34,
   bic: 11,
   bankName: 200,
   bankDetails: 500
 } as const;
+
+const LETTERS_ONLY_REGEX = /^[\p{L}\p{M}]+$/u;
+const DIGITS_ONLY_REGEX = /^\d+$/;
+const WEBSITE_PROTOCOL_REGEX = /^[a-z][a-z0-9+.-]*:\/\//i;
 
 function hasText(value: unknown): boolean {
   return typeof value === 'string' && value.trim().length > 0;
@@ -35,9 +41,19 @@ function hasRepeatableContent(value: unknown, defaultValue: unknown): boolean {
   return value !== defaultValue;
 }
 
-export function requiredTextValidator(): ValidatorFn {
+export function lettersOnlyValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
-    return hasText(control.value) ? null : { required: true };
+    const value = control.value;
+
+    if (typeof value !== 'string') {
+      return null;
+    }
+
+    if (value.length === 0) {
+      return null;
+    }
+
+    return LETTERS_ONLY_REGEX.test(value) ? null : { lettersOnly: true };
   };
 }
 
@@ -45,12 +61,45 @@ export function digitsOnlyValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const value = control.value;
 
-    if (typeof value !== 'string' || value.length === 0) {
+    if (typeof value !== 'string') {
       return null;
     }
 
-    return /^\d+$/.test(value) ? null : { digitsOnly: true };
+    if (value.length === 0) {
+      return null;
+    }
+
+    return DIGITS_ONLY_REGEX.test(value) ? null : { digitsOnly: true };
   };
+}
+
+export function websiteValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value;
+
+    if (typeof value !== 'string') {
+      return null;
+    }
+
+    const trimmedValue = value.trim();
+
+    if (trimmedValue.length === 0) {
+      return null;
+    }
+
+    return isValidWebsiteValue(trimmedValue) ? null : { website: true };
+  };
+}
+
+function isValidWebsiteValue(value: string): boolean {
+  const candidate = WEBSITE_PROTOCOL_REGEX.test(value) ? value : `https://${value}`;
+
+  try {
+    const url = new URL(candidate);
+    return url.hostname === 'localhost' || url.hostname.includes('.');
+  } catch {
+    return false;
+  }
 }
 
 interface RepeatableRowValidatorOptions {

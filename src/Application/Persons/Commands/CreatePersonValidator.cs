@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Domain.SeedWork.Enums;
 using FluentValidation;
 
@@ -13,6 +14,9 @@ public sealed class CreatePersonValidator : PersonUpsertValidator<CreatePersonCo
 public abstract class PersonUpsertValidator<TRequest> : AbstractValidator<TRequest>
     where TRequest : PersonUpsertDto
 {
+    private static readonly Regex LettersOnlyRegex = new(@"^[\p{L}\p{M}]+$", RegexOptions.CultureInvariant);
+    private static readonly Regex DigitsOnlyRegex = new(@"^\d+$", RegexOptions.CultureInvariant);
+
     protected PersonUpsertValidator()
     {
         RuleFor(x => x.Type).NotNull().IsInEnum();
@@ -32,18 +36,44 @@ public abstract class PersonUpsertValidator<TRequest> : AbstractValidator<TReque
 
         When(x => x.Type == PersonType.Individual, () =>
         {
-            RuleFor(x => x.FirstName).NotEmpty().MaximumLength(100);
-            RuleFor(x => x.MiddleName).MaximumLength(100);
-            RuleFor(x => x.LastName).NotEmpty().MaximumLength(100);
-            RuleFor(x => x.Egn).NotEmpty().Must(HaveExactlyTenDigits).WithMessage("EGN must contain exactly 10 digits.");
+            RuleFor(x => x.FirstName)
+                .NotEmpty()
+                .MaximumLength(100)
+                .Matches(LettersOnlyRegex)
+                .WithMessage("First name must contain letters only.");
+            When(x => !string.IsNullOrWhiteSpace(x.MiddleName), () =>
+            {
+                RuleFor(x => x.MiddleName)
+                    .MaximumLength(100)
+                    .Matches(LettersOnlyRegex)
+                    .WithMessage("Middle name must contain letters only.");
+            });
+            RuleFor(x => x.LastName)
+                .NotEmpty()
+                .MaximumLength(100)
+                .Matches(LettersOnlyRegex)
+                .WithMessage("Last name must contain letters only.");
+            RuleFor(x => x.Egn)
+                .NotEmpty()
+                .Length(10)
+                .Matches(DigitsOnlyRegex)
+                .WithMessage("EGN must contain exactly 10 digits.");
             RuleFor(x => x.CompanyName).Must(string.IsNullOrWhiteSpace);
             RuleFor(x => x.Eik).Must(string.IsNullOrWhiteSpace);
         });
 
         When(x => x.Type == PersonType.Company, () =>
         {
-            RuleFor(x => x.CompanyName).NotEmpty().MaximumLength(250);
-            RuleFor(x => x.Eik).NotEmpty().Must(HaveBetweenNineAndThirteenDigits).WithMessage("EIK must contain between 9 and 13 digits.");
+            RuleFor(x => x.CompanyName)
+                .NotEmpty()
+                .MaximumLength(250)
+                .Matches(LettersOnlyRegex)
+                .WithMessage("Company name must contain letters only.");
+            RuleFor(x => x.Eik)
+                .NotEmpty()
+                .Length(9, 13)
+                .Matches(DigitsOnlyRegex)
+                .WithMessage("EIK must contain between 9 and 13 digits.");
             RuleFor(x => x.FirstName).Must(string.IsNullOrWhiteSpace);
             RuleFor(x => x.MiddleName).Must(string.IsNullOrWhiteSpace);
             RuleFor(x => x.LastName).Must(string.IsNullOrWhiteSpace);
@@ -66,14 +96,6 @@ public abstract class PersonUpsertValidator<TRequest> : AbstractValidator<TReque
         });
     }
 
-    private static bool HaveExactlyTenDigits(string? value) => NormalizeDigits(value).Length == 10;
-
-    private static bool HaveBetweenNineAndThirteenDigits(string? value)
-    {
-        var digits = NormalizeDigits(value);
-        return digits.Length is >= 9 and <= 13;
-    }
-
     private static bool HaveAtMostOnePrimary<T>(IEnumerable<T>? items)
         where T : class
     {
@@ -85,19 +107,22 @@ public abstract class PersonUpsertValidator<TRequest> : AbstractValidator<TReque
         var primaryCount = items.Count(item => item is IPrimaryState state && state.IsPrimary);
         return primaryCount <= 1;
     }
-
-    protected static string NormalizeDigits(string? value) =>
-        new(value?.Where(char.IsDigit).ToArray() ?? []);
 }
 
 internal sealed class PersonAddressDtoValidator : AbstractValidator<PersonAddressDto>
 {
+    private static readonly Regex DigitsOnlyRegex = new(@"^\d+$", RegexOptions.CultureInvariant);
+
     public PersonAddressDtoValidator()
     {
-        RuleFor(x => x.AddressLine).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.AddressLine).MaximumLength(200);
         RuleFor(x => x.AdditionalLine).MaximumLength(200);
         RuleFor(x => x.City).MaximumLength(100);
-        RuleFor(x => x.PostalCode).MaximumLength(20);
+        RuleFor(x => x.PostalCode)
+            .MaximumLength(20)
+            .Matches(DigitsOnlyRegex)
+            .When(x => !string.IsNullOrWhiteSpace(x.PostalCode))
+            .WithMessage("Postal code must contain only digits.");
         RuleFor(x => x.Country).MaximumLength(100);
         RuleFor(x => x.Details).MaximumLength(500);
     }
@@ -105,11 +130,50 @@ internal sealed class PersonAddressDtoValidator : AbstractValidator<PersonAddres
 
 internal sealed class PersonContactDtoValidator : AbstractValidator<PersonContactDto>
 {
+    private static readonly Regex DigitsOnlyRegex = new(@"^\d+$", RegexOptions.CultureInvariant);
+
     public PersonContactDtoValidator()
     {
         RuleFor(x => x.ContactType).IsInEnum();
         RuleFor(x => x.Value).NotEmpty().MaximumLength(256);
+        When(x => x.ContactType == Domain.SeedWork.Enums.ContactType.Phone, () =>
+        {
+            RuleFor(x => x.Value)
+                .Length(8, 15)
+                .Matches(DigitsOnlyRegex)
+                .WithMessage("Phone number must contain between 8 and 15 digits.");
+        });
+        When(x => x.ContactType == Domain.SeedWork.Enums.ContactType.Email, () =>
+        {
+            RuleFor(x => x.Value)
+                .EmailAddress()
+                .WithMessage("Email must be a valid email address.");
+        });
+        When(x => x.ContactType == Domain.SeedWork.Enums.ContactType.Website, () =>
+        {
+            RuleFor(x => x.Value)
+                .Must(HaveValidWebsite)
+                .WithMessage("Website must be a valid website address.");
+        });
         RuleFor(x => x.Details).MaximumLength(500);
+    }
+
+    private static bool HaveValidWebsite(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return true;
+        }
+
+        var trimmedValue = value.Trim();
+        var candidate = trimmedValue.Contains("://", StringComparison.Ordinal) ? trimmedValue : $"https://{trimmedValue}";
+
+        if (!Uri.TryCreate(candidate, UriKind.Absolute, out var uri))
+        {
+            return false;
+        }
+
+        return uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) || uri.Host.Contains('.');
     }
 }
 
