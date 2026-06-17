@@ -66,6 +66,7 @@ export function toCreateDashboardPersonRequest(
       : {
           type: formValue.type,
           companyName: formValue.companyName,
+          legalForm: formValue.legalForm,
           eik: formValue.eik,
           vatNumber: `${formValue.vatCountryCode}${formValue.eik}`
         };

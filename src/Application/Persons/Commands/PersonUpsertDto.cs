@@ -9,6 +9,7 @@ public abstract record PersonUpsertDto
     public string? MiddleName { get; init; }
     public string? LastName { get; init; }
     public string? CompanyName { get; init; }
+    public string? LegalForm { get; init; }
     public string? Egn { get; init; }
     public string? Eik { get; init; }
     public string? VatNumber { get; init; }

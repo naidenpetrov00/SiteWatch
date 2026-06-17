@@ -7,8 +7,10 @@
 - If the user asks a yes/no question, answer with "Yes" or "No" first, then add only minimal context if needed.
 - Do not provide long explanations unless explicitly requested.
 - When planning, keep it concrete: describe the files, code paths, APIs, patterns, and technical approach you will use so I can spot overengineering or hallucination early. Keep the text short and technical.
-- Start with the simplest working solution. Add abstractions, layers, or alternatives only when they clearly improve clarity, reuse, maintainability, or correctness, or when the simple approach will not hold up.
-- If you want to add scope or complexity that I did not explicitly ask for, ask me before you draft or expand the plan.
+- Do exactly the work I asked for, plus the wiring needed for it to function end to end. Keep the code quality patterns and principles this should not be saving from just dont overcomplicate with additional logic and if you think its good idea ask me first so i can decide
+- Do not add adjacent behavior, follow-up features, extra automation, or cleanup work unless I explicitly asked for it or if you think is good idea ask me first.
+- When creatign a feature try to find the things that can be separated from this to a reusable separation. I am talking about backend and frontend both logic and ui 
+- If you think additional scope should be included, stop and ask before you draft or expand the plan.
 - When explaining completed work, summarize only key changes.
 - Avoid repetition and unnecessary background context.
 - Do not include tutorials unless requested.

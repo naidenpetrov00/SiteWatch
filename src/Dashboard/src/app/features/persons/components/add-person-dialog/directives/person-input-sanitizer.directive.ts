@@ -1,9 +1,13 @@
 import { Directive, ElementRef, HostListener, Input, inject } from '@angular/core';
 import { NgControl } from '@angular/forms';
 
-import { sanitizeDigitsOnly, sanitizeLettersOnly } from '../add-person-dialog.input-utils';
+import {
+  sanitizeCompanyName,
+  sanitizeDigitsOnly,
+  sanitizeLettersOnly
+} from '../add-person-dialog.input-utils';
 
-export type PersonInputSanitizerMode = 'letters' | 'digits';
+export type PersonInputSanitizerMode = 'letters' | 'digits' | 'company';
 
 @Directive({
   selector: 'input[appPersonInputSanitizer], textarea[appPersonInputSanitizer]',
@@ -29,6 +33,13 @@ export class PersonInputSanitizerDirective {
 
     if (this.mode === 'digits') {
       if (!/^\d$/.test(keyboardEvent.key)) {
+        keyboardEvent.preventDefault();
+      }
+      return;
+    }
+
+    if (this.mode === 'company') {
+      if (!/^[\p{L}\p{M}\d ]$/u.test(keyboardEvent.key)) {
         keyboardEvent.preventDefault();
       }
       return;
@@ -66,7 +77,15 @@ export class PersonInputSanitizerDirective {
   }
 
   private sanitizeValue(value: string): string {
-    return this.mode === 'digits' ? sanitizeDigitsOnly(value) : sanitizeLettersOnly(value);
+    if (this.mode === 'digits') {
+      return sanitizeDigitsOnly(value);
+    }
+
+    if (this.mode === 'company') {
+      return sanitizeCompanyName(value);
+    }
+
+    return sanitizeLettersOnly(value);
   }
 
   private replaceValue(value: string): void {

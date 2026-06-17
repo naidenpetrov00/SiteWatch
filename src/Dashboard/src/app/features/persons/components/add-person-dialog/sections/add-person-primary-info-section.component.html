@@ -131,7 +131,7 @@
               <mat-label>Company name</mat-label>
               <input
                 matInput
-                appPersonInputSanitizer="letters"
+                appPersonInputSanitizer="company"
                 formControlName="companyName"
                 autocomplete="organization"
                 minlength="1"
@@ -140,11 +140,26 @@
               @if (personForm().controls.companyName.touched && personForm().controls.companyName.hasError('required')) {
                 <mat-error>Company name is required.</mat-error>
               }
-              @if (personForm().controls.companyName.touched && personForm().controls.companyName.hasError('lettersOnly')) {
-                <mat-error>Company name must contain letters only.</mat-error>
+              @if (personForm().controls.companyName.touched && personForm().controls.companyName.hasError('companyName')) {
+                <mat-error>Company name must contain letters, digits, and spaces only.</mat-error>
               }
               @if (personForm().controls.companyName.touched && personForm().controls.companyName.hasError('maxlength')) {
                 <mat-error>Company name must be at most {{ validationLimits.companyName }} characters.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field
+              appearance="outline"
+              class="add-person-primary-info-section__field add-person-primary-info-section__field--half"
+            >
+              <mat-label>Legal form</mat-label>
+              <mat-select formControlName="legalForm">
+                @for (option of legalFormOptions; track option.value) {
+                  <mat-option [value]="option.value">{{ option.label }}</mat-option>
+                }
+              </mat-select>
+              @if (personForm().controls.legalForm.touched && personForm().controls.legalForm.hasError('required')) {
+                <mat-error>Legal form is required.</mat-error>
               }
             </mat-form-field>
 

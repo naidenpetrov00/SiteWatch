@@ -20,6 +20,7 @@ public sealed class Person : BaseAuditableEntity
     public string? MiddleName { get; private set; }
     public string? LastName { get; private set; }
     public string? CompanyName { get; private set; }
+    public CompanyLegalForm? LegalForm { get; private set; }
     public string? Egn { get; private set; }
     public string? Eik { get; private set; }
     public string VatNumber { get; private set; } = null!;
@@ -46,10 +47,10 @@ public sealed class Person : BaseAuditableEntity
         return person;
     }
 
-    public static Person CreateCompany(string companyName, string eik, string vatNumber)
+    public static Person CreateCompany(string companyName, CompanyLegalForm? legalForm, string eik, string vatNumber)
     {
         var person = new Person { Id = Guid.NewGuid() };
-        person.UpdateCompany(companyName, eik, vatNumber);
+        person.UpdateCompany(companyName, legalForm, eik, vatNumber);
         return person;
     }
 
@@ -62,9 +63,8 @@ public sealed class Person : BaseAuditableEntity
     )
     {
         var normalizedFirstName = NormalizeRequiredName(firstName, nameof(firstName));
-        var normalizedMiddleName = NormalizeOptionalName(middleName);
         var normalizedLastName = NormalizeRequiredName(lastName, nameof(lastName));
-        var normalizedEgn = NormalizeTaxIdentifier(Guard.Against.NullOrWhiteSpace(egn, nameof(egn)));
+        var normalizedEgn = NormalizeTaxIdentifier(Guard.Against.NullOrWhiteSpace(egn));
         Guard.Against.OutOfRange(
             normalizedEgn.Length,
             nameof(egn),
@@ -75,19 +75,20 @@ public sealed class Person : BaseAuditableEntity
 
         Type = PersonType.Individual;
         FirstName = normalizedFirstName;
-        MiddleName = normalizedMiddleName;
+        MiddleName = middleName;
         LastName = normalizedLastName;
         CompanyName = null;
+        LegalForm = null;
         Egn = normalizedEgn;
         Eik = null;
 
         RefreshDerivedValues(vatNumber);
     }
 
-    public void UpdateCompany(string companyName, string eik, string vatNumber)
+    public void UpdateCompany(string companyName, CompanyLegalForm? legalForm, string eik, string vatNumber)
     {
         var normalizedCompanyName = NormalizeRequiredName(companyName, nameof(companyName));
-        var normalizedEik = NormalizeTaxIdentifier(Guard.Against.NullOrWhiteSpace(eik, nameof(eik)));
+        var normalizedEik = NormalizeTaxIdentifier(Guard.Against.NullOrWhiteSpace(eik));
         Guard.Against.OutOfRange(
             normalizedEik.Length,
             nameof(eik),
@@ -98,6 +99,7 @@ public sealed class Person : BaseAuditableEntity
 
         Type = PersonType.Company;
         CompanyName = normalizedCompanyName;
+        LegalForm = legalForm;
         FirstName = null;
         MiddleName = null;
         LastName = null;
@@ -153,7 +155,7 @@ public sealed class Person : BaseAuditableEntity
 
     private static string NormalizeVatNumber(string vatNumber)
     {
-        var normalizedVatNumber = Guard.Against.NullOrWhiteSpace(vatNumber, nameof(vatNumber)).Trim();
+        var normalizedVatNumber = Guard.Against.NullOrWhiteSpace(vatNumber).Trim();
         Guard.Against.OutOfRange(
             normalizedVatNumber.Length,
             nameof(vatNumber),
@@ -167,7 +169,4 @@ public sealed class Person : BaseAuditableEntity
 
     private static string NormalizeRequiredName(string value, string parameterName) =>
         Guard.Against.NullOrWhiteSpace(value, parameterName).Trim();
-
-    private static string? NormalizeOptionalName(string? value) =>
-        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

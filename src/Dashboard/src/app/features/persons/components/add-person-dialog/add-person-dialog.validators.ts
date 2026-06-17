@@ -26,6 +26,7 @@ export const ADD_PERSON_VALIDATION_LIMITS = {
 } as const;
 
 const LETTERS_ONLY_REGEX = /^[\p{L}\p{M}]+$/u;
+const COMPANY_NAME_REGEX = /^[\p{L}\p{M}\d ]+$/u;
 const DIGITS_ONLY_REGEX = /^\d+$/;
 const WEBSITE_PROTOCOL_REGEX = /^[a-z][a-z0-9+.-]*:\/\//i;
 
@@ -54,6 +55,22 @@ export function lettersOnlyValidator(): ValidatorFn {
     }
 
     return LETTERS_ONLY_REGEX.test(value) ? null : { lettersOnly: true };
+  };
+}
+
+export function companyNameValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value;
+
+    if (typeof value !== 'string') {
+      return null;
+    }
+
+    if (value.trim().length === 0) {
+      return { companyName: true };
+    }
+
+    return COMPANY_NAME_REGEX.test(value) ? null : { companyName: true };
   };
 }
 

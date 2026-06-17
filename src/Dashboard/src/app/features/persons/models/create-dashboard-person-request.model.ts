@@ -35,6 +35,7 @@ export interface CreateDashboardPersonRequest {
   middleName?: string;
   lastName?: string;
   companyName?: string;
+  legalForm?: string;
   egn?: string;
   eik?: string;
   vatNumber: string;

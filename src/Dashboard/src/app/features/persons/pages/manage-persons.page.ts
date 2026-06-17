@@ -61,6 +61,10 @@ const PERSON_COLUMNS: readonly DataTableColumn<DashboardPerson>[] = [
     filter: { kind: 'text', placeholder: 'Filter Company Name' }
   },
   {
+    key: 'legalForm',
+    label: 'Legal Form'
+  },
+  {
     key: 'egn',
     label: 'EGN',
     sortable: true,

@@ -14,8 +14,24 @@ export const CONTACT_TYPES = {
   other: 3
 } as const;
 
+export const LEGAL_FORM_OPTIONS = [
+  { value: 'ООД', label: 'ООД' },
+  { value: 'ЕООД', label: 'ЕООД' },
+  { value: 'АД', label: 'АД' },
+  { value: 'ЕАД', label: 'ЕАД' },
+  { value: 'ЕТ', label: 'ЕТ' },
+  { value: 'СД', label: 'СД' },
+  { value: 'КД', label: 'КД' },
+  { value: 'КДА', label: 'КДА' },
+  { value: 'ДЗЗД', label: 'ДЗЗД' }
+] as const satisfies readonly {
+  value: string;
+  label: string;
+}[];
+
 export type AddPersonTypeOption = (typeof PERSON_TYPES)[keyof typeof PERSON_TYPES];
 export type AddPersonContactTypeOption = (typeof CONTACT_TYPES)[keyof typeof CONTACT_TYPES];
+export type AddPersonLegalFormOption = (typeof LEGAL_FORM_OPTIONS)[number]['value'];
 export type AddPersonVatCountryCodeOption = 'BG';
 export type AddPersonPhoneCountryCodeOption = '359' | '1' | '44' | '49';
 export type AddPersonWizardTabId = 'primary-info' | 'addresses' | 'contacts' | 'bank-accounts';
@@ -54,6 +70,7 @@ export interface AddPersonDialogFormControls {
   middleName: FormControl<string>;
   lastName: FormControl<string>;
   companyName: FormControl<string>;
+  legalForm: FormControl<AddPersonLegalFormOption | ''>;
   egn: FormControl<string>;
   eik: FormControl<string>;
   vatCountryCode: FormControl<AddPersonVatCountryCodeOption>;

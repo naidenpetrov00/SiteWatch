@@ -35,7 +35,12 @@ public sealed class PersonService(ApplicationDbContext dbContext) : IPersonServi
 
     private static Person CreatePerson(PersonUpsertDto request) => request.Type switch
     {
-        PersonType.Company => Person.CreateCompany(request.CompanyName!, request.Eik!, request.VatNumber!),
+        PersonType.Company => Person.CreateCompany(
+            request.CompanyName!,
+            ParseLegalForm(request.LegalForm),
+            request.Eik!,
+            request.VatNumber!
+        ),
         PersonType.Individual => Person.CreateIndividual(
             request.FirstName!,
             request.LastName!,
@@ -45,6 +50,18 @@ public sealed class PersonService(ApplicationDbContext dbContext) : IPersonServi
         ),
         _ => throw new InvalidOperationException("Person type is required.")
     };
+
+    private static CompanyLegalForm? ParseLegalForm(string? legalForm)
+    {
+        var value = Guard.Against.NullOrWhiteSpace(legalForm, nameof(legalForm)).Trim();
+
+        if (!Enum.TryParse<CompanyLegalForm>(value, true, out var parsed))
+        {
+            throw new ArgumentException($"Unsupported legal form '{value}'.", nameof(legalForm));
+        }
+
+        return parsed;
+    }
 
     private static void ApplyChildCollections(Person person, PersonUpsertDto request)
     {

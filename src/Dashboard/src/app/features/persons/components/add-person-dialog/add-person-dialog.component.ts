@@ -17,6 +17,7 @@ import {
   AddPersonContactFormGroup,
   AddPersonContactTypeOption,
   AddPersonDialogFormGroup,
+  AddPersonLegalFormOption,
   AddPersonTypeOption,
   PERSON_TYPES,
   AddPersonVatCountryCodeOption,
@@ -30,6 +31,7 @@ import {
   ADD_PERSON_VALIDATION_LIMITS,
   createRepeatableRowValidator,
   createAtMostOnePrimaryValidator,
+  companyNameValidator,
   digitsOnlyValidator,
   lettersOnlyValidator,
   websiteValidator
@@ -135,7 +137,16 @@ export class AddPersonDialogComponent implements OnInit {
   }
 
   private applyPrimaryInfoValidators(type: AddPersonTypeOption): void {
-    const { firstName, middleName, lastName, companyName, egn, eik, vatNumber } = this.personForm.controls;
+    const {
+      firstName,
+      middleName,
+      lastName,
+      companyName,
+      legalForm,
+      egn,
+      eik,
+      vatNumber
+    } = this.personForm.controls;
 
     if (type === this.personTypes.individual) {
       firstName.setValidators([
@@ -153,6 +164,7 @@ export class AddPersonDialogComponent implements OnInit {
         Validators.maxLength(this.validationLimits.lastName)
       ]);
       companyName.clearValidators();
+      legalForm.clearValidators();
       egn.setValidators([
         Validators.required,
         digitsOnlyValidator(),
@@ -167,9 +179,10 @@ export class AddPersonDialogComponent implements OnInit {
       lastName.clearValidators();
       companyName.setValidators([
         Validators.required,
-        lettersOnlyValidator(),
+        companyNameValidator(),
         Validators.maxLength(this.validationLimits.companyName)
       ]);
+      legalForm.setValidators([Validators.required]);
       egn.clearValidators();
       eik.setValidators([
         Validators.required,
@@ -180,7 +193,7 @@ export class AddPersonDialogComponent implements OnInit {
       vatNumber.setValidators([Validators.maxLength(this.validationLimits.vatNumberLength)]);
     }
 
-    for (const control of [firstName, middleName, lastName, companyName, egn, eik, vatNumber]) {
+    for (const control of [firstName, middleName, lastName, companyName, legalForm, egn, eik, vatNumber]) {
       control.updateValueAndValidity({ emitEvent: false });
     }
   }
@@ -202,6 +215,7 @@ export class AddPersonDialogComponent implements OnInit {
       middleName: this.formBuilder.nonNullable.control(''),
       lastName: this.formBuilder.nonNullable.control(''),
       companyName: this.formBuilder.nonNullable.control(''),
+      legalForm: this.formBuilder.nonNullable.control<AddPersonLegalFormOption | ''>(''),
       egn: this.formBuilder.nonNullable.control(''),
       eik: this.formBuilder.nonNullable.control(''),
       vatCountryCode: this.formBuilder.nonNullable.control<AddPersonVatCountryCodeOption>('BG'),

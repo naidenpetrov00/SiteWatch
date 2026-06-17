@@ -4,6 +4,10 @@ export function sanitizeLettersOnly(value: string): string {
   return value.normalize('NFC').replace(/[^\p{L}\p{M}]+/gu, '');
 }
 
+export function sanitizeCompanyName(value: string): string {
+  return value.normalize('NFC').replace(/[^\p{L}\p{M}\d ]+/gu, '');
+}
+
 export function sanitizeDigitsOnly(value: string): string {
   return value.replace(/\D+/g, '');
 }

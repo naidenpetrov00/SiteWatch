@@ -16,6 +16,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import {
   AddPersonDialogFormGroup,
+  LEGAL_FORM_OPTIONS,
   PERSON_TYPE_OPTIONS,
   PERSON_TYPES,
   VAT_COUNTRY_CODE_OPTIONS
@@ -43,6 +44,7 @@ export class AddPersonPrimaryInfoSectionComponent implements OnInit {
 
   readonly personForm = input.required<AddPersonDialogFormGroup>();
   readonly personTypeOptions = PERSON_TYPE_OPTIONS;
+  readonly legalFormOptions = LEGAL_FORM_OPTIONS;
   readonly vatCountryCodeOptions = VAT_COUNTRY_CODE_OPTIONS;
   readonly personTypes = PERSON_TYPES;
   readonly validationLimits = ADD_PERSON_VALIDATION_LIMITS;

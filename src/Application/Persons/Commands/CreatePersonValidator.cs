@@ -15,6 +15,7 @@ public abstract class PersonUpsertValidator<TRequest> : AbstractValidator<TReque
     where TRequest : PersonUpsertDto
 {
     private static readonly Regex LettersOnlyRegex = new(@"^[\p{L}\p{M}]+$", RegexOptions.CultureInvariant);
+    private static readonly Regex CompanyNameRegex = new(@"^[\p{L}\p{M}\d ]+$", RegexOptions.CultureInvariant);
     private static readonly Regex DigitsOnlyRegex = new(@"^\d+$", RegexOptions.CultureInvariant);
 
     protected PersonUpsertValidator()
@@ -59,16 +60,22 @@ public abstract class PersonUpsertValidator<TRequest> : AbstractValidator<TReque
                 .Matches(DigitsOnlyRegex)
                 .WithMessage("EGN must contain exactly 10 digits.");
             RuleFor(x => x.CompanyName).Must(string.IsNullOrWhiteSpace);
+            RuleFor(x => x.LegalForm).Must(string.IsNullOrWhiteSpace);
             RuleFor(x => x.Eik).Must(string.IsNullOrWhiteSpace);
         });
 
         When(x => x.Type == PersonType.Company, () =>
         {
             RuleFor(x => x.CompanyName)
-                .NotEmpty()
+                .Must(value => !string.IsNullOrWhiteSpace(value))
+                .WithMessage("Company name is required.")
                 .MaximumLength(250)
-                .Matches(LettersOnlyRegex)
-                .WithMessage("Company name must contain letters only.");
+                .Matches(CompanyNameRegex)
+                .WithMessage("Company name must contain letters, digits, and spaces only.");
+            RuleFor(x => x.LegalForm)
+                .NotEmpty()
+                .Must(value => Enum.TryParse<CompanyLegalForm>(value, true, out _))
+                .WithMessage("Legal form must be one of the supported Bulgarian legal forms.");
             RuleFor(x => x.Eik)
                 .NotEmpty()
                 .Length(9, 13)

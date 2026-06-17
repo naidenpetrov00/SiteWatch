@@ -6,6 +6,7 @@ export interface DashboardPerson {
   middleName: string | null;
   lastName: string | null;
   companyName: string | null;
+  legalForm: string | null;
   egn: string | null;
   eik: string | null;
   vatNumber: string;
