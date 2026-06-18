@@ -15,6 +15,11 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
             .HasConversion<int>()
             .IsRequired();
 
+        builder.Property(person => person.NumberId)
+            .ValueGeneratedOnAdd()
+            .HasDefaultValueSql("NEXT VALUE FOR [dbo].[PersonNumberIds]")
+            .IsRequired();
+
         builder.Property(person => person.FirstName)
             .HasMaxLength(100);
 
@@ -45,6 +50,8 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
             .HasMaxLength(20)
             .IsRequired();
 
+        builder.HasIndex(person => person.NumberId)
+            .IsUnique();
         builder.HasIndex(person => person.SearchName);
         builder.HasIndex(person => person.SearchTaxIdentifier);
         builder.HasIndex(person => person.Egn);

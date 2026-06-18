@@ -22,6 +22,10 @@ namespace Infrastructure.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.HasSequence<int>("ApplicationUserNumberIds", "dbo");
+
+            modelBuilder.HasSequence<int>("PersonNumberIds", "dbo");
+
             modelBuilder.Entity("ApplicationUserSite", b =>
                 {
                     b.Property<Guid>("SitesId")
@@ -73,6 +77,11 @@ namespace Infrastructure.Data.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<int>("NumberId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValueSql("NEXT VALUE FOR [dbo].[ApplicationUserNumberIds]");
+
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");
 
@@ -101,6 +110,9 @@ namespace Infrastructure.Data.Migrations
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
+
+                    b.HasIndex("NumberId")
+                        .IsUnique();
 
                     b.ToTable("AspNetUsers", (string)null);
                 });
@@ -197,6 +209,11 @@ namespace Infrastructure.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int>("NumberId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValueSql("NEXT VALUE FOR [dbo].[PersonNumberIds]");
+
                     b.Property<string>("SearchName")
                         .IsRequired()
                         .HasMaxLength(400)
@@ -220,6 +237,9 @@ namespace Infrastructure.Data.Migrations
                     b.HasIndex("Egn");
 
                     b.HasIndex("Eik");
+
+                    b.HasIndex("NumberId")
+                        .IsUnique();
 
                     b.HasIndex("SearchName");
 

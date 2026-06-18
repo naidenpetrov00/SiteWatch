@@ -29,7 +29,12 @@ public class PersonTests
     [Fact]
     public void CreateCompany_TrimsInputAndBuildsNormalizedDisplayName()
     {
-        var person = Person.CreateCompany("  Смарт Проджектс  ", CompanyLegalForm.ООД, "BG123456789", "BG123456789");
+        var person = Person.CreateCompany(
+            "  Смарт Проджектс  ",
+            CompanyLegalForm.ООД,
+            "BG123456789",
+            "BG123456789"
+        );
 
         Assert.Equal("Смарт Проджектс", person.CompanyName);
         Assert.Equal(CompanyLegalForm.ООД, person.LegalForm);
@@ -81,7 +86,12 @@ public class PersonTests
     [Fact]
     public void UpdateCompany_InvalidEik_DoesNotMutateExistingState()
     {
-        var person = Person.CreateCompany("Acme Ltd", CompanyLegalForm.ООД, "BG123456789", "BG123456789");
+        var person = Person.CreateCompany(
+            "Acme Ltd",
+            CompanyLegalForm.ООД,
+            "BG123456789",
+            "BG123456789"
+        );
 
         var originalType = person.Type;
         var originalFirstName = person.FirstName;

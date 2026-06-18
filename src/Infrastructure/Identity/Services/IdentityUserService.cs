@@ -64,7 +64,11 @@ public class IdentityUserService(
         string password
     )
     {
-        var user = new ApplicationUser { UserName = userName, Email = email };
+        var user = new ApplicationUser
+        {
+            UserName = userName,
+            Email = email
+        };
 
         var result = await userManager.CreateAsync(user, password);
 

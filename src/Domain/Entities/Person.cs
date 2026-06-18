@@ -5,7 +5,7 @@ using Domain.SeedWork.Enums;
 
 namespace Domain.Entities;
 
-public sealed class Person : BaseAuditableEntity
+public sealed class Person : BaseAuditableEntity, IHasNumberId
 {
     private readonly HashSet<PersonAddress> _addresses = [];
     private readonly HashSet<PersonContact> _contacts = [];
@@ -16,6 +16,7 @@ public sealed class Person : BaseAuditableEntity
     }
 
     public PersonType Type { get; private set; }
+    public int NumberId { get; private set; }
     public string? FirstName { get; private set; }
     public string? MiddleName { get; private set; }
     public string? LastName { get; private set; }
@@ -47,7 +48,12 @@ public sealed class Person : BaseAuditableEntity
         return person;
     }
 
-    public static Person CreateCompany(string companyName, CompanyLegalForm? legalForm, string eik, string vatNumber)
+    public static Person CreateCompany(
+        string companyName,
+        CompanyLegalForm? legalForm,
+        string eik,
+        string vatNumber
+    )
     {
         var person = new Person { Id = Guid.NewGuid() };
         person.UpdateCompany(companyName, legalForm, eik, vatNumber);

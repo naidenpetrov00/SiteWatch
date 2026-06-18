@@ -5,6 +5,7 @@ namespace Application.Persons.Queries;
 public sealed record PersonTableDto
 {
     public Guid Id { get; init; }
+    public int NumberId { get; init; }
     public string Type { get; init; } = string.Empty;
     public string DisplayName { get; init; } = string.Empty;
     public string? FirstName { get; init; }
@@ -20,6 +21,7 @@ public sealed record PersonTableDto
         new()
         {
             Id = person.Id,
+            NumberId = person.NumberId,
             Type = person.Type.ToString(),
             DisplayName = person.DisplayName,
             FirstName = person.FirstName,
