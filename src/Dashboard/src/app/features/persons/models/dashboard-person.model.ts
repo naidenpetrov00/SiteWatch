@@ -1,5 +1,6 @@
 export interface DashboardPerson {
   id: string;
+  numberId: number;
   type: string;
   displayName: string;
   firstName: string | null;

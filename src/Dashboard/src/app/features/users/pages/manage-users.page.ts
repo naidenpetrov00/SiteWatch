@@ -19,6 +19,12 @@ import { DialogShellComponent } from '../../../shared/ui/dialog-shell/dialog-she
 
 const USER_COLUMNS: readonly DataTableColumn<DashboardUser>[] = [
   {
+    key: 'numberId',
+    label: 'Number Id',
+    sortable: true,
+    cellType: 'button'
+  },
+  {
     key: 'id',
     label: 'Id',
     sortable: true,
@@ -129,5 +135,9 @@ export class ManageUsersPage {
         subtitle: 'Reusable dialog shell placeholder.'
       }
     });
+  }
+
+  onNumberIdClick(user: DashboardUser): void {
+    console.log(`Redirect to the user id: ${user.numberId}`);
   }
 }

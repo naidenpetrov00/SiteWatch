@@ -62,6 +62,7 @@ export class DataTableComponent<T extends object> {
   readonly tableStateChange = output<DataTableState<T>>();
   readonly searchRequested = output<DataTableState<T>>();
   readonly exportRequested = output<DataTableExportRequest<T>>();
+  readonly cellButtonClicked = output<{ row: T; column: DataTableColumn<T> }>();
 
   readonly draftFilterState = signal<Record<string, string>>({});
   readonly appliedFilterState = signal<Record<string, string>>({});
@@ -208,6 +209,13 @@ export class DataTableComponent<T extends object> {
       columns: this.tableState().exportableColumns,
       rows: this.rows(),
       state: this.tableState()
+    });
+  }
+
+  onCellButtonClick(row: T, column: DataTableColumn<T>): void {
+    this.cellButtonClicked.emit({
+      row,
+      column
     });
   }
 

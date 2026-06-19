@@ -105,7 +105,18 @@
             *matCellDef="let row"
             [style.text-align]="column.align ?? 'start'"
           >
-            {{ renderCell(row, column) }}
+            @if (column.cellType === 'button') {
+              <button
+                mat-stroked-button
+                type="button"
+                class="data-table__cell-button"
+                (click)="onCellButtonClick(row, column)"
+              >
+                {{ renderCell(row, column) }}
+              </button>
+            } @else {
+              {{ renderCell(row, column) }}
+            }
           </td>
         </ng-container>
       }

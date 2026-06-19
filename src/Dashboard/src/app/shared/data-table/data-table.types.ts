@@ -20,6 +20,7 @@ export interface DataTableColumn<T extends object> {
   key: keyof T & string;
   label: string;
   sortable?: boolean;
+  cellType?: 'text' | 'button';
   filter?: DataTableFilterConfig<T>;
   valueAccessor?: (row: T) => unknown;
   displayFormatter?: (value: unknown, row: T) => string;

@@ -19,6 +19,12 @@ import { DashboardPersonsService } from '../services/dashboard-persons.service';
 
 const PERSON_COLUMNS: readonly DataTableColumn<DashboardPerson>[] = [
   {
+    key: 'numberId',
+    label: 'Number Id',
+    sortable: true,
+    cellType: 'button'
+  },
+  {
     key: 'id',
     label: 'Id',
     sortable: true,
@@ -141,5 +147,9 @@ export class ManagePersonsPage {
       width: '72rem',
       maxWidth: 'calc(100vw - 2rem)'
     });
+  }
+
+  onNumberIdClick(person: DashboardPerson): void {
+    console.log(`Redirect to the user id: ${person.numberId}`);
   }
 }
