@@ -13,6 +13,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { startWith, switchMap } from 'rxjs';
 
 import {
   AddPersonDialogFormGroup,
@@ -51,19 +52,27 @@ export class AddPersonPrimaryInfoSectionComponent implements OnInit {
 
   ngOnInit(): void {
     const personForm = this.personForm();
+    const typeControl = personForm.controls.type;
     const eikControl = personForm.controls.eik;
+    const egnControl = personForm.controls.egn;
     const vatNumberControl = personForm.controls.vatNumber;
 
-    vatNumberControl.setValue(eikControl.value, { emitEvent: false });
+    typeControl.valueChanges
+      .pipe(
+        startWith(typeControl.value),
+        switchMap((type) => {
+          const sourceControl = type === PERSON_TYPES.company ? eikControl : egnControl;
 
-    eikControl.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((eikValue) => {
-        if (vatNumberControl.value === eikValue) {
+          return sourceControl.valueChanges.pipe(startWith(sourceControl.value));
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((sourceValue) => {
+        if (vatNumberControl.value === sourceValue) {
           return;
         }
 
-        vatNumberControl.setValue(eikValue, { emitEvent: false });
+        vatNumberControl.setValue(sourceValue, { emitEvent: false });
       });
   }
 }

@@ -150,6 +150,11 @@ export class ManagePersonsPage {
   }
 
   onNumberIdClick(person: DashboardPerson): void {
-    console.log(`Redirect to the user id: ${person.numberId}`);
+    this.dialog.open(AddPersonDialogComponent, {
+      autoFocus: false,
+      width: '72rem',
+      maxWidth: 'calc(100vw - 2rem)',
+      data: person
+    });
   }
 }

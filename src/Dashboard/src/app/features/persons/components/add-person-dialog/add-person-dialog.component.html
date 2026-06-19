@@ -47,13 +47,18 @@
     </div>
   </form>
 
-    <app-dialog-action-bar
+  <app-dialog-action-bar
     dialog-shell-actions
     [cancelLabel]="'Cancel'"
-    [submitLabel]="'Submit'"
+    [submitLabel]="submitLabel"
+    [secondaryLabel]="secondarySubmitLabel"
+    [showSecondary]="showSecondarySubmit"
     [submitFormId]="'add-person-dialog-form'"
     [submitButtonType]="'submit'"
+    [secondaryButtonType]="'button'"
     [submitDisabled]="!personForm.valid || isCreatingPerson()"
+    [secondaryDisabled]="!personForm.valid || isCreatingPerson()"
     (cancel)="closeDialog()"
+    (secondarySubmit)="savePerson()"
   />
 </app-dialog-shell>

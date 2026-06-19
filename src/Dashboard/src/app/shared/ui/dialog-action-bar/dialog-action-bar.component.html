@@ -10,6 +10,18 @@
       </button>
     }
 
+    @if (showSecondary() && secondaryLabel()) {
+      <button
+        mat-stroked-button
+        color="primary"
+        [type]="secondaryButtonType()"
+        [disabled]="secondaryDisabled()"
+        (click)="handleSecondarySubmit()"
+      >
+        {{ secondaryLabel() }}
+      </button>
+    }
+
     @if (showSubmit()) {
       <button
         mat-flat-button

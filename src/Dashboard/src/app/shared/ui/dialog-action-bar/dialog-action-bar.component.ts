@@ -11,14 +11,19 @@ import { MatButtonModule } from '@angular/material/button';
 export class DialogActionBarComponent {
   readonly cancelLabel = input('Cancel');
   readonly submitLabel = input('Submit');
+  readonly secondaryLabel = input<string | null>(null);
   readonly submitDisabled = input(false);
+  readonly secondaryDisabled = input(false);
   readonly showCancel = input(true);
   readonly showSubmit = input(true);
+  readonly showSecondary = input(false);
   readonly submitFormId = input<string | null>(null);
   readonly submitButtonType = input<'button' | 'submit'>('button');
+  readonly secondaryButtonType = input<'button' | 'submit'>('button');
 
   readonly cancel = output<void>();
   readonly submit = output<void>();
+  readonly secondarySubmit = output<void>();
 
   handleCancel(): void {
     this.cancel.emit();
@@ -26,5 +31,9 @@ export class DialogActionBarComponent {
 
   handleSubmit(): void {
     this.submit.emit();
+  }
+
+  handleSecondarySubmit(): void {
+    this.secondarySubmit.emit();
   }
 }
