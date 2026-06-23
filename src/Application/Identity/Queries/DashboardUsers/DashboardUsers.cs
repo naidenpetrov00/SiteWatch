@@ -62,6 +62,11 @@ public class DashboardUsersQuery : TableQueryRequest, IRequest<PagedResult<Dashb
                 StringComparer.OrdinalIgnoreCase
             )
             {
+                ["numberId"] = TableSortDescriptor<ApplicationUser, DashboardUsersQuery>.Create(
+                    "numberId",
+                    user => user.NumberId,
+                    user => user.Id
+                ),
                 ["id"] = TableSortDescriptor<ApplicationUser, DashboardUsersQuery>.Create(
                     "id",
                     user => user.Id,

@@ -14,6 +14,7 @@ import {
   DataTableState
 } from '../../../shared/data-table/data-table.types';
 import { AddPersonDialogComponent } from '../components/add-person-dialog/add-person-dialog.component';
+import { EditPersonDialogComponent } from '../components/edit-person-dialog/edit-person-dialog.component';
 import { DashboardPerson } from '../models/dashboard-person.model';
 import { DashboardPersonsService } from '../services/dashboard-persons.service';
 
@@ -150,7 +151,7 @@ export class ManagePersonsPage {
   }
 
   onNumberIdClick(person: DashboardPerson): void {
-    this.dialog.open(AddPersonDialogComponent, {
+    this.dialog.open(EditPersonDialogComponent, {
       autoFocus: false,
       width: '72rem',
       maxWidth: 'calc(100vw - 2rem)',

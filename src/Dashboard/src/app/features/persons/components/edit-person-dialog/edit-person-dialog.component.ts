@@ -7,10 +7,9 @@ import {
   signal
 } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { DashboardPersonsService } from '../../services/dashboard-persons.service';
 import { DialogActionBarComponent } from '../../../../shared/ui/dialog-action-bar/dialog-action-bar.component';
 import { DialogShellComponent } from '../../../../shared/ui/dialog-shell/dialog-shell.component';
 import {
@@ -29,11 +28,11 @@ import {
   PERSON_TYPES,
   AddPersonVatCountryCodeOption,
   AddPersonWizardTabId
-} from './add-person-dialog.types';
-import { AddPersonAddressesSectionComponent } from './sections/add-person-addresses-section.component';
-import { AddPersonBankAccountsSectionComponent } from './sections/add-person-bank-accounts-section.component';
-import { AddPersonContactsSectionComponent } from './sections/add-person-contacts-section.component';
-import { AddPersonPrimaryInfoSectionComponent } from './sections/add-person-primary-info-section.component';
+} from '../add-person-dialog/add-person-dialog.types';
+import { AddPersonAddressesSectionComponent } from '../add-person-dialog/sections/add-person-addresses-section.component';
+import { AddPersonBankAccountsSectionComponent } from '../add-person-dialog/sections/add-person-bank-accounts-section.component';
+import { AddPersonContactsSectionComponent } from '../add-person-dialog/sections/add-person-contacts-section.component';
+import { AddPersonPrimaryInfoSectionComponent } from '../add-person-dialog/sections/add-person-primary-info-section.component';
 import {
   ADD_PERSON_VALIDATION_LIMITS,
   createRepeatableRowValidator,
@@ -42,11 +41,11 @@ import {
   digitsOnlyValidator,
   lettersOnlyValidator,
   websiteValidator
-} from './add-person-dialog.validators';
-import { toCreateDashboardPersonRequest } from '../../utils/dashboard-person-request.mapper';
+} from '../add-person-dialog/add-person-dialog.validators';
+import { DashboardPerson } from '../../models/dashboard-person.model';
 
 @Component({
-  selector: 'app-add-person-dialog',
+  selector: 'app-edit-person-dialog',
   imports: [
     ReactiveFormsModule,
     DialogActionBarComponent,
@@ -57,27 +56,29 @@ import { toCreateDashboardPersonRequest } from '../../utils/dashboard-person-req
     AddPersonContactsSectionComponent,
     AddPersonBankAccountsSectionComponent
   ],
-  templateUrl: './add-person-dialog.component.html',
-  styleUrl: './add-person-dialog.component.css',
+  templateUrl: './edit-person-dialog.component.html',
+  styleUrl: './edit-person-dialog.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AddPersonDialogComponent implements OnInit {
+export class EditPersonDialogComponent implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly dialogRef = inject(MatDialogRef<AddPersonDialogComponent>);
-  private readonly dashboardPersonsService = inject(DashboardPersonsService);
+  private readonly dialogRef = inject(MatDialogRef<EditPersonDialogComponent>);
+  private readonly dialogData = inject(MAT_DIALOG_DATA, { optional: true }) as DashboardPerson | null;
 
   readonly wizardTabs = ADD_PERSON_WIZARD_TABS;
   readonly dialogEyebrow = 'Administration';
-  readonly dialogTitle = 'Add Person';
+  readonly dialogTitle = this.dialogData ? `Edit Person #${this.dialogData.numberId}` : 'Edit Person';
   readonly dialogSubtitle =
-    'Capture the primary identity first, then move through addresses, contacts, and bank accounts.';
+    'Review the current details, update the fields you need, and save the record.';
   readonly selectedTabId = signal<AddPersonWizardTabId>(this.wizardTabs[0].id);
-  readonly isCreatingPerson = () => this.dashboardPersonsService.createPersonMutation.isPending();
   readonly personTypes = PERSON_TYPES;
   readonly validationLimits = ADD_PERSON_VALIDATION_LIMITS;
+  readonly submitLabel = 'Save and close';
+  readonly secondarySubmitLabel = 'Save';
+  readonly showSecondarySubmit = true;
 
-  readonly personForm = this.createPersonForm();
+  readonly personForm = this.createPersonForm(this.dialogData);
 
   ngOnInit(): void {
     this.configurePrimaryInfoValidators();
@@ -87,19 +88,23 @@ export class AddPersonDialogComponent implements OnInit {
     this.dialogRef.close();
   }
 
-  async submitPerson(): Promise<void> {
+  savePerson(): void {
     if (this.personForm.invalid) {
       this.personForm.markAllAsTouched();
       return;
     }
 
-    try {
-      const request = toCreateDashboardPersonRequest(this.personForm);
-      await this.dashboardPersonsService.createPerson(request);
-      this.dialogRef.close(true);
-    } catch {
-      // Keep the dialog open and let the form state remain intact.
+    console.log('Person edit payload', this.buildPersonEditPayload());
+  }
+
+  savePersonAndClose(): void {
+    if (this.personForm.invalid) {
+      this.personForm.markAllAsTouched();
+      return;
     }
+
+    console.log('Person edit payload', this.buildPersonEditPayload());
+    this.dialogRef.close(true);
   }
 
   setSelectedTab(tabId: string): void {
@@ -205,7 +210,8 @@ export class AddPersonDialogComponent implements OnInit {
     }
   }
 
-  private createPersonForm(): AddPersonDialogFormGroup {
+  private createPersonForm(initialPerson: DashboardPerson | null): AddPersonDialogFormGroup {
+    const isCompany = this.isCompanyPerson(initialPerson);
     const addresses = this.formBuilder.array([this.createAddressGroup()], {
       validators: [createAtMostOnePrimaryValidator('addressMultiplePrimary')]
     });
@@ -217,21 +223,62 @@ export class AddPersonDialogComponent implements OnInit {
     });
 
     return this.formBuilder.nonNullable.group({
-      type: this.formBuilder.nonNullable.control<AddPersonTypeOption>(this.personTypes.individual),
-      firstName: this.formBuilder.nonNullable.control(''),
-      middleName: this.formBuilder.nonNullable.control(''),
-      lastName: this.formBuilder.nonNullable.control(''),
-      companyName: this.formBuilder.nonNullable.control(''),
-      legalForm: this.formBuilder.nonNullable.control<AddPersonLegalFormOption | ''>(''),
-      egn: this.formBuilder.nonNullable.control(''),
-      eik: this.formBuilder.nonNullable.control(''),
-      vatCountryCode: this.formBuilder.nonNullable.control<AddPersonVatCountryCodeOption>('BG'),
-      vatNumber: this.formBuilder.nonNullable.control(''),
+      type: this.formBuilder.nonNullable.control<AddPersonTypeOption>({
+        value: isCompany ? this.personTypes.company : this.personTypes.individual,
+        disabled: true
+      }),
+      firstName: this.formBuilder.nonNullable.control(initialPerson?.firstName ?? ''),
+      middleName: this.formBuilder.nonNullable.control(initialPerson?.middleName ?? ''),
+      lastName: this.formBuilder.nonNullable.control(initialPerson?.lastName ?? ''),
+      companyName: this.formBuilder.nonNullable.control(initialPerson?.companyName ?? ''),
+      legalForm: this.formBuilder.nonNullable.control<AddPersonLegalFormOption | ''>({
+        value: (initialPerson?.legalForm as AddPersonLegalFormOption | null | undefined) ?? '',
+        disabled: true
+      }),
+      egn: this.formBuilder.nonNullable.control({
+        value: initialPerson?.egn ?? '',
+        disabled: true
+      }),
+      eik: this.formBuilder.nonNullable.control({
+        value: initialPerson?.eik ?? '',
+        disabled: true
+      }),
+      vatCountryCode: this.formBuilder.nonNullable.control<AddPersonVatCountryCodeOption>({
+        value: 'BG',
+        disabled: true
+      }),
+      vatNumber: this.formBuilder.nonNullable.control({
+        value: initialPerson?.vatNumber ?? '',
+        disabled: true
+      }),
       addresses,
       contacts,
       bankAccounts
     }) as AddPersonDialogFormGroup;
-   }
+  }
+
+  private isCompanyPerson(person: DashboardPerson | null): boolean {
+    return (person?.type ?? '').toLowerCase() === 'company';
+  }
+
+  private buildPersonEditPayload(): Readonly<Record<string, unknown>> {
+    const {
+      type,
+      egn,
+      legalForm,
+      eik,
+      vatCountryCode,
+      vatNumber,
+      ...editablePerson
+    } = this.personForm.getRawValue();
+    void type;
+
+    return {
+      id: this.dialogData?.id ?? null,
+      numberId: this.dialogData?.numberId ?? null,
+      ...editablePerson
+    };
+  }
 
   private createAddressGroup(): AddPersonAddressFormGroup {
     return this.formBuilder.nonNullable.group(
@@ -240,9 +287,7 @@ export class AddPersonDialogComponent implements OnInit {
           validators: [Validators.maxLength(this.validationLimits.addressLine)]
         }),
         additionalLine: this.formBuilder.nonNullable.control('', {
-          validators: [
-            Validators.maxLength(this.validationLimits.additionalLine)
-          ]
+          validators: [Validators.maxLength(this.validationLimits.additionalLine)]
         }),
         city: this.formBuilder.nonNullable.control('', {
           validators: [Validators.maxLength(this.validationLimits.city)]

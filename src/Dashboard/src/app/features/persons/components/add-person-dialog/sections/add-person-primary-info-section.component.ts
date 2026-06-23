@@ -44,6 +44,7 @@ export class AddPersonPrimaryInfoSectionComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly personForm = input.required<AddPersonDialogFormGroup>();
+  readonly syncVatNumber = input(true);
   readonly personTypeOptions = PERSON_TYPE_OPTIONS;
   readonly legalFormOptions = LEGAL_FORM_OPTIONS;
   readonly vatCountryCodeOptions = VAT_COUNTRY_CODE_OPTIONS;
@@ -51,6 +52,10 @@ export class AddPersonPrimaryInfoSectionComponent implements OnInit {
   readonly validationLimits = ADD_PERSON_VALIDATION_LIMITS;
 
   ngOnInit(): void {
+    if (!this.syncVatNumber()) {
+      return;
+    }
+
     const personForm = this.personForm();
     const typeControl = personForm.controls.type;
     const eikControl = personForm.controls.eik;

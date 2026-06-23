@@ -89,6 +89,11 @@ public sealed class DashboardPersonsQuery : TableQueryRequest, IRequest<PagedRes
                 StringComparer.OrdinalIgnoreCase
             )
             {
+                ["numberId"] = TableSortDescriptor<Person, DashboardPersonsQuery>.Create(
+                    "numberId",
+                    person => person.NumberId,
+                    person => person.Id
+                ),
                 ["id"] = TableSortDescriptor<Person, DashboardPersonsQuery>.Create(
                     "id",
                     person => person.Id,
