@@ -14,6 +14,8 @@ import { DashboardPersonsResponse } from '../models/dashboard-persons-response.m
 import {
   CreateDashboardPersonRequest
 } from '../models/create-dashboard-person-request.model';
+import { DashboardPersonDetails } from '../models/dashboard-person-details.model';
+import { UpdateDashboardPersonRequest } from '../models/update-dashboard-person-request.model';
 
 interface CreateDashboardPersonResponse {
   id: string;
@@ -72,6 +74,17 @@ export class DashboardPersonsService {
     }
   }));
 
+  readonly updatePersonMutation = injectMutation<void, Error, UpdateDashboardPersonRequest>(() => ({
+    mutationKey: ['persons', 'update'],
+    mutationFn: async (request: UpdateDashboardPersonRequest) =>
+      firstValueFrom(this.http.put<void>(buildApiUrl(`/persons/${request.id}`), request)),
+    onSuccess: async () => {
+      await this.queryClient.invalidateQueries({
+        queryKey: ['persons', 'dashboard']
+      });
+    }
+  }));
+
   setTableState(state: DataTableState<DashboardPerson>): void {
     const nextState = this.toQueryState(state);
 
@@ -84,6 +97,14 @@ export class DashboardPersonsService {
 
   createPerson(request: CreateDashboardPersonRequest): Promise<CreateDashboardPersonResponse> {
     return this.createPersonMutation.mutateAsync(request);
+  }
+
+  getPersonById(personId: string): Promise<DashboardPersonDetails> {
+    return firstValueFrom(this.http.get<DashboardPersonDetails>(buildApiUrl(`/persons/${personId}`)));
+  }
+
+  updatePerson(request: UpdateDashboardPersonRequest): Promise<void> {
+    return this.updatePersonMutation.mutateAsync(request);
   }
 
   private toQueryState(state: DataTableState<DashboardPerson>): DashboardPersonsQueryState {

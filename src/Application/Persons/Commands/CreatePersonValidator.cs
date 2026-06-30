@@ -23,15 +23,15 @@ public abstract class PersonUpsertValidator<TRequest> : AbstractValidator<TReque
         RuleFor(x => x.Type).NotNull().IsInEnum();
         RuleFor(x => x.VatNumber).NotEmpty().MaximumLength(20);
         RuleFor(x => x.Addresses)
-            .Must(HaveAtMostOnePrimary)
+            .Must(PersonValidationRules.HaveAtMostOnePrimary)
             .When(x => x.Addresses is not null)
             .WithMessage("Only one primary address is allowed.");
         RuleFor(x => x.Contacts)
-            .Must(HaveAtMostOnePrimary)
+            .Must(PersonValidationRules.HaveAtMostOnePrimary)
             .When(x => x.Contacts is not null)
             .WithMessage("Only one primary contact is allowed.");
         RuleFor(x => x.BankAccounts)
-            .Must(HaveAtMostOnePrimary)
+            .Must(PersonValidationRules.HaveAtMostOnePrimary)
             .When(x => x.BankAccounts is not null)
             .WithMessage("Only one primary bank account is allowed.");
 
@@ -102,100 +102,4 @@ public abstract class PersonUpsertValidator<TRequest> : AbstractValidator<TReque
             RuleForEach(x => x.BankAccounts!).SetValidator(new PersonBankAccountDtoValidator());
         });
     }
-
-    private static bool HaveAtMostOnePrimary<T>(IEnumerable<T>? items)
-        where T : class
-    {
-        if (items is null)
-        {
-            return true;
-        }
-
-        var primaryCount = items.Count(item => item is IPrimaryState state && state.IsPrimary);
-        return primaryCount <= 1;
-    }
-}
-
-internal sealed class PersonAddressDtoValidator : AbstractValidator<PersonAddressDto>
-{
-    private static readonly Regex DigitsOnlyRegex = new(@"^\d+$", RegexOptions.CultureInvariant);
-
-    public PersonAddressDtoValidator()
-    {
-        RuleFor(x => x.AddressLine).MaximumLength(200);
-        RuleFor(x => x.AdditionalLine).MaximumLength(200);
-        RuleFor(x => x.City).MaximumLength(100);
-        RuleFor(x => x.PostalCode)
-            .MaximumLength(20)
-            .Matches(DigitsOnlyRegex)
-            .When(x => !string.IsNullOrWhiteSpace(x.PostalCode))
-            .WithMessage("Postal code must contain only digits.");
-        RuleFor(x => x.Country).MaximumLength(100);
-        RuleFor(x => x.Details).MaximumLength(500);
-    }
-}
-
-internal sealed class PersonContactDtoValidator : AbstractValidator<PersonContactDto>
-{
-    private static readonly Regex DigitsOnlyRegex = new(@"^\d+$", RegexOptions.CultureInvariant);
-
-    public PersonContactDtoValidator()
-    {
-        RuleFor(x => x.ContactType).IsInEnum();
-        RuleFor(x => x.Value).NotEmpty().MaximumLength(256);
-        When(x => x.ContactType == Domain.SeedWork.Enums.ContactType.Phone, () =>
-        {
-            RuleFor(x => x.Value)
-                .Length(8, 15)
-                .Matches(DigitsOnlyRegex)
-                .WithMessage("Phone number must contain between 8 and 15 digits.");
-        });
-        When(x => x.ContactType == Domain.SeedWork.Enums.ContactType.Email, () =>
-        {
-            RuleFor(x => x.Value)
-                .EmailAddress()
-                .WithMessage("Email must be a valid email address.");
-        });
-        When(x => x.ContactType == Domain.SeedWork.Enums.ContactType.Website, () =>
-        {
-            RuleFor(x => x.Value)
-                .Must(HaveValidWebsite)
-                .WithMessage("Website must be a valid website address.");
-        });
-        RuleFor(x => x.Details).MaximumLength(500);
-    }
-
-    private static bool HaveValidWebsite(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return true;
-        }
-
-        var trimmedValue = value.Trim();
-        var candidate = trimmedValue.Contains("://", StringComparison.Ordinal) ? trimmedValue : $"https://{trimmedValue}";
-
-        if (!Uri.TryCreate(candidate, UriKind.Absolute, out var uri))
-        {
-            return false;
-        }
-
-        return uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) || uri.Host.Contains('.');
-    }
-}
-
-internal sealed class PersonBankAccountDtoValidator : AbstractValidator<PersonBankAccountDto>
-{
-    public PersonBankAccountDtoValidator()
-    {
-        RuleFor(x => x.IBAN).NotEmpty().MaximumLength(34);
-        RuleFor(x => x.BIC).MaximumLength(11);
-        RuleFor(x => x.BankName).MaximumLength(200);
-        RuleFor(x => x.Details).MaximumLength(500);
-    }
-}
-
-internal interface IPrimaryState
-{
-    bool IsPrimary { get; }
 }

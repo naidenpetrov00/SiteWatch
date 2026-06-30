@@ -17,6 +17,8 @@ public class Persons : EndpointGroupBase
         var dashboardGroup = app.MapGroupCustom(customGroupName: "dashboard").RequireAuthorization();
 
         group.MapPost(string.Empty, CreatePerson);
+        group.MapGet("/{personId:guid}", GetPerson);
+        group.MapPut("/{personId:guid}", UpdatePerson);
         group.MapDelete("/{personId:guid}", DeletePerson);
         dashboardGroup.MapGet("/persons", GetDashboardPersons);
     }
@@ -25,6 +27,19 @@ public class Persons : EndpointGroupBase
     {
         var personId = await mediator.Send(command);
         return TypedResults.Created($"/persons/{personId}", new { id = personId });
+    }
+
+    private static async Task<Ok<PersonDetailsDto>> GetPerson(IMediator mediator, Guid personId)
+    {
+        var person = await mediator.Send(new PersonByIdQuery { PersonId = personId });
+        return TypedResults.Ok(person);
+    }
+
+    private static async Task<NoContent> UpdatePerson(IMediator mediator, Guid personId, UpdatePersonCommand command)
+    {
+        command.Id = personId;
+        await mediator.Send(command);
+        return TypedResults.NoContent();
     }
 
     private static async Task<NoContent> DeletePerson(IMediator mediator, Guid personId)

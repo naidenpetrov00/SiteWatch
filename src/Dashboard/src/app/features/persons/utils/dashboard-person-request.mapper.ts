@@ -12,6 +12,8 @@ import {
   CreateDashboardPersonContactRequest,
   CreateDashboardPersonRequest
 } from '../models/create-dashboard-person-request.model';
+import { DashboardPersonDetails } from '../models/dashboard-person-details.model';
+import { UpdateDashboardPersonRequest } from '../models/update-dashboard-person-request.model';
 
 const ADDRESS_ROW_DEFAULTS = {
   addressLine: '',
@@ -76,6 +78,36 @@ export function toCreateDashboardPersonRequest(
     ...(addresses.length > 0 ? { addresses } : {}),
     ...(contacts.length > 0 ? { contacts } : {}),
     ...(bankAccounts.length > 0 ? { bankAccounts } : {})
+  };
+}
+
+export function toUpdateDashboardPersonRequest(
+  person: DashboardPersonDetails,
+  personForm: AddPersonDialogFormGroup
+): UpdateDashboardPersonRequest {
+  const formValue = personForm.getRawValue();
+  const addresses = buildAddressRequests(formValue.addresses);
+  const contacts = buildContactRequests(formValue.contacts);
+  const bankAccounts = buildBankAccountRequests(formValue.bankAccounts);
+
+  const request: UpdateDashboardPersonRequest = {
+    id: person.id,
+    ...(person.type.toLowerCase() === 'individual'
+      ? {
+          firstName: formValue.firstName,
+          middleName: formValue.middleName,
+          lastName: formValue.lastName
+        }
+      : {
+          companyName: formValue.companyName
+        })
+  };
+
+  return {
+    ...request,
+    addresses,
+    contacts,
+    bankAccounts
   };
 }
 

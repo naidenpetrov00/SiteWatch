@@ -91,6 +91,24 @@ public sealed class Person : BaseAuditableEntity, IHasNumberId
         RefreshDerivedValues(vatNumber);
     }
 
+    public void UpdateFirstName(string firstName)
+    {
+        FirstName = NormalizeRequiredName(firstName, nameof(firstName));
+        RefreshDerivedValues(VatNumber);
+    }
+
+    public void UpdateMiddleName(string? middleName)
+    {
+        MiddleName = string.IsNullOrWhiteSpace(middleName) ? null : middleName.Trim();
+        RefreshDerivedValues(VatNumber);
+    }
+
+    public void UpdateLastName(string lastName)
+    {
+        LastName = NormalizeRequiredName(lastName, nameof(lastName));
+        RefreshDerivedValues(VatNumber);
+    }
+
     public void UpdateCompany(string companyName, CompanyLegalForm? legalForm, string eik, string vatNumber)
     {
         var normalizedCompanyName = NormalizeRequiredName(companyName, nameof(companyName));
@@ -113,6 +131,12 @@ public sealed class Person : BaseAuditableEntity, IHasNumberId
         Eik = normalizedEik;
 
         RefreshDerivedValues(vatNumber);
+    }
+
+    public void UpdateCompanyName(string companyName)
+    {
+        CompanyName = NormalizeRequiredName(companyName, nameof(companyName));
+        RefreshDerivedValues(VatNumber);
     }
 
     public void AddAddress(PersonAddress address) => _addresses.Add(Guard.Against.Null(address));

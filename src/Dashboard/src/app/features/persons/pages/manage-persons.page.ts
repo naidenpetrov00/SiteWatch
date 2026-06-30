@@ -150,12 +150,18 @@ export class ManagePersonsPage {
     });
   }
 
-  onNumberIdClick(person: DashboardPerson): void {
-    this.dialog.open(EditPersonDialogComponent, {
-      autoFocus: false,
-      width: '72rem',
-      maxWidth: 'calc(100vw - 2rem)',
-      data: person
-    });
+  async onNumberIdClick(person: DashboardPerson): Promise<void> {
+    try {
+      const details = await this.dashboardPersonsService.getPersonById(person.id);
+
+      this.dialog.open(EditPersonDialogComponent, {
+        autoFocus: false,
+        width: '72rem',
+        maxWidth: 'calc(100vw - 2rem)',
+        data: details
+      });
+    } catch {
+      // Keep the table usable if the detail fetch fails.
+    }
   }
 }
