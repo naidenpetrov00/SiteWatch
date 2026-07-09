@@ -1,0 +1,30 @@
+<app-dialog-shell
+  [eyebrow]="dialogEyebrow"
+  [title]="dialogTitle"
+  [subtitle]="dialogSubtitle"
+>
+  <div class="invoice-dialog__sections">
+    @for (section of detailSections; track section.title) {
+      <section class="invoice-dialog__section" [attr.aria-label]="section.title">
+        <h3 class="invoice-dialog__section-title">{{ section.title }}</h3>
+
+        <dl class="invoice-dialog__definition-list">
+          @for (item of section.items; track item.label) {
+            <div class="invoice-dialog__definition-item">
+              <dt>{{ item.label }}</dt>
+              <dd>{{ item.value }}</dd>
+            </div>
+          }
+        </dl>
+      </section>
+    }
+  </div>
+
+  <app-dialog-action-bar
+    dialog-shell-actions
+    [cancelLabel]="'Close'"
+    [showSubmit]="false"
+    [showSecondary]="false"
+    (cancel)="closeDialog()"
+  />
+</app-dialog-shell>
