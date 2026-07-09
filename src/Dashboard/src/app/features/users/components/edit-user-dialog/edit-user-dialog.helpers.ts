@@ -1,13 +1,24 @@
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 
 import { DashboardUser } from '../../models/dashboard-user.model';
 
 export const EDIT_USER_DIALOG_FORM_ID = 'edit-user-dialog-form';
 
+export type EditUserDialogForm = FormGroup<{
+  id: FormControl<string>;
+  numberId: FormControl<number>;
+  username: FormControl<string>;
+  email: FormControl<string>;
+  phoneNumber: FormControl<string>;
+  isEmailConfirmed: FormControl<boolean>;
+  isPhoneNumberConfirmed: FormControl<boolean>;
+  lastLoginAt: FormControl<string>;
+}>;
+
 export function createEditUserDialogForm(
   formBuilder: FormBuilder,
   initialUser: DashboardUser | null
-): FormGroup {
+): EditUserDialogForm {
   return formBuilder.nonNullable.group({
     id: formBuilder.nonNullable.control(initialUser?.id ?? ''),
     numberId: formBuilder.nonNullable.control(initialUser?.numberId ?? 0),
@@ -24,7 +35,7 @@ export function createEditUserDialogForm(
 
 export function buildUserEditPayload(
   dialogData: DashboardUser | null,
-  userForm: FormGroup
+  userForm: EditUserDialogForm
 ): Readonly<Record<string, unknown>> {
   return {
     id: dialogData?.id ?? null,
