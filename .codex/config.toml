@@ -13,6 +13,7 @@ args = ["-y", "@modelcontextprotocol/server-filesystem", "."]
 enabled = true
 
 [mcp_servers.filesystem.tools.create_directory]
+<<<<<<< HEAD
 approval_mode = "approve"
 
 
