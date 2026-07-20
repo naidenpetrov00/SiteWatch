@@ -1,28 +1,19 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import {
-  injectMutation,
-  injectQuery,
-  QueryClient
-} from '@tanstack/angular-query-experimental';
+import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-query-experimental';
 
 import { buildApiUrl } from '../../../core/api/api-url';
 import { DataTableState } from '../../../shared/data-table/data-table.types';
-import { DashboardPerson } from '../models/dashboard-person.model';
-import { DashboardPersonLookup } from '../models/dashboard-person-lookup.model';
-import { DashboardPersonsResponse } from '../models/dashboard-persons-response.model';
-import {
-  CreateDashboardPersonRequest
-} from '../models/create-dashboard-person-request.model';
-import { DashboardPersonDetails } from '../models/dashboard-person-details.model';
-import { UpdateDashboardPersonRequest } from '../models/update-dashboard-person-request.model';
+import { CreateDashboardInvoiceRequest } from '../models/create-dashboard-invoice-request.model';
+import { DashboardInvoice } from '../models/dashboard-invoice.model';
+import { DashboardInvoicesResponse } from '../models/dashboard-invoices-response.model';
 
-interface CreateDashboardPersonResponse {
+interface CreateDashboardInvoiceResponse {
   id: string;
 }
 
-interface DashboardPersonsQueryState {
+interface DashboardInvoicesQueryState {
   pageIndex: number;
   pageSize: number;
   sortActive: string;
@@ -30,7 +21,7 @@ interface DashboardPersonsQueryState {
   appliedFilters: Readonly<Record<string, string>>;
 }
 
-const DEFAULT_QUERY_STATE: DashboardPersonsQueryState = {
+const DEFAULT_QUERY_STATE: DashboardInvoicesQueryState = {
   pageIndex: 0,
   pageSize: 50,
   sortActive: '',
@@ -41,52 +32,41 @@ const DEFAULT_QUERY_STATE: DashboardPersonsQueryState = {
 @Injectable({
   providedIn: 'root'
 })
-export class DashboardPersonsService {
+export class DashboardInvoicesService {
   private readonly http = inject(HttpClient);
   private readonly queryClient = inject(QueryClient);
-  private readonly queryState = signal<DashboardPersonsQueryState>(DEFAULT_QUERY_STATE);
+  private readonly queryState = signal<DashboardInvoicesQueryState>(DEFAULT_QUERY_STATE);
 
-  readonly dashboardPersonsQuery = injectQuery<DashboardPersonsResponse>(() => {
+  readonly dashboardInvoicesQuery = injectQuery<DashboardInvoicesResponse>(() => {
     const state = this.queryState();
 
     return {
-      queryKey: ['persons', 'dashboard', this.queryKeyFromState(state)] as const,
+      queryKey: ['invoices', 'dashboard', this.queryKeyFromState(state)] as const,
       queryFn: async () =>
         firstValueFrom(
-          this.http.get<DashboardPersonsResponse>(buildApiUrl('/dashboard/persons'), {
+          this.http.get<DashboardInvoicesResponse>(buildApiUrl('/dashboard/invoices'), {
             params: this.buildQueryParams(state)
           })
         )
     };
   });
 
-  readonly createPersonMutation = injectMutation<
-    CreateDashboardPersonResponse,
+  readonly createInvoiceMutation = injectMutation<
+    CreateDashboardInvoiceResponse,
     Error,
-    CreateDashboardPersonRequest
+    CreateDashboardInvoiceRequest
   >(() => ({
-    mutationKey: ['persons', 'create'],
-    mutationFn: async (request: CreateDashboardPersonRequest) =>
-      firstValueFrom(this.http.post<CreateDashboardPersonResponse>(buildApiUrl('/persons'), request)),
+    mutationKey: ['invoices', 'create'],
+    mutationFn: async (request: CreateDashboardInvoiceRequest) =>
+      firstValueFrom(this.http.post<CreateDashboardInvoiceResponse>(buildApiUrl('/invoices'), request)),
     onSuccess: async () => {
       await this.queryClient.invalidateQueries({
-        queryKey: ['persons', 'dashboard']
+        queryKey: ['invoices', 'dashboard']
       });
     }
   }));
 
-  readonly updatePersonMutation = injectMutation<void, Error, UpdateDashboardPersonRequest>(() => ({
-    mutationKey: ['persons', 'update'],
-    mutationFn: async (request: UpdateDashboardPersonRequest) =>
-      firstValueFrom(this.http.put<void>(buildApiUrl(`/persons/${request.id}`), request)),
-    onSuccess: async () => {
-      await this.queryClient.invalidateQueries({
-        queryKey: ['persons', 'dashboard']
-      });
-    }
-  }));
-
-  setTableState(state: DataTableState<DashboardPerson>): void {
+  setTableState(state: DataTableState<DashboardInvoice>): void {
     const nextState = this.toQueryState(state);
 
     if (this.areStatesEqual(this.queryState(), nextState)) {
@@ -96,33 +76,11 @@ export class DashboardPersonsService {
     this.queryState.set(nextState);
   }
 
-  createPerson(request: CreateDashboardPersonRequest): Promise<CreateDashboardPersonResponse> {
-    return this.createPersonMutation.mutateAsync(request);
+  createInvoice(request: CreateDashboardInvoiceRequest): Promise<CreateDashboardInvoiceResponse> {
+    return this.createInvoiceMutation.mutateAsync(request);
   }
 
-  getPersonById(personId: string): Promise<DashboardPersonDetails> {
-    return firstValueFrom(this.http.get<DashboardPersonDetails>(buildApiUrl(`/persons/${personId}`)));
-  }
-
-  searchSuppliers(searchTerm: string): Promise<readonly DashboardPersonLookup[]> {
-    const normalizedSearchTerm = searchTerm.trim();
-
-    if (normalizedSearchTerm.length === 0) {
-      return Promise.resolve([]);
-    }
-
-    return firstValueFrom(
-      this.http.get<readonly DashboardPersonLookup[]>(buildApiUrl('/dashboard/persons/search'), {
-        params: new HttpParams().set('searchTerm', normalizedSearchTerm)
-      })
-    );
-  }
-
-  updatePerson(request: UpdateDashboardPersonRequest): Promise<void> {
-    return this.updatePersonMutation.mutateAsync(request);
-  }
-
-  private toQueryState(state: DataTableState<DashboardPerson>): DashboardPersonsQueryState {
+  private toQueryState(state: DataTableState<DashboardInvoice>): DashboardInvoicesQueryState {
     return {
       pageIndex: state.page.pageIndex,
       pageSize: state.page.pageSize,
@@ -132,7 +90,7 @@ export class DashboardPersonsService {
     };
   }
 
-  private buildQueryParams(state: DashboardPersonsQueryState): HttpParams {
+  private buildQueryParams(state: DashboardInvoicesQueryState): HttpParams {
     let params = new HttpParams()
       .set('pageIndex', state.pageIndex)
       .set('pageSize', state.pageSize);
@@ -152,7 +110,7 @@ export class DashboardPersonsService {
     return params;
   }
 
-  private queryKeyFromState(state: DashboardPersonsQueryState): string {
+  private queryKeyFromState(state: DashboardInvoicesQueryState): string {
     const normalizedFilters = Object.entries(this.normalizeFilters(state.appliedFilters))
       .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey));
 
@@ -166,8 +124,8 @@ export class DashboardPersonsService {
   }
 
   private areStatesEqual(
-    leftState: DashboardPersonsQueryState,
-    rightState: DashboardPersonsQueryState
+    leftState: DashboardInvoicesQueryState,
+    rightState: DashboardInvoicesQueryState
   ): boolean {
     if (
       leftState.pageIndex !== rightState.pageIndex ||

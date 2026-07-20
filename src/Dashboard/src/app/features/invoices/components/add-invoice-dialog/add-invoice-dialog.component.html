@@ -1,0 +1,265 @@
+<app-dialog-shell
+  [eyebrow]="dialogEyebrow"
+  [title]="dialogTitle"
+  [subtitle]="dialogSubtitle"
+>
+  <form
+    id="add-invoice-dialog-form"
+    class="add-invoice-dialog__form"
+    [formGroup]="invoiceForm"
+    novalidate
+    (ngSubmit)="submitInvoice()"
+  >
+    <section class="add-invoice-dialog__section">
+      <div class="add-invoice-dialog__section-heading">
+        <p class="add-invoice-dialog__eyebrow">Supplier</p>
+        <h3>Supplier details</h3>
+        <p class="add-invoice-dialog__summary">
+          Search for a supplier by name, EGN, or EIK, then choose the match to load the derived invoice details.
+        </p>
+      </div>
+
+      <div class="add-invoice-dialog__grid">
+        <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--full">
+          <mat-label>Supplier</mat-label>
+          <input
+            matInput
+            [formControl]="supplierSearchControl"
+            [matAutocomplete]="supplierAutocomplete"
+            autocomplete="off"
+            inputmode="search"
+          />
+          <mat-hint>Pick one of the filtered suppliers to load the invoice details.</mat-hint>
+          @if (supplierSearchControl.touched && supplierSearchControl.hasError('supplierNotFound')) {
+            <mat-error>Supplier was not found.</mat-error>
+          }
+          @if (supplierSearchControl.touched && supplierSearchControl.hasError('supplierDetailsIncomplete')) {
+            <mat-error>Supplier must have an address, email, phone number, and EIK.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-autocomplete
+          #supplierAutocomplete="matAutocomplete"
+          [displayWith]="displaySupplierSearchValue"
+          (optionSelected)="onSupplierSelected($event)"
+        >
+          @for (supplier of supplierSearchResults(); track supplier.id) {
+            <mat-option [value]="supplier">
+              <span class="add-invoice-dialog__supplier-option-title">
+                {{ formatInvoiceSupplierOptionLabel(supplier) }}
+              </span>
+              <span class="add-invoice-dialog__supplier-option-subtitle">
+                {{ formatInvoiceSupplierOptionSubtitle(supplier) }}
+              </span>
+            </mat-option>
+          }
+        </mat-autocomplete>
+
+        <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--half">
+          <mat-label>Invoice Number</mat-label>
+          <input
+            matInput
+            formControlName="invoiceNumber"
+            autocomplete="off"
+            maxlength="100"
+          />
+          @if (invoiceForm.controls.invoiceNumber.touched && invoiceForm.controls.invoiceNumber.hasError('required')) {
+            <mat-error>Invoice Number is required.</mat-error>
+          }
+          @if (invoiceForm.controls.invoiceNumber.touched && invoiceForm.controls.invoiceNumber.hasError('maxlength')) {
+            <mat-error>Invoice Number must be at most {{ validationLimits.invoiceNumber }} characters.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--half">
+          <mat-label>Date</mat-label>
+          <input
+            matInput
+            formControlName="date"
+            type="date"
+          />
+          @if (invoiceForm.controls.date.touched && invoiceForm.controls.date.hasError('required')) {
+            <mat-error>Date is required.</mat-error>
+          }
+          @if (invoiceForm.controls.date.touched && invoiceForm.controls.date.hasError('date')) {
+            <mat-error>Date must be a valid date.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--half">
+          <mat-label>Contact Person</mat-label>
+          <input
+            matInput
+            formControlName="contactPerson"
+            readonly
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--full">
+          <mat-label>Address</mat-label>
+          <textarea
+            matInput
+            formControlName="address"
+            rows="2"
+            readonly
+          ></textarea>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--half">
+          <mat-label>Email</mat-label>
+          <input
+            matInput
+            formControlName="email"
+            readonly
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--half">
+          <mat-label>Phone Number</mat-label>
+          <input
+            matInput
+            formControlName="phoneNumber"
+            readonly
+          />
+        </mat-form-field>
+      </div>
+    </section>
+
+    <section class="add-invoice-dialog__section">
+      <div class="add-invoice-dialog__section-heading">
+        <p class="add-invoice-dialog__eyebrow">Invoice</p>
+        <h3>Amounts and payment</h3>
+      </div>
+
+      <div class="add-invoice-dialog__grid">
+        <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--half">
+          <mat-label>IBAN</mat-label>
+          <input
+            matInput
+            formControlName="iban"
+            autocomplete="off"
+            maxlength="34"
+          />
+          @if (invoiceForm.controls.iban.touched && invoiceForm.controls.iban.hasError('required')) {
+            <mat-error>IBAN is required.</mat-error>
+          }
+          @if (invoiceForm.controls.iban.touched && invoiceForm.controls.iban.hasError('maxlength')) {
+            <mat-error>IBAN must be at most {{ validationLimits.iban }} characters.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--half">
+          <mat-label>Payment Term</mat-label>
+          <input
+            matInput
+            formControlName="paymentTerm"
+            autocomplete="off"
+            maxlength="100"
+          />
+          @if (invoiceForm.controls.paymentTerm.touched && invoiceForm.controls.paymentTerm.hasError('required')) {
+            <mat-error>Payment Term is required.</mat-error>
+          }
+          @if (invoiceForm.controls.paymentTerm.touched && invoiceForm.controls.paymentTerm.hasError('maxlength')) {
+            <mat-error>Payment Term must be at most {{ validationLimits.paymentTerm }} characters.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--half">
+          <mat-label>Total Value</mat-label>
+          <input
+            matInput
+            formControlName="totalValue"
+            type="number"
+            inputmode="decimal"
+            min="0"
+            step="0.01"
+          />
+          @if (invoiceForm.controls.totalValue.touched && invoiceForm.controls.totalValue.hasError('required')) {
+            <mat-error>Total Value is required.</mat-error>
+          }
+          @if (invoiceForm.controls.totalValue.touched && invoiceForm.controls.totalValue.hasError('decimal')) {
+            <mat-error>Total Value must be a valid decimal number.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--half">
+          <mat-label>VAT Rate</mat-label>
+          <mat-select formControlName="vatRate">
+            @for (option of vatRateOptions; track option.value) {
+              <mat-option [value]="option.value">{{ option.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--half">
+          <mat-label>VAT Amount</mat-label>
+          <input
+            matInput
+            formControlName="vatAmount"
+            readonly
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--half">
+          <mat-label>Total Including VAT</mat-label>
+          <input
+            matInput
+            formControlName="totalValueIncludingVat"
+            readonly
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--half">
+          <mat-label>Payment Date</mat-label>
+          <input
+            matInput
+            formControlName="paymentDate"
+            type="datetime-local"
+          />
+          @if (invoiceForm.controls.paymentDate.touched && invoiceForm.controls.paymentDate.hasError('dateTime')) {
+            <mat-error>Payment Date must be a valid date-time.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--half">
+          <mat-label>Payment Time</mat-label>
+          <input
+            matInput
+            formControlName="paymentTime"
+            type="datetime-local"
+          />
+          @if (invoiceForm.controls.paymentTime.touched && invoiceForm.controls.paymentTime.hasError('dateTime')) {
+            <mat-error>Payment Time must be a valid date-time.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--full">
+          <mat-label>Payment Method</mat-label>
+          <input
+            matInput
+            formControlName="paymentMethod"
+            autocomplete="off"
+            maxlength="100"
+          />
+          @if (invoiceForm.controls.paymentMethod.touched && invoiceForm.controls.paymentMethod.hasError('required')) {
+            <mat-error>Payment Method is required.</mat-error>
+          }
+          @if (invoiceForm.controls.paymentMethod.touched && invoiceForm.controls.paymentMethod.hasError('maxlength')) {
+            <mat-error>Payment Method must be at most {{ validationLimits.paymentMethod }} characters.</mat-error>
+          }
+        </mat-form-field>
+      </div>
+    </section>
+  </form>
+
+  <app-dialog-action-bar
+    dialog-shell-actions
+    [cancelLabel]="'Cancel'"
+    [submitLabel]="'Submit'"
+    [showSecondary]="false"
+    [submitFormId]="'add-invoice-dialog-form'"
+    [submitButtonType]="'submit'"
+    [submitDisabled]="!invoiceForm.valid || !supplierDetailsReady() || isCreatingInvoice()"
+    (cancel)="closeDialog()"
+  />
+</app-dialog-shell>

@@ -12,6 +12,7 @@
       <app-action-button
         label="Add Invoice"
         variant="primary"
+        (clicked)="openAddInvoiceDialog()"
       ></app-action-button>
     </div>
   </header>
@@ -20,12 +21,14 @@
     tableEyebrow="Invoices"
     tableLabel="Manage Invoices"
     emptyMessage="No invoices available yet."
-    [rows]="invoices"
-    [filteredRowsTotal]="invoicesFilteredCount"
-    [overallRowsTotal]="invoicesTotalCount"
+    filterApplyMode="search"
+    [rows]="invoices()"
+    [filteredRowsTotal]="invoicesFilteredCount()"
+    [overallRowsTotal]="invoicesTotalCount()"
     [columns]="columns"
     [pageSize]="pageSize"
     [pageSizeOptions]="pageSizeOptions"
+    (tableStateChange)="onTableStateChange($event)"
     (cellButtonClicked)="onCellButtonClicked($event)"
   />
 </main>

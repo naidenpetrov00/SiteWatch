@@ -1,11 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 import { ActionButtonComponent } from '../../../shared/ui/action-button/action-button.component';
 import { DataTableComponent } from '../../../shared/data-table/data-table.component';
-import { DataTableColumn } from '../../../shared/data-table/data-table.types';
+import { DataTableColumn, DataTableState } from '../../../shared/data-table/data-table.types';
+import { AddInvoiceDialogComponent } from '../components/add-invoice-dialog/add-invoice-dialog.component';
 import { InvoiceDialogComponent } from '../components/invoice-dialog/invoice-dialog.component';
 import { DashboardInvoice } from '../models/dashboard-invoice.model';
+import { DashboardInvoicesService } from '../services/dashboard-invoices.service';
 import {
   formatInvoiceAmountValue,
   formatInvoiceDateTimeValue,
@@ -141,14 +143,52 @@ const INVOICE_COLUMNS: readonly DataTableColumn<DashboardInvoice>[] = [
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class InvoicesPage {
+  private readonly dashboardInvoicesService = inject(DashboardInvoicesService);
   private readonly dialog = inject(MatDialog);
 
+  readonly invoices = signal<readonly DashboardInvoice[]>([]);
+  readonly invoicesFilteredCount = signal(0);
+  readonly invoicesTotalCount = signal(0);
+  readonly tableState = signal<DataTableState<DashboardInvoice> | null>(null);
   readonly columns = INVOICE_COLUMNS;
-  readonly invoices: readonly DashboardInvoice[] = [];
-  readonly invoicesFilteredCount = 0;
-  readonly invoicesTotalCount = 0;
   readonly pageSize = 50;
   readonly pageSizeOptions = [50, 100, 500, 1000] as const;
+
+  constructor() {
+    effect(() => {
+      const tableState = this.tableState();
+
+      if (!tableState) {
+        return;
+      }
+
+      this.dashboardInvoicesService.setTableState(tableState);
+    });
+
+    effect(() => {
+      const dashboardInvoices = this.dashboardInvoicesService.dashboardInvoicesQuery.data();
+
+      if (!dashboardInvoices) {
+        return;
+      }
+
+      this.invoices.set(dashboardInvoices.items);
+      this.invoicesFilteredCount.set(dashboardInvoices.filteredCount);
+      this.invoicesTotalCount.set(dashboardInvoices.totalCount);
+    });
+  }
+
+  onTableStateChange(state: DataTableState<DashboardInvoice>): void {
+    this.tableState.set(state);
+  }
+
+  openAddInvoiceDialog(): void {
+    this.dialog.open(AddInvoiceDialogComponent, {
+      autoFocus: false,
+      width: '72rem',
+      maxWidth: 'calc(100vw - 2rem)'
+    });
+  }
 
   onCellButtonClicked(event: { row: DashboardInvoice; column: DataTableColumn<DashboardInvoice> }): void {
     if (event.column.key !== 'id') {
