@@ -3,7 +3,7 @@ using Domain.SeedWork;
 
 namespace Domain.Entities;
 
-public sealed class Invoice : BaseAuditableEntity
+public sealed class Invoice : BaseAuditableEntity, IHasNumberId
 {
     private Invoice()
     {
@@ -11,6 +11,7 @@ public sealed class Invoice : BaseAuditableEntity
 
     public Guid SupplierId { get; private set; }
     public Person Supplier { get; private set; } = null!;
+    public int NumberId { get; private set; }
     public string InvoiceNumber { get; private set; } = null!;
     public DateTimeOffset Date { get; private set; }
     public string Eik { get; private set; } = null!;

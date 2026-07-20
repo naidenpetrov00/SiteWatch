@@ -10,6 +10,11 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
     {
         builder.ToTable("Invoices");
 
+        builder.Property(invoice => invoice.NumberId)
+            .ValueGeneratedOnAdd()
+            .HasDefaultValueSql("NEXT VALUE FOR [dbo].[InvoiceNumberIds]")
+            .IsRequired();
+
         builder.Property(invoice => invoice.InvoiceNumber)
             .HasMaxLength(100)
             .IsRequired();

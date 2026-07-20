@@ -22,12 +22,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        modelBuilder.HasSequence<int>("PersonNumberIds", "dbo")
-            .StartsAt(1)
-            .IncrementsBy(1);
-        modelBuilder.HasSequence<int>("ApplicationUserNumberIds", "dbo")
-            .StartsAt(1)
-            .IncrementsBy(1);
+        modelBuilder.AddSequences();
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
     }
 

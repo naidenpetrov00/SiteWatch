@@ -20,6 +20,7 @@ public class Persons : EndpointGroupBase
         group.MapGet("/{personId:guid}", GetPerson);
         group.MapPut("/{personId:guid}", UpdatePerson);
         group.MapDelete("/{personId:guid}", DeletePerson);
+        dashboardGroup.MapGet("/persons/search", SearchDashboardPersons);
         dashboardGroup.MapGet("/persons", GetDashboardPersons);
     }
 
@@ -51,6 +52,15 @@ public class Persons : EndpointGroupBase
     private static async Task<Ok<PagedResult<PersonTableDto>>> GetDashboardPersons(
         IMediator mediator,
         [AsParameters] DashboardPersonsQuery query
+    )
+    {
+        var persons = await mediator.Send(query);
+        return TypedResults.Ok(persons);
+    }
+
+    private static async Task<Ok<List<PersonLookupDto>>> SearchDashboardPersons(
+        IMediator mediator,
+        [AsParameters] PersonSearchQuery query
     )
     {
         var persons = await mediator.Send(query);
