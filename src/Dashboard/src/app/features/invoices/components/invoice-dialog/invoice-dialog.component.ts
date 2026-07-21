@@ -39,6 +39,7 @@ export class InvoiceDialogComponent {
     {
       title: 'Invoice',
       items: [
+        { label: 'NumberId', value: this.invoice.numberId.toString() },
         { label: 'Id', value: this.invoice.id },
         { label: 'Invoice Number', value: this.invoice.invoiceNumber },
         { label: 'Date', value: formatInvoiceDateValue(this.invoice.date) }

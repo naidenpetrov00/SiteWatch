@@ -16,10 +16,15 @@ import {
 
 const INVOICE_COLUMNS: readonly DataTableColumn<DashboardInvoice>[] = [
   {
+    key: 'numberId',
+    label: 'NumberId',
+    sortable: true,
+    cellType: 'button'
+  },
+  {
     key: 'id',
     label: 'Id',
     sortable: true,
-    cellType: 'button',
     filter: { kind: 'text', placeholder: 'Filter Id' }
   },
   {
@@ -192,7 +197,7 @@ export class InvoicesPage {
   }
 
   onCellButtonClicked(event: { row: DashboardInvoice; column: DataTableColumn<DashboardInvoice> }): void {
-    if (event.column.key !== 'id') {
+    if (event.column.key !== 'numberId') {
       return;
     }
 

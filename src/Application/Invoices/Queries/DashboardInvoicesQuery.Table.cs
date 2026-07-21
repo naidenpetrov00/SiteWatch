@@ -105,6 +105,11 @@ public sealed partial class DashboardInvoicesQuery
                 StringComparer.OrdinalIgnoreCase
             )
             {
+                ["numberId"] = TableSortDescriptor<Invoice, DashboardInvoicesQuery>.Create(
+                    "numberId",
+                    invoice => invoice.NumberId,
+                    invoice => invoice.Id
+                ),
                 ["id"] = TableSortDescriptor<Invoice, DashboardInvoicesQuery>.Create(
                     "id",
                     invoice => invoice.Id

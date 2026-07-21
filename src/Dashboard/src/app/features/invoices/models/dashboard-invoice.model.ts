@@ -1,5 +1,6 @@
 export interface DashboardInvoice {
   id: string;
+  numberId: number;
   supplierId: string;
   supplierDisplayLabel: string;
   invoiceNumber: string;

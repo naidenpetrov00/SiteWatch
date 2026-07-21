@@ -7,6 +7,7 @@ namespace Application.Invoices.Queries;
 public sealed record DashboardInvoiceDto
 {
     public Guid Id { get; init; }
+    public int NumberId { get; init; }
     public Guid SupplierId { get; init; }
     public string SupplierDisplayLabel { get; init; } = string.Empty;
     public string InvoiceNumber { get; init; } = string.Empty;
