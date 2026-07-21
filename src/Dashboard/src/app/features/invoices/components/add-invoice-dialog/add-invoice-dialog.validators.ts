@@ -3,8 +3,7 @@ import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 export const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DECIMAL_REGEX = /^\d+(\.\d{1,2})?$/;
-const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
-const DATE_TIME_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/;
+const TIME_REGEX = /^\d{2}:\d{2}$/;
 
 export function uuidValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
@@ -22,11 +21,15 @@ export function decimalValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const value = control.value;
 
-    if (typeof value !== 'string') {
+    if (value === null || value === undefined || value === '') {
       return null;
     }
 
-    if (value.trim().length === 0) {
+    if (typeof value === 'number') {
+      return Number.isFinite(value) && DECIMAL_REGEX.test(String(value)) ? null : { decimal: true };
+    }
+
+    if (typeof value !== 'string' || value.trim().length === 0) {
       return null;
     }
 
@@ -38,11 +41,11 @@ export function positiveDecimalValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const value = control.value;
 
-    if (typeof value !== 'string') {
+    if (value === null || value === undefined || value === '') {
       return null;
     }
 
-    const normalizedValue = value.trim();
+    const normalizedValue = typeof value === 'number' ? String(value) : value.trim();
 
     if (normalizedValue.length === 0) {
       return null;
@@ -58,7 +61,7 @@ export function positiveDecimalValidator(): ValidatorFn {
   };
 }
 
-export function dateValidator(): ValidatorFn {
+export function timeValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const value = control.value;
 
@@ -70,22 +73,6 @@ export function dateValidator(): ValidatorFn {
       return null;
     }
 
-    return DATE_REGEX.test(value.trim()) ? null : { date: true };
-  };
-}
-
-export function dateTimeValidator(): ValidatorFn {
-  return (control: AbstractControl): ValidationErrors | null => {
-    const value = control.value;
-
-    if (typeof value !== 'string') {
-      return null;
-    }
-
-    if (value.trim().length === 0) {
-      return null;
-    }
-
-    return DATE_TIME_REGEX.test(value.trim()) ? null : { dateTime: true };
+    return TIME_REGEX.test(value.trim()) ? null : { time: true };
   };
 }

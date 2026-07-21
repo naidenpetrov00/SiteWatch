@@ -76,12 +76,14 @@
           <input
             matInput
             formControlName="date"
-            type="date"
+            [matDatepicker]="invoiceDatePicker"
           />
+          <mat-datepicker-toggle matIconSuffix [for]="invoiceDatePicker" />
+          <mat-datepicker #invoiceDatePicker />
           @if (invoiceForm.controls.date.touched && invoiceForm.controls.date.hasError('required')) {
             <mat-error>Date is required.</mat-error>
           }
-          @if (invoiceForm.controls.date.touched && invoiceForm.controls.date.hasError('date')) {
+          @if (invoiceForm.controls.date.touched && invoiceForm.controls.date.hasError('matDatepickerParse')) {
             <mat-error>Date must be a valid date.</mat-error>
           }
         </mat-form-field>
@@ -153,14 +155,15 @@
           <input
             matInput
             formControlName="paymentTerm"
-            autocomplete="off"
-            maxlength="100"
+            [matDatepicker]="paymentTermPicker"
           />
+          <mat-datepicker-toggle matIconSuffix [for]="paymentTermPicker" />
+          <mat-datepicker #paymentTermPicker />
           @if (invoiceForm.controls.paymentTerm.touched && invoiceForm.controls.paymentTerm.hasError('required')) {
             <mat-error>Payment Term is required.</mat-error>
           }
-          @if (invoiceForm.controls.paymentTerm.touched && invoiceForm.controls.paymentTerm.hasError('maxlength')) {
-            <mat-error>Payment Term must be at most {{ validationLimits.paymentTerm }} characters.</mat-error>
+          @if (invoiceForm.controls.paymentTerm.touched && invoiceForm.controls.paymentTerm.hasError('matDatepickerParse')) {
+            <mat-error>Payment Term must be a valid date.</mat-error>
           }
         </mat-form-field>
 
@@ -184,11 +187,21 @@
 
         <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--half">
           <mat-label>VAT Rate</mat-label>
-          <mat-select formControlName="vatRate">
-            @for (option of vatRateOptions; track option.value) {
-              <mat-option [value]="option.value">{{ option.label }}</mat-option>
-            }
-          </mat-select>
+          <input
+            matInput
+            formControlName="vatRate"
+            type="number"
+            min="0"
+            max="100"
+            step="0.01"
+          />
+          <span matSuffix>%</span>
+          @if (invoiceForm.controls.vatRate.touched && invoiceForm.controls.vatRate.hasError('required')) {
+            <mat-error>VAT Rate is required.</mat-error>
+          }
+          @if (invoiceForm.controls.vatRate.touched && (invoiceForm.controls.vatRate.hasError('min') || invoiceForm.controls.vatRate.hasError('max'))) {
+            <mat-error>VAT Rate must be between 0% and 100%.</mat-error>
+          }
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--half">
@@ -214,10 +227,12 @@
           <input
             matInput
             formControlName="paymentDate"
-            type="datetime-local"
+            [matDatepicker]="paymentDatePicker"
           />
-          @if (invoiceForm.controls.paymentDate.touched && invoiceForm.controls.paymentDate.hasError('dateTime')) {
-            <mat-error>Payment Date must be a valid date-time.</mat-error>
+          <mat-datepicker-toggle matIconSuffix [for]="paymentDatePicker" />
+          <mat-datepicker #paymentDatePicker />
+          @if (invoiceForm.controls.paymentDate.touched && invoiceForm.controls.paymentDate.hasError('matDatepickerParse')) {
+            <mat-error>Payment Date must be a valid date.</mat-error>
           }
         </mat-form-field>
 
@@ -226,26 +241,22 @@
           <input
             matInput
             formControlName="paymentTime"
-            type="datetime-local"
+            type="time"
           />
-          @if (invoiceForm.controls.paymentTime.touched && invoiceForm.controls.paymentTime.hasError('dateTime')) {
-            <mat-error>Payment Time must be a valid date-time.</mat-error>
+          @if (invoiceForm.controls.paymentTime.touched && invoiceForm.controls.paymentTime.hasError('time')) {
+            <mat-error>Payment Time must be a valid time.</mat-error>
           }
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--full">
           <mat-label>Payment Method</mat-label>
-          <input
-            matInput
-            formControlName="paymentMethod"
-            autocomplete="off"
-            maxlength="100"
-          />
+          <mat-select formControlName="paymentMethod">
+            @for (paymentMethod of paymentMethodOptions; track paymentMethod) {
+              <mat-option [value]="paymentMethod">{{ paymentMethod }}</mat-option>
+            }
+          </mat-select>
           @if (invoiceForm.controls.paymentMethod.touched && invoiceForm.controls.paymentMethod.hasError('required')) {
             <mat-error>Payment Method is required.</mat-error>
-          }
-          @if (invoiceForm.controls.paymentMethod.touched && invoiceForm.controls.paymentMethod.hasError('maxlength')) {
-            <mat-error>Payment Method must be at most {{ validationLimits.paymentMethod }} characters.</mat-error>
           }
         </mat-form-field>
       </div>

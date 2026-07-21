@@ -1,13 +1,6 @@
 import { FormControl, FormGroup } from '@angular/forms';
 
-export const VAT_RATE_OPTIONS = [
-  { value: 20, label: '20%' },
-  { value: 9, label: '9%' },
-  { value: 0, label: '0%' }
-] as const satisfies readonly {
-  value: number;
-  label: string;
-}[];
+export const PAYMENT_METHOD_OPTIONS = ['Bank', 'Cash'] as const;
 
 export const ADD_INVOICE_VALIDATION_LIMITS = {
   supplierId: 36,
@@ -25,18 +18,18 @@ export const ADD_INVOICE_VALIDATION_LIMITS = {
 export interface AddInvoiceDialogFormControls {
   supplierId: FormControl<string>;
   invoiceNumber: FormControl<string>;
-  date: FormControl<string>;
+  date: FormControl<Date | null>;
   address: FormControl<string>;
   email: FormControl<string>;
   phoneNumber: FormControl<string>;
   contactPerson: FormControl<string>;
   iban: FormControl<string>;
-  paymentTerm: FormControl<string>;
-  totalValue: FormControl<string>;
-  vatRate: FormControl<number>;
+  paymentTerm: FormControl<Date | null>;
+  totalValue: FormControl<number | null>;
+  vatRate: FormControl<number | null>;
   vatAmount: FormControl<string>;
   totalValueIncludingVat: FormControl<string>;
-  paymentDate: FormControl<string>;
+  paymentDate: FormControl<Date | null>;
   paymentTime: FormControl<string>;
   paymentMethod: FormControl<string>;
 }

@@ -87,7 +87,8 @@ const INVOICE_COLUMNS: readonly DataTableColumn<DashboardInvoice>[] = [
     key: 'paymentTerm',
     label: 'Payment Term',
     sortable: true,
-    filter: { kind: 'text', placeholder: 'Filter Payment Term' }
+    filter: { kind: 'text', placeholder: 'Filter Payment Term (date)' },
+    displayFormatter: (value) => formatInvoiceDateValue(value)
   },
   {
     key: 'totalValueExcludingVat',

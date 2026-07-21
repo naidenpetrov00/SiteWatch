@@ -3,8 +3,12 @@ export interface InvoiceAmountCalculation {
   totalValueIncludingVat: number;
 }
 
-export function parseInvoiceDecimal(value: string): number | null {
-  const normalizedValue = value.trim();
+export function parseInvoiceDecimal(value: string | number | null): number | null {
+  if (value === null) {
+    return null;
+  }
+
+  const normalizedValue = typeof value === 'string' ? value.trim() : String(value);
 
   if (normalizedValue.length === 0) {
     return null;

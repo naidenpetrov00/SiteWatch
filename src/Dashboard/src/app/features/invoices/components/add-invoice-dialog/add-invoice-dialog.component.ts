@@ -14,6 +14,8 @@ import { MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 
 import { DashboardPersonsService } from '../../../persons/services/dashboard-persons.service';
 import { DashboardPersonLookup } from '../../../persons/models/dashboard-person-lookup.model';
@@ -24,15 +26,14 @@ import { toCreateDashboardInvoiceRequest } from '../../utils/create-dashboard-in
 import {
   ADD_INVOICE_VALIDATION_LIMITS,
   AddInvoiceDialogFormGroup,
-  VAT_RATE_OPTIONS
+  PAYMENT_METHOD_OPTIONS
 } from './add-invoice-dialog.types';
 import {
-  dateTimeValidator,
-  dateValidator,
   decimalValidator,
   UUID_REGEX,
   positiveDecimalValidator,
-  uuidValidator
+  uuidValidator,
+  timeValidator
 } from './add-invoice-dialog.validators';
 import {
   calculateInvoiceAmounts,
@@ -54,7 +55,9 @@ import {
     MatAutocompleteModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSelectModule
+    MatSelectModule,
+    MatDatepickerModule,
+    MatNativeDateModule
   ],
   templateUrl: './add-invoice-dialog.component.html',
   styleUrl: './add-invoice-dialog.component.css',
@@ -74,7 +77,7 @@ export class AddInvoiceDialogComponent implements OnInit {
   readonly dialogTitle = 'Add Invoice';
   readonly dialogSubtitle =
     'Search for a supplier by name, EGN, or EIK, then review the derived supplier details.';
-  readonly vatRateOptions = VAT_RATE_OPTIONS;
+  readonly paymentMethodOptions = PAYMENT_METHOD_OPTIONS;
   readonly validationLimits = ADD_INVOICE_VALIDATION_LIMITS;
   readonly supplierDetailsReady = signal(false);
   readonly supplierSearchResults = signal<readonly DashboardPersonLookup[]>([]);
@@ -268,7 +271,13 @@ export class AddInvoiceDialogComponent implements OnInit {
     const totalValue = parseInvoiceDecimal(this.invoiceForm.controls.totalValue.value);
     const vatRate = this.invoiceForm.controls.vatRate.value;
 
-    if (totalValue === null) {
+    if (
+      totalValue === null ||
+      vatRate === null ||
+      !Number.isFinite(vatRate) ||
+      vatRate < 0 ||
+      vatRate > 100
+    ) {
       this.invoiceForm.controls.vatAmount.setValue('', { emitEvent: false });
       this.invoiceForm.controls.totalValueIncludingVat.setValue('', { emitEvent: false });
       return;
@@ -293,8 +302,8 @@ export class AddInvoiceDialogComponent implements OnInit {
       invoiceNumber: this.formBuilder.nonNullable.control('', {
         validators: [Validators.required, Validators.maxLength(this.validationLimits.invoiceNumber)]
       }),
-      date: this.formBuilder.nonNullable.control('', {
-        validators: [Validators.required, dateValidator()]
+      date: this.formBuilder.control<Date | null>(null, {
+        validators: [Validators.required]
       }),
       address: this.formBuilder.nonNullable.control({ value: '', disabled: true }),
       email: this.formBuilder.nonNullable.control({ value: '', disabled: true }),
@@ -303,23 +312,23 @@ export class AddInvoiceDialogComponent implements OnInit {
       iban: this.formBuilder.nonNullable.control('', {
         validators: [Validators.required, Validators.maxLength(this.validationLimits.iban)]
       }),
-      paymentTerm: this.formBuilder.nonNullable.control('', {
-        validators: [Validators.required, Validators.maxLength(this.validationLimits.paymentTerm)]
+      paymentTerm: this.formBuilder.control<Date | null>(null, {
+        validators: [Validators.required]
       }),
-      totalValue: this.formBuilder.nonNullable.control('', {
+      totalValue: this.formBuilder.control<number | null>(null, {
         validators: [Validators.required, decimalValidator(), positiveDecimalValidator()]
       }),
-      vatRate: this.formBuilder.nonNullable.control(20),
+      vatRate: this.formBuilder.control<number | null>(20, {
+        validators: [Validators.required, Validators.min(0), Validators.max(100)]
+      }),
       vatAmount: this.formBuilder.nonNullable.control({ value: '', disabled: true }),
       totalValueIncludingVat: this.formBuilder.nonNullable.control({ value: '', disabled: true }),
-      paymentDate: this.formBuilder.nonNullable.control('', {
-        validators: [dateTimeValidator()]
-      }),
+      paymentDate: this.formBuilder.control<Date | null>(null),
       paymentTime: this.formBuilder.nonNullable.control('', {
-        validators: [dateTimeValidator()]
+        validators: [timeValidator()]
       }),
       paymentMethod: this.formBuilder.nonNullable.control('', {
-        validators: [Validators.required, Validators.maxLength(this.validationLimits.paymentMethod)]
+        validators: [Validators.required]
       })
     });
   }
