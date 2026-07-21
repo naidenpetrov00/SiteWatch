@@ -20,7 +20,7 @@ public sealed class Invoice : BaseAuditableEntity, IHasNumberId
     public string PhoneNumber { get; private set; } = null!;
     public string ContactPerson { get; private set; } = null!;
     public string Iban { get; private set; } = null!;
-    public string PaymentTerm { get; private set; } = null!;
+    public DateTimeOffset PaymentTerm { get; private set; }
     public decimal TotalValueExcludingVat { get; private set; }
     public decimal Vat { get; private set; }
     public decimal TotalValueIncludingVat { get; private set; }
@@ -39,7 +39,7 @@ public sealed class Invoice : BaseAuditableEntity, IHasNumberId
         string phoneNumber,
         string contactPerson,
         string iban,
-        string paymentTerm,
+        DateTimeOffset paymentTerm,
         decimal totalValueExcludingVat,
         decimal vat,
         decimal totalValueIncludingVat,
@@ -66,7 +66,7 @@ public sealed class Invoice : BaseAuditableEntity, IHasNumberId
             PhoneNumber = NormalizeRequiredText(phoneNumber, nameof(phoneNumber)),
             ContactPerson = NormalizeRequiredText(contactPerson, nameof(contactPerson)),
             Iban = NormalizeRequiredText(iban, nameof(iban)),
-            PaymentTerm = NormalizeRequiredText(paymentTerm, nameof(paymentTerm)),
+            PaymentTerm = paymentTerm,
             TotalValueExcludingVat = totalValueExcludingVat,
             Vat = vat,
             TotalValueIncludingVat = totalValueIncludingVat,

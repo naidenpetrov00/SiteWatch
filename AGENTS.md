@@ -62,8 +62,10 @@ SiteWatch is split into:
 - Do not commit secrets or environment-specific values.
 - Keep changes scoped and avoid unrelated formatting or churn.
 - Follow existing repository naming and formatting conventions.
-- Prefer existing patterns over introducing new abstractions.
-- Only extract reusable helpers, directives, or components when the same behavior is clearly shared or the interaction is inherently reusable.
+- Prefer reusing existing functions, methods, utilities, components, services, and patterns over creating new implementations or abstractions.
+- Before adding a helper or repeating logic, search the relevant backend or frontend scope for an existing implementation that can be reused.
+- When new logic is clearly reusable, or when an existing implementation is duplicated or belongs in a broader/correct scope, separate or move it to the appropriate shared scope and update callers to reuse it.
+- Keep abstractions focused and avoid extracting one-off logic or creating layers without a concrete reuse case.
 - Avoid building layers for one-off validation or transformation logic.
 - Read only the minimum relevant files required for the task.
 

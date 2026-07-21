@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Security.Claims;
+using Infrastructure.Data.SeedData;
 
 namespace Infrastructure.Data;
 
@@ -240,6 +241,44 @@ public class ApplicationDbContextInitialiser(
         );
     }
 
+    private async Task<List<Person>> AddPersons()
+    {
+        if (await dbContext.Persons.AnyAsync())
+        {
+            logger.LogInformation("Person seeding skipped: persons already exist.");
+            return await dbContext.Persons.ToListAsync();
+        }
+
+        var persons = PersonSeedData.Create();
+
+        await dbContext.Persons.AddRangeAsync(persons);
+        await dbContext.SaveChangesAsync();
+        logger.LogInformation("Seeded {PersonCount} persons.", persons.Count);
+
+        return persons;
+    }
+
+    private async Task AddInvoices(List<Person> persons)
+    {
+        if (await dbContext.Invoices.AnyAsync())
+        {
+            logger.LogInformation("Invoice seeding skipped: invoices already exist.");
+            return;
+        }
+
+        if (persons.Count < 3)
+        {
+            logger.LogWarning("Invoice seeding skipped: not enough persons available.");
+            return;
+        }
+
+        var invoices = InvoiceSeedData.Create(persons);
+
+        await dbContext.Invoices.AddRangeAsync(invoices);
+        await dbContext.SaveChangesAsync();
+        logger.LogInformation("Seeded {InvoiceCount} invoices.", invoices.Count);
+    }
+
     public async Task InitializeDatabaseAsync()
     {
         try
@@ -273,6 +312,8 @@ public class ApplicationDbContextInitialiser(
             var users = await AddUsers();
             await AddSites(users);
             await AddCameras();
+            var persons = await AddPersons();
+            await AddInvoices(persons);
 
             logger.LogInformation("Database initialization completed successfully.");
         }

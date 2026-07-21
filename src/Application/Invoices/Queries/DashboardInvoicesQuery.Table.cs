@@ -62,7 +62,7 @@ public sealed partial class DashboardInvoicesQuery
                     query => query.Iban,
                     invoice => invoice.Iban
                 ),
-                TableFilterDescriptor<Invoice, DashboardInvoicesQuery>.TextContains(
+                TableFilterDescriptor<Invoice, DashboardInvoicesQuery>.DateTimeOffsetSearch(
                     "paymentTerm",
                     query => query.PaymentTerm,
                     invoice => invoice.PaymentTerm

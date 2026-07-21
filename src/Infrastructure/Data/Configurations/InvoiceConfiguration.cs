@@ -44,7 +44,6 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
             .IsRequired();
 
         builder.Property(invoice => invoice.PaymentTerm)
-            .HasMaxLength(100)
             .IsRequired();
 
         builder.Property(invoice => invoice.TotalValueExcludingVat)

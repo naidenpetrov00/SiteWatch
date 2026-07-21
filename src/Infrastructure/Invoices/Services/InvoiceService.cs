@@ -45,6 +45,7 @@ public sealed class InvoiceService(ApplicationDbContext dbContext, IMapper mappe
         }
 
         var date = ParseDateTimeOffset(request.Date, nameof(request.Date));
+        var paymentTerm = ParseDateTimeOffset(request.PaymentTerm, nameof(request.PaymentTerm));
         var paymentDate = ParseOptionalDateTimeOffset(request.PaymentDate, nameof(request.PaymentDate));
         var paymentTime = ParseOptionalDateTimeOffset(request.PaymentTime, nameof(request.PaymentTime));
         var vatAmount = Math.Round(request.TotalValue * request.VatRate / 100m, 2, MidpointRounding.AwayFromZero);
@@ -61,7 +62,7 @@ public sealed class InvoiceService(ApplicationDbContext dbContext, IMapper mappe
             phoneNumber,
             contactPerson,
             request.Iban,
-            request.PaymentTerm,
+            paymentTerm,
             request.TotalValue,
             vatAmount,
             totalValueIncludingVat,

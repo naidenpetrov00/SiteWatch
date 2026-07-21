@@ -20,7 +20,8 @@ public sealed class CreateInvoiceValidator : AbstractValidator<CreateInvoiceComm
             .MaximumLength(34);
         RuleFor(x => x.PaymentTerm)
             .NotEmpty()
-            .MaximumLength(100);
+            .Must(BeValidDateTimeOffset)
+            .WithMessage("PaymentTerm must be a valid date.");
         RuleFor(x => x.TotalValue)
             .GreaterThan(0m);
         RuleFor(x => x.VatRate)
