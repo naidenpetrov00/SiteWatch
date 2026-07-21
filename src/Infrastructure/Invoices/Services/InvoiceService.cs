@@ -29,19 +29,23 @@ public sealed class InvoiceService(ApplicationDbContext dbContext, IMapper mappe
             throw CreateValidationException(nameof(request.SupplierId), "Supplier must exist.");
         }
 
-        if (string.IsNullOrWhiteSpace(supplier.Eik))
+        var taxIdentifier = supplier.Type == PersonType.Company ? supplier.Eik : supplier.Egn;
+        if (string.IsNullOrWhiteSpace(taxIdentifier))
         {
-            throw CreateValidationException(nameof(request.SupplierId), "Supplier must have an EIK.");
+            var message = supplier.Type == PersonType.Company
+                ? "Company is missing EIK."
+                : "Individual is missing EGN.";
+            throw CreateValidationException(nameof(request.SupplierId), message);
         }
 
         var address = GetRequiredAddress(supplier);
-        var email = GetRequiredContactValue(supplier, ContactType.Email);
-        var phoneNumber = GetRequiredContactValue(supplier, ContactType.Phone);
+        var email = GetOptionalContactValue(supplier, ContactType.Email);
+        var phoneNumber = GetOptionalContactValue(supplier, ContactType.Phone);
         var contactPerson = supplier.DisplayName;
 
         if (string.IsNullOrWhiteSpace(contactPerson))
         {
-            throw CreateValidationException(nameof(request.SupplierId), "Supplier must have a display name.");
+            throw CreateValidationException(nameof(request.SupplierId), "Supplier is missing a display name.");
         }
 
         var date = ParseDateTimeOffset(request.Date, nameof(request.Date));
@@ -56,7 +60,7 @@ public sealed class InvoiceService(ApplicationDbContext dbContext, IMapper mappe
             supplier,
             request.InvoiceNumber,
             date,
-            supplier.Eik,
+            taxIdentifier,
             address,
             email,
             phoneNumber,
@@ -97,50 +101,43 @@ public sealed class InvoiceService(ApplicationDbContext dbContext, IMapper mappe
         var address = supplier.Addresses
             .Where(item => item.IsActive)
             .OrderByDescending(item => item.IsPrimary)
-            .FirstOrDefault();
+            .Select(address => new
+            {
+                Address = address,
+                Parts = new[]
+                {
+                    address.AddressLine,
+                    address.AdditionalLine,
+                    address.City,
+                    address.PostalCode,
+                    address.Country
+                }
+                    .Select(value => value?.Trim())
+                    .Where(value => !string.IsNullOrWhiteSpace(value))
+                    .Select(value => value!)
+                    .ToArray()
+            })
+            .FirstOrDefault(item => item.Parts.Length > 0);
 
         if (address is null)
         {
-            throw CreateValidationException(nameof(supplier.Addresses), "Supplier must have an address.");
+            throw CreateValidationException(
+                nameof(supplier.Addresses),
+                "Supplier is missing an active address."
+            );
         }
 
-        var parts = new[]
-        {
-            address.AddressLine,
-            address.AdditionalLine,
-            address.City,
-            address.PostalCode,
-            address.Country
-        }
-            .Select(value => value?.Trim())
-            .Where(value => !string.IsNullOrWhiteSpace(value))
-            .Select(value => value!)
-            .ToArray();
-
-        if (parts.Length == 0)
-        {
-            throw CreateValidationException(nameof(supplier.Addresses), "Supplier address must not be empty.");
-        }
-
-        return string.Join(", ", parts);
+        return string.Join(", ", address.Parts);
     }
 
-    private static string GetRequiredContactValue(Person supplier, ContactType contactType)
+    private static string GetOptionalContactValue(Person supplier, ContactType contactType)
     {
         var contact = supplier.Contacts
             .Where(item => item.IsActive && item.ContactType == contactType)
             .OrderByDescending(item => item.IsPrimary)
             .FirstOrDefault();
 
-        if (contact is null || string.IsNullOrWhiteSpace(contact.Value))
-        {
-            throw CreateValidationException(
-                nameof(supplier.Contacts),
-                $"Supplier must have a {contactType.ToString().ToLowerInvariant()} contact."
-            );
-        }
-
-        return contact.Value.Trim();
+        return contact?.Value.Trim() ?? string.Empty;
     }
 
     private static DateTimeOffset ParseDateTimeOffset(string value, string parameterName)

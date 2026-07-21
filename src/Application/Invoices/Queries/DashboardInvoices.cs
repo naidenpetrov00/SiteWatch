@@ -13,7 +13,7 @@ public sealed partial class DashboardInvoicesQuery
     public string? SupplierId { get; set; }
     public string? InvoiceNumber { get; set; }
     public string? Date { get; set; }
-    public string? Eik { get; set; }
+    public string? TaxIdentifier { get; set; }
     public string? Address { get; set; }
     public string? Email { get; set; }
     public string? PhoneNumber { get; set; }

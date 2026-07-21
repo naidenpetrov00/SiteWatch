@@ -42,3 +42,8 @@ export interface AddInvoiceSupplierDetails {
   phoneNumber: string;
   contactPerson: string;
 }
+
+export interface InvoiceSupplierValidationResult {
+  details: AddInvoiceSupplierDetails | null;
+  error: string | null;
+}

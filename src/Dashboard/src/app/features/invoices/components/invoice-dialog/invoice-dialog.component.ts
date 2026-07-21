@@ -50,7 +50,7 @@ export class InvoiceDialogComponent {
       items: [
         { label: 'Supplier Id', value: this.invoice.supplierId },
         { label: 'Supplier', value: formatInvoiceTextValue(this.invoice.supplierDisplayLabel) },
-        { label: 'EIK', value: formatInvoiceTextValue(this.invoice.eik) },
+        { label: 'Tax Identifier', value: formatInvoiceTextValue(this.invoice.taxIdentifier) },
         { label: 'Address', value: formatInvoiceTextValue(this.invoice.address) }
       ]
     },

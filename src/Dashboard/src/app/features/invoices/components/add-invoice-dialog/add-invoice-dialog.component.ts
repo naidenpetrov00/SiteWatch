@@ -6,6 +6,7 @@ import {
   inject,
   signal
 } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged, merge, startWith } from 'rxjs';
@@ -135,8 +136,13 @@ export class AddInvoiceDialogComponent implements OnInit {
       const request = toCreateDashboardInvoiceRequest(this.invoiceForm);
       await this.dashboardInvoicesService.createInvoice(request);
       this.dialogRef.close(true);
-    } catch {
+    } catch (error) {
       // Keep the dialog open so the user can fix validation or backend errors.
+      const supplierValidationMessage = this.getSupplierValidationMessage(error);
+      if (supplierValidationMessage) {
+        this.setSupplierSearchError('supplierDetailsIncomplete', supplierValidationMessage);
+        this.supplierSearchControl.markAsTouched();
+      }
     }
   }
 
@@ -200,30 +206,34 @@ export class AddInvoiceDialogComponent implements OnInit {
         return;
       }
 
-      const details = deriveInvoiceSupplierDetails(supplier);
+      const result = deriveInvoiceSupplierDetails(supplier);
 
-      if (!details) {
+      if (!result.details) {
         this.clearSelectedSupplier();
-        this.setSupplierSearchError('supplierDetailsIncomplete', true);
+        this.setSupplierSearchError('supplierDetailsIncomplete', result.error ?? true);
         return;
       }
 
       this.clearSupplierSearchErrors();
       this.invoiceForm.controls.supplierId.setValue(supplier.id, { emitEvent: false });
-      this.invoiceForm.controls.address.setValue(details.address, { emitEvent: false });
-      this.invoiceForm.controls.email.setValue(details.email, { emitEvent: false });
-      this.invoiceForm.controls.phoneNumber.setValue(details.phoneNumber, { emitEvent: false });
-      this.invoiceForm.controls.contactPerson.setValue(details.contactPerson, {
+      this.invoiceForm.controls.address.setValue(result.details.address, { emitEvent: false });
+      this.invoiceForm.controls.email.setValue(result.details.email, { emitEvent: false });
+      this.invoiceForm.controls.phoneNumber.setValue(result.details.phoneNumber, { emitEvent: false });
+      this.invoiceForm.controls.contactPerson.setValue(result.details.contactPerson, {
         emitEvent: false
       });
       this.supplierDetailsReady.set(true);
-    } catch {
+    } catch (error) {
       if (lookupRevision !== this.supplierDetailsRevision) {
         return;
       }
 
       this.clearSelectedSupplier();
-      this.setSupplierSearchError('supplierNotFound', true);
+      const supplierValidationMessage = this.getSupplierValidationMessage(error);
+      this.setSupplierSearchError(
+        supplierValidationMessage ? 'supplierDetailsIncomplete' : 'supplierNotFound',
+        supplierValidationMessage ?? true
+      );
     }
   }
 
@@ -254,17 +264,40 @@ export class AddInvoiceDialogComponent implements OnInit {
     this.setSupplierSearchError('supplierDetailsIncomplete', false);
   }
 
-  private setSupplierSearchError(errorKey: string, isPresent: boolean): void {
+  private setSupplierSearchError(errorKey: string, errorValue: boolean | string): void {
     const supplierSearchControl = this.supplierSearchControl;
     const nextErrors = { ...(supplierSearchControl.errors ?? {}) };
 
-    if (isPresent) {
-      nextErrors[errorKey] = true;
+    if (errorValue) {
+      nextErrors[errorKey] = errorValue;
     } else {
       delete nextErrors[errorKey];
     }
 
     supplierSearchControl.setErrors(Object.keys(nextErrors).length > 0 ? nextErrors : null);
+  }
+
+  private getSupplierValidationMessage(error: unknown): string | null {
+    if (!(error instanceof HttpErrorResponse)) {
+      return null;
+    }
+
+    const details = error.error?.details as
+      | readonly { field?: string; message?: string }[]
+      | undefined;
+    const supplierDetail = details?.find(
+      (detail) => detail.field?.toLowerCase() === 'supplierid'
+    );
+
+    if (supplierDetail?.message) {
+      return supplierDetail.message;
+    }
+
+    const errors = error.error?.errors as Record<string, readonly string[]> | undefined;
+    const messages = Object.entries(errors ?? {}).find(
+      ([field]) => field.toLowerCase() === 'supplierid'
+    )?.[1];
+    return messages?.find((message) => message.length > 0) ?? null;
   }
 
   private updateCalculatedAmounts(): void {

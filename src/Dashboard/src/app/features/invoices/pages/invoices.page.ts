@@ -53,10 +53,10 @@ const INVOICE_COLUMNS: readonly DataTableColumn<DashboardInvoice>[] = [
     }
   },
   {
-    key: 'eik',
-    label: 'EIK',
+    key: 'taxIdentifier',
+    label: 'Tax Identifier',
     sortable: true,
-    filter: { kind: 'text', placeholder: 'Filter EIK' }
+    filter: { kind: 'text', placeholder: 'Filter Tax Identifier' }
   },
   {
     key: 'address',

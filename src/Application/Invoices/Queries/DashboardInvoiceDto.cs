@@ -12,7 +12,7 @@ public sealed record DashboardInvoiceDto
     public string SupplierDisplayLabel { get; init; } = string.Empty;
     public string InvoiceNumber { get; init; } = string.Empty;
     public DateTimeOffset Date { get; init; }
-    public string Eik { get; init; } = string.Empty;
+    public string TaxIdentifier { get; init; } = string.Empty;
     public string Address { get; init; } = string.Empty;
     public string Email { get; init; } = string.Empty;
     public string PhoneNumber { get; init; } = string.Empty;

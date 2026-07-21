@@ -251,6 +251,33 @@ public class ApplicationDbContextInitialiser(
 
         var persons = PersonSeedData.Create();
 
+        var addresses = new[]
+        {
+            (AddressLine: "Vitosha Boulevard 1", City: "Sofia", PostalCode: "1000"),
+            (AddressLine: "Tsarigradsko Shose 115", City: "Sofia", PostalCode: "1784"),
+            (AddressLine: "Dondukov 11", City: "Sofia", PostalCode: "1000"),
+        };
+
+        var now = DateTimeOffset.UtcNow;
+        for (var i = 0; i < persons.Count && i < addresses.Length; i++)
+        {
+            var addressData = addresses[i];
+            var address = PersonAddress.Create(
+                persons[i].Id,
+                addressData.AddressLine,
+                addressData.City,
+                addressData.PostalCode,
+                "Bulgaria",
+                isPrimary: true,
+                isActive: true
+            );
+            address.Created = now;
+            address.CreatedBy = "System";
+            address.LastModified = now;
+            address.LastModifiedBy = "System";
+            persons[i].AddAddress(address);
+        }
+
         await dbContext.Persons.AddRangeAsync(persons);
         await dbContext.SaveChangesAsync();
         logger.LogInformation("Seeded {PersonCount} persons.", persons.Count);

@@ -5,7 +5,7 @@ export interface DashboardInvoice {
   supplierDisplayLabel: string;
   invoiceNumber: string;
   date: string;
-  eik: string;
+  taxIdentifier: string;
   address: string;
   email: string;
   phoneNumber: string;

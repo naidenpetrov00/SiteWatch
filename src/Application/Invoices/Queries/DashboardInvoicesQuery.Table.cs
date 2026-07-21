@@ -33,9 +33,9 @@ public sealed partial class DashboardInvoicesQuery
                     invoice => invoice.Date
                 ),
                 TableFilterDescriptor<Invoice, DashboardInvoicesQuery>.TextContains(
-                    "eik",
-                    query => query.Eik,
-                    invoice => invoice.Eik
+                    "taxIdentifier",
+                    query => query.TaxIdentifier,
+                    invoice => invoice.TaxIdentifier
                 ),
                 TableFilterDescriptor<Invoice, DashboardInvoicesQuery>.TextContains(
                     "address",
@@ -129,9 +129,9 @@ public sealed partial class DashboardInvoicesQuery
                     invoice => invoice.Date,
                     invoice => invoice.Id
                 ),
-                ["eik"] = TableSortDescriptor<Invoice, DashboardInvoicesQuery>.Create(
-                    "eik",
-                    invoice => invoice.Eik,
+                ["taxIdentifier"] = TableSortDescriptor<Invoice, DashboardInvoicesQuery>.Create(
+                    "taxIdentifier",
+                    invoice => invoice.TaxIdentifier,
                     invoice => invoice.Id
                 ),
                 ["address"] = TableSortDescriptor<Invoice, DashboardInvoicesQuery>.Create(

@@ -1,5 +1,5 @@
 import { DashboardPersonDetails } from '../../persons/models/dashboard-person-details.model';
-import { AddInvoiceSupplierDetails } from '../components/add-invoice-dialog/add-invoice-dialog.types';
+import { InvoiceSupplierValidationResult } from '../components/add-invoice-dialog/add-invoice-dialog.types';
 
 const CONTACT_TYPES = {
   phone: 0,
@@ -8,47 +8,63 @@ const CONTACT_TYPES = {
 
 export function deriveInvoiceSupplierDetails(
   supplier: DashboardPersonDetails
-): AddInvoiceSupplierDetails | null {
-  if (supplier.eik === null || supplier.eik.trim().length === 0) {
-    return null;
+): InvoiceSupplierValidationResult {
+  const identifier = supplier.type.toLowerCase() === 'company' ? supplier.eik : supplier.egn;
+  if (identifier === null || identifier.trim().length === 0) {
+    return {
+      details: null,
+      error: supplier.type.toLowerCase() === 'company'
+        ? 'Company is missing EIK.'
+        : 'Individual is missing EGN.'
+    };
   }
 
   const address = pickSupplierAddress(supplier);
   const email = pickSupplierContactValue(supplier, CONTACT_TYPES.email);
   const phoneNumber = pickSupplierContactValue(supplier, CONTACT_TYPES.phone);
+  const contactPerson = supplier.displayName.trim();
 
-  if (!address || !email || !phoneNumber || supplier.displayName.trim().length === 0) {
-    return null;
+  if (!address) {
+    return { details: null, error: 'Supplier is missing an active address.' };
+  }
+
+  if (contactPerson.length === 0) {
+    return { details: null, error: 'Supplier is missing a display name.' };
   }
 
   return {
-    address,
-    email,
-    phoneNumber,
-    contactPerson: supplier.displayName.trim()
+    details: {
+      address,
+      email: email ?? '',
+      phoneNumber: phoneNumber ?? '',
+      contactPerson
+    },
+    error: null
   };
 }
 
 function pickSupplierAddress(supplier: DashboardPersonDetails): string | null {
-  const address = [...supplier.addresses]
+  const addresses = [...supplier.addresses]
     .filter((item) => item.isActive)
-    .sort((left, right) => Number(right.isPrimary) - Number(left.isPrimary))[0];
+    .sort((left, right) => Number(right.isPrimary) - Number(left.isPrimary));
 
-  if (!address) {
-    return null;
+  for (const address of addresses) {
+    const parts = [
+      address.addressLine,
+      address.additionalLine ?? '',
+      address.city ?? '',
+      address.postalCode ?? '',
+      address.country ?? ''
+    ]
+      .map((part) => part.trim())
+      .filter((part) => part.length > 0);
+
+    if (parts.length > 0) {
+      return parts.join(', ');
+    }
   }
 
-  const parts = [
-    address.addressLine,
-    address.additionalLine ?? '',
-    address.city ?? '',
-    address.postalCode ?? '',
-    address.country ?? ''
-  ]
-    .map((part) => part.trim())
-    .filter((part) => part.length > 0);
-
-  return parts.length > 0 ? parts.join(', ') : null;
+  return null;
 }
 
 function pickSupplierContactValue(

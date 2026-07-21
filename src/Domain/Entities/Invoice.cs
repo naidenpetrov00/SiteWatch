@@ -14,7 +14,7 @@ public sealed class Invoice : BaseAuditableEntity, IHasNumberId
     public int NumberId { get; private set; }
     public string InvoiceNumber { get; private set; } = null!;
     public DateTimeOffset Date { get; private set; }
-    public string Eik { get; private set; } = null!;
+    public string TaxIdentifier { get; private set; } = null!;
     public string Address { get; private set; } = null!;
     public string Email { get; private set; } = null!;
     public string PhoneNumber { get; private set; } = null!;
@@ -33,7 +33,7 @@ public sealed class Invoice : BaseAuditableEntity, IHasNumberId
         Person supplier,
         string invoiceNumber,
         DateTimeOffset date,
-        string eik,
+        string taxIdentifier,
         string address,
         string email,
         string phoneNumber,
@@ -60,10 +60,10 @@ public sealed class Invoice : BaseAuditableEntity, IHasNumberId
             Supplier = normalizedSupplier,
             InvoiceNumber = NormalizeRequiredText(invoiceNumber, nameof(invoiceNumber)),
             Date = date,
-            Eik = NormalizeRequiredText(eik, nameof(eik)),
+            TaxIdentifier = NormalizeRequiredText(taxIdentifier, nameof(taxIdentifier)),
             Address = NormalizeRequiredText(address, nameof(address)),
-            Email = NormalizeRequiredText(email, nameof(email)),
-            PhoneNumber = NormalizeRequiredText(phoneNumber, nameof(phoneNumber)),
+            Email = NormalizeOptionalText(email),
+            PhoneNumber = NormalizeOptionalText(phoneNumber),
             ContactPerson = NormalizeRequiredText(contactPerson, nameof(contactPerson)),
             Iban = NormalizeRequiredText(iban, nameof(iban)),
             PaymentTerm = paymentTerm,
@@ -78,4 +78,6 @@ public sealed class Invoice : BaseAuditableEntity, IHasNumberId
 
     private static string NormalizeRequiredText(string value, string parameterName) =>
         Guard.Against.NullOrWhiteSpace(value, parameterName).Trim();
+
+    private static string NormalizeOptionalText(string? value) => value?.Trim() ?? string.Empty;
 }

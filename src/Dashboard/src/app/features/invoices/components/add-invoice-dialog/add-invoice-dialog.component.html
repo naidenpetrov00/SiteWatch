@@ -34,7 +34,7 @@
             <mat-error>Supplier was not found.</mat-error>
           }
           @if (supplierSearchControl.touched && supplierSearchControl.hasError('supplierDetailsIncomplete')) {
-            <mat-error>Supplier must have an address, email, phone number, and EIK.</mat-error>
+            <mat-error>{{ supplierSearchControl.getError('supplierDetailsIncomplete') }}</mat-error>
           }
         </mat-form-field>
 
@@ -88,7 +88,11 @@
           }
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--half">
+        <mat-form-field
+          appearance="outline"
+          class="add-invoice-dialog__field add-invoice-dialog__field--half"
+          floatLabel="always"
+        >
           <mat-label>Contact Person</mat-label>
           <input
             matInput
@@ -97,7 +101,11 @@
           />
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--full">
+        <mat-form-field
+          appearance="outline"
+          class="add-invoice-dialog__field add-invoice-dialog__field--full"
+          floatLabel="always"
+        >
           <mat-label>Address</mat-label>
           <textarea
             matInput
@@ -107,7 +115,11 @@
           ></textarea>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--half">
+        <mat-form-field
+          appearance="outline"
+          class="add-invoice-dialog__field add-invoice-dialog__field--half"
+          floatLabel="always"
+        >
           <mat-label>Email</mat-label>
           <input
             matInput
@@ -116,7 +128,11 @@
           />
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--half">
+        <mat-form-field
+          appearance="outline"
+          class="add-invoice-dialog__field add-invoice-dialog__field--half"
+          floatLabel="always"
+        >
           <mat-label>Phone Number</mat-label>
           <input
             matInput

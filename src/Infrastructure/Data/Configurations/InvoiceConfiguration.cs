@@ -19,7 +19,8 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
             .HasMaxLength(100)
             .IsRequired();
 
-        builder.Property(invoice => invoice.Eik)
+        builder.Property(invoice => invoice.TaxIdentifier)
+            .HasColumnName("Eik")
             .HasMaxLength(13)
             .IsRequired();
 
