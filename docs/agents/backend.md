@@ -16,3 +16,4 @@
 - Keep dependencies pointing inward.
 - Do not place infrastructure concerns in `Domain` or request handling logic in `Infrastructure`.
 - Do not write database migrations by hand or update the `DbContext` snapshot manually; those files should only be changed through the normal migration workflow.
+- Unless the user explicitly asks for migration work, do not create, update, or touch EF migrations or snapshot files.

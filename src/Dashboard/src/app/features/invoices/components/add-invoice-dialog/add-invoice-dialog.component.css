@@ -1,0 +1,102 @@
+:host {
+  display: block;
+}
+
+.add-invoice-dialog__form {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.add-invoice-dialog__section {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 1.25rem;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.add-invoice-dialog__section-heading {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.add-invoice-dialog__section-heading h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.25;
+}
+
+.add-invoice-dialog__eyebrow {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(15, 23, 42, 0.52);
+}
+
+.add-invoice-dialog__summary {
+  margin: 0;
+  color: rgba(15, 23, 42, 0.7);
+}
+
+.add-invoice-dialog__payment-section {
+  display: grid;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(15, 23, 42, 0.1);
+}
+
+.add-invoice-dialog__subsection-heading {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.add-invoice-dialog__subsection-heading h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+
+.add-invoice-dialog__grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  align-items: start;
+}
+
+.add-invoice-dialog__field {
+  width: 100%;
+}
+
+.add-invoice-dialog__field--full {
+  grid-column: span 12;
+}
+
+.add-invoice-dialog__field--half {
+  grid-column: span 6;
+}
+
+.add-invoice-dialog__supplier-option-title,
+.add-invoice-dialog__supplier-option-subtitle {
+  display: block;
+  white-space: normal;
+}
+
+.add-invoice-dialog__supplier-option-title {
+  font-weight: 600;
+}
+
+.add-invoice-dialog__supplier-option-subtitle {
+  color: rgba(15, 23, 42, 0.68);
+  font-size: 0.875rem;
+}
+
+@media (max-width: 48rem) {
+  .add-invoice-dialog__field--half,
+  .add-invoice-dialog__field--full {
+    grid-column: span 12;
+  }
+}

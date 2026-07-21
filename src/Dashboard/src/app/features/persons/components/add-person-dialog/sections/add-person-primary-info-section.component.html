@@ -1,0 +1,225 @@
+<section class="add-person-primary-info-section">
+  <mat-card class="add-person-primary-info-section__card">
+    <mat-card-content class="add-person-primary-info-section__content" [formGroup]="personForm()">
+      <div class="add-person-primary-info-section__block">
+        <div class="add-person-primary-info-section__block-heading">
+          <p class="add-person-primary-info-section__eyebrow">Person type</p>
+          <h3>Identity details</h3>
+          <p class="add-person-primary-info-section__summary">
+            Choose whether this record represents a private person or a company.
+          </p>
+        </div>
+
+        <mat-button-toggle-group
+          class="add-person-primary-info-section__toggle-group"
+          formControlName="type"
+          aria-label="Person type"
+        >
+          @for (option of personTypeOptions; track option.value) {
+            <mat-button-toggle [value]="option.value">
+              {{ option.label }}
+            </mat-button-toggle>
+          }
+        </mat-button-toggle-group>
+      </div>
+
+      <div class="add-person-primary-info-section__body">
+        @if (personForm().controls.type.value === personTypes.individual) {
+          <div class="add-person-primary-info-section__grid">
+            <mat-form-field
+              appearance="outline"
+              class="add-person-primary-info-section__field add-person-primary-info-section__field--third"
+            >
+              <mat-label>First name</mat-label>
+              <input
+                matInput
+                appPersonInputSanitizer="letters"
+                formControlName="firstName"
+                autocomplete="given-name"
+                minlength="1"
+                [attr.maxlength]="validationLimits.firstName"
+              />
+              @if (personForm().controls.firstName.touched && personForm().controls.firstName.hasError('required')) {
+                <mat-error>First name is required.</mat-error>
+              }
+              @if (personForm().controls.firstName.touched && personForm().controls.firstName.hasError('lettersOnly')) {
+                <mat-error>First name must contain letters only.</mat-error>
+              }
+              @if (personForm().controls.firstName.touched && personForm().controls.firstName.hasError('maxlength')) {
+                <mat-error>First name must be at most {{ validationLimits.firstName }} characters.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field
+              appearance="outline"
+              class="add-person-primary-info-section__field add-person-primary-info-section__field--third"
+            >
+              <mat-label>Middle name</mat-label>
+              <input
+                matInput
+                appPersonInputSanitizer="letters"
+                formControlName="middleName"
+                autocomplete="additional-name"
+                minlength="1"
+                [attr.maxlength]="validationLimits.middleName"
+              />
+              @if (personForm().controls.middleName.touched && personForm().controls.middleName.hasError('lettersOnly')) {
+                <mat-error>Middle name must contain letters only.</mat-error>
+              }
+              @if (personForm().controls.middleName.touched && personForm().controls.middleName.hasError('maxlength')) {
+                <mat-error>Middle name must be at most {{ validationLimits.middleName }} characters.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field
+              appearance="outline"
+              class="add-person-primary-info-section__field add-person-primary-info-section__field--third"
+            >
+              <mat-label>Last name</mat-label>
+              <input
+                matInput
+                appPersonInputSanitizer="letters"
+                formControlName="lastName"
+                autocomplete="family-name"
+                minlength="1"
+                [attr.maxlength]="validationLimits.lastName"
+              />
+              @if (personForm().controls.lastName.touched && personForm().controls.lastName.hasError('required')) {
+                <mat-error>Last name is required.</mat-error>
+              }
+              @if (personForm().controls.lastName.touched && personForm().controls.lastName.hasError('lettersOnly')) {
+                <mat-error>Last name must contain letters only.</mat-error>
+              }
+              @if (personForm().controls.lastName.touched && personForm().controls.lastName.hasError('maxlength')) {
+                <mat-error>Last name must be at most {{ validationLimits.lastName }} characters.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field
+              appearance="outline"
+              class="add-person-primary-info-section__field add-person-primary-info-section__field--half"
+            >
+              <mat-label>EGN</mat-label>
+              <input
+                matInput
+                appPersonInputSanitizer="digits"
+                formControlName="egn"
+                inputmode="numeric"
+                minlength="1"
+                [attr.maxlength]="validationLimits.egnLength"
+              />
+              @if (personForm().controls.egn.touched && personForm().controls.egn.hasError('required')) {
+                <mat-error>EGN is required.</mat-error>
+              }
+              @if (personForm().controls.egn.touched && personForm().controls.egn.hasError('digitsOnly')) {
+                <mat-error>EGN must contain only digits.</mat-error>
+              }
+              @if (personForm().controls.egn.touched && personForm().controls.egn.hasError('minlength')) {
+                <mat-error>EGN must be exactly {{ validationLimits.egnLength }} digits.</mat-error>
+              }
+              @if (personForm().controls.egn.touched && personForm().controls.egn.hasError('maxlength')) {
+                <mat-error>EGN must be exactly {{ validationLimits.egnLength }} digits.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        } @else {
+          <div class="add-person-primary-info-section__grid">
+            <mat-form-field
+              appearance="outline"
+              class="add-person-primary-info-section__field add-person-primary-info-section__field--full"
+            >
+              <mat-label>Company name</mat-label>
+              <input
+                matInput
+                appPersonInputSanitizer="company"
+                formControlName="companyName"
+                autocomplete="organization"
+                minlength="1"
+                [attr.maxlength]="validationLimits.companyName"
+              />
+              @if (personForm().controls.companyName.touched && personForm().controls.companyName.hasError('required')) {
+                <mat-error>Company name is required.</mat-error>
+              }
+              @if (personForm().controls.companyName.touched && personForm().controls.companyName.hasError('companyName')) {
+                <mat-error>Company name must contain letters, digits, and spaces only.</mat-error>
+              }
+              @if (personForm().controls.companyName.touched && personForm().controls.companyName.hasError('maxlength')) {
+                <mat-error>Company name must be at most {{ validationLimits.companyName }} characters.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field
+              appearance="outline"
+              class="add-person-primary-info-section__field add-person-primary-info-section__field--half"
+            >
+              <mat-label>Legal form</mat-label>
+              <mat-select formControlName="legalForm">
+                @for (option of legalFormOptions; track option.value) {
+                  <mat-option [value]="option.value">{{ option.label }}</mat-option>
+                }
+              </mat-select>
+              @if (personForm().controls.legalForm.touched && personForm().controls.legalForm.hasError('required')) {
+                <mat-error>Legal form is required.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field
+              appearance="outline"
+              class="add-person-primary-info-section__field add-person-primary-info-section__field--half"
+            >
+              <mat-label>EIK</mat-label>
+              <input
+                matInput
+                appPersonInputSanitizer="digits"
+                formControlName="eik"
+                inputmode="numeric"
+                minlength="1"
+                [attr.maxlength]="validationLimits.eikMaxLength"
+              />
+              @if (personForm().controls.eik.touched && personForm().controls.eik.hasError('required')) {
+                <mat-error>EIK is required.</mat-error>
+              }
+              @if (personForm().controls.eik.touched && personForm().controls.eik.hasError('digitsOnly')) {
+                <mat-error>EIK must contain only digits.</mat-error>
+              }
+              @if (personForm().controls.eik.touched && personForm().controls.eik.hasError('minlength')) {
+                <mat-error>EIK must be between {{ validationLimits.eikMinLength }} and {{ validationLimits.eikMaxLength }} digits.</mat-error>
+              }
+              @if (personForm().controls.eik.touched && personForm().controls.eik.hasError('maxlength')) {
+                <mat-error>EIK must be between {{ validationLimits.eikMinLength }} and {{ validationLimits.eikMaxLength }} digits.</mat-error>
+              }
+            </mat-form-field>
+
+            <div class="add-person-primary-info-section__field add-person-primary-info-section__vat-row">
+              <mat-form-field
+                appearance="outline"
+                class="add-person-primary-info-section__vat-country"
+              >
+                <mat-label>Country code</mat-label>
+                <mat-select formControlName="vatCountryCode">
+                  @for (option of vatCountryCodeOptions; track option.value) {
+                    <mat-option [value]="option.value">{{ option.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field
+                appearance="outline"
+                class="add-person-primary-info-section__vat-number"
+              >
+                <mat-label>VAT number</mat-label>
+                <input
+                  matInput
+                  formControlName="vatNumber"
+                  inputmode="numeric"
+                  readonly
+                  [attr.maxlength]="validationLimits.vatNumberLength"
+                />
+              </mat-form-field>
+            </div>
+          </div>
+        }
+      </div>
+    </mat-card-content>
+  </mat-card>
+</section>

@@ -1,0 +1,31 @@
+<div class="person-phone-input">
+  <mat-form-field appearance="outline" class="person-phone-input__country-code">
+    <mat-label>Country code</mat-label>
+    <mat-select
+      [value]="selectedCountryCode()"
+      [disabled]="isDisabled()"
+      (valueChange)="handleCountryCodeChange($event)"
+      (blur)="handleTouched()"
+    >
+      @for (option of countryCodeOptions; track option.value) {
+        <mat-option [value]="option.value">{{ option.label }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="person-phone-input__national-number">
+    <mat-label>Phone number</mat-label>
+    <input
+      matInput
+      appPersonInputSanitizer="digits"
+      [value]="nationalNumber()"
+      [disabled]="isDisabled()"
+      autocomplete="tel-national"
+      inputmode="numeric"
+      maxlength="15"
+      (input)="handleNationalNumberInput($event)"
+      (blur)="handleTouched()"
+    />
+    <mat-hint>Enter the national number without the leading 0.</mat-hint>
+  </mat-form-field>
+</div>

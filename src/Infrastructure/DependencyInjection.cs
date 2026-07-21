@@ -6,7 +6,9 @@ using Domain.Entities;
 using Infrastructure.Cameras.Services;
 using Infrastructure.Data;
 using Infrastructure.Email;
+using Infrastructure.Invoices.Services;
 using Infrastructure.Identity.Services;
+using Infrastructure.Persons.Services;
 using Infrastructure.SeedWork.Options;
 using Infrastructure.Sites.Services;
 using Infrastructure.Storage;
@@ -55,9 +57,11 @@ public static class DependencyInjection
         services.AddScoped<IFilesBlobService, BlobFilesService>();
         services.AddScoped<IVideosBlobService, BlobVideosService>();
         services.AddScoped<IEmailService, EmailService>();
+        services.AddScoped<IInvoiceService, InvoiceService>();
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<ISiteService, SiteService>();
         services.AddScoped<ICameraService, CameraService>();
+        services.AddScoped<IPersonService, PersonService>();
 
         services
             .AddIdentity<ApplicationUser, IdentityRole>(options => { options.User.RequireUniqueEmail = true; })

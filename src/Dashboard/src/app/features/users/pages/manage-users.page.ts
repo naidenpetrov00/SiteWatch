@@ -15,9 +15,16 @@ import { ActionButtonComponent } from '../../../shared/ui/action-button/action-b
 import { DashboardUser } from '../models/dashboard-user.model';
 import { DashboardUsersService } from '../services/dashboard-users.service';
 import { DataTableComponent } from '../../../shared/data-table/data-table.component';
+import { EditUserDialogComponent } from '../components/edit-user-dialog/edit-user-dialog.component';
 import { DialogShellComponent } from '../../../shared/ui/dialog-shell/dialog-shell.component';
 
 const USER_COLUMNS: readonly DataTableColumn<DashboardUser>[] = [
+  {
+    key: 'numberId',
+    label: 'Number Id',
+    sortable: true,
+    cellType: 'button'
+  },
   {
     key: 'id',
     label: 'Id',
@@ -119,6 +126,24 @@ export class ManageUsersPage {
   }
 
   openAddUserDialog(): void {
-    this.dialog.open(DialogShellComponent);
+    this.dialog.open(DialogShellComponent, {
+      autoFocus: false,
+      width: '36rem',
+      maxWidth: 'calc(100vw - 2rem)',
+      data: {
+        eyebrow: 'Administration',
+        title: 'Manage Users',
+        subtitle: 'Reusable dialog shell placeholder.'
+      }
+    });
+  }
+
+  onNumberIdClick(user: DashboardUser): void {
+    this.dialog.open(EditUserDialogComponent, {
+      autoFocus: false,
+      width: '48rem',
+      maxWidth: 'calc(100vw - 2rem)',
+      data: user
+    });
   }
 }

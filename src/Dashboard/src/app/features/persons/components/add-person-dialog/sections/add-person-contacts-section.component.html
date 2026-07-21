@@ -1,0 +1,165 @@
+<section class="add-person-contacts-section">
+  <div class="add-person-contacts-section__header">
+    <div>
+      <p class="add-person-contacts-section__eyebrow">Repeatable section</p>
+      <h3>Contacts</h3>
+      <p class="add-person-contacts-section__summary">
+        Store phone numbers, email addresses, or other contact methods as separate entries.
+      </p>
+      @if (contacts().touched && contacts().hasError('contactMultiplePrimary')) {
+        <p class="add-person-contacts-section__error" role="alert">
+          Only one contact can be marked as primary.
+        </p>
+      }
+    </div>
+
+    <button mat-stroked-button type="button" (click)="addRequested.emit()">
+      Add contact
+    </button>
+  </div>
+
+  <div class="add-person-contacts-section__list">
+    @for (contactGroup of contacts().controls; track $index; let index = $index) {
+      <mat-card class="add-person-contacts-section__card">
+        <mat-card-content class="add-person-contacts-section__card-content">
+          <div class="add-person-contacts-section__repeatable-header">
+            <div>
+              <p class="add-person-contacts-section__repeatable-eyebrow">Contact {{ index + 1 }}</p>
+              <h4>Communication details</h4>
+            </div>
+
+            <button
+              mat-icon-button
+              type="button"
+              aria-label="Remove contact"
+              (click)="removeRequested.emit(index)"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+
+          <div class="add-person-contacts-section__grid" [formGroup]="contactGroup">
+            <mat-form-field
+              appearance="outline"
+              class="add-person-contacts-section__field add-person-contacts-section__field--third"
+            >
+              <mat-label>Contact type</mat-label>
+              <mat-select formControlName="contactType">
+                @for (option of contactTypeOptions; track option.value) {
+                  <mat-option [value]="option.value">{{ option.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            @switch (contactGroup.controls.contactType.value) {
+              @case (contactTypes.phone) {
+                <div class="add-person-contacts-section__field add-person-contacts-section__field--full">
+                  <app-person-phone-input formControlName="value" />
+                  @if (contactGroup.controls.value.touched && contactGroup.controls.value.hasError('digitsOnly')) {
+                    <p class="add-person-contacts-section__error" role="alert">
+                      Phone number must contain digits only.
+                    </p>
+                  }
+                  @if (contactGroup.controls.value.touched && (contactGroup.controls.value.hasError('minlength') || contactGroup.controls.value.hasError('maxlength'))) {
+                    <p class="add-person-contacts-section__error" role="alert">
+                      Phone number must contain between {{ validationLimits.phoneValueMinLength }} and {{ validationLimits.phoneValueMaxLength }} digits, including the country code.
+                    </p>
+                  }
+                </div>
+              }
+              @case (contactTypes.email) {
+                <mat-form-field
+                  appearance="outline"
+                  class="add-person-contacts-section__field add-person-contacts-section__field--full"
+                >
+                  <mat-label>Email</mat-label>
+                  <input
+                    matInput
+                    formControlName="value"
+                    type="email"
+                    autocomplete="email"
+                    inputmode="email"
+                    minlength="1"
+                    maxlength="256"
+                  />
+                  @if (contactGroup.controls.value.touched && contactGroup.controls.value.hasError('email')) {
+                    <mat-error>Enter a valid email address.</mat-error>
+                  }
+                  @if (contactGroup.controls.value.touched && contactGroup.controls.value.hasError('maxlength')) {
+                    <mat-error>Email must be at most 256 characters.</mat-error>
+                  }
+                </mat-form-field>
+              }
+              @case (contactTypes.website) {
+                <mat-form-field
+                  appearance="outline"
+                  class="add-person-contacts-section__field add-person-contacts-section__field--full"
+                >
+                  <mat-label>Website</mat-label>
+                  <input
+                    matInput
+                    formControlName="value"
+                    type="text"
+                    autocomplete="url"
+                    inputmode="url"
+                    minlength="1"
+                    maxlength="256"
+                  />
+                  @if (contactGroup.controls.value.touched && contactGroup.controls.value.hasError('website')) {
+                    <mat-error>Enter a valid website address.</mat-error>
+                  }
+                  @if (contactGroup.controls.value.touched && contactGroup.controls.value.hasError('maxlength')) {
+                    <mat-error>Website must be at most 256 characters.</mat-error>
+                  }
+                </mat-form-field>
+              }
+              @default {
+                <mat-form-field
+                  appearance="outline"
+                  class="add-person-contacts-section__field add-person-contacts-section__field--full"
+                >
+                  <mat-label>Value</mat-label>
+                  <input
+                    matInput
+                    formControlName="value"
+                    type="text"
+                    minlength="1"
+                    maxlength="256"
+                  />
+                  @if (contactGroup.controls.value.touched && contactGroup.controls.value.hasError('maxlength')) {
+                    <mat-error>Value must be at most 256 characters.</mat-error>
+                  }
+                </mat-form-field>
+              }
+            }
+
+            <mat-form-field
+              appearance="outline"
+              class="add-person-contacts-section__field add-person-contacts-section__field--full"
+            >
+              <mat-label>Details</mat-label>
+              <textarea matInput rows="3" formControlName="details" minlength="1" maxlength="500"></textarea>
+              @if (contactGroup.controls.details.touched && contactGroup.controls.details.hasError('maxlength')) {
+                <mat-error>Details must be at most 500 characters.</mat-error>
+              }
+            </mat-form-field>
+
+            <div class="add-person-contacts-section__field add-person-contacts-section__field--checkbox">
+              <mat-checkbox formControlName="isPrimary">Primary contact</mat-checkbox>
+            </div>
+
+            <div class="add-person-contacts-section__field add-person-contacts-section__field--checkbox">
+              <mat-checkbox formControlName="isActive">Active</mat-checkbox>
+            </div>
+
+            @if (contactGroup.touched && contactGroup.hasError('contactRowIncomplete')) {
+              <p class="add-person-contacts-section__error" role="alert">
+                Fill the contact value or clear the row.
+              </p>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+  </div>
+</section>

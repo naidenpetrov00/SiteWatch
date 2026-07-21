@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Security.Claims;
+using Infrastructure.Data.SeedData;
 
 namespace Infrastructure.Data;
 
@@ -22,7 +23,7 @@ public class ApplicationDbContextInitialiser(
     ];
 
     private const string BulkSeedEmailDomain = "sitewatch.local";
-    private const int BulkSeedUserCount = 5000;
+    private const int BulkSeedUserCount = 1000;
 
     private async Task<List<ApplicationUser>> AddUsers()
     {
@@ -240,6 +241,93 @@ public class ApplicationDbContextInitialiser(
         );
     }
 
+    private async Task<List<Person>> AddPersons()
+    {
+        if (await dbContext.Persons.AnyAsync())
+        {
+            logger.LogInformation("Person seeding skipped: persons already exist.");
+            return await dbContext.Persons.ToListAsync();
+        }
+
+        var persons = PersonSeedData.Create();
+
+        var addresses = new[]
+        {
+            (AddressLine: "Vitosha Boulevard 1", City: "Sofia", PostalCode: "1000"),
+            (AddressLine: "Tsarigradsko Shose 115", City: "Sofia", PostalCode: "1784"),
+            (AddressLine: "Dondukov 11", City: "Sofia", PostalCode: "1000"),
+        };
+
+        var now = DateTimeOffset.UtcNow;
+        for (var i = 0; i < persons.Count && i < addresses.Length; i++)
+        {
+            var addressData = addresses[i];
+            var address = PersonAddress.Create(
+                persons[i].Id,
+                addressData.AddressLine,
+                addressData.City,
+                addressData.PostalCode,
+                "Bulgaria",
+                isPrimary: true,
+                isActive: true
+            );
+            address.Created = now;
+            address.CreatedBy = "System";
+            address.LastModified = now;
+            address.LastModifiedBy = "System";
+            persons[i].AddAddress(address);
+        }
+
+        var ibans = new[]
+        {
+            "BG80BNBG96611020345678",
+            "BG18RZBB91550123456789",
+            "BG03UNCR70001512345678",
+        };
+
+        for (var i = 0; i < persons.Count && i < ibans.Length; i++)
+        {
+            var bankAccount = PersonBankAccount.Create(
+                persons[i].Id,
+                ibans[i],
+                isPrimary: true,
+                isActive: true
+            );
+            bankAccount.Created = now;
+            bankAccount.CreatedBy = "System";
+            bankAccount.LastModified = now;
+            bankAccount.LastModifiedBy = "System";
+            persons[i].AddBankAccount(bankAccount);
+        }
+
+        await dbContext.Persons.AddRangeAsync(persons);
+        await dbContext.SaveChangesAsync();
+        logger.LogInformation("Seeded {PersonCount} persons.", persons.Count);
+
+        return persons;
+    }
+
+    private async Task AddInvoices(List<Person> persons)
+    {
+        if (await dbContext.Invoices.AnyAsync())
+        {
+            logger.LogInformation("Invoice seeding skipped: invoices already exist.");
+            return;
+        }
+
+        if (persons.Count < 3)
+        {
+            logger.LogWarning("Invoice seeding skipped: not enough persons available.");
+            return;
+        }
+
+        var invoices = InvoiceSeedData.Create(persons);
+
+        await dbContext.Invoices.AddRangeAsync(invoices);
+        await dbContext.SaveChangesAsync();
+        logger.LogInformation("Seeded {InvoiceCount} invoices.", invoices.Count);
+    }
+
     public async Task InitializeDatabaseAsync()
     {
         try
@@ -273,6 +361,8 @@ public class ApplicationDbContextInitialiser(
             var users = await AddUsers();
             await AddSites(users);
             await AddCameras();
+            var persons = await AddPersons();
+            await AddInvoices(persons);
 
             logger.LogInformation("Database initialization completed successfully.");
         }

@@ -1,0 +1,34 @@
+<main class="invoices-page">
+  <header class="invoices-page__header">
+    <div>
+      <p class="invoices-page__eyebrow">Administration</p>
+      <h1>Invoices</h1>
+      <p class="invoices-page__summary">
+        Review the current invoice records.
+      </p>
+    </div>
+
+    <div class="invoices-page__actions">
+      <app-action-button
+        label="Add Invoice"
+        variant="primary"
+        (clicked)="openAddInvoiceDialog()"
+      ></app-action-button>
+    </div>
+  </header>
+
+  <app-data-table
+    tableEyebrow="Invoices"
+    tableLabel="Manage Invoices"
+    emptyMessage="No invoices available yet."
+    filterApplyMode="search"
+    [rows]="invoices()"
+    [filteredRowsTotal]="invoicesFilteredCount()"
+    [overallRowsTotal]="invoicesTotalCount()"
+    [columns]="columns"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="pageSizeOptions"
+    (tableStateChange)="onTableStateChange($event)"
+    (cellButtonClicked)="onCellButtonClicked($event)"
+  />
+</main>

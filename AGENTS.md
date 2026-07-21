@@ -6,12 +6,18 @@
 - Do not over-explain.
 - If the user asks a yes/no question, answer with "Yes" or "No" first, then add only minimal context if needed.
 - Do not provide long explanations unless explicitly requested.
-- When planing explain more of the patterns tech and code you will use rather then just long text explaining the details. Keep the Details shorter and on point
+- When planning, keep it concrete: describe the files, code paths, APIs, patterns, and technical approach you will use so I can spot overengineering or hallucination early. Keep the text short and technical.
+- Do exactly the work I asked for, plus the wiring needed for it to function end to end. Keep the code quality patterns and principles this should not be saving from just dont overcomplicate with additional logic and if you think its good idea ask me first so i can decide
+- Do not add adjacent behavior, follow-up features, extra automation, or cleanup work unless I explicitly asked for it or if you think is good idea ask me first.
+- When creatign a feature try to find the things that can be separated from this to a reusable separation. I am talking about backend and frontend both logic and ui 
+- If you think additional scope should be included, stop and ask before you draft or expand the plan.
 - When explaining completed work, summarize only key changes.
 - Avoid repetition and unnecessary background context.
 - Do not include tutorials unless requested.
 - If the answer is obvious from the code, keep responses short.
 - While planning, if anything is not 100% certain, ask the user before proceeding.
+- If a request is ambiguous or could be misunderstood, stop and ask for clarification before acting.
+- Do not assume user intent when details are unclear; double-check user-provided facts and call out likely mistakes or better options.
 
 ## Repository Guidelines
 
@@ -56,7 +62,11 @@ SiteWatch is split into:
 - Do not commit secrets or environment-specific values.
 - Keep changes scoped and avoid unrelated formatting or churn.
 - Follow existing repository naming and formatting conventions.
-- Prefer existing patterns over introducing new abstractions.
+- Prefer reusing existing functions, methods, utilities, components, services, and patterns over creating new implementations or abstractions.
+- Before adding a helper or repeating logic, search the relevant backend or frontend scope for an existing implementation that can be reused.
+- When new logic is clearly reusable, or when an existing implementation is duplicated or belongs in a broader/correct scope, separate or move it to the appropriate shared scope and update callers to reuse it.
+- Keep abstractions focused and avoid extracting one-off logic or creating layers without a concrete reuse case.
+- Avoid building layers for one-off validation or transformation logic.
 - Read only the minimum relevant files required for the task.
 
 ### Specialized Guidance

@@ -12,8 +12,6 @@ command = "npx"
 args = ["-y", "@modelcontextprotocol/server-filesystem", "."]
 enabled = true
 
-[mcp_servers.playwright]
-args = ["@playwright/mcp@latest"]
-command = "npx"
-cwd = "/home/naidenpetrov00/dev/SiteWatch"
-enabled = true
+[mcp_servers.filesystem.tools.create_directory]
+approval_mode = "approve"
+

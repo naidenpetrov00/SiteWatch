@@ -1,0 +1,70 @@
+<form
+  [attr.id]="formId"
+  class="edit-user-dialog__form"
+  [formGroup]="userForm()"
+  novalidate
+  (ngSubmit)="onSubmit()"
+>
+  <div class="edit-user-dialog__grid">
+    <mat-form-field
+      appearance="outline"
+      class="edit-user-dialog__field edit-user-dialog__field--half"
+    >
+      <mat-label>Number Id</mat-label>
+      <input matInput formControlName="numberId" type="number" readonly />
+    </mat-form-field>
+
+    <mat-form-field
+      appearance="outline"
+      class="edit-user-dialog__field edit-user-dialog__field--half"
+    >
+      <mat-label>Id</mat-label>
+      <input matInput formControlName="id" type="text" readonly />
+    </mat-form-field>
+
+    <mat-form-field
+      appearance="outline"
+      class="edit-user-dialog__field edit-user-dialog__field--full"
+    >
+      <mat-label>Username</mat-label>
+      <input matInput formControlName="username" type="text" />
+    </mat-form-field>
+
+    <mat-form-field
+      appearance="outline"
+      class="edit-user-dialog__field edit-user-dialog__field--half"
+    >
+      <mat-label>Email</mat-label>
+      <input matInput formControlName="email" type="email" />
+    </mat-form-field>
+
+    <mat-form-field
+      appearance="outline"
+      class="edit-user-dialog__field edit-user-dialog__field--half"
+    >
+      <mat-label>Phone number</mat-label>
+      <input matInput formControlName="phoneNumber" type="text" />
+    </mat-form-field>
+
+    <div class="edit-user-dialog__field edit-user-dialog__field--checkbox">
+      <mat-checkbox formControlName="isEmailConfirmed">Email confirmed</mat-checkbox>
+    </div>
+
+    <div class="edit-user-dialog__field edit-user-dialog__field--checkbox">
+      <mat-checkbox formControlName="isPhoneNumberConfirmed">Phone confirmed</mat-checkbox>
+    </div>
+
+    <mat-form-field
+      appearance="outline"
+      class="edit-user-dialog__field edit-user-dialog__field--full"
+    >
+      <mat-label>Last login at</mat-label>
+      <input
+        matInput
+        type="text"
+        [value]="formatLastLoginAt(userForm().controls.lastLoginAt.value)"
+        readonly
+      />
+    </mat-form-field>
+  </div>
+</form>

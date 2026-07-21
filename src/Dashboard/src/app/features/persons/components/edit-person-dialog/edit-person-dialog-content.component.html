@@ -1,0 +1,46 @@
+<form
+  [attr.id]="formId"
+  class="edit-person-dialog__form"
+  [formGroup]="personForm()"
+  novalidate
+  (ngSubmit)="onSubmit()"
+>
+  <app-dialog-wizard-tabs
+    [tabs]="wizardTabs"
+    [selectedTabId]="selectedTabId()"
+    [ariaLabel]="'Person sections'"
+    (selectedTabIdChange)="setSelectedTab($event)"
+  />
+
+  <div class="edit-person-dialog__content">
+    @switch (selectedTabId()) {
+      @case ('primary-info') {
+        <app-add-person-primary-info-section
+          [personForm]="personForm()"
+          [syncVatNumber]="false"
+        />
+      }
+      @case ('addresses') {
+        <app-add-person-addresses-section
+          [addresses]="personForm().controls.addresses"
+          (addRequested)="addAddress()"
+          (removeRequested)="removeAddress($event)"
+        />
+      }
+      @case ('contacts') {
+        <app-add-person-contacts-section
+          [contacts]="personForm().controls.contacts"
+          (addRequested)="addContact()"
+          (removeRequested)="removeContact($event)"
+        />
+      }
+      @case ('bank-accounts') {
+        <app-add-person-bank-accounts-section
+          [bankAccounts]="personForm().controls.bankAccounts"
+          (addRequested)="addBankAccount()"
+          (removeRequested)="removeBankAccount($event)"
+        />
+      }
+    }
+  </div>
+</form>

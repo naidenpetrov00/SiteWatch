@@ -1,0 +1,25 @@
+<app-dialog-shell
+  [eyebrow]="dialogEyebrow"
+  [title]="dialogTitle"
+  [subtitle]="dialogSubtitle"
+>
+  <app-edit-user-dialog-content
+    [userForm]="userForm"
+    (saveRequested)="saveUserAndClose()"
+  />
+
+  <app-dialog-action-bar
+    dialog-shell-actions
+    [cancelLabel]="'Cancel'"
+    [submitLabel]="submitLabel"
+    [secondaryLabel]="secondaryLabel"
+    [showSecondary]="true"
+    [submitFormId]="formId"
+    [submitButtonType]="'submit'"
+    [secondaryButtonType]="'button'"
+    [submitDisabled]="!userForm.valid"
+    [secondaryDisabled]="!userForm.valid"
+    (cancel)="closeDialog()"
+    (secondarySubmit)="saveUser()"
+  />
+</app-dialog-shell>

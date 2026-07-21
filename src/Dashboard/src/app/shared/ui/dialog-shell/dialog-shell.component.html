@@ -1,17 +1,35 @@
-<div class="dialog-shell">
-  <div class="dialog-shell__actions">
+<section class="dialog-shell">
+  <header class="dialog-shell__header">
+    <div class="dialog-shell__header-copy">
+      @if (resolvedEyebrow()) {
+        <p class="dialog-shell__eyebrow">{{ resolvedEyebrow() }}</p>
+      }
+
+      @if (resolvedTitle()) {
+        <h2 class="dialog-shell__title">{{ resolvedTitle() }}</h2>
+      }
+
+      @if (resolvedSubtitle()) {
+        <p class="dialog-shell__subtitle">{{ resolvedSubtitle() }}</p>
+      }
+    </div>
+
     <button
       mat-icon-button
       type="button"
       class="dialog-shell__close-button"
-      aria-label="Close dialog"
+      [attr.aria-label]="resolvedCloseAriaLabel()"
       mat-dialog-close
     >
       <mat-icon>close</mat-icon>
     </button>
-  </div>
+  </header>
 
-  <div class="dialog-shell__content">
+  <div class="dialog-shell__body">
     <ng-content />
   </div>
-</div>
+
+  <footer class="dialog-shell__actions">
+    <ng-content select="[dialog-shell-actions]" />
+  </footer>
+</section>

@@ -1,0 +1,78 @@
+import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
+
+export const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const DECIMAL_REGEX = /^\d+(\.\d{1,2})?$/;
+const TIME_REGEX = /^\d{2}:\d{2}$/;
+
+export function uuidValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value;
+
+    if (typeof value !== 'string' || value.trim().length === 0) {
+      return null;
+    }
+
+    return UUID_REGEX.test(value.trim()) ? null : { uuid: true };
+  };
+}
+
+export function decimalValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value;
+
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    if (typeof value === 'number') {
+      return Number.isFinite(value) && DECIMAL_REGEX.test(String(value)) ? null : { decimal: true };
+    }
+
+    if (typeof value !== 'string' || value.trim().length === 0) {
+      return null;
+    }
+
+    return DECIMAL_REGEX.test(value.trim()) ? null : { decimal: true };
+  };
+}
+
+export function positiveDecimalValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value;
+
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    const normalizedValue = typeof value === 'number' ? String(value) : value.trim();
+
+    if (normalizedValue.length === 0) {
+      return null;
+    }
+
+    const parsedValue = Number(normalizedValue);
+
+    if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
+      return { positiveDecimal: true };
+    }
+
+    return DECIMAL_REGEX.test(normalizedValue) ? null : { positiveDecimal: true };
+  };
+}
+
+export function timeValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value;
+
+    if (typeof value !== 'string') {
+      return null;
+    }
+
+    if (value.trim().length === 0) {
+      return null;
+    }
+
+    return TIME_REGEX.test(value.trim()) ? null : { time: true };
+  };
+}

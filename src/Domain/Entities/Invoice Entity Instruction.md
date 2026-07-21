@@ -1,0 +1,17 @@
+We need new Entity Invoice it should repsresent Invoice it should contain props:
+Id,
+Invoice Number,
+Date,
+Supplier,
+EIK,
+Address,
+Email,
+Phone number,
+Contact Person,
+Payment term,
+Total value excluding VAT,
+VAT,
+Total value including VAT,
+payment date,
+payment time,
+payment method

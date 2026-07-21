@@ -1,0 +1,49 @@
+.invoice-dialog__sections {
+  display: grid;
+  gap: 1rem;
+}
+
+.invoice-dialog__section {
+  padding: 1rem;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.invoice-dialog__section-title {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.invoice-dialog__definition-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.875rem 1rem;
+  margin: 0;
+}
+
+.invoice-dialog__definition-item {
+  min-width: 0;
+}
+
+.invoice-dialog__definition-item dt {
+  margin: 0 0 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(15, 23, 42, 0.58);
+}
+
+.invoice-dialog__definition-item dd {
+  margin: 0;
+  color: rgb(15, 23, 42);
+  word-break: break-word;
+}
+
+@media (max-width: 48rem) {
+  .invoice-dialog__definition-list {
+    grid-template-columns: 1fr;
+  }
+}

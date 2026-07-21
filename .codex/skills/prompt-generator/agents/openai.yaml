@@ -1,0 +1,4 @@
+interface:
+  display_name: Prompt Generator
+  short_description: Generate task prompts with repository skills
+  default_prompt: Use /prompt to turn my instruction into an execution-ready prompt and identify the repository skills required.

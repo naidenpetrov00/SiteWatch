@@ -14,6 +14,8 @@
 - Keep reads targeted: open only files directly needed to answer the task.
 - Prefer the smallest relevant context set before expanding to nearby files or docs.
 - While planning, if anything is not 100% certain, ask the user before proceeding.
+- If a request is ambiguous or could be misunderstood, stop and ask for clarification before acting.
+- Do not assume user intent when details are unclear; double-check user-provided facts and call out likely mistakes or better options.
 
 ## Commit Style
 - Use short imperative commits with prefixes such as `feat:`, `fix:`, and `refactor:`.

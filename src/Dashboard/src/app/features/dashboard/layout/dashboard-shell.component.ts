@@ -55,6 +55,9 @@ export class DashboardShellComponent {
   }
 
   isAdministrationActive(): boolean {
-    return this.router.isActive('/manage-users', this.exactMatchOptions);
+    return (
+      this.router.isActive('/manage-users', this.exactMatchOptions) ||
+      this.router.isActive('/manage-persons', this.exactMatchOptions)
+    );
   }
 }
