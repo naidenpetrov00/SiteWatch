@@ -15,9 +15,6 @@ public sealed class CreateInvoiceValidator : AbstractValidator<CreateInvoiceComm
             .NotEmpty()
             .Must(BeValidDateTimeOffset)
             .WithMessage("Date must be a valid date.");
-        RuleFor(x => x.Iban)
-            .NotEmpty()
-            .MaximumLength(34);
         RuleFor(x => x.PaymentTerm)
             .NotEmpty()
             .Must(BeValidDateTimeOffset)

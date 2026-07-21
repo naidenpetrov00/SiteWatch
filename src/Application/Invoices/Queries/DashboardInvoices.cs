@@ -18,7 +18,6 @@ public sealed partial class DashboardInvoicesQuery
     public string? Email { get; set; }
     public string? PhoneNumber { get; set; }
     public string? ContactPerson { get; set; }
-    public string? Iban { get; set; }
     public string? PaymentTerm { get; set; }
     public string? TotalValueExcludingVat { get; set; }
     public string? Vat { get; set; }

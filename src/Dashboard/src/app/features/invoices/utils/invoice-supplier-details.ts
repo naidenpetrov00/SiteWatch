@@ -23,6 +23,7 @@ export function deriveInvoiceSupplierDetails(
   const email = pickSupplierContactValue(supplier, CONTACT_TYPES.email);
   const phoneNumber = pickSupplierContactValue(supplier, CONTACT_TYPES.phone);
   const contactPerson = supplier.displayName.trim();
+  const iban = pickSupplierIban(supplier);
 
   if (!address) {
     return { details: null, error: 'Supplier is missing an active address.' };
@@ -37,10 +38,19 @@ export function deriveInvoiceSupplierDetails(
       address,
       email: email ?? '',
       phoneNumber: phoneNumber ?? '',
-      contactPerson
+      contactPerson,
+      iban
     },
     error: null
   };
+}
+
+function pickSupplierIban(supplier: DashboardPersonDetails): string {
+  return [...supplier.bankAccounts]
+    .filter((item) => item.isActive && item.iban.trim().length > 0)
+    .sort((left, right) => Number(right.isPrimary) - Number(left.isPrimary))
+    .map((item) => item.iban.trim())
+    .at(0) ?? '';
 }
 
 function pickSupplierAddress(supplier: DashboardPersonDetails): string | null {

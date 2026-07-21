@@ -10,7 +10,6 @@ export interface DashboardInvoice {
   email: string;
   phoneNumber: string;
   contactPerson: string;
-  iban: string;
   paymentTerm: string;
   totalValueExcludingVat: number;
   vat: number;

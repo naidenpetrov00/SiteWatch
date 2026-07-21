@@ -278,6 +278,28 @@ public class ApplicationDbContextInitialiser(
             persons[i].AddAddress(address);
         }
 
+        var ibans = new[]
+        {
+            "BG80BNBG96611020345678",
+            "BG18RZBB91550123456789",
+            "BG03UNCR70001512345678",
+        };
+
+        for (var i = 0; i < persons.Count && i < ibans.Length; i++)
+        {
+            var bankAccount = PersonBankAccount.Create(
+                persons[i].Id,
+                ibans[i],
+                isPrimary: true,
+                isActive: true
+            );
+            bankAccount.Created = now;
+            bankAccount.CreatedBy = "System";
+            bankAccount.LastModified = now;
+            bankAccount.LastModifiedBy = "System";
+            persons[i].AddBankAccount(bankAccount);
+        }
+
         await dbContext.Persons.AddRangeAsync(persons);
         await dbContext.SaveChangesAsync();
         logger.LogInformation("Seeded {PersonCount} persons.", persons.Count);

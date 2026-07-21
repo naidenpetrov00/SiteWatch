@@ -57,11 +57,6 @@ public sealed partial class DashboardInvoicesQuery
                     query => query.ContactPerson,
                     invoice => invoice.ContactPerson
                 ),
-                TableFilterDescriptor<Invoice, DashboardInvoicesQuery>.TextContains(
-                    "iban",
-                    query => query.Iban,
-                    invoice => invoice.Iban
-                ),
                 TableFilterDescriptor<Invoice, DashboardInvoicesQuery>.DateTimeOffsetSearch(
                     "paymentTerm",
                     query => query.PaymentTerm,
@@ -152,11 +147,6 @@ public sealed partial class DashboardInvoicesQuery
                 ["contactPerson"] = TableSortDescriptor<Invoice, DashboardInvoicesQuery>.Create(
                     "contactPerson",
                     invoice => invoice.ContactPerson,
-                    invoice => invoice.Id
-                ),
-                ["iban"] = TableSortDescriptor<Invoice, DashboardInvoicesQuery>.Create(
-                    "iban",
-                    invoice => invoice.Iban,
                     invoice => invoice.Id
                 ),
                 ["paymentTerm"] = TableSortDescriptor<Invoice, DashboardInvoicesQuery>.Create(

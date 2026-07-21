@@ -65,7 +65,6 @@ public sealed class InvoiceService(ApplicationDbContext dbContext, IMapper mappe
             email,
             phoneNumber,
             contactPerson,
-            request.Iban,
             paymentTerm,
             request.TotalValue,
             vatAmount,

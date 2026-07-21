@@ -1,0 +1,27 @@
+<mat-form-field appearance="outline" class="datepicker">
+  <mat-label>{{ label() }}</mat-label>
+  <input
+    matInput
+    [formControl]="control()"
+    [matDatepicker]="datepicker"
+    (click)="datepicker.open()"
+  />
+  <span matSuffix class="datepicker__actions">
+    <button
+      mat-button
+      type="button"
+      class="datepicker__today-button"
+      (click)="selectToday()"
+    >
+      Today
+    </button>
+    <mat-datepicker-toggle [for]="datepicker" />
+  </span>
+  <mat-datepicker #datepicker />
+  @if (showRequiredError() && control().touched && control().hasError('required')) {
+    <mat-error>{{ label() }} is required.</mat-error>
+  }
+  @if (showParseError() && control().touched && control().hasError('matDatepickerParse')) {
+    <mat-error>{{ label() }} must be a valid date.</mat-error>
+  }
+</mat-form-field>

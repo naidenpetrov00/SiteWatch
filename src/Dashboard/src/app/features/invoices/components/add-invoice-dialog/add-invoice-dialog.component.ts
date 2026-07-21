@@ -15,13 +15,13 @@ import { MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
+import { provideNativeDateAdapter } from '@angular/material/core';
 
 import { DashboardPersonsService } from '../../../persons/services/dashboard-persons.service';
 import { DashboardPersonLookup } from '../../../persons/models/dashboard-person-lookup.model';
 import { DialogActionBarComponent } from '../../../../shared/ui/dialog-action-bar/dialog-action-bar.component';
 import { DialogShellComponent } from '../../../../shared/ui/dialog-shell/dialog-shell.component';
+import { DatepickerComponent } from '../../../../shared/ui/datepicker/datepicker.component';
 import { DashboardInvoicesService } from '../../services/dashboard-invoices.service';
 import { toCreateDashboardInvoiceRequest } from '../../utils/create-dashboard-invoice-request.mapper';
 import {
@@ -54,14 +54,14 @@ import {
     DialogActionBarComponent,
     DialogShellComponent,
     MatAutocompleteModule,
+    DatepickerComponent,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatDatepickerModule,
-    MatNativeDateModule
   ],
   templateUrl: './add-invoice-dialog.component.html',
   styleUrl: './add-invoice-dialog.component.css',
+  providers: [provideNativeDateAdapter()],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AddInvoiceDialogComponent implements OnInit {
@@ -222,6 +222,7 @@ export class AddInvoiceDialogComponent implements OnInit {
       this.invoiceForm.controls.contactPerson.setValue(result.details.contactPerson, {
         emitEvent: false
       });
+      this.invoiceForm.controls.iban.setValue(result.details.iban, { emitEvent: false });
       this.supplierDetailsReady.set(true);
     } catch (error) {
       if (lookupRevision !== this.supplierDetailsRevision) {
@@ -257,6 +258,7 @@ export class AddInvoiceDialogComponent implements OnInit {
     this.invoiceForm.controls.email.setValue('', { emitEvent: false });
     this.invoiceForm.controls.phoneNumber.setValue('', { emitEvent: false });
     this.invoiceForm.controls.contactPerson.setValue('', { emitEvent: false });
+    this.invoiceForm.controls.iban.setValue('', { emitEvent: false });
   }
 
   private clearSupplierSearchErrors(): void {
@@ -342,8 +344,8 @@ export class AddInvoiceDialogComponent implements OnInit {
       email: this.formBuilder.nonNullable.control({ value: '', disabled: true }),
       phoneNumber: this.formBuilder.nonNullable.control({ value: '', disabled: true }),
       contactPerson: this.formBuilder.nonNullable.control({ value: '', disabled: true }),
-      iban: this.formBuilder.nonNullable.control('', {
-        validators: [Validators.required, Validators.maxLength(this.validationLimits.iban)]
+      iban: this.formBuilder.nonNullable.control({ value: '', disabled: true }, {
+        validators: [Validators.maxLength(this.validationLimits.iban)]
       }),
       paymentTerm: this.formBuilder.control<Date | null>(null, {
         validators: [Validators.required]

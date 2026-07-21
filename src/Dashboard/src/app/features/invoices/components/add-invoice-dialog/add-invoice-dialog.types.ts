@@ -41,6 +41,7 @@ export interface AddInvoiceSupplierDetails {
   email: string;
   phoneNumber: string;
   contactPerson: string;
+  iban: string;
 }
 
 export interface InvoiceSupplierValidationResult {

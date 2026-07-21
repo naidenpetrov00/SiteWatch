@@ -8,7 +8,6 @@ public sealed record CreateInvoiceCommand : IRequest<Guid>
     public Guid SupplierId { get; init; }
     public string InvoiceNumber { get; init; } = string.Empty;
     public string Date { get; init; } = string.Empty;
-    public string Iban { get; init; } = string.Empty;
     public string PaymentTerm { get; init; } = string.Empty;
     public decimal TotalValue { get; init; }
     public decimal VatRate { get; init; }

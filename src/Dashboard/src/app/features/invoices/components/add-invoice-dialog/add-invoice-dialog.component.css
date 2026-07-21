@@ -42,6 +42,24 @@
   color: rgba(15, 23, 42, 0.7);
 }
 
+.add-invoice-dialog__payment-section {
+  display: grid;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(15, 23, 42, 0.1);
+}
+
+.add-invoice-dialog__subsection-heading {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.add-invoice-dialog__subsection-heading h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+
 .add-invoice-dialog__grid {
   display: grid;
   gap: 1rem;

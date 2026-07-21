@@ -17,7 +17,6 @@ public sealed record DashboardInvoiceDto
     public string Email { get; init; } = string.Empty;
     public string PhoneNumber { get; init; } = string.Empty;
     public string ContactPerson { get; init; } = string.Empty;
-    public string Iban { get; init; } = string.Empty;
     public DateTimeOffset PaymentTerm { get; init; }
     public decimal TotalValueExcludingVat { get; init; }
     public decimal Vat { get; init; }

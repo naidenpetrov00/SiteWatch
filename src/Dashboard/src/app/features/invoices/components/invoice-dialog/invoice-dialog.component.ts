@@ -65,7 +65,6 @@ export class InvoiceDialogComponent {
     {
       title: 'Payment',
       items: [
-        { label: 'IBAN', value: formatInvoiceTextValue(this.invoice.iban) },
         { label: 'Payment Term', value: formatInvoiceDateValue(this.invoice.paymentTerm) },
         {
           label: 'Total Value Excluding VAT',

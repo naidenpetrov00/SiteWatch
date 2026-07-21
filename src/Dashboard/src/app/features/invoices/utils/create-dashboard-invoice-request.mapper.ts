@@ -21,7 +21,6 @@ export function toCreateDashboardInvoiceRequest(
     supplierId: value.supplierId.trim(),
     invoiceNumber: value.invoiceNumber.trim(),
     date: formatLocalDate(value.date),
-    iban: value.iban.trim(),
     paymentTerm: formatLocalDate(value.paymentTerm),
     totalValue: Number(value.totalValue),
     vatRate: value.vatRate ?? 0,

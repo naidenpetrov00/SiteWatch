@@ -83,12 +83,6 @@ const INVOICE_COLUMNS: readonly DataTableColumn<DashboardInvoice>[] = [
     filter: { kind: 'text', placeholder: 'Filter Contact Person' }
   },
   {
-    key: 'iban',
-    label: 'IBAN',
-    sortable: true,
-    filter: { kind: 'text', placeholder: 'Filter IBAN' }
-  },
-  {
     key: 'paymentTerm',
     label: 'Payment Term',
     sortable: true,

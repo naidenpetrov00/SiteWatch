@@ -40,10 +40,6 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
             .HasMaxLength(200)
             .IsRequired();
 
-        builder.Property(invoice => invoice.Iban)
-            .HasMaxLength(34)
-            .IsRequired();
-
         builder.Property(invoice => invoice.PaymentTerm)
             .IsRequired();
 
