@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
+import { ActionButtonComponent } from '../../../shared/ui/action-button/action-button.component';
 import { DataTableComponent } from '../../../shared/data-table/data-table.component';
 import { DataTableColumn, DataTableState } from '../../../shared/data-table/data-table.types';
 import { DashboardSite } from '../models/dashboard-site.model';
 import { DashboardSitesService } from '../services/dashboard-sites.service';
 import { EditSiteDialogComponent } from '../components/edit-site-dialog/edit-site-dialog.component';
+import { AddSiteDialogComponent } from '../components/add-site-dialog/add-site-dialog.component';
 
 const SITE_COLUMNS: readonly DataTableColumn<DashboardSite>[] = [
   {
@@ -41,7 +43,7 @@ const SITE_COLUMNS: readonly DataTableColumn<DashboardSite>[] = [
 
 @Component({
   selector: 'app-manage-sites-page',
-  imports: [DataTableComponent, MatDialogModule],
+  imports: [ActionButtonComponent, DataTableComponent, MatDialogModule],
   templateUrl: './manage-sites.page.html',
   styleUrl: './manage-sites.page.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -84,6 +86,14 @@ export class ManageSitesPage {
 
   onTableStateChange(state: DataTableState<DashboardSite>): void {
     this.tableState.set(state);
+  }
+
+  openAddSiteDialog(): void {
+    this.dialog.open(AddSiteDialogComponent, {
+      autoFocus: false,
+      width: '42rem',
+      maxWidth: 'calc(100vw - 2rem)'
+    });
   }
 
   async onCellButtonClicked(event: { row: DashboardSite; column: DataTableColumn<DashboardSite> }): Promise<void> {

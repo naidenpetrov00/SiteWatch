@@ -15,6 +15,7 @@ public class Sites : EndpointGroupBase
         var group = app.MapGroupCustom();
         var dashboardGroup = app.MapGroupCustom(customGroupName: "dashboard").RequireAuthorization();
 
+        group.MapPost(string.Empty, CreateSite).RequireAuthorization();
         group.MapGet("/sitesByUser/{userId:guid}", SitesByUser).RequireAuthorization();
         dashboardGroup.MapGet("/sites", GetDashboardSites);
         dashboardGroup.MapGet("/sites/{siteId:guid}", GetDashboardSite);
@@ -28,6 +29,12 @@ public class Sites : EndpointGroupBase
     {
         var sites = await mediator.Send(query);
         return TypedResults.Ok(sites);
+    }
+
+    private static async Task<IResult> CreateSite(IMediator mediator, CreateSiteCommand command)
+    {
+        var siteId = await mediator.Send(command);
+        return TypedResults.Created($"/sites/{siteId}", new { id = siteId });
     }
 
     private static async Task<Ok<PagedResult<DashboardSiteDto>>> GetDashboardSites(

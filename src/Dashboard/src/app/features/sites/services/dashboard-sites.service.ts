@@ -9,6 +9,7 @@ import {
 
 import { buildApiUrl } from '../../../core/api/api-url';
 import { DataTableState } from '../../../shared/data-table/data-table.types';
+import { CreateDashboardSiteRequest } from '../models/create-dashboard-site-request.model';
 import { DashboardSite } from '../models/dashboard-site.model';
 import { DashboardSitesResponse } from '../models/dashboard-sites-response.model';
 import { UpdateDashboardSiteRequest } from '../models/update-dashboard-site-request.model';
@@ -19,6 +20,10 @@ interface DashboardSitesQueryState {
   sortActive: string;
   sortDirection: string;
   appliedFilters: Readonly<Record<string, string>>;
+}
+
+interface CreateDashboardSiteResponse {
+  id: string;
 }
 
 const DEFAULT_QUERY_STATE: DashboardSitesQueryState = {
@@ -51,6 +56,21 @@ export class DashboardSitesService {
     };
   });
 
+  readonly createSiteMutation = injectMutation<
+    CreateDashboardSiteResponse,
+    Error,
+    CreateDashboardSiteRequest
+  >(() => ({
+    mutationKey: ['sites', 'create'],
+    mutationFn: async (request: CreateDashboardSiteRequest) =>
+      firstValueFrom(this.http.post<CreateDashboardSiteResponse>(buildApiUrl('/sites'), request)),
+    onSuccess: async () => {
+      await this.queryClient.invalidateQueries({
+        queryKey: ['sites', 'dashboard']
+      });
+    }
+  }));
+
   readonly updateSiteMutation = injectMutation<void, Error, UpdateDashboardSiteRequest>(() => ({
     mutationKey: ['sites', 'update'],
     mutationFn: async (request: UpdateDashboardSiteRequest) =>
@@ -74,6 +94,10 @@ export class DashboardSitesService {
 
   getSiteById(siteId: string): Promise<DashboardSite> {
     return firstValueFrom(this.http.get<DashboardSite>(buildApiUrl(`/dashboard/sites/${siteId}`)));
+  }
+
+  createSite(request: CreateDashboardSiteRequest): Promise<CreateDashboardSiteResponse> {
+    return this.createSiteMutation.mutateAsync(request);
   }
 
   updateSite(request: UpdateDashboardSiteRequest): Promise<void> {

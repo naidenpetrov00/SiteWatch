@@ -7,6 +7,14 @@
         Review and filter the current dashboard sites.
       </p>
     </div>
+
+    <div class="manage-sites-page__actions">
+      <app-action-button
+        label="Add Site"
+        variant="primary"
+        (clicked)="openAddSiteDialog()"
+      ></app-action-button>
+    </div>
   </header>
 
   <app-data-table

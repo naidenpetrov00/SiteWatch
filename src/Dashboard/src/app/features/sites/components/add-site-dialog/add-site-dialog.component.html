@@ -1,0 +1,54 @@
+<app-dialog-shell
+  [eyebrow]="dialogEyebrow"
+  [title]="dialogTitle"
+  [subtitle]="dialogSubtitle"
+>
+  <form
+    [id]="formId"
+    class="add-site-dialog__form"
+    [formGroup]="siteForm"
+    novalidate
+    (ngSubmit)="submitSite()"
+  >
+    <mat-form-field appearance="outline">
+      <mat-label>Name</mat-label>
+      <input matInput formControlName="name" maxlength="100" />
+      @if (siteForm.controls.name.touched && siteForm.controls.name.hasError('required')) {
+        <mat-error>Name is required.</mat-error>
+      }
+      @if (siteForm.controls.name.touched && (siteForm.controls.name.hasError('minlength') || siteForm.controls.name.hasError('maxlength'))) {
+        <mat-error>Name must be between 5 and 100 characters.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Address</mat-label>
+      <input matInput formControlName="address" maxlength="200" />
+      @if (siteForm.controls.address.touched && siteForm.controls.address.hasError('required')) {
+        <mat-error>Address is required.</mat-error>
+      }
+      @if (siteForm.controls.address.touched && (siteForm.controls.address.hasError('minlength') || siteForm.controls.address.hasError('maxlength'))) {
+        <mat-error>Address must be between 5 and 200 characters.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Media Policy</mat-label>
+      <mat-select formControlName="mediaPolicyPreset">
+        @for (preset of mediaPolicyPresets; track preset) {
+          <mat-option [value]="preset">{{ preset }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </form>
+
+  <app-dialog-action-bar
+    dialog-shell-actions
+    [cancelLabel]="'Cancel'"
+    [submitLabel]="'Submit'"
+    [submitFormId]="formId"
+    [submitButtonType]="'submit'"
+    [submitDisabled]="!siteForm.valid || isCreating()"
+    (cancel)="closeDialog()"
+  />
+</app-dialog-shell>

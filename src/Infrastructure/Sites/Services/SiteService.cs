@@ -3,6 +3,8 @@ using Application.Sites.Commands;
 using Application.Sites.Queries;
 using AutoMapper;
 using Domain.SeedWork.Enums;
+using Domain.Entities;
+using Domain.ValueObjects;
 using Ardalis.GuardClauses;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +13,24 @@ namespace Infrastructure.Sites.Services;
 
 public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) : ISiteService
 {
+    public async Task<Guid> CreateAsync(CreateSiteCommand request, CancellationToken cancellationToken)
+    {
+        if (!Enum.TryParse<MediaPolicyPreset>(request.MediaPolicyPreset, true, out var preset))
+        {
+            throw new ArgumentException("Unsupported media policy preset.", nameof(request.MediaPolicyPreset));
+        }
+
+        var mediaPolicy = preset == MediaPolicyPreset.Regular
+            ? SiteMediaPolicy.Regular()
+            : SiteMediaPolicy.Custom([], []);
+        var site = new Site(request.Name, request.Address, mediaPolicy);
+
+        dbContext.Sites.Add(site);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return site.Id;
+    }
+
     public async Task<List<SitesDto>> GetSitesByUserAsync(
         Guid userId,
         CancellationToken cancellationToken
@@ -31,7 +51,7 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
 
         if (site is null)
         {
-            throw new NotFoundException(nameof(Domain.Entities.Site), request.Id.ToString());
+            throw new NotFoundException(nameof(Site), request.Id.ToString());
         }
 
         if (!Enum.TryParse<MediaPolicyPreset>(request.MediaPolicyPreset, true, out var preset))
