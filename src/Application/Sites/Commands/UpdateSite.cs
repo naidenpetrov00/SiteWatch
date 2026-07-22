@@ -21,7 +21,9 @@ public sealed class UpdateSiteValidator : AbstractValidator<UpdateSiteCommand>
         RuleFor(command => command.Name).NotEmpty().Length(5, 100);
         RuleFor(command => command.Address).NotEmpty().Length(5, 200);
         RuleFor(command => command.MediaPolicyPreset)
-            .Must(value => Enum.TryParse<MediaPolicyPreset>(value, true, out _))
+            .Must(value =>
+                Enum.TryParse<MediaPolicyPreset>(value, true, out var preset)
+                && Enum.IsDefined(typeof(MediaPolicyPreset), preset))
             .WithMessage("MediaPolicyPreset must be a valid media policy preset.");
     }
 }

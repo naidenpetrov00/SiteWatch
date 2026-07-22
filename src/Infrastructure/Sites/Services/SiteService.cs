@@ -15,7 +15,10 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
 {
     public async Task<Guid> CreateAsync(CreateSiteCommand request, CancellationToken cancellationToken)
     {
-        if (!Enum.TryParse<MediaPolicyPreset>(request.MediaPolicyPreset, true, out var preset))
+        if (
+            !Enum.TryParse<MediaPolicyPreset>(request.MediaPolicyPreset, true, out var preset)
+            || !Enum.IsDefined(typeof(MediaPolicyPreset), preset)
+        )
         {
             throw new ArgumentException("Unsupported media policy preset.", nameof(request.MediaPolicyPreset));
         }
@@ -54,7 +57,10 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
             throw new NotFoundException(nameof(Site), request.Id.ToString());
         }
 
-        if (!Enum.TryParse<MediaPolicyPreset>(request.MediaPolicyPreset, true, out var preset))
+        if (
+            !Enum.TryParse<MediaPolicyPreset>(request.MediaPolicyPreset, true, out var preset)
+            || !Enum.IsDefined(typeof(MediaPolicyPreset), preset)
+        )
         {
             throw new ArgumentException("Unsupported media policy preset.", nameof(request.MediaPolicyPreset));
         }

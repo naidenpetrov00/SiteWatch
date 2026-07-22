@@ -1,6 +1,7 @@
 using Application.SeedWork.Interfaces;
 using FluentValidation;
 using MediatR;
+using Domain.SeedWork.Enums;
 
 namespace Application.Sites.Commands;
 
@@ -26,7 +27,9 @@ public sealed class CreateSiteValidator : AbstractValidator<CreateSiteCommand>
             .WithMessage("Address must not be empty.")
             .Length(5, 200);
         RuleFor(command => command.MediaPolicyPreset)
-            .Must(value => Enum.TryParse<Domain.SeedWork.Enums.MediaPolicyPreset>(value, true, out _))
+            .Must(value =>
+                Enum.TryParse<MediaPolicyPreset>(value, true, out var preset)
+                && Enum.IsDefined(typeof(MediaPolicyPreset), preset))
             .WithMessage("MediaPolicyPreset must be a valid media policy preset.");
     }
 }
