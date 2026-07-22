@@ -22,6 +22,22 @@ public static class TableFilterPredicates
         return Expression.Lambda<Func<TEntity, bool>>(body, selector.Parameters);
     }
 
+    public static Expression<Func<TEntity, bool>>? IntEquals<TEntity>(
+        Expression<Func<TEntity, int>> selector,
+        string? rawValue
+    )
+    {
+        var normalizedValue = Normalize(rawValue);
+        if (normalizedValue.Length == 0 || !int.TryParse(normalizedValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedValue))
+        {
+            return null;
+        }
+
+        var body = Expression.Equal(selector.Body, Expression.Constant(parsedValue));
+
+        return Expression.Lambda<Func<TEntity, bool>>(body, selector.Parameters);
+    }
+
     public static Expression<Func<TEntity, bool>>? TextContains<TEntity>(
         Expression<Func<TEntity, string>> selector,
         string? rawValue

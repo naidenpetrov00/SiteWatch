@@ -1,10 +1,11 @@
 using Ardalis.GuardClauses;
 using Domain.SeedWork;
+using Domain.SeedWork.Enums;
 using Domain.ValueObjects;
 
 namespace Domain.Entities;
 
-public sealed class Site : BaseAuditableEntity
+public sealed class Site : BaseAuditableEntity, IHasNumberId
 {
     private readonly HashSet<ApplicationUser> _users = [];
     private readonly HashSet<Camera> _cameras = [];
@@ -25,6 +26,7 @@ public sealed class Site : BaseAuditableEntity
     }
 
     public SiteName Name { get; private set; } = null!;
+    public int NumberId { get; private set; }
     public SiteAddress Address { get; private set; } = null!;
     public SiteMediaPolicy MediaPolicy { get; private set; } = null!;
     public IReadOnlyCollection<ApplicationUser> Users => _users;
@@ -35,6 +37,13 @@ public sealed class Site : BaseAuditableEntity
 
     public void ChangeMediaPolicy(SiteMediaPolicy mediaPolicy) =>
         MediaPolicy = Guard.Against.Null(mediaPolicy);
+
+    public void UpdateDetails(string name, string address, MediaPolicyPreset mediaPolicyPreset)
+    {
+        Name = name;
+        Address = address;
+        MediaPolicy.ChangePreset(mediaPolicyPreset);
+    }
 
     public void AddImage(SiteImage image) => _images.Add(image);
     public void RemoveImage(SiteImage image) => _images.Remove(image);

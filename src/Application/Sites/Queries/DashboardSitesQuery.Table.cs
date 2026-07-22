@@ -9,6 +9,11 @@ public sealed partial class DashboardSitesQuery
         new(
             Filters:
             [
+                TableFilterDescriptorExtensions.IntEquals<Site, DashboardSitesQuery>(
+                    "numberId",
+                    query => query.NumberId,
+                    site => site.NumberId
+                ),
                 TableFilterDescriptorExtensions.GuidEquals<Site, DashboardSitesQuery>(
                     "id",
                     query => query.Id,
@@ -29,6 +34,11 @@ public sealed partial class DashboardSitesQuery
                 StringComparer.OrdinalIgnoreCase
             )
             {
+                ["numberId"] = TableSortDescriptor<Site, DashboardSitesQuery>.Create(
+                    "numberId",
+                    site => site.NumberId,
+                    site => site.Id
+                ),
                 ["id"] = TableSortDescriptor<Site, DashboardSitesQuery>.Create(
                     "id",
                     site => site.Id

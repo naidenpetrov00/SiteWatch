@@ -9,6 +9,7 @@ namespace Application.Sites.Queries;
 
 public sealed partial class DashboardSitesQuery : TableQueryRequest, IRequest<PagedResult<DashboardSiteDto>>
 {
+    public string? NumberId { get; set; }
     public string? Id { get; set; }
     public string? Name { get; set; }
     public string? Address { get; set; }
@@ -42,12 +43,14 @@ public sealed class DashboardSitesQueryHandler(IApplicationDbContext dbContext)
 /// <summary>Represents a site returned by the dashboard site table.</summary>
 public sealed record DashboardSiteDto(
     Guid Id,
+    int NumberId,
     string Name,
     string Address,
     string MediaPolicy)
 {
     public static DashboardSiteDto From(Site site) => new(
         site.Id,
+        site.NumberId,
         site.Name.Value,
         site.Address.Value,
         site.MediaPolicy.Preset.ToString());

@@ -1,11 +1,20 @@
 import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 import { DataTableComponent } from '../../../shared/data-table/data-table.component';
 import { DataTableColumn, DataTableState } from '../../../shared/data-table/data-table.types';
 import { DashboardSite } from '../models/dashboard-site.model';
 import { DashboardSitesService } from '../services/dashboard-sites.service';
+import { EditSiteDialogComponent } from '../components/edit-site-dialog/edit-site-dialog.component';
 
 const SITE_COLUMNS: readonly DataTableColumn<DashboardSite>[] = [
+  {
+    key: 'numberId',
+    label: 'NumberId',
+    sortable: true,
+    cellType: 'button',
+    filter: { kind: 'number', placeholder: 'Filter NumberId' }
+  },
   {
     key: 'id',
     label: 'Id',
@@ -32,13 +41,14 @@ const SITE_COLUMNS: readonly DataTableColumn<DashboardSite>[] = [
 
 @Component({
   selector: 'app-manage-sites-page',
-  imports: [DataTableComponent],
+  imports: [DataTableComponent, MatDialogModule],
   templateUrl: './manage-sites.page.html',
   styleUrl: './manage-sites.page.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ManageSitesPage {
   private readonly dashboardSitesService = inject(DashboardSitesService);
+  private readonly dialog = inject(MatDialog);
 
   readonly sites = signal<readonly DashboardSite[]>([]);
   readonly sitesFilteredCount = signal(0);
@@ -74,5 +84,24 @@ export class ManageSitesPage {
 
   onTableStateChange(state: DataTableState<DashboardSite>): void {
     this.tableState.set(state);
+  }
+
+  async onCellButtonClicked(event: { row: DashboardSite; column: DataTableColumn<DashboardSite> }): Promise<void> {
+    if (event.column.key !== 'numberId') {
+      return;
+    }
+
+    try {
+      const site = await this.dashboardSitesService.getSiteById(event.row.id);
+
+      this.dialog.open(EditSiteDialogComponent, {
+        autoFocus: false,
+        width: '42rem',
+        maxWidth: 'calc(100vw - 2rem)',
+        data: site
+      });
+    } catch {
+      // Keep the table usable if the detail fetch fails.
+    }
   }
 }

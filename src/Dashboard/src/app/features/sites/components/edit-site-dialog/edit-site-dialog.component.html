@@ -1,0 +1,49 @@
+<app-dialog-shell
+  [eyebrow]="dialogEyebrow"
+  [title]="dialogTitle"
+  [subtitle]="dialogSubtitle"
+>
+  <form
+    [id]="formId"
+    class="edit-site-dialog__form"
+    [formGroup]="siteForm"
+    novalidate
+    (ngSubmit)="saveSite()"
+  >
+    <div class="edit-site-dialog__readonly">
+      <span>NumberId</span>
+      <strong>{{ site.numberId }}</strong>
+      <span>Id</span>
+      <strong>{{ site.id }}</strong>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Name</mat-label>
+      <input matInput formControlName="name" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Address</mat-label>
+      <input matInput formControlName="address" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Media Policy</mat-label>
+      <mat-select formControlName="mediaPolicyPreset">
+        @for (preset of mediaPolicyPresets; track preset) {
+          <mat-option [value]="preset">{{ preset }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </form>
+
+  <app-dialog-action-bar
+    dialog-shell-actions
+    [cancelLabel]="'Cancel'"
+    [submitLabel]="'Save'"
+    [submitFormId]="formId"
+    [submitButtonType]="'submit'"
+    [submitDisabled]="!siteForm.valid || isSaving()"
+    (cancel)="closeDialog()"
+  />
+</app-dialog-shell>

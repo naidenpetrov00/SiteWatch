@@ -57,6 +57,8 @@ public sealed class SiteMediaPolicy : ValueObject
 
     public bool AllowsVideoCategory(VideoCategory category) => AllowedVideoCategories.Contains(category);
 
+    public void ChangePreset(MediaPolicyPreset preset) => Preset = preset;
+
     public string ToStorageValue()
     {
         var storage = new SiteMediaPolicyStorage(

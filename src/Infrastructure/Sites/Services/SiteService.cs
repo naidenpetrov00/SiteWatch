@@ -1,11 +1,15 @@
 using Application.SeedWork.Interfaces;
+using Application.Sites.Commands;
 using Application.Sites.Queries;
 using AutoMapper;
+using Domain.SeedWork.Enums;
+using Ardalis.GuardClauses;
+using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Sites.Services;
 
-public class SiteService(IApplicationDbContext dbContext, IMapper mapper) : ISiteService
+public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) : ISiteService
 {
     public async Task<List<SitesDto>> GetSitesByUserAsync(
         Guid userId,
@@ -18,5 +22,24 @@ public class SiteService(IApplicationDbContext dbContext, IMapper mapper) : ISit
             .ToListAsync(cancellationToken);
 
         return mapper.Map<List<SitesDto>>(sites);
+    }
+
+    public async Task UpdateAsync(UpdateSiteCommand request, CancellationToken cancellationToken)
+    {
+        var site = await dbContext.Sites
+            .SingleOrDefaultAsync(item => item.Id == request.Id, cancellationToken);
+
+        if (site is null)
+        {
+            throw new NotFoundException(nameof(Domain.Entities.Site), request.Id.ToString());
+        }
+
+        if (!Enum.TryParse<MediaPolicyPreset>(request.MediaPolicyPreset, true, out var preset))
+        {
+            throw new ArgumentException("Unsupported media policy preset.", nameof(request.MediaPolicyPreset));
+        }
+
+        site.UpdateDetails(request.Name, request.Address, preset);
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

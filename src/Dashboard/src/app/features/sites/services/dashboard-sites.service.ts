@@ -1,12 +1,17 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { injectQuery } from '@tanstack/angular-query-experimental';
+import {
+  injectMutation,
+  injectQuery,
+  QueryClient
+} from '@tanstack/angular-query-experimental';
 
 import { buildApiUrl } from '../../../core/api/api-url';
 import { DataTableState } from '../../../shared/data-table/data-table.types';
 import { DashboardSite } from '../models/dashboard-site.model';
 import { DashboardSitesResponse } from '../models/dashboard-sites-response.model';
+import { UpdateDashboardSiteRequest } from '../models/update-dashboard-site-request.model';
 
 interface DashboardSitesQueryState {
   pageIndex: number;
@@ -29,6 +34,7 @@ const DEFAULT_QUERY_STATE: DashboardSitesQueryState = {
 })
 export class DashboardSitesService {
   private readonly http = inject(HttpClient);
+  private readonly queryClient = inject(QueryClient);
   private readonly queryState = signal<DashboardSitesQueryState>(DEFAULT_QUERY_STATE);
 
   readonly dashboardSitesQuery = injectQuery<DashboardSitesResponse>(() => {
@@ -45,6 +51,17 @@ export class DashboardSitesService {
     };
   });
 
+  readonly updateSiteMutation = injectMutation<void, Error, UpdateDashboardSiteRequest>(() => ({
+    mutationKey: ['sites', 'update'],
+    mutationFn: async (request: UpdateDashboardSiteRequest) =>
+      firstValueFrom(this.http.put<void>(buildApiUrl(`/dashboard/sites/${request.id}`), request)),
+    onSuccess: async () => {
+      await this.queryClient.invalidateQueries({
+        queryKey: ['sites', 'dashboard']
+      });
+    }
+  }));
+
   setTableState(state: DataTableState<DashboardSite>): void {
     const nextState = this.toQueryState(state);
 
@@ -53,6 +70,14 @@ export class DashboardSitesService {
     }
 
     this.queryState.set(nextState);
+  }
+
+  getSiteById(siteId: string): Promise<DashboardSite> {
+    return firstValueFrom(this.http.get<DashboardSite>(buildApiUrl(`/dashboard/sites/${siteId}`)));
+  }
+
+  updateSite(request: UpdateDashboardSiteRequest): Promise<void> {
+    return this.updateSiteMutation.mutateAsync(request);
   }
 
   private toQueryState(state: DataTableState<DashboardSite>): DashboardSitesQueryState {
