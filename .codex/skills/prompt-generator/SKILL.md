@@ -12,7 +12,7 @@ When the user invokes `/prompt`, convert the supplied instruction into a precise
 1. Extract the requested outcome, affected area, constraints, and expected deliverable.
 2. Identify only the repository skills relevant to the task. Use their exact names when known.
 3. Preserve explicit user requirements and do not invent scope, files, technologies, or acceptance criteria.
-4. If an important requirement is missing, state the assumption in the generated prompt. Ask a question only when proceeding would materially change the task.
+4. If any part of the request is unclear, ambiguous, conflicting, or not understood, ask concise clarifying questions and wait for the user's answers. Do not generate the prompt or substitute assumptions until the uncertainty is resolved.
 5. Read [references/models.md](references/models.md) completely. Recommend one model from that catalog based on the task's complexity, risk, latency, and cost. Do not inspect or depend on a runtime model catalog.
 6. Classify task difficulty as low, medium, or high using scope, ambiguity, risk, dependencies, and required depth. Recommend a reasoning level supported by the selected model and execution surface.
 7. Recommend whether Plan mode should be used.
@@ -77,6 +77,7 @@ Recommend Plan mode for tasks with multiple dependent steps, several affected la
 
 ## Quality rules
 
+- Generate the prompt only after the request is understood well enough to avoid unresolved assumptions.
 - Make the generated prompt self-contained enough for another agent to execute.
 - Keep it concise and action-oriented.
 - Include execution guidance so the user can choose the appropriate reasoning level and Plan mode.
