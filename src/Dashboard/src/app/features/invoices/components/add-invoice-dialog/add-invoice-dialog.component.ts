@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   OnInit,
   inject,
@@ -15,6 +16,7 @@ import { MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatButtonModule } from '@angular/material/button';
 import { provideNativeDateAdapter } from '@angular/material/core';
 
 import { DashboardPersonsService } from '../../../persons/services/dashboard-persons.service';
@@ -23,6 +25,8 @@ import { DialogActionBarComponent } from '../../../../shared/ui/dialog-action-ba
 import { DialogShellComponent } from '../../../../shared/ui/dialog-shell/dialog-shell.component';
 import { DatepickerComponent } from '../../../../shared/ui/datepicker/datepicker.component';
 import { DashboardInvoicesService } from '../../services/dashboard-invoices.service';
+import { DashboardSitesService } from '../../../sites/services/dashboard-sites.service';
+import { DashboardSiteLookup } from '../../../sites/models/dashboard-site-lookup.model';
 import { toCreateDashboardInvoiceRequest } from '../../utils/create-dashboard-invoice-request.mapper';
 import {
   ADD_INVOICE_VALIDATION_LIMITS,
@@ -46,6 +50,14 @@ import {
   formatDashboardPersonLookupLabel,
   formatDashboardPersonLookupSubtitle
 } from '../../../persons/utils/dashboard-person-lookup-formatters';
+import {
+  InvoiceSiteAllocationFormGroup,
+  calculateAssignedSiteAmount,
+  createInvoiceSiteAllocationForm,
+  createInvoiceSiteAllocationsFormArray,
+  getInvoiceSiteAllocationErrorMessage
+} from '../../utils/invoice-site-allocation-form';
+import { SITE_PAYMENT_DIRECTIONS } from '../../models/invoice-site-allocation.model';
 
 @Component({
   selector: 'app-add-invoice-dialog',
@@ -58,6 +70,7 @@ import {
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+    MatButtonModule,
   ],
   templateUrl: './add-invoice-dialog.component.html',
   styleUrl: './add-invoice-dialog.component.css',
@@ -70,9 +83,11 @@ export class AddInvoiceDialogComponent implements OnInit {
   private readonly dialogRef = inject(MatDialogRef<AddInvoiceDialogComponent>);
   private readonly dashboardInvoicesService = inject(DashboardInvoicesService);
   private readonly dashboardPersonsService = inject(DashboardPersonsService);
+  private readonly dashboardSitesService = inject(DashboardSitesService);
 
   private supplierSearchRevision = 0;
   private supplierDetailsRevision = 0;
+  private siteSearchRevision = 0;
 
   readonly dialogEyebrow = 'Administration';
   readonly dialogTitle = 'Add Invoice';
@@ -83,10 +98,19 @@ export class AddInvoiceDialogComponent implements OnInit {
   readonly supplierDetailsReady = signal(false);
   readonly supplierSearchResults = signal<readonly DashboardPersonLookup[]>([]);
   readonly supplierSearchControl = this.formBuilder.control<string | DashboardPersonLookup | null>('');
+  readonly invoiceTotalIncludingVat = signal<number | null>(null);
+  readonly assignedSiteAmount = signal(0);
+  readonly remainingSiteAmount = computed(() =>
+    Math.max((this.invoiceTotalIncludingVat() ?? 0) - this.assignedSiteAmount(), 0)
+  );
+  readonly siteSearchResults = signal<readonly DashboardSiteLookup[]>([]);
+  readonly siteAllocationSaveError = signal<string | null>(null);
+  readonly sitePaymentDirections = SITE_PAYMENT_DIRECTIONS;
   readonly invoiceForm = this.createInvoiceForm();
   readonly isCreatingInvoice = () => this.dashboardInvoicesService.createInvoiceMutation.isPending();
   readonly formatInvoiceSupplierOptionLabel = formatDashboardPersonLookupLabel;
   readonly formatInvoiceSupplierOptionSubtitle = formatDashboardPersonLookupSubtitle;
+  readonly formatSiteAmount = formatInvoiceAmount;
   readonly displaySupplierSearchValue = (
     value: string | DashboardPersonLookup | null
   ): string => {
@@ -95,6 +119,13 @@ export class AddInvoiceDialogComponent implements OnInit {
     }
 
     return value ? value.displayName : '';
+  };
+  readonly displaySiteSearchValue = (value: string | DashboardSiteLookup | null): string => {
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    return value ? `#${value.numberId} ${value.name}` : '';
   };
 
   ngOnInit(): void {
@@ -118,7 +149,37 @@ export class AddInvoiceDialogComponent implements OnInit {
         void this.onSupplierSearchTermChanged(value);
       });
 
+    this.invoiceForm.controls.siteAllocations.valueChanges
+      .pipe(
+        startWith(this.invoiceForm.controls.siteAllocations.getRawValue()),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(() => this.updateSiteAllocationSummary());
+
     this.updateCalculatedAmounts();
+  }
+
+  addSiteAllocation(): void {
+    const allocation = createInvoiceSiteAllocationForm(this.formBuilder);
+    this.registerSiteSearch(allocation);
+    this.invoiceForm.controls.siteAllocations.push(allocation);
+  }
+
+  removeSiteAllocation(index: number): void {
+    this.invoiceForm.controls.siteAllocations.removeAt(index);
+    this.invoiceForm.controls.siteAllocations.markAsTouched();
+  }
+
+  onSiteSelected(
+    allocation: InvoiceSiteAllocationFormGroup,
+    event: MatAutocompleteSelectedEvent
+  ): void {
+    const site = event.option.value as DashboardSiteLookup;
+    allocation.controls.siteId.setValue(site.id);
+    allocation.controls.siteSearch.setValue(site, { emitEvent: false });
+    this.siteSearchResults.set([]);
+    this.invoiceForm.controls.siteAllocations.markAsTouched();
+    this.invoiceForm.controls.siteAllocations.updateValueAndValidity();
   }
 
   closeDialog(): void {
@@ -132,6 +193,7 @@ export class AddInvoiceDialogComponent implements OnInit {
       return;
     }
 
+    this.siteAllocationSaveError.set(null);
     try {
       const request = toCreateDashboardInvoiceRequest(this.invoiceForm);
       await this.dashboardInvoicesService.createInvoice(request);
@@ -142,6 +204,10 @@ export class AddInvoiceDialogComponent implements OnInit {
       if (supplierValidationMessage) {
         this.setSupplierSearchError('supplierDetailsIncomplete', supplierValidationMessage);
         this.supplierSearchControl.markAsTouched();
+      } else {
+        this.siteAllocationSaveError.set(
+          getInvoiceSiteAllocationErrorMessage(error) ?? 'Unable to save site allocations.'
+        );
       }
     }
   }
@@ -315,6 +381,8 @@ export class AddInvoiceDialogComponent implements OnInit {
     ) {
       this.invoiceForm.controls.vatAmount.setValue('', { emitEvent: false });
       this.invoiceForm.controls.totalValueIncludingVat.setValue('', { emitEvent: false });
+      this.invoiceTotalIncludingVat.set(null);
+      this.invoiceForm.controls.siteAllocations.updateValueAndValidity();
       return;
     }
 
@@ -326,6 +394,50 @@ export class AddInvoiceDialogComponent implements OnInit {
     this.invoiceForm.controls.totalValueIncludingVat.setValue(
       formatInvoiceAmount(totalValueIncludingVat),
       { emitEvent: false }
+    );
+    this.invoiceTotalIncludingVat.set(totalValueIncludingVat);
+    this.invoiceForm.controls.siteAllocations.updateValueAndValidity();
+    this.updateSiteAllocationSummary();
+  }
+
+  private registerSiteSearch(allocation: InvoiceSiteAllocationFormGroup): void {
+    allocation.controls.siteSearch.valueChanges
+      .pipe(debounceTime(250), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe((value) => {
+        if (typeof value !== 'string') {
+          return;
+        }
+
+        allocation.controls.siteId.setValue('', { emitEvent: false });
+        this.invoiceForm.controls.siteAllocations.updateValueAndValidity();
+        void this.searchSites(value);
+      });
+  }
+
+  private async searchSites(rawSearchTerm: string): Promise<void> {
+    const searchTerm = rawSearchTerm.trim();
+    const searchRevision = ++this.siteSearchRevision;
+    this.siteSearchResults.set([]);
+
+    if (searchTerm.length === 0) {
+      return;
+    }
+
+    try {
+      const sites = await this.dashboardSitesService.searchSites(searchTerm);
+      if (searchRevision === this.siteSearchRevision) {
+        this.siteSearchResults.set(sites);
+      }
+    } catch {
+      if (searchRevision === this.siteSearchRevision) {
+        this.siteSearchResults.set([]);
+      }
+    }
+  }
+
+  private updateSiteAllocationSummary(): void {
+    this.assignedSiteAmount.set(
+      calculateAssignedSiteAmount(this.invoiceForm.controls.siteAllocations)
     );
   }
 
@@ -364,7 +476,10 @@ export class AddInvoiceDialogComponent implements OnInit {
       }),
       paymentMethod: this.formBuilder.nonNullable.control('', {
         validators: [Validators.required]
-      })
+      }),
+      siteAllocations: createInvoiceSiteAllocationsFormArray(
+        () => this.invoiceTotalIncludingVat()
+      )
     });
   }
 }

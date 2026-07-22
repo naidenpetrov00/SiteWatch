@@ -11,6 +11,7 @@ import { buildApiUrl } from '../../../core/api/api-url';
 import { DataTableState } from '../../../shared/data-table/data-table.types';
 import { CreateDashboardSiteRequest } from '../models/create-dashboard-site-request.model';
 import { DashboardSite } from '../models/dashboard-site.model';
+import { DashboardSiteLookup } from '../models/dashboard-site-lookup.model';
 import { DashboardSitesResponse } from '../models/dashboard-sites-response.model';
 import { UpdateDashboardSiteRequest } from '../models/update-dashboard-site-request.model';
 
@@ -94,6 +95,20 @@ export class DashboardSitesService {
 
   getSiteById(siteId: string): Promise<DashboardSite> {
     return firstValueFrom(this.http.get<DashboardSite>(buildApiUrl(`/dashboard/sites/${siteId}`)));
+  }
+
+  searchSites(searchTerm: string): Promise<readonly DashboardSiteLookup[]> {
+    const normalizedSearchTerm = searchTerm.trim();
+
+    if (normalizedSearchTerm.length === 0) {
+      return Promise.resolve([]);
+    }
+
+    return firstValueFrom(
+      this.http.get<readonly DashboardSiteLookup[]>(buildApiUrl('/dashboard/sites/search'), {
+        params: new HttpParams().set('searchTerm', normalizedSearchTerm)
+      })
+    );
   }
 
   createSite(request: CreateDashboardSiteRequest): Promise<CreateDashboardSiteResponse> {

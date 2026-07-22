@@ -1,3 +1,5 @@
+import { InvoiceSiteAllocationRequest } from './invoice-site-allocation.model';
+
 export interface CreateDashboardInvoiceRequest {
   supplierId: string;
   invoiceNumber: string;
@@ -8,4 +10,5 @@ export interface CreateDashboardInvoiceRequest {
   paymentMethod: string;
   paymentDate?: string;
   paymentTime?: string;
+  siteAllocations: readonly InvoiceSiteAllocationRequest[];
 }

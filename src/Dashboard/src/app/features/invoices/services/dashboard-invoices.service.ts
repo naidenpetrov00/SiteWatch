@@ -8,6 +8,7 @@ import { DataTableState } from '../../../shared/data-table/data-table.types';
 import { CreateDashboardInvoiceRequest } from '../models/create-dashboard-invoice-request.model';
 import { DashboardInvoice } from '../models/dashboard-invoice.model';
 import { DashboardInvoicesResponse } from '../models/dashboard-invoices-response.model';
+import { UpdateInvoiceSiteAllocationsRequest } from '../models/invoice-site-allocation.model';
 
 interface CreateDashboardInvoiceResponse {
   id: string;
@@ -66,6 +67,25 @@ export class DashboardInvoicesService {
     }
   }));
 
+  readonly updateSiteAllocationsMutation = injectMutation<
+    void,
+    Error,
+    UpdateInvoiceSiteAllocationsRequest
+  >(() => ({
+    mutationKey: ['invoices', 'site-allocations', 'update'],
+    mutationFn: async (request: UpdateInvoiceSiteAllocationsRequest) =>
+      firstValueFrom(
+        this.http.put<void>(buildApiUrl(`/invoices/${request.invoiceId}/site-allocations`), {
+          siteAllocations: request.siteAllocations
+        })
+      ),
+    onSuccess: async () => {
+      await this.queryClient.invalidateQueries({
+        queryKey: ['invoices', 'dashboard']
+      });
+    }
+  }));
+
   setTableState(state: DataTableState<DashboardInvoice>): void {
     const nextState = this.toQueryState(state);
 
@@ -78,6 +98,10 @@ export class DashboardInvoicesService {
 
   createInvoice(request: CreateDashboardInvoiceRequest): Promise<CreateDashboardInvoiceResponse> {
     return this.createInvoiceMutation.mutateAsync(request);
+  }
+
+  updateSiteAllocations(request: UpdateInvoiceSiteAllocationsRequest): Promise<void> {
+    return this.updateSiteAllocationsMutation.mutateAsync(request);
   }
 
   private toQueryState(state: DataTableState<DashboardInvoice>): DashboardInvoicesQueryState {

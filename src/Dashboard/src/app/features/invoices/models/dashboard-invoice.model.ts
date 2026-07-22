@@ -1,3 +1,5 @@
+import { DashboardInvoiceSiteAllocation } from './invoice-site-allocation.model';
+
 export interface DashboardInvoice {
   id: string;
   numberId: number;
@@ -17,4 +19,5 @@ export interface DashboardInvoice {
   paymentDate: string | null;
   paymentTime: string | null;
   paymentMethod: string;
+  siteAllocations: readonly DashboardInvoiceSiteAllocation[];
 }

@@ -17,13 +17,28 @@ public class Invoices : EndpointGroupBase
         var dashboardGroup = app.MapGroupCustom(customGroupName: "dashboard").RequireAuthorization();
 
         group.MapPost(string.Empty, CreateInvoice);
+        group.MapPut("/{invoiceId:guid}/site-allocations", UpdateInvoiceSiteAllocations);
         dashboardGroup.MapGet("/invoices", GetDashboardInvoices);
     }
 
-    private static async Task<IResult> CreateInvoice(IMediator mediator, CreateInvoiceCommand command)
+    private static async Task<IResult> CreateInvoice(
+        IMediator mediator,
+        CreateInvoiceCommand command,
+        CancellationToken cancellationToken)
     {
-        var invoiceId = await mediator.Send(command);
+        var invoiceId = await mediator.Send(command, cancellationToken);
         return TypedResults.Created($"/invoices/{invoiceId}", new { id = invoiceId });
+    }
+
+    private static async Task<NoContent> UpdateInvoiceSiteAllocations(
+        IMediator mediator,
+        Guid invoiceId,
+        UpdateInvoiceSiteAllocationsCommand command,
+        CancellationToken cancellationToken)
+    {
+        command.InvoiceId = invoiceId;
+        await mediator.Send(command, cancellationToken);
+        return TypedResults.NoContent();
     }
 
     private static async Task<Ok<PagedResult<DashboardInvoiceDto>>> GetDashboardInvoices(

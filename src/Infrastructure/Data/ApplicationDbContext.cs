@@ -18,6 +18,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<Camera> Cameras => Set<Camera>();
     public DbSet<Person> Persons => Set<Person>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
+    public DbSet<SitePayment> SitePayments => Set<SitePayment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

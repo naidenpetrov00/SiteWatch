@@ -24,12 +24,16 @@ public sealed record DashboardInvoiceDto
     public DateTimeOffset? PaymentDate { get; init; }
     public DateTimeOffset? PaymentTime { get; init; }
     public string PaymentMethod { get; init; } = string.Empty;
+    public IReadOnlyList<DashboardInvoiceSiteAllocationDto> SiteAllocations { get; init; } = [];
 
     public sealed class Mapping : Profile
     {
         public Mapping()
         {
             CreateMap<Invoice, DashboardInvoiceDto>()
+                .ForMember(
+                    destination => destination.SiteAllocations,
+                    options => options.MapFrom(source => source.SitePayments))
                 .ForMember(
                     d => d.SupplierDisplayLabel,
                     o =>
@@ -47,6 +51,26 @@ public sealed record DashboardInvoiceDto
                                         + (s.Supplier.LastName ?? string.Empty)
                         )
                 );
+
+            CreateMap<SitePayment, DashboardInvoiceSiteAllocationDto>()
+                .ForMember(
+                    destination => destination.SiteNumberId,
+                    options => options.MapFrom(source => source.Site.NumberId))
+                .ForMember(
+                    destination => destination.SiteName,
+                    options => options.MapFrom(source => source.Site.Name.Value))
+                .ForMember(
+                    destination => destination.Direction,
+                    options => options.MapFrom(source => source.Direction.ToString()));
         }
     }
+}
+
+public sealed record DashboardInvoiceSiteAllocationDto
+{
+    public Guid SiteId { get; init; }
+    public int SiteNumberId { get; init; }
+    public string SiteName { get; init; } = string.Empty;
+    public decimal Amount { get; init; }
+    public string Direction { get; init; } = string.Empty;
 }

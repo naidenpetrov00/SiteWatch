@@ -8,6 +8,10 @@ public interface IInvoiceService
 {
     Task<Guid> CreateAsync(CreateInvoiceCommand request, CancellationToken cancellationToken);
 
+    Task UpdateSiteAllocationsAsync(
+        UpdateInvoiceSiteAllocationsCommand request,
+        CancellationToken cancellationToken);
+
     Task<PagedResult<DashboardInvoiceDto>> GetDashboardInvoicesAsync(
         DashboardInvoicesQuery request,
         CancellationToken cancellationToken

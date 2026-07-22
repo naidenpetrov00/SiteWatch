@@ -1,5 +1,6 @@
 import { AddInvoiceDialogFormGroup } from '../components/add-invoice-dialog/add-invoice-dialog.types';
 import { CreateDashboardInvoiceRequest } from '../models/create-dashboard-invoice-request.model';
+import { toInvoiceSiteAllocationRequests } from './invoice-site-allocation-form';
 
 function formatLocalDate(value: Date | null): string {
   if (!value) {
@@ -29,6 +30,7 @@ export function toCreateDashboardInvoiceRequest(
     paymentTime:
       value.paymentDate && value.paymentTime.trim().length > 0
         ? `${formatLocalDate(value.paymentDate)}T${value.paymentTime.trim()}:00`
-        : undefined
+        : undefined,
+    siteAllocations: toInvoiceSiteAllocationRequests(form.controls.siteAllocations)
   };
 }

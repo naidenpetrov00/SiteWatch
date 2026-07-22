@@ -14,6 +14,7 @@ public sealed record CreateInvoiceCommand : IRequest<Guid>
     public string PaymentMethod { get; init; } = string.Empty;
     public string? PaymentDate { get; init; }
     public string? PaymentTime { get; init; }
+    public List<InvoiceSiteAllocationInput> SiteAllocations { get; init; } = [];
 }
 
 public sealed class CreateInvoiceHandler(IInvoiceService invoiceService)

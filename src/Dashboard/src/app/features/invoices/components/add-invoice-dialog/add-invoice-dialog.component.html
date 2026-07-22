@@ -257,6 +257,116 @@
         </div>
       </div>
     </section>
+
+    <section class="add-invoice-dialog__section">
+      <div class="add-invoice-dialog__section-heading add-invoice-dialog__section-heading--actions">
+        <div>
+          <p class="add-invoice-dialog__eyebrow">Sites</p>
+          <h3>Site allocations</h3>
+          <p class="add-invoice-dialog__summary">
+            Assign all or part of the invoice total to one or more sites.
+          </p>
+        </div>
+
+        <button mat-stroked-button type="button" (click)="addSiteAllocation()">
+          Add Site
+        </button>
+      </div>
+
+      <div class="add-invoice-dialog__allocations" formArrayName="siteAllocations">
+        @for (allocation of invoiceForm.controls.siteAllocations.controls; track allocation) {
+          <div
+            class="add-invoice-dialog__allocation-row"
+            [formGroupName]="$index"
+          >
+            <mat-form-field appearance="outline" class="add-invoice-dialog__allocation-site">
+              <mat-label>Site</mat-label>
+              <input
+                matInput
+                formControlName="siteSearch"
+                [matAutocomplete]="siteAutocomplete"
+                autocomplete="off"
+                inputmode="search"
+              />
+              <mat-hint>Search by NumberId, name, or address.</mat-hint>
+              @if (allocation.controls.siteSearch.touched && allocation.controls.siteId.invalid) {
+                <mat-error>Select a site from the results.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-autocomplete
+              #siteAutocomplete="matAutocomplete"
+              [displayWith]="displaySiteSearchValue"
+              (optionSelected)="onSiteSelected(allocation, $event)"
+            >
+              @for (site of siteSearchResults(); track site.id) {
+                <mat-option [value]="site">
+                  <span class="add-invoice-dialog__supplier-option-title">
+                    #{{ site.numberId }} {{ site.name }}
+                  </span>
+                  <span class="add-invoice-dialog__supplier-option-subtitle">
+                    {{ site.address }}
+                  </span>
+                </mat-option>
+              }
+            </mat-autocomplete>
+
+            <mat-form-field appearance="outline" class="add-invoice-dialog__allocation-amount">
+              <mat-label>Amount</mat-label>
+              <input
+                matInput
+                formControlName="amount"
+                type="number"
+                inputmode="decimal"
+                min="0.01"
+                step="0.01"
+              />
+              @if (allocation.controls.amount.touched && allocation.controls.amount.hasError('required')) {
+                <mat-error>Amount is required.</mat-error>
+              }
+              @if (allocation.controls.amount.touched && (allocation.controls.amount.hasError('decimal') || allocation.controls.amount.hasError('positiveDecimal'))) {
+                <mat-error>Enter a positive amount with up to two decimals.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="add-invoice-dialog__allocation-direction">
+              <mat-label>Direction</mat-label>
+              <mat-select formControlName="direction">
+                @for (direction of sitePaymentDirections; track direction) {
+                  <mat-option [value]="direction">{{ direction }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <button
+              mat-button
+              type="button"
+              class="add-invoice-dialog__allocation-remove"
+              (click)="removeSiteAllocation($index)"
+            >
+              Remove
+            </button>
+          </div>
+        }
+      </div>
+
+      @if (invoiceForm.controls.siteAllocations.touched && invoiceForm.controls.siteAllocations.hasError('duplicateSites')) {
+        <p class="add-invoice-dialog__allocation-error">Each site can only be allocated once.</p>
+      }
+      @if (invoiceForm.controls.siteAllocations.touched && invoiceForm.controls.siteAllocations.hasError('allocatedTotalExceeded')) {
+        <p class="add-invoice-dialog__allocation-error">
+          Assigned amount cannot exceed the invoice total including VAT.
+        </p>
+      }
+      @if (siteAllocationSaveError()) {
+        <p class="add-invoice-dialog__allocation-error">{{ siteAllocationSaveError() }}</p>
+      }
+
+      <div class="add-invoice-dialog__allocation-summary">
+        <span>Assigned: {{ formatSiteAmount(assignedSiteAmount()) }}</span>
+        <span>Remaining: {{ formatSiteAmount(remainingSiteAmount()) }}</span>
+      </div>
+    </section>
   </form>
 
   <app-dialog-action-bar

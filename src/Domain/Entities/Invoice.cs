@@ -5,6 +5,8 @@ namespace Domain.Entities;
 
 public sealed class Invoice : BaseAuditableEntity, IHasNumberId
 {
+    private readonly HashSet<SitePayment> _sitePayments = [];
+
     private Invoice()
     {
     }
@@ -26,6 +28,7 @@ public sealed class Invoice : BaseAuditableEntity, IHasNumberId
     public DateTimeOffset? PaymentDate { get; private set; }
     public DateTimeOffset? PaymentTime { get; private set; }
     public string PaymentMethod { get; private set; } = null!;
+    public IReadOnlyCollection<SitePayment> SitePayments => _sitePayments;
 
     public static Invoice Create(
         Guid supplierId,
@@ -71,6 +74,35 @@ public sealed class Invoice : BaseAuditableEntity, IHasNumberId
             PaymentDate = paymentDate,
             PaymentTime = paymentTime
         };
+    }
+
+    public void ReplaceSitePayments(IEnumerable<SitePayment> sitePayments)
+    {
+        var normalizedSitePayments = Guard.Against.Null(sitePayments).ToList();
+
+        if (normalizedSitePayments.Any(sitePayment => sitePayment.InvoiceId != Id))
+        {
+            throw new ArgumentException("Every site payment must belong to this invoice.", nameof(sitePayments));
+        }
+
+        if (normalizedSitePayments.Select(sitePayment => sitePayment.SiteId).Distinct().Count()
+            != normalizedSitePayments.Count)
+        {
+            throw new ArgumentException("A site can only be allocated once per invoice.", nameof(sitePayments));
+        }
+
+        if (normalizedSitePayments.Sum(sitePayment => sitePayment.Amount) > TotalValueIncludingVat)
+        {
+            throw new ArgumentException(
+                "The allocated total cannot exceed the invoice total including VAT.",
+                nameof(sitePayments));
+        }
+
+        _sitePayments.Clear();
+        foreach (var sitePayment in normalizedSitePayments)
+        {
+            _sitePayments.Add(sitePayment);
+        }
     }
 
     private static string NormalizeRequiredText(string value, string parameterName) =>

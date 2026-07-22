@@ -26,6 +26,16 @@ public sealed class CreateInvoiceValidator : AbstractValidator<CreateInvoiceComm
         RuleFor(x => x.PaymentMethod)
             .NotEmpty()
             .MaximumLength(100);
+        RuleFor(x => x.SiteAllocations).NotNull();
+        RuleForEach(x => x.SiteAllocations)
+            .SetValidator(new InvoiceSiteAllocationInputValidator());
+        RuleFor(x => x.SiteAllocations)
+            .Must(InvoiceSiteAllocationValidation.HaveUniqueSites)
+            .WithMessage("A site can only be allocated once per invoice.");
+        RuleFor(x => x)
+            .Must(HaveAllocationsWithinInvoiceTotal)
+            .WithName(nameof(CreateInvoiceCommand.SiteAllocations))
+            .WithMessage("The allocated total cannot exceed the invoice total including VAT.");
 
         When(x => !string.IsNullOrWhiteSpace(x.PaymentDate), () =>
         {
@@ -40,6 +50,27 @@ public sealed class CreateInvoiceValidator : AbstractValidator<CreateInvoiceComm
                 .Must(BeValidDateTimeOffset)
                 .WithMessage("PaymentTime must be a valid date-time.");
         });
+    }
+
+    private static bool HaveAllocationsWithinInvoiceTotal(CreateInvoiceCommand command)
+    {
+        if (command.TotalValue <= 0m || command.VatRate < 0m || command.VatRate > 100m)
+        {
+            return true;
+        }
+
+        var vatAmount = Math.Round(
+            command.TotalValue * command.VatRate / 100m,
+            2,
+            MidpointRounding.AwayFromZero);
+        var totalValueIncludingVat = Math.Round(
+            command.TotalValue + vatAmount,
+            2,
+            MidpointRounding.AwayFromZero);
+
+        return InvoiceSiteAllocationValidation.FitWithinTotal(
+            command.SiteAllocations,
+            totalValueIncludingVat);
     }
 
     private static bool BeValidDateTimeOffset(string? value)
