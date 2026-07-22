@@ -34,7 +34,7 @@ public class Sites : EndpointGroupBase
     private static async Task<IResult> CreateSite(IMediator mediator, CreateSiteCommand command)
     {
         var siteId = await mediator.Send(command);
-        return TypedResults.Created($"/sites/{siteId}", new { id = siteId });
+        return TypedResults.Created($"/dashboard/sites/{siteId}", new { id = siteId });
     }
 
     private static async Task<Ok<PagedResult<DashboardSiteDto>>> GetDashboardSites(
