@@ -13,9 +13,10 @@ When the user invokes `/prompt`, convert the supplied instruction into a precise
 2. Identify only the repository skills relevant to the task. Use their exact names when known.
 3. Preserve explicit user requirements and do not invent scope, files, technologies, or acceptance criteria.
 4. If an important requirement is missing, state the assumption in the generated prompt. Ask a question only when proceeding would materially change the task.
-5. Recommend task difficulty and reasoning effort using only `low`, `medium`, or `high`.
-6. Recommend whether Plan mode should be used.
-7. Produce the prompt using the format below.
+5. Use the model list in this skill as the current available catalog and recommend one model based on the task's complexity and domain. Do not invent model identifiers or capabilities that are not documented here.
+6. Recommend task difficulty and reasoning effort using only `low`, `medium`, or `high`.
+7. Recommend whether Plan mode should be used.
+8. Produce the prompt using the format below.
 
 ## Output format
 
@@ -27,6 +28,7 @@ Required skills
 - [Exact relevant skill name, or "None"]
 
 Execution guidance
+- Model: [Recommended model from the catalog, with a short reason]
 - Difficulty: [low, medium, or high]
 - Reasoning: [low, medium, or high, with a short reason]
 - Plan mode: [Yes or no, with a short reason]
@@ -60,6 +62,15 @@ Classify difficulty and reasoning as follows:
 - **Low**: simple, localized, well-defined edits.
 - **Medium**: multi-file changes or behavior changes using established repository patterns.
 - **High**: architectural changes, ambiguous requirements, security-sensitive work, difficult debugging, or changes spanning multiple subsystems.
+
+Choose the model together with difficulty and reasoning using this current model catalog:
+
+- `GPT-5.6 Sol`
+- `GPT-5.6 Terra`
+- `GPT-5.6 Luna`
+- `GPT-5.5`
+- `GPT-5.4`
+- `GPT-5.4 Mini`
 
 Recommend Plan mode for tasks with multiple dependent steps, several affected layers, repository exploration, or meaningful architectural tradeoffs. Recommend no Plan mode for small, localized, well-defined edits.
 
