@@ -1,0 +1,10 @@
+interface:
+  display_name: "Skill Generator"
+  short_description: "Build repository-local modular coding skills"
+  default_prompt: "Use $skill-generator to analyze ./src/Application and propose the repository-local modular coding skills it needs."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "context7"
+      description: "Resolve libraries and retrieve current version-aware framework documentation."
