@@ -6,15 +6,9 @@
 - Do not over-explain.
 - If the user asks a yes/no question, answer with "Yes" or "No" first, then add only minimal context if needed.
 - Do not provide long explanations unless explicitly requested.
-- When planning, keep it concrete: describe the files, code paths, APIs, patterns, and technical approach you will use so I can spot overengineering or hallucination early. Keep the text short and technical.
-- Do exactly the work I asked for, plus the wiring needed for it to function end to end. Keep the code quality patterns and principles this should not be saving from just dont overcomplicate with additional logic and if you think its good idea ask me first so i can decide
-- Do not add adjacent behavior, follow-up features, extra automation, or cleanup work unless I explicitly asked for it or if you think is good idea ask me first.
 - When creatign a feature try to find the things that can be separated from this to a reusable separation. I am talking about backend and frontend both logic and ui 
 - If you think additional scope should be included, stop and ask before you draft or expand the plan.
-- When explaining completed work, summarize only key changes.
-- Avoid repetition and unnecessary background context.
 - Do not include tutorials unless requested.
-- If the answer is obvious from the code, keep responses short.
 - While planning, if anything is not 100% certain, ask the user before proceeding.
 - If a request is ambiguous or could be misunderstood, stop and ask for clarification before acting.
 - Do not assume user intent when details are unclear; double-check user-provided facts and call out likely mistakes or better options.
@@ -26,7 +20,6 @@
 - When the user explicitly provides files as context, prefer using only those files.
 - Do not scan the repository unnecessarily.
 - Do not search unrelated folders unless required for correctness.
-- If additional files are needed, explain briefly why before loading them.
 
 ### Information Sources
 

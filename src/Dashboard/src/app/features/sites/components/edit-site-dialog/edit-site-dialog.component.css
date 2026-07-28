@@ -1,0 +1,19 @@
+.edit-site-dialog__form {
+  display: grid;
+  gap: 1rem;
+  padding: 0 1.5rem 1.5rem;
+}
+
+.edit-site-dialog__readonly {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.35rem 1rem;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.875rem;
+}
+
+.edit-site-dialog__readonly strong {
+  color: var(--mat-sys-on-surface);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}

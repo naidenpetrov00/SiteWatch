@@ -16,6 +16,32 @@
   line-height: 1.2;
 }
 
+.invoice-dialog__section-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.invoice-dialog__section-heading .invoice-dialog__section-title {
+  margin-bottom: 0.25rem;
+}
+
+.invoice-dialog__eyebrow {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(15, 23, 42, 0.52);
+}
+
+.invoice-dialog__summary {
+  margin: 0;
+  color: rgba(15, 23, 42, 0.7);
+}
+
 .invoice-dialog__definition-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -42,8 +68,68 @@
   word-break: break-word;
 }
 
+.invoice-dialog__allocations {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.invoice-dialog__allocation-row {
+  display: grid;
+  grid-template-columns: minmax(14rem, 6fr) minmax(8rem, 2fr) minmax(7rem, 2fr) auto;
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.invoice-dialog__allocation-remove {
+  margin-top: 0.5rem;
+}
+
+.invoice-dialog__site-option-title,
+.invoice-dialog__site-option-subtitle {
+  display: block;
+  white-space: normal;
+}
+
+.invoice-dialog__site-option-title {
+  font-weight: 600;
+}
+
+.invoice-dialog__site-option-subtitle {
+  color: rgba(15, 23, 42, 0.68);
+  font-size: 0.875rem;
+}
+
+.invoice-dialog__allocation-summary {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1.5rem;
+  margin-top: 1rem;
+  font-weight: 600;
+}
+
+.invoice-dialog__allocation-error {
+  margin: 0.75rem 0 0;
+  color: #b91c1c;
+  font-size: 0.875rem;
+}
+
 @media (max-width: 48rem) {
   .invoice-dialog__definition-list {
     grid-template-columns: 1fr;
+  }
+
+  .invoice-dialog__section-heading,
+  .invoice-dialog__allocation-row {
+    grid-template-columns: 1fr;
+  }
+
+  .invoice-dialog__allocation-remove {
+    justify-self: start;
+    margin-top: 0;
+  }
+
+  .invoice-dialog__allocation-summary {
+    flex-direction: column;
+    gap: 0.25rem;
   }
 }

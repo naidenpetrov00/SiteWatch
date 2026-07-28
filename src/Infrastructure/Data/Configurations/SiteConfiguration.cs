@@ -14,6 +14,11 @@ public class SiteConfiguration : IEntityTypeConfiguration<Site>
     {
         builder.HasMany(site => site.Users).WithMany(user => user.Sites);
 
+        builder.Property(site => site.NumberId)
+            .ValueGeneratedOnAdd()
+            .HasDefaultValueSql("NEXT VALUE FOR [dbo].[SiteNumberIds]")
+            .IsRequired();
+
         var mediaPolicyConverter = new ValueConverter<SiteMediaPolicy, string>(
             mediaPolicy => mediaPolicy.ToStorageValue(),
             value => SiteMediaPolicy.FromStorageValue(value));

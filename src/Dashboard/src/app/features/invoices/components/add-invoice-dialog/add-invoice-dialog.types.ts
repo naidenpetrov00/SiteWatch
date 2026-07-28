@@ -1,4 +1,5 @@
 import { FormControl, FormGroup } from '@angular/forms';
+import { InvoiceSiteAllocationsFormArray } from '../../utils/invoice-site-allocation-form';
 
 export const PAYMENT_METHOD_OPTIONS = ['Bank', 'Cash'] as const;
 
@@ -32,6 +33,7 @@ export interface AddInvoiceDialogFormControls {
   paymentDate: FormControl<Date | null>;
   paymentTime: FormControl<string>;
   paymentMethod: FormControl<string>;
+  siteAllocations: InvoiceSiteAllocationsFormArray;
 }
 
 export type AddInvoiceDialogFormGroup = FormGroup<AddInvoiceDialogFormControls>;

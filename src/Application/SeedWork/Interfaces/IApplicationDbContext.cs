@@ -12,6 +12,7 @@ public interface IApplicationDbContext
     DbSet<Camera> Cameras { get; }
     DbSet<Person> Persons { get; }
     DbSet<Invoice> Invoices { get; }
+    DbSet<SitePayment> SitePayments { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

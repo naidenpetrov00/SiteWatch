@@ -1,4 +1,5 @@
 using System.Globalization;
+using Ardalis.GuardClauses;
 using Application.Invoices.Commands;
 using Application.Invoices.Queries;
 using Application.SeedWork.Interfaces;
@@ -74,10 +75,47 @@ public sealed class InvoiceService(ApplicationDbContext dbContext, IMapper mappe
             paymentTime
         );
 
+        var sitePayments = await CreateSitePaymentsAsync(
+            invoice,
+            request.SiteAllocations,
+            cancellationToken);
+        invoice.ReplaceSitePayments(sitePayments);
+
         dbContext.Invoices.Add(invoice);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return invoice.Id;
+    }
+
+    public async Task UpdateSiteAllocationsAsync(
+        UpdateInvoiceSiteAllocationsCommand request,
+        CancellationToken cancellationToken)
+    {
+        var invoice = await dbContext.Invoices
+            .Include(item => item.SitePayments)
+            .SingleOrDefaultAsync(item => item.Id == request.InvoiceId, cancellationToken);
+
+        if (invoice is null)
+        {
+            throw new NotFoundException(nameof(Invoice), request.InvoiceId.ToString());
+        }
+
+        if (request.SiteAllocations.Sum(allocation => allocation.Amount)
+            > invoice.TotalValueIncludingVat)
+        {
+            throw CreateValidationException(
+                nameof(request.SiteAllocations),
+                "The allocated total cannot exceed the invoice total including VAT.");
+        }
+
+        var sitePayments = await CreateSitePaymentsAsync(
+            invoice,
+            request.SiteAllocations,
+            cancellationToken);
+
+        dbContext.SitePayments.RemoveRange(invoice.SitePayments);
+        invoice.ReplaceSitePayments(sitePayments);
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<PagedResult<DashboardInvoiceDto>> GetDashboardInvoicesAsync(
@@ -127,6 +165,51 @@ public sealed class InvoiceService(ApplicationDbContext dbContext, IMapper mappe
         }
 
         return string.Join(", ", address.Parts);
+    }
+
+    private async Task<List<SitePayment>> CreateSitePaymentsAsync(
+        Invoice invoice,
+        IReadOnlyCollection<InvoiceSiteAllocationInput> allocations,
+        CancellationToken cancellationToken)
+    {
+        if (allocations.Count == 0)
+        {
+            return [];
+        }
+
+        var siteIds = allocations.Select(allocation => allocation.SiteId).Distinct().ToList();
+        var sites = await dbContext.Sites
+            .Where(site => siteIds.Contains(site.Id))
+            .ToDictionaryAsync(site => site.Id, cancellationToken);
+
+        var missingSiteId = siteIds.FirstOrDefault(siteId => !sites.ContainsKey(siteId));
+        if (missingSiteId != Guid.Empty)
+        {
+            throw CreateValidationException(
+                nameof(InvoiceSiteAllocationInput.SiteId),
+                $"Site {missingSiteId} must exist.");
+        }
+
+        return allocations
+            .Select(allocation => SitePayment.Create(
+                invoice,
+                sites[allocation.SiteId],
+                allocation.Amount,
+                ParseDirection(allocation.Direction)))
+            .ToList();
+    }
+
+    private static SitePaymentDirection ParseDirection(string direction)
+    {
+        if (Enum.TryParse<SitePaymentDirection>(direction, true, out var parsedDirection)
+            && Enum.IsDefined(parsedDirection))
+        {
+            return parsedDirection;
+        }
+
+        throw CreateValidationException(
+            nameof(InvoiceSiteAllocationInput.Direction),
+            "Direction must be In or Out.");
     }
 
     private static string GetOptionalContactValue(Person supplier, ContactType contactType)

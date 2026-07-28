@@ -54,6 +54,10 @@ export class DashboardShellComponent {
     );
   }
 
+  isSitesManagementActive(): boolean {
+    return this.router.isActive('/manage-sites', this.exactMatchOptions);
+  }
+
   isAdministrationActive(): boolean {
     return (
       this.router.isActive('/manage-users', this.exactMatchOptions) ||

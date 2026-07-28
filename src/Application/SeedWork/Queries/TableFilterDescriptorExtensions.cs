@@ -16,4 +16,17 @@ public static class TableFilterDescriptorExtensions
             request => TableFilterPredicates.GuidEquals(selector, valueSelector(request))
         );
     }
+
+    public static TableFilterDescriptor<TEntity, TRequest> IntEquals<TEntity, TRequest>(
+        string key,
+        Func<TRequest, string?> valueSelector,
+        Expression<Func<TEntity, int>> selector
+    )
+        where TRequest : TableQueryRequest
+    {
+        return new TableFilterDescriptor<TEntity, TRequest>(
+            key,
+            request => TableFilterPredicates.IntEquals(selector, valueSelector(request))
+        );
+    }
 }

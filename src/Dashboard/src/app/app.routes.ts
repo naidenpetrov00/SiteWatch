@@ -45,6 +45,14 @@ export const routes: Routes = [
           )
       },
       {
+        path: 'manage-sites',
+        title: 'Manage Sites',
+        loadComponent: () =>
+          import('./features/sites/pages/manage-sites.page').then(
+            (m) => m.ManageSitesPage
+          )
+      },
+      {
         path: 'manage-users',
         title: 'Manage Users',
         loadComponent: () =>

@@ -1,0 +1,34 @@
+<main class="manage-sites-page">
+  <header class="manage-sites-page__header">
+    <div>
+      <p class="manage-sites-page__eyebrow">Administration</p>
+      <h1>Manage Sites</h1>
+      <p class="manage-sites-page__summary">
+        Review and filter the current dashboard sites.
+      </p>
+    </div>
+
+    <div class="manage-sites-page__actions">
+      <app-action-button
+        label="Add Site"
+        variant="primary"
+        (clicked)="openAddSiteDialog()"
+      ></app-action-button>
+    </div>
+  </header>
+
+  <app-data-table
+    tableEyebrow="Sites"
+    tableLabel="Manage Sites"
+    emptyMessage="No sites match the current filters."
+    filterApplyMode="search"
+    [rows]="sites()"
+    [filteredRowsTotal]="sitesFilteredCount()"
+    [overallRowsTotal]="sitesTotalCount()"
+    [columns]="columns"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="pageSizeOptions"
+    (tableStateChange)="onTableStateChange($event)"
+    (cellButtonClicked)="onCellButtonClicked($event)"
+  />
+</main>

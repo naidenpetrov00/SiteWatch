@@ -18,6 +18,18 @@
         <span class="dashboard-shell__nav-label">Invoice Management</span>
         <mat-icon>expand_more</mat-icon>
       </button>
+      <button
+        cdkMenuItem
+        mat-button
+        type="button"
+        class="dashboard-shell__nav-button"
+        [class.dashboard-shell__nav-button--active]="isSitesManagementActive()"
+        aria-label="Sites management menu"
+        [cdkMenuTriggerFor]="sitesMenu"
+      >
+        <span class="dashboard-shell__nav-label">Sites Management</span>
+        <mat-icon>expand_more</mat-icon>
+      </button>
       <span class="dashboard-shell__nav-spacer"></span>
       <button
         cdkMenuItem
@@ -62,6 +74,20 @@
         [routerLinkActiveOptions]="{ exact: true }"
       >
         Scan Invoice
+      </a>
+    </div>
+  </ng-template>
+
+  <ng-template #sitesMenu>
+    <div class="dashboard-shell__menu-panel" cdkMenu>
+      <a
+        cdkMenuItem
+        class="dashboard-shell__menu-item"
+        routerLink="/manage-sites"
+        routerLinkActive="dashboard-shell__menu-item--active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        Manage Sites
       </a>
     </div>
   </ng-template>
