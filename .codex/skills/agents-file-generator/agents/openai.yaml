@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agents File Generator"
+  short_description: "Design precise repository AGENTS instructions"
+  default_prompt: "Use $agents-file-generator to analyze this repository and propose a concise, policy-aware AGENTS.md hierarchy before writing files."
