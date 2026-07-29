@@ -15,8 +15,7 @@ Use repository evidence to select relevant questions. Do not ask the entire cata
 - [Scope expansion](#scope-expansion)
 - [Existing-code reuse](#existing-code-reuse)
 - [Skills and registry](#skills-and-registry)
-- [Context7 and approved technical documentation tools](#context7-and-approved-technical-documentation-tools)
-- [General web search](#general-web-search)
+- [Generator research sources](#generator-research-sources)
 - [Secrets and sensitive values](#secrets-and-sensitive-values)
 - [Generated files](#generated-files)
 - [Git](#git)
@@ -112,25 +111,22 @@ When project skills exist, recommend:
 
 Confirm the actual discovery path and registry name.
 
-## Context7 and approved technical documentation tools
+## Generator research sources
 
-Ask whether the repository should use the following model:
+Before forming a recommendation or asking a policy question that needs technical evidence, the generator must use:
 
 ```text
 applicable skills
   -> repository context
-  -> Context7 or another approved documentation tool only for gaps
+  -> Context7 MCP only for unresolved technical gaps
+  -> general web search only as the final permitted fallback
 ```
 
-Recommended default: use approved technical documentation when framework or library behavior is uncovered, uncertain, unfamiliar, version-sensitive, or newer than skill validation; retrieve only the missing information. Do not require lookup for routine work already covered by skills and repository evidence.
+Use Context7 only when framework or library behavior remains uncovered, uncertain, unfamiliar, version-sensitive, or newer than skill validation; retrieve only the missing information. Do not use general web search unless Context7 is unavailable or insufficient and external/current information is still needed.
 
 Do not claim Context7 exists unless the environment or repository proves it.
 
-## General web search
-
-Treat general web search separately from approved technical documentation tools.
-
-Recommended default: use it only when external or current information is actually required and repository/user policy permits it; prefer official primary documentation for technical facts.
+This is an internal generator workflow, not a default AGENTS rule. Ask about a repository-specific documentation or web-search policy only when the repository's needs make it material; do not add one otherwise.
 
 ## Secrets and sensitive values
 
@@ -188,8 +184,7 @@ GIT
 REPOSITORY INSPECTION
 SCOPE
 SKILLS
-CONTEXT7
-WEB
+<only repository policy approved for generated AGENTS; do not copy the generator's internal research order>
 ```
 
 Ask the user to correct or approve the summary. Do not treat earlier silence as agreement.

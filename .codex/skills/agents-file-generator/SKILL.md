@@ -30,6 +30,17 @@ Read these references before acting:
 
 Keep this skill separate from any repository `skill-generator`: this skill defines how coding agents operate in the repository, while a skill generator defines how they perform specific engineering capabilities. If an AGENTS audit discovers useful implementation knowledge, report the candidate and defer creation or migration to a separate skill-generation request.
 
+## Internal research order
+
+When this generator needs evidence to design an AGENTS hierarchy, classify a rule, or recommend a policy, use sources in this order:
+
+1. **Applicable skills:** identify the task-relevant repository or installed skills, use their required guidance, and avoid loading unrelated skills.
+2. **Repository/project context:** inspect the relevant instructions, manifests, configuration, documentation, CI, and representative boundary files to establish local facts and conventions.
+3. **Context7 MCP:** only when the first two sources leave a technical gap that is missing, uncertain, unfamiliar, or version-sensitive; use it only when available and retrieve only the missing information.
+4. **General web search:** only as the final fallback when Context7 is unavailable or inadequate and current external information is still necessary and permitted.
+
+Do not skip ahead, treat Context7 and web search as parallel sources, or use either external source when applicable skills and repository evidence answer the question. This is the generator's internal evidence workflow. Do not automatically place it, or Context7/web-search policy, in generated AGENTS files; include such policy only when the repository's approved requirements independently call for it.
+
 ## Select the workflow
 
 Choose one workflow from current evidence:
@@ -42,11 +53,12 @@ Treat deleted or renamed instruction files in a dirty worktree as user state, no
 
 ## Phase 1: Discover the repository
 
-1. Resolve the repository root and applicable existing instructions.
-2. Inventory applications, projects, package managers, dependency manifests, build systems, test projects, lint and formatting tools, CI, hooks, deployment configuration, architecture documents, ADRs, READMEs, skills, registries, generated-code areas, migrations, and common commands.
-3. Inspect manifests, configuration, scripts, documentation, and representative boundary files. Expand into source only when necessary to prove module boundaries or dependency direction.
-4. Record findings with file evidence and distinguish proven facts from tentative inferences.
-5. Identify existing uncommitted changes before proposing edits.
+1. Identify and read applicable skills using the repository's actual discovery mechanism before inspecting project details.
+2. Resolve the repository root and applicable existing instructions.
+3. Inventory applications, projects, package managers, dependency manifests, build systems, test projects, lint and formatting tools, CI, hooks, deployment configuration, architecture documents, ADRs, READMEs, skills, registries, generated-code areas, migrations, and common commands.
+4. Inspect manifests, configuration, scripts, documentation, and representative boundary files. Expand into source only when necessary to prove module boundaries or dependency direction.
+5. Record findings with file evidence and distinguish proven facts from tentative inferences.
+6. Identify existing uncommitted changes before proposing edits.
 
 Follow [discovery.md](references/discovery.md); adapt its examples to the repository rather than assuming a technology stack.
 
@@ -84,7 +96,7 @@ Always distinguish:
 - build, test, lint, and typecheck from launching applications, servers, containers, or infrastructure;
 - model or configuration edits from migration generation and database execution;
 - supporting files needed for the same requested behavior from materially expanded product scope;
-- approved documentation tools such as Context7 from unrestricted general web search.
+- when a repository-specific external-lookup policy is material, approved documentation tools such as Context7 from unrestricted general web search.
 
 Apply safe inferred rules for secrets, unrelated user changes, destructive actions, and production access unless the user explicitly chooses a stricter compatible policy. Use [policy-interview.md](references/policy-interview.md) for relevant choices and recommended defaults.
 
@@ -96,7 +108,7 @@ After decisions are resolved, present one concise policy summary and ask the use
 2. Keep rules concise, actionable, repository-specific, and scoped.
 3. Include only commands confirmed by repository evidence. Define verification by affected scope instead of requiring one giant command for every change.
 4. Route implementation work through the repository's actual skill discovery mechanism. Do not duplicate skill contents in AGENTS files.
-5. Define Context7 or other documentation lookup as a narrow fallback for missing, uncertain, unfamiliar, or version-sensitive technical knowledge when the approved policy permits it.
+5. Do not automatically add the generator's internal research order or Context7/web-search rules to generated AGENTS files; add documentation-lookup policy only when it is independently approved for that repository.
 6. Do not copy secrets, credentials, environment values, or private configuration into instructions.
 7. Do not direct agents to edit generated outputs unless the repository intentionally treats those files as source.
 8. Preserve useful existing rules after reclassification; do not blindly preserve stale or noisy wording.
@@ -108,7 +120,7 @@ After decisions are resolved, present one concise policy summary and ask the use
 2. Verify each command against manifests, scripts, CI, or documentation.
 3. Check for duplicated rules, contradictory scopes, stale paths, excessive interruptions, misplaced implementation knowledge, and unjustified nested files.
 4. Simulate representative tasks covering backend or service work, UI work, data-model changes and migrations when present, dependency additions, and unfamiliar external APIs.
-5. For each scenario, identify applicable AGENTS files, skill routing, allowed verification, required approvals, and any documentation fallback.
+5. For each scenario, identify applicable AGENTS files, skill routing, allowed verification, required approvals, and any repository-specific documentation fallback. Validate the generator's own research sequence separately: applicable skills, repository context, Context7 only for unresolved gaps, then web search only as a final permitted fallback.
 6. Refine ambiguous rules and repeat affected scenarios.
 7. Report created, updated, removed, or intentionally retained files; important reclassifications; validation evidence; and unresolved limitations.
 

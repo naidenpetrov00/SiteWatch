@@ -17,7 +17,7 @@ When the user invokes `/prompt`, convert the supplied instruction into a precise
 6. Read [references/models.md](references/models.md) completely. Recommend one model from that catalog based on the task's complexity, risk, latency, and cost. Do not inspect or depend on a runtime model catalog.
 7. Classify task difficulty as low, medium, or high using scope, ambiguity, risk, dependencies, and required depth. Recommend a reasoning level supported by the selected model and execution surface.
 8. Recommend whether Plan mode should be used.
-9. Recommend whether Goal Mode should be used. Treat this as independent from Plan mode; a task may warrant either, both, or neither.
+9. Choose whether Plan mode or Goal Mode should be used. These are mutually exclusive; recommend at most one, or neither for a small self-contained task.
 10. Produce the prompt using the format below.
 
 ## Output format
@@ -79,9 +79,7 @@ Choose reasoning proportionally:
 - Use `xhigh` or `max` only for exceptional, quality-first work where the added latency and cost are justified.
 - Recommend `ultra` only for Codex execution when parallel agent work materially benefits a complex task; never present it as an API reasoning-effort value.
 
-Recommend Plan mode for tasks with multiple dependent steps, several affected layers, repository exploration, or meaningful architectural tradeoffs. Recommend no Plan mode for small, localized, well-defined edits.
-
-Recommend Goal Mode for tasks that are likely to require sustained work across multiple turns, iterative implementation and verification, broad repository changes, monitoring, or an explicit outcome-oriented request to keep working until completion. Recommend no Goal Mode for small, self-contained tasks that should be completed in one turn. Plan mode and Goal Mode may both be recommended when a task needs upfront decomposition as well as persistent execution.
+Plan mode and Goal Mode are mutually exclusive. Recommend Plan mode for tasks with multiple dependent steps, several affected layers, repository exploration, or meaningful architectural tradeoffs that can be completed in a bounded execution. Recommend Goal Mode for tasks likely to require sustained work across multiple turns, iterative implementation and verification, broad repository changes, monitoring, or an explicit outcome-oriented request to keep working until completion. Recommend neither for small, localized, well-defined edits, and never recommend both.
 
 ## Quality rules
 
