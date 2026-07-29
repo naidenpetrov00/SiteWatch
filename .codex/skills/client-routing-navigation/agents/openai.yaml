@@ -1,0 +1,4 @@
+interface:
+  display_name: "Client Routing Navigation"
+  short_description: "Maintain Expo Router flows"
+  default_prompt: "Use -routing-navigation to update ClientApp routes and navigation."

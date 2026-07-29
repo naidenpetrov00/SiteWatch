@@ -1,0 +1,4 @@
+interface:
+  display_name: "Client Server State"
+  short_description: "Maintain queries and API state"
+  default_prompt: "Use -server-state to update ClientApp API queries or mutations."

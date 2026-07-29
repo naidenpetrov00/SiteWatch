@@ -1,0 +1,4 @@
+interface:
+  display_name: "Client Media Gallery"
+  short_description: "Build media gallery views"
+  default_prompt: "Use -media-gallery to update ClientApp image or video galleries."

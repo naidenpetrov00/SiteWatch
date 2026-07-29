@@ -1,0 +1,4 @@
+interface:
+  display_name: "Client Lifecycle Resilience"
+  short_description: "Handle mobile lifecycle changes"
+  default_prompt: "Use -app-lifecycle-resilience to update ClientApp lifecycle behavior."

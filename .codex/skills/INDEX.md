@@ -737,3 +737,182 @@
 **Location:** `.codex/skills/agents-file-generator/SKILL.md`.
 
 **Status:** Current.
+
+
+## ClientApp skills
+
+## client-routing-navigation
+
+**Purpose:** Focused SiteWatch Expo/React Native capability.
+
+**Activates:** Changes covered by `client-routing-navigation` in `src/ClientApp`.
+
+**Validated technologies:** See the skill.
+
+**Technical validation:** 2026-07.
+
+**Origin:** Generated locally from approved ClientApp architecture and current framework guidance.
+
+**Location:** `.codex/skills/client-routing-navigation/SKILL.md`.
+
+**Status:** Current.
+
+## client-server-state
+
+**Purpose:** Focused SiteWatch Expo/React Native capability.
+
+**Activates:** Changes covered by `client-server-state` in `src/ClientApp`.
+
+**Validated technologies:** See the skill.
+
+**Technical validation:** 2026-07.
+
+**Origin:** Generated locally from approved ClientApp architecture and current framework guidance.
+
+**Location:** `.codex/skills/client-server-state/SKILL.md`.
+
+**Status:** Current.
+
+## client-auth-session
+
+**Purpose:** Focused SiteWatch Expo/React Native capability.
+
+**Activates:** Changes covered by `client-auth-session` in `src/ClientApp`.
+
+**Validated technologies:** See the skill.
+
+**Technical validation:** 2026-07.
+
+**Origin:** Generated locally from approved ClientApp architecture and current framework guidance.
+
+**Location:** `.codex/skills/client-auth-session/SKILL.md`.
+
+**Status:** Current.
+
+## client-live-camera-streaming
+
+**Purpose:** Focused SiteWatch Expo/React Native capability.
+
+**Activates:** Changes covered by `client-live-camera-streaming` in `src/ClientApp`.
+
+**Validated technologies:** See the skill.
+
+**Technical validation:** 2026-07.
+
+**Origin:** Generated locally from approved ClientApp architecture and current framework guidance.
+
+**Location:** `.codex/skills/client-live-camera-streaming/SKILL.md`.
+
+**Status:** Current.
+
+## client-camera-ptz-control
+
+**Purpose:** Focused SiteWatch Expo/React Native capability.
+
+**Activates:** Changes covered by `client-camera-ptz-control` in `src/ClientApp`.
+
+**Validated technologies:** See the skill.
+
+**Technical validation:** 2026-07.
+
+**Origin:** Generated locally from approved ClientApp architecture and current framework guidance.
+
+**Location:** `.codex/skills/client-camera-ptz-control/SKILL.md`.
+
+**Status:** Current.
+
+## client-device-media
+
+**Purpose:** Focused SiteWatch Expo/React Native capability.
+
+**Activates:** Changes covered by `client-device-media` in `src/ClientApp`.
+
+**Validated technologies:** See the skill.
+
+**Technical validation:** 2026-07.
+
+**Origin:** Generated locally from approved ClientApp architecture and current framework guidance.
+
+**Location:** `.codex/skills/client-device-media/SKILL.md`.
+
+**Status:** Current.
+
+## client-media-gallery
+
+**Purpose:** Focused SiteWatch Expo/React Native capability.
+
+**Activates:** Changes covered by `client-media-gallery` in `src/ClientApp`.
+
+**Validated technologies:** See the skill.
+
+**Technical validation:** 2026-07.
+
+**Origin:** Generated locally from approved ClientApp architecture and current framework guidance.
+
+**Location:** `.codex/skills/client-media-gallery/SKILL.md`.
+
+**Status:** Current.
+
+## client-gesture-interactions
+
+**Purpose:** Focused SiteWatch Expo/React Native capability.
+
+**Activates:** Changes covered by `client-gesture-interactions` in `src/ClientApp`.
+
+**Validated technologies:** See the skill.
+
+**Technical validation:** 2026-07.
+
+**Origin:** Generated locally from approved ClientApp architecture and current framework guidance.
+
+**Location:** `.codex/skills/client-gesture-interactions/SKILL.md`.
+
+**Status:** Current.
+
+## client-app-lifecycle-resilience
+
+**Purpose:** Focused SiteWatch Expo/React Native capability.
+
+**Activates:** Changes covered by `client-app-lifecycle-resilience` in `src/ClientApp`.
+
+**Validated technologies:** See the skill.
+
+**Technical validation:** 2026-07.
+
+**Origin:** Generated locally from approved ClientApp architecture and current framework guidance.
+
+**Location:** `.codex/skills/client-app-lifecycle-resilience/SKILL.md`.
+
+**Status:** Current.
+
+## client-native-accessibility
+
+**Purpose:** Focused SiteWatch Expo/React Native capability.
+
+**Activates:** Changes covered by `client-native-accessibility` in `src/ClientApp`.
+
+**Validated technologies:** See the skill.
+
+**Technical validation:** 2026-07.
+
+**Origin:** Generated locally from approved ClientApp architecture and current framework guidance.
+
+**Location:** `.codex/skills/client-native-accessibility/SKILL.md`.
+
+**Status:** Current.
+
+## client-mobile-testing
+
+**Purpose:** Focused SiteWatch Expo/React Native capability.
+
+**Activates:** Changes covered by `client-mobile-testing` in `src/ClientApp`.
+
+**Validated technologies:** See the skill.
+
+**Technical validation:** 2026-07.
+
+**Origin:** Generated locally from approved ClientApp architecture and current framework guidance.
+
+**Location:** `.codex/skills/client-mobile-testing/SKILL.md`.
+
+**Status:** Current.

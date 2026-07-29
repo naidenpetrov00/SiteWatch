@@ -1,0 +1,4 @@
+interface:
+  display_name: "Client Native Accessibility"
+  short_description: "Build accessible native interfaces"
+  default_prompt: "Use -native-accessibility to improve ClientApp accessibility."

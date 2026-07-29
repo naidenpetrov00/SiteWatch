@@ -1,0 +1,4 @@
+interface:
+  display_name: "Client Device Media"
+  short_description: "Handle device media safely"
+  default_prompt: "Use -device-media to save, cache, or share ClientApp media."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Live Camera Streaming"
+  short_description: "Maintain RTSP camera streams"
+  default_prompt: "Use -live-camera-streaming to update live camera playback or recording."

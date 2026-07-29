@@ -1,0 +1,4 @@
+interface:
+  display_name: "Camera PTZ Control"
+  short_description: "Maintain safe camera movement"
+  default_prompt: "Use -camera-ptz-control to update camera PTZ interactions."

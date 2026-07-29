@@ -1,0 +1,4 @@
+interface:
+  display_name: "Client Gesture Interactions"
+  short_description: "Build native touch interactions"
+  default_prompt: "Use -gesture-interactions to update ClientApp gestures or animations."

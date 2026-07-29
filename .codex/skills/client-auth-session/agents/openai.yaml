@@ -1,0 +1,4 @@
+interface:
+  display_name: "Client Auth Session"
+  short_description: "Maintain mobile auth sessions"
+  default_prompt: "Use -auth-session to update ClientApp authentication flows."
