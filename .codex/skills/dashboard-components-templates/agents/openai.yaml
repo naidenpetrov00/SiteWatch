@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dashboard Components & Templates"
+  short_description: "Build signal-based Angular UI components"
+  default_prompt: "Use $dashboard-components-templates to implement this Dashboard component or template."

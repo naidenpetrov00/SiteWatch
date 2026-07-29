@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dashboard Data Access"
+  short_description: "Implement Dashboard HTTP and server-state flows"
+  default_prompt: "Use $dashboard-data-access to implement this Dashboard API and query flow."

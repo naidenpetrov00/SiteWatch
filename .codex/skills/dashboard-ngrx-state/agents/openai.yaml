@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dashboard NgRx State"
+  short_description: "Add scoped NgRx client-state management"
+  default_prompt: "Use $dashboard-ngrx-state to design this Dashboard client-state feature."

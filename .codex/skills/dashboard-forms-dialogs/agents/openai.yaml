@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dashboard Forms & Dialogs"
+  short_description: "Build typed Dashboard forms and dialogs"
+  default_prompt: "Use $dashboard-forms-dialogs to implement this typed form or dialog."

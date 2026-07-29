@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dashboard Testing"
+  short_description: "Test Dashboard Angular behavior with Vitest"
+  default_prompt: "Use $dashboard-testing to add focused tests for this Dashboard behavior."

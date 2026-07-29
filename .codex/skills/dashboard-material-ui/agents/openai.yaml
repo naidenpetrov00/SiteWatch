@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dashboard Material UI"
+  short_description: "Build accessible Material dashboard interfaces"
+  default_prompt: "Use $dashboard-material-ui to build this accessible Material interface."

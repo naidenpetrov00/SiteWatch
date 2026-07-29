@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dashboard SSR & Hydration"
+  short_description: "Adopt SSR and hydration safely"
+  default_prompt: "Use $dashboard-ssr-hydration to assess and implement this rendering change."

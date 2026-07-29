@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dashboard Async UI State"
+  short_description: "Handle loading, error, and mutation states"
+  default_prompt: "Use $dashboard-async-ui-state to design the loading and error behavior for this flow."
