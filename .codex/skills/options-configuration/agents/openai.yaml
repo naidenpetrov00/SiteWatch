@@ -1,0 +1,4 @@
+interface:
+  display_name: "Options Configuration"
+  short_description: "Manage typed backend configuration safely"
+  default_prompt: "Use $options-configuration to add or change typed backend configuration."

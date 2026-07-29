@@ -1,0 +1,4 @@
+interface:
+  display_name: "EF Core Queries"
+  short_description: "Write efficient EF Core read queries"
+  default_prompt: "Use $ef-queries to implement or optimize an EF Core query."

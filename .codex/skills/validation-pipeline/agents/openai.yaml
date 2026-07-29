@@ -1,0 +1,4 @@
+interface:
+  display_name: "Validation Pipeline"
+  short_description: "Implement FluentValidation request validation"
+  default_prompt: "Use $validation-pipeline to add validation for an application request."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Identity Integration"
+  short_description: "Integrate ASP.NET Core Identity and JWT"
+  default_prompt: "Use $identity-integration to change identity authentication tokens roles or claims."

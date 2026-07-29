@@ -1,0 +1,4 @@
+interface:
+  display_name: "Backend Composition"
+  short_description: "Wire backend dependency injection and startup"
+  default_prompt: "Use $backend-composition to register backend services and compose application startup."

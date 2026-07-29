@@ -1,0 +1,4 @@
+interface:
+  display_name: "Application Ports"
+  short_description: "Design application-layer service interfaces"
+  default_prompt: "Use $application-ports to add or revise an application port and infrastructure adapter."

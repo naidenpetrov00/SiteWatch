@@ -1,0 +1,4 @@
+interface:
+  display_name: "File Uploads"
+  short_description: "Implement secure multipart file uploads"
+  default_prompt: "Use $file-uploads to add or revise a secure file upload workflow."

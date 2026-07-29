@@ -1,0 +1,4 @@
+interface:
+  display_name: "Backend Testing"
+  short_description: "Test backend domain and application behavior"
+  default_prompt: "Use $backend-testing to add focused backend tests for changed behavior."

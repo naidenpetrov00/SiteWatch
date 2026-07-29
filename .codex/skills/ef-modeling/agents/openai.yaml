@@ -1,0 +1,4 @@
+interface:
+  display_name: "EF Core Modeling"
+  short_description: "Configure EF Core entity persistence"
+  default_prompt: "Use $ef-modeling to add or revise EF Core entity configuration."

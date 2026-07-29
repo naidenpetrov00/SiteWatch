@@ -1,0 +1,4 @@
+interface:
+  display_name: "EF Schema Changes"
+  short_description: "Plan safe EF Core schema changes"
+  default_prompt: "Use $ef-schema-changes to prepare a model change that may require an EF migration."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "DTO Mapping"
+  short_description: "Map domain and query data to DTOs"
+  default_prompt: "Use $dto-mapping to create or revise DTO mappings and projections."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Table Queries"
+  short_description: "Build filtered sorted paged table queries"
+  default_prompt: "Use $table-queries to add a dashboard table query with filtering sorting and paging."
