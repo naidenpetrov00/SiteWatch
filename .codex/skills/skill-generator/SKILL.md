@@ -17,6 +17,7 @@ Read [artifact-templates.md](references/artifact-templates.md) before presenting
 - Resolve the repository's skill collection before creating files. Store every generated, adapted, forked, or wrapper skill and its registry inside the repository, normally under `<repository>/.codex/skills`. Never default generated artifacts to user/global skill directories. Ask only when repository instructions define multiple plausible repository-local skill collections.
 - Ask only questions whose answers materially affect architecture, skill ownership, reuse, or future generated code. Recommend a default with a brief reason when the user is unsure.
 - Stop at each explicit approval gate. Do not interpret silence as approval.
+- Use a plan-first workflow for every generation or refresh request. Before external research, loading full existing-skill instructions, creating files, or adopting/reusing any skill, present a concise proposed plan that names the likely skills to create, reuse, wrap, adapt, or omit and gives each a short purpose. Wait for explicit approval or requested changes.
 - Treat existing code as evidence, not truth.
 - Keep skills modular around coherent engineering capabilities. Avoid broad technology catch-alls and API-level fragments.
 - Use applicable repository instructions and the `skill-creator` skill when creating or substantially editing each individual skill.
@@ -31,6 +32,27 @@ Classify the requested area before proposing skills:
 - **Refresh**: a registry and skills already exist. Detect version or architecture changes, identify affected skills, research only affected framework behavior, propose deltas, and update only approved knowledge.
 
 If the evidence does not clearly distinguish existing from new, show the evidence and ask the user.
+
+## Plan-first checkpoint
+
+After the minimum local inspection needed to understand the requested boundary, stop and present a planning checkpoint before continuing to framework research, external skill discovery, or artifact changes. This is the skill-generator equivalent of Plan mode.
+
+The checkpoint must include:
+
+- the requested scope and mode (Existing, New, or Refresh);
+- the local evidence inspected so far and any important uncertainty;
+- a provisional skill map with one row per likely skill or meaningful reused candidate;
+- for each row: name, short purpose, disposition (`CREATE`, `REUSE`, `REUSE + WRAPPER`, `ADAPT / FORK`, or `OMIT`), and why it is likely needed;
+- adjacent areas that will be inspected read-only;
+- research and discovery that will happen after approval;
+- files or registry entries that may change after the final map is approved;
+- explicit questions or decisions required from the user.
+
+Label the map `PROVISIONAL` because exact ownership may change after version detection and authoritative research. Do not present a vague promise to “analyze and create skills”; show concrete likely names and short descriptions. If no skill should be created, say so and identify the existing skill or project-wide rule that covers the capability.
+
+End the checkpoint with: `Approve this plan to continue, or tell me what to add, remove, rename, merge, split, or change.`
+
+Do not continue to Context7, web search, full candidate loading, skill creation, adaptation, wrapping, replacement, forking, or registry mutation until the user explicitly approves the plan. If the user requests changes, revise and show the plan again. Approval allows the planned discovery and research only; it does not approve final skill artifacts.
 
 ## Phase 1: Establish scope and evidence
 
@@ -85,6 +107,8 @@ Continue until architecture and convention decisions are sufficient to define ca
 
 ## Phase 4: Research with Context7
 
+Run this phase only after the plan-first checkpoint is approved. If research changes the provisional map materially, pause and show the revised map before proceeding.
+
 Use Context7 as a primary technical source during creation and refresh, not as a ceremonial citation.
 
 1. Build a research list from the proposed capabilities and installed technologies.
@@ -101,6 +125,8 @@ If Context7 is unavailable or lacks the required authoritative source, report th
 At normal coding runtime, make generated skills the primary guidance. Include a narrow Context7 fallback only for uncovered APIs, uncertain behavior, newer installed versions, unfamiliar capabilities, repository conflicts, or a decision that requires documentation. Retrieve only the missing knowledge.
 
 ## Phase 5: Discover existing skills
+
+Run this phase only after the plan-first checkpoint is approved. Candidate discovery may refine dispositions, but it does not authorize reuse or adoption.
 
 Search all skill sources available to the agent before proposing creation:
 

@@ -11,12 +11,14 @@ When the user invokes `/prompt`, convert the supplied instruction into a precise
 
 1. Extract the requested outcome, affected area, constraints, and expected deliverable.
 2. Identify only the repository skills relevant to the task. Use their exact names when known.
-3. Preserve explicit user requirements and do not invent scope, files, technologies, or acceptance criteria.
-4. If any part of the request is unclear, ambiguous, conflicting, or not understood, ask concise clarifying questions and wait for the user's answers. Do not generate the prompt or substitute assumptions until the uncertainty is resolved.
-5. Read [references/models.md](references/models.md) completely. Recommend one model from that catalog based on the task's complexity, risk, latency, and cost. Do not inspect or depend on a runtime model catalog.
-6. Classify task difficulty as low, medium, or high using scope, ambiguity, risk, dependencies, and required depth. Recommend a reasoning level supported by the selected model and execution surface.
-7. Recommend whether Plan mode should be used.
-8. Produce the prompt using the format below.
+3. Read each selected skill's instructions far enough to identify its required inputs, expected decisions, prerequisites, and deliverables. Align the generated prompt with those inputs explicitly.
+4. Preserve explicit user requirements and do not invent scope, files, technologies, or acceptance criteria.
+5. If any part of the request or a selected skill's required inputs is unclear, ambiguous, conflicting, or not understood, ask concise clarifying questions and wait for the user's answers. Do not generate the prompt or substitute assumptions until the uncertainty is resolved.
+6. Read [references/models.md](references/models.md) completely. Recommend one model from that catalog based on the task's complexity, risk, latency, and cost. Do not inspect or depend on a runtime model catalog.
+7. Classify task difficulty as low, medium, or high using scope, ambiguity, risk, dependencies, and required depth. Recommend a reasoning level supported by the selected model and execution surface.
+8. Recommend whether Plan mode should be used.
+9. Recommend whether Goal Mode should be used. Treat this as independent from Plan mode; a task may warrant either, both, or neither.
+10. Produce the prompt using the format below.
 
 ## Output format
 
@@ -27,11 +29,15 @@ Task
 Required skills
 - [Exact relevant skill name, or "None"]
 
+Skill-aligned inputs
+- [Input required by a selected skill, its value from the request or repository context, and how the implementing agent should use it]
+
 Execution guidance
 - Model: [Exact model ID from the checked-in catalog, with a short reason]
 - Difficulty: [low, medium, or high]
 - Reasoning: [Supported reasoning level, with a short reason]
 - Plan mode: [Yes or no, with a short reason]
+- Goal Mode: [Yes or no, with a short reason]
 
 Context
 - [Known repository, product, or technical context]
@@ -75,12 +81,15 @@ Choose reasoning proportionally:
 
 Recommend Plan mode for tasks with multiple dependent steps, several affected layers, repository exploration, or meaningful architectural tradeoffs. Recommend no Plan mode for small, localized, well-defined edits.
 
+Recommend Goal Mode for tasks that are likely to require sustained work across multiple turns, iterative implementation and verification, broad repository changes, monitoring, or an explicit outcome-oriented request to keep working until completion. Recommend no Goal Mode for small, self-contained tasks that should be completed in one turn. Plan mode and Goal Mode may both be recommended when a task needs upfront decomposition as well as persistent execution.
+
 ## Quality rules
 
 - Generate the prompt only after the request is understood well enough to avoid unresolved assumptions.
 - Make the generated prompt self-contained enough for another agent to execute.
 - Keep it concise and action-oriented.
-- Include execution guidance so the user can choose the appropriate reasoning level and Plan mode.
+- Include execution guidance so the user can choose the appropriate reasoning level, Plan mode, and Goal Mode.
+- When skills are selected, include every required skill input in the prompt, mapped to the user's request or discovered repository context. Do not omit required inputs or invent values; ask the user when a required input cannot be safely discovered.
 - Do not add unrelated cleanup, testing, deployment, or documentation work unless requested.
 - Preserve the repository's `AGENTS.md` and relevant `docs/agents` instructions as part of the implementation context.
 - Mention repository paths only when supplied by the user, present in provided context, or discovered from relevant repository context. Do not guess filenames or paths.

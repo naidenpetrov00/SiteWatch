@@ -5,13 +5,14 @@ Use these compact formats to keep the interactive workflow consistent. Adapt lab
 ## Contents
 
 1. Scope brief
-2. Architecture finding
-3. Existing-skill candidate
-4. Coverage map
-5. Proposed skill
-6. Registry entry
-7. Verification record
-8. Refresh impact
+2. Plan-first checkpoint
+3. Architecture finding
+4. Existing-skill candidate
+5. Coverage map
+6. Proposed skill
+7. Registry entry
+8. Verification record
+9. Refresh impact
 
 ## Scope brief
 
@@ -36,6 +37,45 @@ AUTHORITATIVE VERSION EVIDENCE
 
 OPEN MATERIAL DECISIONS
 - <decision or None>
+```
+
+## Plan-first checkpoint
+
+```text
+SKILL GENERATION PLAN
+
+REQUESTED SCOPE
+<path, layer, subsystem, or bounded area>
+
+MODE
+Existing | New | Refresh
+
+LOCAL EVIDENCE SO FAR
+- <file or document>: <relevant observation>
+
+PROVISIONAL SKILL MAP
+
+| Name | Short purpose | Disposition | Why likely needed |
+|---|---|---|---|
+| <skill-name> | <one sentence> | CREATE | <distinct capability or gap> |
+| <existing-skill> | <one sentence> | REUSE | <matching capability> |
+
+READ-ONLY ADJACENT INSPECTION
+- <area>: <reason>
+
+AFTER APPROVAL
+- <focused framework or library research>
+- <existing-skill discovery and candidate comparison>
+- <final coverage map and approval before artifacts>
+
+POSSIBLE CHANGES
+- <skill path or INDEX.md entry>
+
+OPEN DECISIONS
+- <decision or None>
+
+DECISION
+Approve this plan to continue, or tell me what to add, remove, rename, merge, split, or change.
 ```
 
 ## Architecture finding
@@ -241,4 +281,3 @@ PRESERVED
 DECISION
 <approval request before editing>
 ```
-
