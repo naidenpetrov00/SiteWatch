@@ -57,7 +57,7 @@ public class IdentityAuthenticationService(
         var isAdministrator = claims.Any(
             claim =>
                 claim.Type == UserClaimTypes.UserType
-                && claim.Value == UserClaimTypes.Administrator
+                && claim.Value == UserRoles.Administrator
         );
 
         if (!isAdministrator)
@@ -84,13 +84,14 @@ public class IdentityAuthenticationService(
         Result result
     )
     {
-        var token = await jwtTokenService.GenerateTokenAsync(user);
+        var generatedToken = await jwtTokenService.GenerateTokenAsync(user);
         var userDto = mapper.Map<UserInfoDto>(user);
+        userDto.Roles = generatedToken.Roles;
 
         return new IdentityResultWithUserToken
         {
             Result = result,
-            Token = token,
+            Token = generatedToken.Token,
             User = userDto,
         };
     }

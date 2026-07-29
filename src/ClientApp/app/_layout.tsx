@@ -8,6 +8,7 @@ import { Stack } from "expo-router";
 import { useAuth } from "@/store/auth_context";
 import { useEffect } from "react";
 import { useReactNavigationDevTools } from "@dev-plugins/react-navigation";
+import { ACCESS_POLICIES } from "@/types/authorization";
 
 const RootLayout = () => {
   const navigationRef = useNavigationContainerRef();
@@ -23,15 +24,19 @@ const RootLayout = () => {
 };
 
 const Root = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, hasAnyRole } = useAuth();
+  const canAccessCurrentApp = hasAnyRole(ACCESS_POLICIES.currentApp);
   useEffect(() => {
     ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
   }, []);
 
   return (
     <Stack>
-      <Stack.Protected guard={isAuthenticated}>
+      <Stack.Protected guard={isAuthenticated && canAccessCurrentApp}>
         <Stack.Screen name="(app)" options={{ headerShown: false }} />
+      </Stack.Protected>
+      <Stack.Protected guard={isAuthenticated && !canAccessCurrentApp}>
+        <Stack.Screen name="AccessDenied" options={{ headerShown: false }} />
       </Stack.Protected>
       <Stack.Protected guard={!isAuthenticated}>
         <Stack.Screen name="SignIn" options={{ headerShown: false }} />

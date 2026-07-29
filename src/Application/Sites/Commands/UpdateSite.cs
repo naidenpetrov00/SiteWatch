@@ -1,10 +1,12 @@
 using Application.SeedWork.Interfaces;
+using Application.SeedWork.Security;
 using Domain.SeedWork.Enums;
 using FluentValidation;
 using MediatR;
 
 namespace Application.Sites.Commands;
 
+[Authorize(Roles = UserRoles.Administrator)]
 public sealed record UpdateSiteCommand : IRequest
 {
     public Guid Id { get; set; }

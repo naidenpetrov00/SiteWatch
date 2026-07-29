@@ -21,6 +21,7 @@ export interface User {
   id: string;
   username: string;
   email: string;
+  roles: readonly UserRole[];
 }
 
 export interface AuthState {
@@ -35,7 +36,11 @@ export type AuthAction =
   | { type: "SET_TOKEN"; payload: string | null };
 
 export interface AuthContextType extends AuthState {
+  roles: readonly UserRole[];
   login: (user: User, token: string) => void;
   logout: () => void;
   setToken: (token: string | null) => void;
+  hasRole: (role: UserRole) => boolean;
+  hasAnyRole: (roles: readonly UserRole[]) => boolean;
 }
+import { UserRole } from "@/types/authorization";

@@ -1,9 +1,11 @@
 using Application.SeedWork.Interfaces;
+using Application.SeedWork.Security;
 using FluentValidation;
 using MediatR;
 
 namespace Application.Invoices.Commands;
 
+[Authorize(Roles = UserRoles.Administrator)]
 public sealed record UpdateInvoiceSiteAllocationsCommand : IRequest
 {
     public Guid InvoiceId { get; set; }

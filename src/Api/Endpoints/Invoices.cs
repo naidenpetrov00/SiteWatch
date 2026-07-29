@@ -3,6 +3,7 @@ using Api.SeedWork.Extensions;
 using Application.Invoices.Commands;
 using Application.Invoices.Queries;
 using Application.SeedWork.Models;
+using Application.SeedWork.Security;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -13,8 +14,12 @@ public class Invoices : EndpointGroupBase
 {
     public override void Map(WebApplication app)
     {
-        var group = app.MapGroupCustom(customGroupName: "invoices").RequireAuthorization();
-        var dashboardGroup = app.MapGroupCustom(customGroupName: "dashboard").RequireAuthorization();
+        var group = app
+            .MapGroupCustom(customGroupName: "invoices")
+            .RequireAuthorization(AuthorizationPolicies.Administrator);
+        var dashboardGroup = app
+            .MapGroupCustom(customGroupName: "dashboard")
+            .RequireAuthorization(AuthorizationPolicies.Administrator);
 
         group.MapPost(string.Empty, CreateInvoice);
         group.MapPut("/{invoiceId:guid}/site-allocations", UpdateInvoiceSiteAllocations);

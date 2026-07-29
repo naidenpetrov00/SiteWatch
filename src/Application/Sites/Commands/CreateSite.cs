@@ -1,10 +1,12 @@
 using Application.SeedWork.Interfaces;
+using Application.SeedWork.Security;
 using FluentValidation;
 using MediatR;
 using Domain.SeedWork.Enums;
 
 namespace Application.Sites.Commands;
 
+[Authorize(Roles = UserRoles.Administrator)]
 public sealed record CreateSiteCommand : IRequest<Guid>
 {
     public string Name { get; init; } = string.Empty;

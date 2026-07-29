@@ -58,11 +58,11 @@ public class ApplicationDbContextInitialiser(
 
         await userManager.AddClaimAsync(
             user1,
-            new Claim(UserClaimTypes.UserType, UserClaimTypes.Administrator)
+            new Claim(UserClaimTypes.UserType, UserRoles.Administrator)
         );
         await userManager.AddClaimAsync(
             user2,
-            new Claim(UserClaimTypes.UserType, UserClaimTypes.Administrator)
+            new Claim(UserClaimTypes.UserType, UserRoles.Administrator)
         );
 
         var users = new List<ApplicationUser> { user1, user2 };
@@ -93,7 +93,7 @@ public class ApplicationDbContextInitialiser(
 
             await userManager.AddClaimAsync(
                 bulkUser,
-                new Claim(UserClaimTypes.UserType, UserClaimTypes.Client)
+                new Claim(UserClaimTypes.UserType, UserRoles.Client)
             );
 
             users.Add(bulkUser);

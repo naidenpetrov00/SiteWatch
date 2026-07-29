@@ -1,4 +1,5 @@
 using Application.SeedWork.Interfaces;
+using Application.SeedWork.Security;
 using Ardalis.GuardClauses;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
@@ -8,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Persons.Queries;
 
+[Authorize(Roles = UserRoles.Administrator)]
 public sealed record PersonByIdQuery : IRequest<PersonDetailsDto>
 {
     public Guid PersonId { get; init; }

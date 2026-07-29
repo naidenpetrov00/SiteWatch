@@ -1,10 +1,10 @@
 using Api.SeedWork;
-using Api.SeedWork.EndpointFilters;
 using Api.SeedWork.Extensions;
 using Application.Identity.Commands;
 using Application.Identity.Queries.DashboardUsers;
 using Application.Identity.Queries.Users;
 using Application.SeedWork.Models;
+using Application.SeedWork.Security;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -18,8 +18,10 @@ public class Users : EndpointGroupBase
         var group = app.MapGroupCustom();
         var dashboardGroup = app.MapGroupCustom(customGroupName: "dashboard");
 
-        group.MapGet("/{email}", GetUserByEmail).AddEndpointFilter<AuthorizationFilter>();
-        dashboardGroup.MapGet("/users", GetDashboardUsers).AddEndpointFilter<AuthorizationFilter>();
+        group.MapGet("/{email}", GetUserByEmail).RequireAuthorization();
+        dashboardGroup
+            .MapGet("/users", GetDashboardUsers)
+            .RequireAuthorization(AuthorizationPolicies.Administrator);
     }
 
     public async Task<Results<Ok<IdentityResultWithUser>, BadRequest<string[]>>> GetUserByEmail(

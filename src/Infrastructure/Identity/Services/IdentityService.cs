@@ -31,8 +31,8 @@ public class IdentityService(
     public Task<bool> AuthorizeAsync(string userId, string policyName) =>
         authenticationService.AuthorizeAsync(userId, policyName);
 
-    public Task<IdentityResultModel> AssignAdministratorClaimAsync(string userId) =>
-        userService.AssignAdministratorClaimAsync(userId);
+    public Task<IdentityResultModel> AssignRoleAsync(string userId, string role) =>
+        userService.AssignRoleAsync(userId, role);
 
     public Task<Result> DeleteUserAsync(string userId) => userService.DeleteUserAsync(userId);
 

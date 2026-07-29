@@ -22,8 +22,16 @@ public class IdentityUserService(
     IMapper mapper
 ) : IIdentityUserService
 {
-    public async Task<IdentityResultModel> AssignAdministratorClaimAsync(string userId)
+    public async Task<IdentityResultModel> AssignRoleAsync(string userId, string role)
     {
+        if (!UserRoles.IsSupported(role))
+        {
+            return new IdentityResultOnly
+            {
+                Result = Result.Failure([IdentityResultErrors.UnsupportedRole]),
+            };
+        }
+
         var user = await FindByIdAsync(userId);
 
         if (user is null)
@@ -37,25 +45,37 @@ public class IdentityUserService(
         var claims = await userManager.GetClaimsAsync(user);
         var userTypeClaims = claims.Where(c => c.Type == UserClaimTypes.UserType).ToList();
 
-        if (userTypeClaims.Count > 0)
+        if (userTypeClaims.Count == 0)
         {
-            var removeResult = await userManager.RemoveClaimsAsync(user, userTypeClaims);
+            var addResult = await userManager.AddClaimAsync(
+                user,
+                new Claim(UserClaimTypes.UserType, role)
+            );
+            return new IdentityResultOnly { Result = addResult.ToApplicationResult() };
+        }
+
+        var currentClaim = userTypeClaims[0];
+        var extraClaims = userTypeClaims.Skip(1).ToList();
+        if (extraClaims.Count > 0)
+        {
+            var removeResult = await userManager.RemoveClaimsAsync(user, extraClaims);
             if (!removeResult.Succeeded)
             {
                 return new IdentityResultOnly { Result = removeResult.ToApplicationResult() };
             }
         }
 
-        var addResult = await userManager.AddClaimAsync(
-            user,
-            new Claim(UserClaimTypes.UserType, UserClaimTypes.Administrator)
-        );
-        if (!addResult.Succeeded)
+        if (currentClaim.Value == role)
         {
-            return new IdentityResultOnly { Result = addResult.ToApplicationResult() };
+            return new IdentityResultOnly { Result = Result.Success() };
         }
 
-        return new IdentityResultOnly { Result = Result.Success() };
+        var replaceResult = await userManager.ReplaceClaimAsync(
+            user,
+            currentClaim,
+            new Claim(UserClaimTypes.UserType, role)
+        );
+        return new IdentityResultOnly { Result = replaceResult.ToApplicationResult() };
     }
 
     public async Task<IdentityResultModel> CreateUserAsync(
@@ -79,7 +99,7 @@ public class IdentityUserService(
 
         var claimResult = await userManager.AddClaimAsync(
             user,
-            new Claim(UserClaimTypes.UserType, UserClaimTypes.Client)
+            new Claim(UserClaimTypes.UserType, UserRoles.Client)
         );
         if (!claimResult.Succeeded)
         {

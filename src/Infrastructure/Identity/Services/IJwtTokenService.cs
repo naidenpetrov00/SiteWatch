@@ -2,7 +2,9 @@ using Domain.Entities;
 
 namespace Infrastructure.Identity.Services;
 
+public sealed record GeneratedJwtToken(string Token, IReadOnlyList<string> Roles);
+
 public interface IJwtTokenService
 {
-    Task<string> GenerateTokenAsync(ApplicationUser user);
+    Task<GeneratedJwtToken> GenerateTokenAsync(ApplicationUser user);
 }

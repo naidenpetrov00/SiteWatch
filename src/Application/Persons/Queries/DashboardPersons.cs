@@ -1,12 +1,14 @@
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models;
 using Application.SeedWork.Queries;
+using Application.SeedWork.Security;
 using Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.Persons.Queries;
 
+[Authorize(Roles = UserRoles.Administrator)]
 public sealed partial class DashboardPersonsQuery
     : TableQueryRequest,
         IRequest<PagedResult<PersonTableDto>>

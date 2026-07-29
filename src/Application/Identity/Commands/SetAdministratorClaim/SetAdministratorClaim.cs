@@ -1,8 +1,10 @@
 using Application.SeedWork.Interfaces;
+using Application.SeedWork.Security;
 using MediatR;
 
 namespace Application.Identity.Commands.SetAdministratorClaim;
 
+[Authorize(Roles = UserRoles.Administrator)]
 public class SetAdministratorClaimCommand : IRequest<IdentityResultModel>
 {
     public required string UserId { get; set; }
@@ -21,5 +23,5 @@ public class SetAdministratorClaimHandler
     public async Task<IdentityResultModel> Handle(
         SetAdministratorClaimCommand request,
         CancellationToken cancellationToken
-    ) => await identityService.AssignAdministratorClaimAsync(request.UserId);
+    ) => await identityService.AssignRoleAsync(request.UserId, UserRoles.Administrator);
 }

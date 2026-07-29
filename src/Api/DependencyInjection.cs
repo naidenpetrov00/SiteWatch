@@ -1,5 +1,8 @@
 using System.Reflection;
 using System.Text;
+using Api.Services;
+using Application.SeedWork.Interfaces;
+using Application.SeedWork.Security;
 using Ardalis.GuardClauses;
 using Infrastructure.SeedWork.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -15,6 +18,8 @@ public static class DependencyInjection
     )
     {
         builder.Services.AddOpenApi();
+        builder.Services.AddHttpContextAccessor();
+        builder.Services.AddScoped<IUser, CurrentUser>();
         builder.Services.AddAutoMapper(cfg => { }, Assembly.GetExecutingAssembly());
         builder.Services.AddCors(opt =>
         {
@@ -46,12 +51,22 @@ public static class DependencyInjection
             {
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = issuer,
                     ValidAudience = audience,
+                    RoleClaimType = UserClaimTypes.UserType,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
                 };
             });
-        builder.Services.AddAuthorization();
+        builder.Services.AddAuthorization(options =>
+        {
+            options.AddPolicy(
+                AuthorizationPolicies.Administrator,
+                policy => policy.RequireAuthenticatedUser().RequireRole(UserRoles.Administrator)
+            );
+        });
     }
 }

@@ -1,8 +1,10 @@
 using Application.SeedWork.Interfaces;
+using Application.SeedWork.Security;
 using MediatR;
 
 namespace Application.Invoices.Commands;
 
+[Authorize(Roles = UserRoles.Administrator)]
 public sealed record CreateInvoiceCommand : IRequest<Guid>
 {
     public Guid SupplierId { get; init; }

@@ -3,6 +3,7 @@ using Api.SeedWork.Extensions;
 using Application.Persons.Commands;
 using Application.Persons.Queries;
 using Application.SeedWork.Models;
+using Application.SeedWork.Security;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -13,8 +14,12 @@ public class Persons : EndpointGroupBase
 {
     public override void Map(WebApplication app)
     {
-        var group = app.MapGroupCustom(customGroupName: "persons").RequireAuthorization();
-        var dashboardGroup = app.MapGroupCustom(customGroupName: "dashboard").RequireAuthorization();
+        var group = app
+            .MapGroupCustom(customGroupName: "persons")
+            .RequireAuthorization(AuthorizationPolicies.Administrator);
+        var dashboardGroup = app
+            .MapGroupCustom(customGroupName: "dashboard")
+            .RequireAuthorization(AuthorizationPolicies.Administrator);
 
         group.MapPost(string.Empty, CreatePerson);
         group.MapGet("/{personId:guid}", GetPerson);

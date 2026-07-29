@@ -1,10 +1,12 @@
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models;
 using Application.SeedWork.Queries;
+using Application.SeedWork.Security;
 using MediatR;
 
 namespace Application.Invoices.Queries;
 
+[Authorize(Roles = UserRoles.Administrator)]
 public sealed partial class DashboardInvoicesQuery
     : TableQueryRequest,
         IRequest<PagedResult<DashboardInvoiceDto>>
