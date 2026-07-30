@@ -10,9 +10,9 @@ Use this guide before proposing policies or instruction scopes. Gather enough ev
 4. Discover commands from authoritative scripts, manifests, CI, and documentation.
 5. Locate architecture records, skills, generated artifacts, migrations, secrets-related configuration, and external infrastructure.
 6. Inspect representative source only to resolve boundaries that metadata and documentation do not prove.
-7. Identify and read only the skills applicable to the task through the repository's actual skill discovery mechanism. Use a skill when project context does not provide enough reliable implementation guidance; do not load unrelated skills.
+7. Record every skill explicitly named by the user as a required task input and include it in the working plan. Do not assume the named set provides complete task coverage: use the repository's actual skill discovery mechanism to identify any additional skills required for uncovered capabilities. Read only the named and additional applicable skills; do not load unrelated skills.
 
-If project context and applicable skills leave a technical gap, use Context7 MCP only when available and only for the missing information. Use general web search only if Context7 is unavailable or inadequate, current external information remains necessary, and search is permitted. This research order must be included as a concise root AGENTS rule unless the user explicitly declines it.
+If project context and the selected skills leave a technical gap, or a local technique appears questionable, stale, or legacy, use Context7 MCP only when available and only for the missing or questionable technical information. Treat local code as evidence of current behavior, not automatic proof of best practice. Surface conflicts with current guidance rather than silently changing user policy or repository architecture. Use general web search only if Context7 is unavailable or inadequate, current external information remains necessary, and search is permitted. This research order must be included as a concise root AGENTS rule unless the user explicitly declines it.
 
 Prefer fast filename and text searches such as `rg --files` and focused `rg` patterns. Avoid recursive content dumps.
 

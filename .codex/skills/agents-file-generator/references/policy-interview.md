@@ -103,11 +103,12 @@ Keep framework-specific reuse procedures in skills.
 
 When project skills exist, recommend:
 
-1. discover applicable skills before implementation;
-2. use them as primary implementation guidance;
-3. compose multiple relevant skills for cross-capability tasks;
-4. avoid loading unrelated skills;
-5. use the registry or index before scanning all skill bodies when one exists.
+1. record skills explicitly named by the user in the working plan and use them as required inputs;
+2. do not assume the named skills provide complete task coverage;
+3. independently identify uncovered capabilities and add only the additional applicable skills needed;
+4. use the selected skills as primary implementation guidance and compose them when the task crosses owned boundaries;
+5. avoid loading unrelated skills;
+6. use the registry or index before scanning additional skill bodies when one exists.
 
 Confirm the actual discovery path and registry name.
 
@@ -117,12 +118,13 @@ Before forming a recommendation or asking a policy question that needs technical
 
 ```text
 repository context
-  -> applicable skills when repository evidence is insufficient, uncertain, stale, or lacks implementation guidance
-  -> Context7 MCP only for unresolved technical gaps
+  -> user-named skills as required inputs, without assuming complete coverage
+  -> only the additional applicable skills needed for uncovered capabilities
+  -> Context7 MCP for unresolved or version-sensitive gaps and questionable, stale, or legacy technical patterns
   -> general web search only as the final permitted fallback
 ```
 
-Use Context7 only when framework or library behavior remains uncovered, uncertain, unfamiliar, version-sensitive, or newer than skill validation; retrieve only the missing information. Do not use general web search unless Context7 is unavailable or insufficient and external/current information is still needed.
+Use Context7 only when framework or library behavior remains uncovered, uncertain, unfamiliar, version-sensitive, newer than skill validation, or represented locally by a questionable, stale, or legacy technique; retrieve only the missing or questionable technical information. Treat local code as evidence of current behavior rather than proof of best practice. Surface mismatches with current guidance and recommend a compatible resolution instead of silently overriding user policy or repository architecture. Do not use general web search unless Context7 is unavailable or insufficient and external/current information is still needed.
 
 Do not claim Context7 exists unless the environment or repository proves it.
 

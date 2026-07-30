@@ -17,7 +17,7 @@ Create the smallest persistent AGENTS hierarchy that communicates repository ope
 ## Workflow
 
 1. Select existing, new, or targeted-refresh mode.
-2. Map each instruction file to its effective scope and parent. Verify commands and architecture from manifests, documentation, configuration, and representative boundaries.
+2. Map each instruction file to its effective scope and parent. Record skills explicitly named by the user as required inputs, then independently check whether they cover the task; add only the additional applicable skills needed for uncovered capabilities. Verify commands and architecture from manifests, documentation, configuration, and representative boundaries.
 3. Classify rules as keep in AGENTS, move to skill, move to documentation, deduplicate, rewrite, delete as noise, or ask the user.
 4. Propose the root and any necessary nested files. Nested files must contain stable local deltas, not parent repetition.
 5. Resolve only policy choices that materially affect behavior, safety, scope, cost, or approvals. Present a concise policy summary.
@@ -30,6 +30,6 @@ Create the smallest persistent AGENTS hierarchy that communicates repository ope
 - Confirm commands from repository evidence; never invent build, test, lint, migration, or run commands.
 - Do not create `AGENTS.override.md` without a demonstrated replacement need.
 - Report detailed implementation knowledge as a skill candidate; do not create the skill unless requested.
-- In generated root instructions, include the approved research order: project context first, applicable skills second, Context7 only for unresolved or version-sensitive technical gaps, then web search as the final permitted fallback.
+- In generated root instructions, include the approved research order: project context first; user-named skills as required inputs without assuming they provide complete coverage; only necessary additional applicable skills next; Context7 for unresolved or version-sensitive gaps and questionable, stale, or legacy technical patterns; then web search as the final permitted fallback.
 
 Complete the work only when the hierarchy, policies, command evidence, skill routing, and representative scenarios are consistent and approved.

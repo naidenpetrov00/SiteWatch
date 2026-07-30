@@ -104,12 +104,13 @@ After writing, verify:
 - root rules are genuinely shared;
 - nested files contain local deltas rather than parent duplication;
 - no implementation tutorials or lengthy system explanations remain;
+- questionable, stale, or legacy implementation patterns were not promoted into AGENTS rules merely because they exist locally;
 - architecture invariants have repository evidence;
 - user-policy rules match the approved summary;
 - commands and paths still exist;
 - generated files, migrations, dependencies, servers, infrastructure, Git, secrets, and destructive actions are unambiguous where relevant;
-- skill routing names the real discovery mechanism;
-- the root AGENTS file states the approved research sequence: project context, applicable skills, Context7 for unresolved/version-sensitive gaps, then permitted web search;
+- skill routing names the real discovery mechanism, preserves user-named skills as required inputs, checks their coverage, and adds only necessary additional skills;
+- the root AGENTS file states the approved research sequence: project context; user-named skills without assuming complete coverage; necessary additional applicable skills; Context7 for unresolved/version-sensitive gaps or questionable, stale, or legacy techniques; then permitted web search;
 - no override file exists without an explained override need;
 - unrelated user changes remain untouched.
 
@@ -133,9 +134,9 @@ When a migration framework exists, determine whether model/configuration edits a
 
 Determine whether existing packages must be reused first and when production or development dependency approval is required.
 
-### Unfamiliar or version-sensitive API
+### Unfamiliar, questionable, or version-sensitive API or pattern
 
-Confirm the generator first used repository context, then an applicable skill if the local evidence was insufficient or unreliable, then only the missing information from Context7 MCP when available. Permit general web search only when Context7 is unavailable or inadequate, current external information remains necessary, and search is permitted. Confirm this sequence is stated concisely in the generated root AGENTS file.
+Confirm the generator first used repository context and every user-named skill as a required input, then checked whether those skills covered the task instead of assuming they were sufficient. Confirm it loaded only additional skills needed for uncovered capabilities, and used Context7 MCP when available for unresolved or version-sensitive gaps or questionable, stale, or legacy local techniques. Permit general web search only when Context7 is unavailable or inadequate, current external information remains necessary, and search is permitted. Confirm this sequence is stated concisely in the generated root AGENTS file.
 
 ### Generated output change
 
@@ -151,6 +152,7 @@ For every scenario report:
 SCENARIO
 Applicable AGENTS files:
 Applicable skill routing:
+Prompt-named skill coverage:
 Generator research evidence:
 Allowed verification:
 Test-source permission:
