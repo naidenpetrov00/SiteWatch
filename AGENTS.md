@@ -28,7 +28,7 @@ Preserve the proven backend dependency direction: `Domain <- Application <- Infr
 - Permission to change code does not imply permission to execute it. Permission to execute one command or one project does not extend to other commands or projects.
 - Do not create, modify, regenerate, or delete tests unless the user explicitly requests test-source work.
 - Do not launch the API, frontend development servers, Expo, emulators, development clients, Docker services, or external infrastructure unless explicitly requested.
-- Do not generate, edit, remove, or apply database migrations unless explicitly requested. Any command that mutates a database requires explicit approval for the named environment.
+- Do not generate, edit, remove, or apply database migrations. EF migration generation and application are reserved for the user; never hand-edit migration files or the EF model snapshot. Any command that mutates a database requires explicit approval for the named environment.
 - Reuse existing dependencies when practical. Ask before adding, replacing, or upgrading a production or development dependency unless the request explicitly requires it.
 - Supporting edits needed for the requested behavior are allowed within the affected scopes. Ask before broad refactors, unrelated cleanup, or new functionality.
 
@@ -47,4 +47,3 @@ Preserve the proven backend dependency direction: `Domain <- Application <- Infr
 - Treat `bin`, `obj`, `dist`, `node_modules`, `.angular`, `.expo`, coverage output, generated clients, and similar artifacts as generated. Change their source or generator rather than editing output directly, and regenerate only when authorized.
 - Do not modify data under `sqlserver` or `azurelite-data` unless the request explicitly targets that data and the destructive or mutation boundary is clear.
 - Update documentation only when the requested change makes existing documented behavior, commands, or architecture inaccurate.
-

@@ -9,7 +9,7 @@
 
 ## Data and generated boundaries
 
-- Treat model and EF configuration edits separately from migrations. A requested model/configuration change does not authorize migration generation, migration editing, snapshot changes, or applying a database change.
+- Treat model and EF configuration edits separately from migrations. A requested model/configuration change does not authorize migration generation, migration editing, snapshot changes, or applying a database change. Leave migration generation to the user; never hand-edit migration files or `ApplicationDbContextModelSnapshot.cs`, and never apply EF migrations manually or by command.
 - Never execute a database mutation without explicit approval for the named environment.
 - Treat files under generated-looking paths, including `Cameras/Services/Onvif/Generated`, as generator-owned until their source and regeneration process are identified. Do not hand-edit or regenerate them without authorization.
 - Keep secrets and connection values out of source and agent output. Do not inspect or echo secret values merely to understand configuration.
