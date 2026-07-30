@@ -1,4 +1,0 @@
-interface:
-  display_name: "Dashboard Feature Architecture"
-  short_description: "Organize Dashboard features and shared code"
-  default_prompt: "Use $dashboard-feature-architecture to place and structure this Dashboard change."

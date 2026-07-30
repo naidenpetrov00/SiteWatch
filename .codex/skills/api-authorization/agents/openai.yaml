@@ -1,4 +1,0 @@
-interface:
-  display_name: "API Authorization"
-  short_description: "Implement backend authentication and authorization"
-  default_prompt: "Use $api-authorization to secure an endpoint or application request."

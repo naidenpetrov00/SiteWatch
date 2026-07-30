@@ -6,6 +6,7 @@ These rules supplement the repository root instructions for `src/Infrastructure`
 
 - This project owns EF Core persistence and implementations for identity, storage, email, cameras, invoices, persons, and sites.
 - Keep abstractions needed by application use cases in `Application`; implement them here. Do not move infrastructure dependencies into `Application` or `Domain` as an incidental shortcut.
+- Existing option types use `GetOptions<T>` and derive section names from the `Options` suffix. Preserve that contract unless the task explicitly coordinates a configuration redesign.
 
 ## Data and migrations
 
@@ -19,7 +20,6 @@ These rules supplement the repository root instructions for `src/Infrastructure`
 - Treat `Cameras/Services/Onvif/Generated` and its `*.g.cs` files as generated output. Do not hand-edit them.
 - No regeneration command is documented in the repository. Change generator inputs or regenerate clients only when the user explicitly requests it, and record the command used.
 
-## Verification
+## External operations
 
-- Prefer checks scoped to the affected backend project. Do not start the API, containers, storage emulator, or database as verification.
-- If verification requires a database or external device, request approval and state the expected side effects first.
+- For an explicitly requested database or external-device operation, state the expected side effects before requesting approval.

@@ -1,4 +1,0 @@
-interface:
-  display_name: "Backend Feature Slices"
-  short_description: "Build complete backend feature slices"
-  default_prompt: "Use $backend-feature-slices to implement a backend feature slice across the approved layers."

@@ -1,4 +1,0 @@
-interface:
-  display_name: "Dashboard Internationalization"
-  short_description: "Localize Dashboard text and locale behavior"
-  default_prompt: "Use $dashboard-internationalization to implement this Dashboard localization change."

@@ -1,4 +1,0 @@
-interface:
-  display_name: "Value Objects"
-  short_description: "Model immutable domain value objects"
-  default_prompt: "Use $value-objects to create or change a domain value object."

@@ -1,4 +1,0 @@
-interface:
-  display_name: "Email Delivery"
-  short_description: "Implement secure email delivery workflows"
-  default_prompt: "Use $email-delivery to add or change an email delivery workflow."

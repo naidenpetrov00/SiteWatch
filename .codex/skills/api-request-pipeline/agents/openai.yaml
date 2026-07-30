@@ -1,4 +1,0 @@
-interface:
-  display_name: "API Request Pipeline"
-  short_description: "Maintain API middleware and error handling"
-  default_prompt: "Use $api-request-pipeline to change API middleware or centralized error handling."

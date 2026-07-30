@@ -1,4 +1,0 @@
-interface:
-  display_name: "Blob Storage"
-  short_description: "Implement Azure Blob Storage workflows"
-  default_prompt: "Use $blob-storage to add or change a blob storage operation."

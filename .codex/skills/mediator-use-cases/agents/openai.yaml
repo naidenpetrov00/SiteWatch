@@ -1,4 +1,0 @@
-interface:
-  display_name: "Mediator Use Cases"
-  short_description: "Implement MediatR commands and queries"
-  default_prompt: "Use $mediator-use-cases to create or change a MediatR command or query."

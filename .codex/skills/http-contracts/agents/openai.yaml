@@ -1,4 +1,0 @@
-interface:
-  display_name: "HTTP Contracts"
-  short_description: "Design stable HTTP request and response contracts"
-  default_prompt: "Use $http-contracts to design or revise HTTP request and response contracts."
