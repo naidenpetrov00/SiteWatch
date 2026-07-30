@@ -30,6 +30,6 @@ Create the smallest persistent AGENTS hierarchy that communicates repository ope
 - Confirm commands from repository evidence; never invent build, test, lint, migration, or run commands.
 - Do not create `AGENTS.override.md` without a demonstrated replacement need.
 - Report detailed implementation knowledge as a skill candidate; do not create the skill unless requested.
-- Use applicable skills and repository evidence before narrow Context7 research; use web search only as a permitted final fallback.
+- In generated root instructions, include the approved research order: project context first, applicable skills second, Context7 only for unresolved or version-sensitive technical gaps, then web search as the final permitted fallback.
 
 Complete the work only when the hierarchy, policies, command evidence, skill routing, and representative scenarios are consistent and approved.

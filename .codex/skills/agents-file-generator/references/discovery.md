@@ -4,15 +4,15 @@ Use this guide before proposing policies or instruction scopes. Gather enough ev
 
 ## Discovery sequence
 
-1. Identify and read skills applicable to the AGENTS-generation task through the repository's actual skill discovery mechanism; do not load unrelated skills.
-2. Resolve the repository root, current working tree, and applicable instruction files.
-3. List top-level directories and key manifests.
-4. Map logical applications, deployable units, libraries, shared areas, and dependency boundaries.
-5. Discover commands from authoritative scripts, manifests, CI, and documentation.
-6. Locate architecture records, skills, generated artifacts, migrations, secrets-related configuration, and external infrastructure.
-7. Inspect representative source only to resolve boundaries that metadata and documentation do not prove.
+1. Resolve the repository root, current working tree, and applicable instruction files.
+2. List top-level directories and key manifests.
+3. Map logical applications, deployable units, libraries, shared areas, and dependency boundaries.
+4. Discover commands from authoritative scripts, manifests, CI, and documentation.
+5. Locate architecture records, skills, generated artifacts, migrations, secrets-related configuration, and external infrastructure.
+6. Inspect representative source only to resolve boundaries that metadata and documentation do not prove.
+7. Identify and read only the skills applicable to the task through the repository's actual skill discovery mechanism. Use a skill when project context does not provide enough reliable implementation guidance; do not load unrelated skills.
 
-If applicable skills and repository context leave a technical gap, use Context7 MCP only when available and only for the missing information. Use general web search only if Context7 is unavailable or inadequate, current external information remains necessary, and search is permitted. This research order guides the generator; it is not generated AGENTS content by default.
+If project context and applicable skills leave a technical gap, use Context7 MCP only when available and only for the missing information. Use general web search only if Context7 is unavailable or inadequate, current external information remains necessary, and search is permitted. This research order must be included as a concise root AGENTS rule unless the user explicitly declines it.
 
 Prefer fast filename and text searches such as `rg --files` and focused `rg` patterns. Avoid recursive content dumps.
 

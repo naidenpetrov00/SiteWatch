@@ -109,7 +109,7 @@ After writing, verify:
 - commands and paths still exist;
 - generated files, migrations, dependencies, servers, infrastructure, Git, secrets, and destructive actions are unambiguous where relevant;
 - skill routing names the real discovery mechanism;
-- the generator's internal research sequence is not copied into generated AGENTS files unless explicitly approved as repository policy;
+- the root AGENTS file states the approved research sequence: project context, applicable skills, Context7 for unresolved/version-sensitive gaps, then permitted web search;
 - no override file exists without an explained override need;
 - unrelated user changes remain untouched.
 
@@ -135,7 +135,7 @@ Determine whether existing packages must be reused first and when production or 
 
 ### Unfamiliar or version-sensitive API
 
-Confirm the generator first used applicable skills, then repository context, then only the missing information from Context7 MCP when available. Permit general web search only when Context7 is unavailable or inadequate, current external information remains necessary, and search is permitted. Do not add this sequence to generated AGENTS files unless the repository's approved policy specifically requires it.
+Confirm the generator first used repository context, then an applicable skill if the local evidence was insufficient or unreliable, then only the missing information from Context7 MCP when available. Permit general web search only when Context7 is unavailable or inadequate, current external information remains necessary, and search is permitted. Confirm this sequence is stated concisely in the generated root AGENTS file.
 
 ### Generated output change
 

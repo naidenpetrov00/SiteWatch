@@ -116,8 +116,8 @@ Confirm the actual discovery path and registry name.
 Before forming a recommendation or asking a policy question that needs technical evidence, the generator must use:
 
 ```text
-applicable skills
-  -> repository context
+repository context
+  -> applicable skills when repository evidence is insufficient, uncertain, stale, or lacks implementation guidance
   -> Context7 MCP only for unresolved technical gaps
   -> general web search only as the final permitted fallback
 ```
@@ -126,7 +126,7 @@ Use Context7 only when framework or library behavior remains uncovered, uncertai
 
 Do not claim Context7 exists unless the environment or repository proves it.
 
-This is an internal generator workflow, not a default AGENTS rule. Ask about a repository-specific documentation or web-search policy only when the repository's needs make it material; do not add one otherwise.
+Include this as a concise root AGENTS rule by default. It is a research-source priority, not an instruction to search routinely: agents stop once an earlier source answers the task reliably. Ask only if the user wants a different repository-specific policy.
 
 ## Secrets and sensitive values
 
