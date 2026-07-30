@@ -13,12 +13,6 @@
       "skillPath": "angular-new-app/SKILL.md",
       "computedHash": "d9f712544847ab80ef7ed20043820afd275c394ca05340c2f20a0f051e35d945"
     },
-    "vercel-composition-patterns": {
-      "source": "vercel-labs/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/composition-patterns/SKILL.md",
-      "computedHash": "575757e3e25761c8c562d6e395d29f0b76c98b1273c0bd72d88e6ab1bc9c7d42"
-    },
     "vercel-react-best-practices": {
       "source": "vercel-labs/agent-skills",
       "sourceType": "github",
