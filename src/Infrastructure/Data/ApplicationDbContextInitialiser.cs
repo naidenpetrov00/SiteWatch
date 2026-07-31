@@ -5,7 +5,6 @@ using Domain.ValueObjects;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System.Security.Claims;
 using Infrastructure.Data.SeedData;
 
 namespace Infrastructure.Data;
@@ -23,81 +22,82 @@ public class ApplicationDbContextInitialiser(
     ];
 
     private const string BulkSeedEmailDomain = "sitewatch.local";
-    private const int BulkSeedUserCount = 1000;
+    private const int BulkSeedUserCount = 100;
 
     private async Task<List<ApplicationUser>> AddUsers()
     {
-        if (await userManager.Users.AnyAsync())
+        var existingUsers = await userManager.Users.ToListAsync();
+        if (existingUsers.Count > 0)
         {
             logger.LogInformation("User seeding skipped: users already exist.");
-            return await userManager.Users.ToListAsync();
+            return existingUsers;
         }
 
         var now = DateTimeOffset.UtcNow;
+        var users = new List<ApplicationUser>();
+        var claims = new List<IdentityUserClaim<string>>();
 
-        var user1 = new ApplicationUser
+        void AddSeedUser(ApplicationUser user, string role)
         {
-            UserName = "Test.2010",
-            Email = "naiden.petrov.31.12.00@gmail.com",
-            EmailConfirmed = true,
-            PhoneNumber = "+359888000001",
-            PhoneNumberConfirmed = true,
-            LastLoginAt = now.AddDays(-1),
-        };
-        var user2 = new ApplicationUser
-        {
-            UserName = "Test2.2010",
-            Email = "naidenpetrov00@gmail.com",
-            EmailConfirmed = true,
-            PhoneNumber = "+359888000002",
-            PhoneNumberConfirmed = true,
-            LastLoginAt = now.AddHours(-4),
-        };
-        await userManager.CreateAsync(user1, "Test@123");
-        await userManager.CreateAsync(user2, "Test@123");
+            user.NormalizedUserName = userManager.NormalizeName(user.UserName);
+            user.NormalizedEmail = userManager.NormalizeEmail(user.Email);
+            user.PasswordHash = userManager.PasswordHasher.HashPassword(user, "Test@123");
 
-        await userManager.AddClaimAsync(
-            user1,
-            new Claim(UserClaimTypes.UserType, UserRoles.Administrator)
-        );
-        await userManager.AddClaimAsync(
-            user2,
-            new Claim(UserClaimTypes.UserType, UserRoles.Administrator)
-        );
+            users.Add(user);
+            claims.Add(
+                new IdentityUserClaim<string>
+                {
+                    UserId = user.Id,
+                    ClaimType = UserClaimTypes.UserType,
+                    ClaimValue = role,
+                }
+            );
+        }
 
-        var users = new List<ApplicationUser> { user1, user2 };
+        AddSeedUser(
+            new ApplicationUser
+            {
+                UserName = "Test.2010",
+                Email = "naiden.petrov.31.12.00@gmail.com",
+                EmailConfirmed = true,
+                PhoneNumber = "+359888000001",
+                PhoneNumberConfirmed = true,
+                LastLoginAt = now.AddDays(-1),
+            },
+            UserRoles.Administrator
+        );
+        AddSeedUser(
+            new ApplicationUser
+            {
+                UserName = "Test2.2010",
+                Email = "naidenpetrov00@gmail.com",
+                EmailConfirmed = true,
+                PhoneNumber = "+359888000002",
+                PhoneNumberConfirmed = true,
+                LastLoginAt = now.AddHours(-4),
+            },
+            UserRoles.Administrator
+        );
 
         for (var i = 1; i <= BulkSeedUserCount; i++)
         {
-            var bulkUser = new ApplicationUser
-            {
-                UserName = $"user{i:0000}",
-                Email = $"user{i:0000}@{BulkSeedEmailDomain}",
-                EmailConfirmed = i % 2 == 0,
-                PhoneNumber = $"+359888{i:000000}",
-                PhoneNumberConfirmed = i % 3 == 0,
-                LastLoginAt = i % 5 == 0 ? now.AddDays(-(i % 30)) : null,
-            };
-
-            var result = await userManager.CreateAsync(bulkUser, "Test@123");
-            if (!result.Succeeded)
-            {
-                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                logger.LogWarning(
-                    "Failed to create seed user {Email}: {Errors}",
-                    bulkUser.Email,
-                    errors
-                );
-                continue;
-            }
-
-            await userManager.AddClaimAsync(
-                bulkUser,
-                new Claim(UserClaimTypes.UserType, UserRoles.Client)
+            AddSeedUser(
+                new ApplicationUser
+                {
+                    UserName = $"user{i:0000}",
+                    Email = $"user{i:0000}@{BulkSeedEmailDomain}",
+                    EmailConfirmed = i % 2 == 0,
+                    PhoneNumber = $"+359888{i:000000}",
+                    PhoneNumberConfirmed = i % 3 == 0,
+                    LastLoginAt = i % 5 == 0 ? now.AddDays(-(i % 30)) : null,
+                },
+                UserRoles.Client
             );
-
-            users.Add(bulkUser);
         }
+
+        await dbContext.Users.AddRangeAsync(users);
+        await dbContext.UserClaims.AddRangeAsync(claims);
+        await dbContext.SaveChangesAsync();
 
         logger.LogInformation("Seeded {UserCount} users.", users.Count);
         return users;

@@ -1,12 +1,14 @@
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models.Internal;
+using Domain.SeedWork.Enums;
 using MediatR;
 
 namespace Application.Sites.Files.Commands;
 
 public sealed record AddFileCommand(
     Guid SiteId,
-    UploadedFile File)
+    UploadedFile File,
+    FileCategory? Category)
     : IRequest<UploadedFileResult>;
 
 public class AddFileHandler(IFilesBlobService blobService, IFilesService filesService)
@@ -25,6 +27,7 @@ public class AddFileHandler(IFilesBlobService blobService, IFilesService filesSe
             result.FileId,
             request.File.FileName,
             request.File.ContentType,
+            request.Category!.Value,
             cancellationToken);
 
         return result;

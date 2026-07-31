@@ -25,7 +25,7 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
 
         var mediaPolicy = preset == MediaPolicyPreset.Regular
             ? SiteMediaPolicy.Regular()
-            : SiteMediaPolicy.Custom([], []);
+            : SiteMediaPolicy.Custom([], [], []);
         var site = new Site(request.Name, request.Address, mediaPolicy);
 
         dbContext.Sites.Add(site);

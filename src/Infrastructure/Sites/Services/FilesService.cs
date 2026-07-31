@@ -1,6 +1,7 @@
 using Application.SeedWork.Interfaces;
 using Application.Sites.Files.Queries;
 using Domain.Entities;
+using Domain.SeedWork.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Sites.Services;
@@ -13,7 +14,8 @@ public class FilesService(IApplicationDbContext dbContext) : IFilesService
         .Select(siteFile => new SiteFileIdsDto(
             siteFile.FileId,
             siteFile.FileName,
-            siteFile.ContentType))
+            siteFile.ContentType,
+            siteFile.Category.ToString()))
         .ToListAsync();
 
     public async Task AddFileIdsToSiteAsync(
@@ -21,9 +23,10 @@ public class FilesService(IApplicationDbContext dbContext) : IFilesService
         Guid resultFileId,
         string fileName,
         string contentType,
+        FileCategory category,
         CancellationToken cancellationToken = default)
     {
-        dbContext.SiteFiles.Add(new SiteFile(requestSiteId, resultFileId, fileName, contentType));
+        dbContext.SiteFiles.Add(new SiteFile(requestSiteId, resultFileId, fileName, contentType, category));
 
         await dbContext.SaveChangesAsync(cancellationToken);
     }

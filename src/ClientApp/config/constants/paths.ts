@@ -23,4 +23,8 @@ export const paths = {
         getById: (videoId: string) => `/videos/${videoId}`,
         getSnapshotById: (snapshotId: string) => `/videos/snapshot/${snapshotId}`,
     },
+    files: {
+        getIdsBySiteId: (siteId: string) => `/files/files${siteId}`,
+        getById: (fileId: string) => `/files/${fileId}`,
+    },
 };

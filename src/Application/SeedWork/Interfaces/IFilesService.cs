@@ -1,4 +1,5 @@
 using Application.Sites.Files.Queries;
+using Domain.SeedWork.Enums;
 
 namespace Application.SeedWork.Interfaces;
 
@@ -11,6 +12,7 @@ public interface IFilesService
         Guid resultFileId,
         string fileName,
         string contentType,
+        FileCategory category,
         CancellationToken cancellationToken = default);
 
     Task DeleteFileIdFromSiteAsync(Guid fileId, CancellationToken cancellationToken = default);
