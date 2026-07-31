@@ -1,0 +1,4 @@
+interface:
+  display_name: "Test Applications"
+  short_description: "Design robust tests across the SiteWatch stack"
+  default_prompt: "Use $test-applications to design and implement maintainable tests for this change."
