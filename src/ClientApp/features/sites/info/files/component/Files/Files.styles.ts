@@ -18,7 +18,14 @@ const filesStyles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 10,
+  },
+  filterGroup: {
+    gap: 8,
     marginBottom: 18,
+  },
+  filterLabel: {
+    fontSize: 14,
+    fontWeight: "700",
   },
   filterChip: {
     borderWidth: 1,

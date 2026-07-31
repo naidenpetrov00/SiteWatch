@@ -36,6 +36,7 @@ public class Files : EndpointGroupBase
         IMediator mediator,
         [FromForm] IFormFile file,
         [FromForm] FileCategory? category,
+        [FromForm] FileDocumentType? documentType,
         Guid siteId)
     {
         await using var stream = file.OpenReadStream();
@@ -46,7 +47,11 @@ public class Files : EndpointGroupBase
             FileName = Path.GetFileName(file.FileName),
         };
 
-        var fileId = await mediator.Send(new AddFileCommand(siteId, uploadedFile, category));
+        var fileId = await mediator.Send(new AddFileCommand(
+            siteId,
+            uploadedFile,
+            category,
+            documentType));
 
         return TypedResults.Ok(fileId);
     }

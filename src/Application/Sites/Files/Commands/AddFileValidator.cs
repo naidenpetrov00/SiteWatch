@@ -38,6 +38,14 @@ public class AddFileValidator : AbstractValidator<AddFileCommand>
             .MustAsync((request, category, cancellationToken) =>
                 FileCategoryAllowedForSite(request, category, cancellationToken))
             .WithMessage("Category is not allowed for this site.");
+
+        RuleFor(af => af.DocumentType)
+            .Cascade(CascadeMode.Stop)
+            .NotNull()
+            .Must(documentType =>
+                documentType.HasValue
+                && Enum.IsDefined(typeof(FileDocumentType), documentType.Value))
+            .WithMessage("Document type is not valid.");
     }
 
     private async Task<bool> SiteIdMustExist(Guid siteId, CancellationToken cancellationToken) =>

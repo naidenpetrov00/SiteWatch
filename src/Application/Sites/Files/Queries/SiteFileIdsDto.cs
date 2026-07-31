@@ -4,4 +4,5 @@ public sealed record SiteFileIdsDto(
     Guid FileId,
     string FileName,
     string ContentType,
-    string Category);
+    string Category,
+    string DocumentType);

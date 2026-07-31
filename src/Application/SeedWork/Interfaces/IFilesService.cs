@@ -13,6 +13,7 @@ public interface IFilesService
         string fileName,
         string contentType,
         FileCategory category,
+        FileDocumentType documentType,
         CancellationToken cancellationToken = default);
 
     Task DeleteFileIdFromSiteAsync(Guid fileId, CancellationToken cancellationToken = default);

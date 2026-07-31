@@ -15,7 +15,8 @@ public class FilesService(IApplicationDbContext dbContext) : IFilesService
             siteFile.FileId,
             siteFile.FileName,
             siteFile.ContentType,
-            siteFile.Category.ToString()))
+            siteFile.Category.ToString(),
+            siteFile.DocumentType.ToString()))
         .ToListAsync();
 
     public async Task AddFileIdsToSiteAsync(
@@ -24,9 +25,16 @@ public class FilesService(IApplicationDbContext dbContext) : IFilesService
         string fileName,
         string contentType,
         FileCategory category,
+        FileDocumentType documentType,
         CancellationToken cancellationToken = default)
     {
-        dbContext.SiteFiles.Add(new SiteFile(requestSiteId, resultFileId, fileName, contentType, category));
+        dbContext.SiteFiles.Add(new SiteFile(
+            requestSiteId,
+            resultFileId,
+            fileName,
+            contentType,
+            category,
+            documentType));
 
         await dbContext.SaveChangesAsync(cancellationToken);
     }
