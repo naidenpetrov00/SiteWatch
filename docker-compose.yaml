@@ -38,4 +38,4 @@ services:
     ports: ["10000:10000"]
     volumes:
       - ./azurelite-data/data:/data
-    command: "azurite-blob --blobHost 0.0.0.0 --skipApiVersionCheck -l /data"
+    command: "azurite-blob --blobHost 0.0.0.0 -l /data"
