@@ -15,7 +15,6 @@ public class FilesService(IApplicationDbContext dbContext) : IFilesService
             siteFile.FileId,
             siteFile.FileName,
             siteFile.ContentType,
-            siteFile.Category.ToString(),
             siteFile.DocumentType.ToString()))
         .ToListAsync();
 
@@ -24,7 +23,6 @@ public class FilesService(IApplicationDbContext dbContext) : IFilesService
         Guid resultFileId,
         string fileName,
         string contentType,
-        FileCategory category,
         FileDocumentType documentType,
         CancellationToken cancellationToken = default)
     {
@@ -33,7 +31,6 @@ public class FilesService(IApplicationDbContext dbContext) : IFilesService
             resultFileId,
             fileName,
             contentType,
-            category,
             documentType));
 
         await dbContext.SaveChangesAsync(cancellationToken);

@@ -12,7 +12,6 @@ public interface IFilesService
         Guid resultFileId,
         string fileName,
         string contentType,
-        FileCategory category,
         FileDocumentType documentType,
         CancellationToken cancellationToken = default);
 

@@ -1,4 +1,4 @@
-import { ALL_FILTER, type MediaCategory } from "../media-types";
+import { ALL_FILTER } from "../media-types";
 
 export const FILE_DOCUMENT_TYPES = [
   "Warranty",
@@ -30,6 +30,5 @@ export type SiteFileIds = {
   fileId: string;
   fileName: string;
   contentType: string;
-  category: MediaCategory;
   documentType: FileDocumentType;
 };

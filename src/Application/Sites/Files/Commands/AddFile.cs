@@ -8,7 +8,6 @@ namespace Application.Sites.Files.Commands;
 public sealed record AddFileCommand(
     Guid SiteId,
     UploadedFile File,
-    FileCategory? Category,
     FileDocumentType? DocumentType)
     : IRequest<UploadedFileResult>;
 
@@ -28,7 +27,6 @@ public class AddFileHandler(IFilesBlobService blobService, IFilesService filesSe
             result.FileId,
             request.File.FileName,
             request.File.ContentType,
-            request.Category!.Value,
             request.DocumentType!.Value,
             cancellationToken);
 

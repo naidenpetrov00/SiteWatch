@@ -16,11 +16,6 @@ public class SiteFileConfiguration : IEntityTypeConfiguration<SiteFile>
         builder.Property(sf => sf.ContentType)
             .HasMaxLength(128);
 
-        builder.Property(sf => sf.Category)
-            .HasConversion<string>()
-            .HasMaxLength(32)
-            .IsRequired();
-
         builder.Property(sf => sf.DocumentType)
             .HasConversion<string>()
             .HasMaxLength(64)

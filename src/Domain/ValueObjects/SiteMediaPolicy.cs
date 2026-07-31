@@ -21,13 +21,6 @@ public sealed class SiteMediaPolicy : ValueObject
         VideoCategory.Design,
     ];
 
-    private static readonly FileCategory[] RegularFileCategories =
-    [
-        FileCategory.Pipes,
-        FileCategory.Electricity,
-        FileCategory.Design,
-    ];
-
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
 
     private SiteMediaPolicy()
@@ -37,40 +30,32 @@ public sealed class SiteMediaPolicy : ValueObject
     private SiteMediaPolicy(
         MediaPolicyPreset preset,
         IEnumerable<ImageCategory> allowedImageCategories,
-        IEnumerable<VideoCategory> allowedVideoCategories,
-        IEnumerable<FileCategory> allowedFileCategories)
+        IEnumerable<VideoCategory> allowedVideoCategories)
     {
         Preset = preset;
         AllowedImageCategories = Normalize(allowedImageCategories);
         AllowedVideoCategories = Normalize(allowedVideoCategories);
-        AllowedFileCategories = Normalize(allowedFileCategories);
     }
 
     public MediaPolicyPreset Preset { get; private set; }
     public IReadOnlyCollection<ImageCategory> AllowedImageCategories { get; private set; } = [];
     public IReadOnlyCollection<VideoCategory> AllowedVideoCategories { get; private set; } = [];
-    public IReadOnlyCollection<FileCategory> AllowedFileCategories { get; private set; } = [];
 
     public static SiteMediaPolicy Regular() => new(
         MediaPolicyPreset.Regular,
         RegularImageCategories,
-        RegularVideoCategories,
-        RegularFileCategories);
+        RegularVideoCategories);
 
     public static SiteMediaPolicy Custom(
         IEnumerable<ImageCategory> allowedImageCategories,
-        IEnumerable<VideoCategory> allowedVideoCategories,
-        IEnumerable<FileCategory> allowedFileCategories) => new(
+        IEnumerable<VideoCategory> allowedVideoCategories) => new(
         MediaPolicyPreset.Custom,
         allowedImageCategories,
-        allowedVideoCategories,
-        allowedFileCategories);
+        allowedVideoCategories);
 
     public bool AllowsImageCategory(ImageCategory category) => AllowedImageCategories.Contains(category);
 
     public bool AllowsVideoCategory(VideoCategory category) => AllowedVideoCategories.Contains(category);
-
-    public bool AllowsFileCategory(FileCategory category) => AllowedFileCategories.Contains(category);
 
     public void ChangePreset(MediaPolicyPreset preset) => Preset = preset;
 
@@ -79,8 +64,7 @@ public sealed class SiteMediaPolicy : ValueObject
         var storage = new SiteMediaPolicyStorage(
             Preset,
             AllowedImageCategories.ToArray(),
-            AllowedVideoCategories.ToArray(),
-            AllowedFileCategories.ToArray());
+            AllowedVideoCategories.ToArray());
 
         return JsonSerializer.Serialize(storage, SerializerOptions);
     }
@@ -98,9 +82,7 @@ public sealed class SiteMediaPolicy : ValueObject
         return new SiteMediaPolicy(
             storage.Preset,
             storage.AllowedImageCategories ?? [],
-            storage.AllowedVideoCategories ?? [],
-            storage.AllowedFileCategories
-                ?? (storage.Preset == MediaPolicyPreset.Regular ? RegularFileCategories : []));
+            storage.AllowedVideoCategories ?? []);
     }
 
     protected override IEnumerable<object> GetEqualityComponents()
@@ -118,13 +100,6 @@ public sealed class SiteMediaPolicy : ValueObject
         {
             yield return videoCategory;
         }
-
-        yield return "|";
-
-        foreach (var fileCategory in AllowedFileCategories)
-        {
-            yield return fileCategory;
-        }
     }
 
     private static IReadOnlyCollection<TEnum> Normalize<TEnum>(IEnumerable<TEnum> values)
@@ -137,6 +112,5 @@ public sealed class SiteMediaPolicy : ValueObject
     private sealed record SiteMediaPolicyStorage(
         MediaPolicyPreset Preset,
         ImageCategory[]? AllowedImageCategories,
-        VideoCategory[]? AllowedVideoCategories,
-        FileCategory[]? AllowedFileCategories);
+        VideoCategory[]? AllowedVideoCategories);
 }

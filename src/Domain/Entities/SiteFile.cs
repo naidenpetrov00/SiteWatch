@@ -14,14 +14,12 @@ public sealed class SiteFile : BaseAuditableEntity
         Guid fileId,
         string fileName,
         string contentType,
-        FileCategory category,
         FileDocumentType documentType)
     {
         SiteId = siteId;
         FileId = fileId;
         FileName = fileName;
         ContentType = contentType;
-        Category = category;
         DocumentType = documentType;
     }
 
@@ -29,7 +27,6 @@ public sealed class SiteFile : BaseAuditableEntity
     public Guid FileId { get; private set; }
     public string FileName { get; private set; } = null!;
     public string ContentType { get; private set; } = null!;
-    public FileCategory Category { get; private set; }
     public FileDocumentType DocumentType { get; private set; }
 
     public Site Site { get; private set; } = null!;

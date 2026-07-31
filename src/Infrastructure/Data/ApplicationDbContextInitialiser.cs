@@ -12,6 +12,7 @@ namespace Infrastructure.Data;
 public class ApplicationDbContextInitialiser(
     ApplicationDbContext dbContext,
     UserManager<ApplicationUser> userManager,
+    BlobInitializer blobInitializer,
     ILogger<ApplicationDbContextInitialiser> logger
 )
 {
@@ -360,6 +361,7 @@ public class ApplicationDbContextInitialiser(
 
             var users = await AddUsers();
             await AddSites(users);
+            await blobInitializer.InitializeAsync();
             await AddCameras();
             var persons = await AddPersons();
             await AddInvoices(persons);

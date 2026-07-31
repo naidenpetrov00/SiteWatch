@@ -4,7 +4,6 @@ export interface SiteMediaPolicy {
   preset: "Regular" | "Custom";
   allowedImageCategories: MediaCategory[];
   allowedVideoCategories: MediaCategory[];
-  allowedFileCategories: MediaCategory[];
 }
 
 export interface Site {

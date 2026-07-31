@@ -30,10 +30,6 @@ public class SitesDto
                 .ForMember(
                     d => d.AllowedVideoCategories,
                     o => o.MapFrom(s => s.AllowedVideoCategories.Select(category => category.ToString()).ToArray())
-                )
-                .ForMember(
-                    d => d.AllowedFileCategories,
-                    o => o.MapFrom(s => s.AllowedFileCategories.Select(category => category.ToString()).ToArray())
                 );
         }
     }
@@ -44,5 +40,4 @@ public sealed class SiteMediaPolicyDto
     public string Preset { get; init; } = string.Empty;
     public string[] AllowedImageCategories { get; init; } = [];
     public string[] AllowedVideoCategories { get; init; } = [];
-    public string[] AllowedFileCategories { get; init; } = [];
 }

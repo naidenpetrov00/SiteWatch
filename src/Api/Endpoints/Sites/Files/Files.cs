@@ -35,7 +35,6 @@ public class Files : EndpointGroupBase
     private static async Task<Ok<UploadedFileResult>> AddFileToSite(
         IMediator mediator,
         [FromForm] IFormFile file,
-        [FromForm] FileCategory? category,
         [FromForm] FileDocumentType? documentType,
         Guid siteId)
     {
@@ -50,7 +49,6 @@ public class Files : EndpointGroupBase
         var fileId = await mediator.Send(new AddFileCommand(
             siteId,
             uploadedFile,
-            category,
             documentType));
 
         return TypedResults.Ok(fileId);

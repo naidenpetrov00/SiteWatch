@@ -30,15 +30,6 @@ public class AddFileValidator : AbstractValidator<AddFileCommand>
                     .NotEmpty();
             });
 
-        RuleFor(af => af.Category)
-            .Cascade(CascadeMode.Stop)
-            .NotNull()
-            .Must(category => category.HasValue && Enum.IsDefined(typeof(FileCategory), category.Value))
-            .WithMessage("Category is not valid.")
-            .MustAsync((request, category, cancellationToken) =>
-                FileCategoryAllowedForSite(request, category, cancellationToken))
-            .WithMessage("Category is not allowed for this site.");
-
         RuleFor(af => af.DocumentType)
             .Cascade(CascadeMode.Stop)
             .NotNull()
@@ -51,19 +42,4 @@ public class AddFileValidator : AbstractValidator<AddFileCommand>
     private async Task<bool> SiteIdMustExist(Guid siteId, CancellationToken cancellationToken) =>
         await _dbContext.Sites.AsNoTracking().AnyAsync(site => site.Id == siteId, cancellationToken);
 
-    private async Task<bool> FileCategoryAllowedForSite(
-        AddFileCommand request,
-        FileCategory? category,
-        CancellationToken cancellationToken)
-    {
-        if (!category.HasValue)
-        {
-            return false;
-        }
-
-        var site = await _dbContext.Sites.AsNoTracking()
-            .FirstOrDefaultAsync(site => site.Id == request.SiteId, cancellationToken);
-
-        return site is null || site.MediaPolicy.AllowsFileCategory(category.Value);
-    }
 }

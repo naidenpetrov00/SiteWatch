@@ -1,7 +1,7 @@
 import { FlatList, Linking, Pressable, Text, View } from "react-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { ALL_FILTER, type MediaFilter } from "@/features/sites/info/media-types";
+import { ALL_FILTER } from "@/features/sites/info/media-types";
 import { env } from "@/config/env";
 import {
   FILE_DOCUMENT_TYPE_LABELS,
@@ -11,7 +11,6 @@ import {
 } from "../../types";
 import { paths } from "@/config/constants/paths";
 import { useGetSiteFileIdsBySiteId } from "../../hooks/useGetSiteFileIdsBySiteId";
-import { useGetSitesByUserId } from "@/features/sites/api/get-sites-by-user";
 import { useColorPalette } from "@/hooks/useColorPalette";
 import useGetSearchParams from "@/hooks/useGetSearchParams";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -26,9 +25,6 @@ const Files = () => {
   const { siteId } = useGetSearchParams<{ siteId?: string }>();
   const colorPalette = useColorPalette();
   const insets = useSafeAreaInsets();
-  const { data: sites = [] } = useGetSitesByUserId();
-  const [activeCategoryFilter, setActiveCategoryFilter] =
-    useState<MediaFilter>(ALL_FILTER);
   const [activeDocumentTypeFilter, setActiveDocumentTypeFilter] =
     useState<FileDocumentTypeFilter>(ALL_FILTER);
   const [openingFileId, setOpeningFileId] = useState<string | null>(null);
@@ -42,36 +38,15 @@ const Files = () => {
     refetch,
   } = useGetSiteFileIdsBySiteId({ siteId });
 
-  const site = useMemo(
-    () => sites.find((siteItem) => siteItem.id === siteId),
-    [siteId, sites],
-  );
-  const categoryFilters = useMemo<MediaFilter[]>(
-    () => [ALL_FILTER, ...(site?.mediaPolicy.allowedFileCategories ?? [])],
-    [site],
-  );
-  const resolvedActiveCategoryFilter = categoryFilters.includes(
-    activeCategoryFilter,
-  )
-    ? activeCategoryFilter
-    : ALL_FILTER;
   const filteredFiles = useMemo(
     () =>
       siteFiles.filter(
         (file) =>
-          (resolvedActiveCategoryFilter === ALL_FILTER ||
-            file.category === resolvedActiveCategoryFilter) &&
-          (activeDocumentTypeFilter === ALL_FILTER ||
-            file.documentType === activeDocumentTypeFilter),
+          activeDocumentTypeFilter === ALL_FILTER ||
+          file.documentType === activeDocumentTypeFilter,
       ),
-    [activeDocumentTypeFilter, resolvedActiveCategoryFilter, siteFiles],
+    [activeDocumentTypeFilter, siteFiles],
   );
-
-  useEffect(() => {
-    if (resolvedActiveCategoryFilter !== activeCategoryFilter) {
-      setActiveCategoryFilter(ALL_FILTER);
-    }
-  }, [activeCategoryFilter, resolvedActiveCategoryFilter]);
 
   useEffect(() => {
     setOpenError(null);
@@ -111,9 +86,6 @@ const Files = () => {
           {item.fileName}
         </Text>
         <Text style={[filesStyles.metadata, { color: colorPalette.secondary }]}>
-          Category: {item.category}
-        </Text>
-        <Text style={[filesStyles.metadata, { color: colorPalette.secondary }]}>
           Document type: {FILE_DOCUMENT_TYPE_LABELS[item.documentType]}
         </Text>
         <Text style={[filesStyles.metadata, { color: colorPalette.secondary }]}>
@@ -140,48 +112,6 @@ const Files = () => {
       <Text style={[filesStyles.subtitle, { color: colorPalette.secondary }]}>
         Site ID: {siteId ?? "Unknown"}
       </Text>
-      <View style={filesStyles.filterGroup}>
-        <Text style={[filesStyles.filterLabel, { color: colorPalette.text }]}>
-          Category
-        </Text>
-        <View style={filesStyles.filters}>
-          {categoryFilters.map((filter) => {
-            const isActive = filter === resolvedActiveCategoryFilter;
-
-            return (
-              <Pressable
-                key={filter}
-                onPress={() => setActiveCategoryFilter(filter)}
-                style={[
-                  filesStyles.filterChip,
-                  {
-                    backgroundColor: isActive
-                      ? colorPalette.primary
-                      : colorPalette.background,
-                    borderColor: isActive
-                      ? colorPalette.primary
-                      : colorPalette.secondary,
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    filesStyles.filterText,
-                    {
-                      color: isActive
-                        ? colorPalette.contrastText
-                        : colorPalette.text,
-                    },
-                  ]}
-                >
-                  {filter}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
-
       <View style={filesStyles.filterGroup}>
         <Text style={[filesStyles.filterLabel, { color: colorPalette.text }]}>
           Document type
