@@ -28,7 +28,12 @@ export const hasAnyRole = (
 ): boolean => allowedRoles.some((role) => hasRole(roles, role));
 
 export const ACCESS_POLICIES = {
-  currentApp: [USER_ROLES.administrator],
+  currentApp: [
+    USER_ROLES.administrator,
+    USER_ROLES.worker,
+    USER_ROLES.client,
+  ],
+  siteInvoices: [USER_ROLES.administrator, USER_ROLES.worker],
 } as const satisfies Record<string, readonly UserRole[]>;
 
 export const AUTHENTICATED_ROUTES = {

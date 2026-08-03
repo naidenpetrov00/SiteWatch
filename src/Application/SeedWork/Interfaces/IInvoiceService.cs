@@ -16,4 +16,17 @@ public interface IInvoiceService
         DashboardInvoicesQuery request,
         CancellationToken cancellationToken
     );
+
+    Task<IReadOnlyList<SiteInvoiceDto>> GetSiteInvoicesAsync(
+        Guid siteId,
+        string userId,
+        CancellationToken cancellationToken);
+
+    Task EnsureUserCanAccessInvoiceAsync(
+        Guid siteId,
+        Guid invoiceId,
+        string userId,
+        CancellationToken cancellationToken);
+
+    Task EnsureInvoiceExistsAsync(Guid invoiceId, CancellationToken cancellationToken);
 }

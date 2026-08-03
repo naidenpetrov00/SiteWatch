@@ -2,11 +2,13 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using Application.Invoices.Commands;
 using Application.SeedWork.Interfaces;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Domain.Entities;
 using Domain.SeedWork.Enums;
+using Infrastructure.Data.SeedData;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -18,12 +20,20 @@ public sealed class BlobInitializer(
     BlobServiceClient blobServiceClient,
     IImagesService imagesService,
     IVideosService videosService,
+    IInvoiceBlobService invoiceBlobService,
     ILogger<BlobInitializer> logger)
 {
     private const string SeedAssetsDirectoryName = "Data/SeedAssets";
     private const string SeededBy = "System";
     private static readonly string[] SeedSiteAddresses = ["Vitosha 17", "Dondukov 11", "Kestenova Gora 24"];
     private static readonly FileExtensionContentTypeProvider ContentTypeProvider = new();
+
+    public int GetRequiredSeedInvoiceCount()
+    {
+        var directory = Path.Combine(AppContext.BaseDirectory, SeedAssetsDirectoryName, "Invoices");
+        var assetCount = GetInvoiceAssetPaths(directory, logUnsupportedAssets: false).Count;
+        return Math.Max(InvoiceSeedData.MinimumInvoiceCount, assetCount);
+    }
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
@@ -54,11 +64,12 @@ public sealed class BlobInitializer(
         await SeedImagesAsync(Path.Combine(seedAssetsPath, "Images"), sites, cancellationToken);
         await SeedVideosAsync(Path.Combine(seedAssetsPath, "Videos"), sites, cancellationToken);
         await SeedFilesAsync(Path.Combine(seedAssetsPath, "Files"), sites, cancellationToken);
+        await SeedInvoicesAsync(Path.Combine(seedAssetsPath, "Invoices"), cancellationToken);
     }
 
     private async Task EnsureContainersAsync(CancellationToken cancellationToken)
     {
-        foreach (var containerName in new[] { "images", "videos", "files" })
+        foreach (var containerName in new[] { "images", "videos", "files", "invoices" })
         {
             await blobServiceClient
                 .GetBlobContainerClient(containerName)
@@ -225,6 +236,102 @@ public sealed class BlobInitializer(
             dbContext.SiteFiles.Add(file);
             await dbContext.SaveChangesAsync(cancellationToken);
         }
+    }
+
+    private async Task SeedInvoicesAsync(string directory, CancellationToken cancellationToken)
+    {
+        var assetPaths = GetInvoiceAssetPaths(directory, logUnsupportedAssets: true);
+        if (assetPaths.Count == 0)
+        {
+            logger.LogInformation("Invoice file seeding skipped: {Directory} contains no PDF files.", directory);
+            return;
+        }
+
+        var assignedAssetPaths = assetPaths.ToList();
+        while (assignedAssetPaths.Count < InvoiceSeedData.MinimumInvoiceCount)
+        {
+            assignedAssetPaths.Add(assetPaths[^1]);
+        }
+
+        var seedInvoiceNumbers = InvoiceSeedData.GetInvoiceNumbers(assignedAssetPaths.Count);
+        var invoices = await dbContext.Invoices
+            .Where(invoice => invoice.CreatedBy == SeededBy
+                && seedInvoiceNumbers.Contains(invoice.InvoiceNumber))
+            .ToListAsync(cancellationToken);
+
+        if (invoices.Count == 0)
+        {
+            logger.LogWarning("Invoice file seeding skipped: no seeded invoices are available.");
+            return;
+        }
+
+        var missingInvoiceNumbers = seedInvoiceNumbers
+            .Except(invoices.Select(invoice => invoice.InvoiceNumber))
+            .ToArray();
+        if (missingInvoiceNumbers.Length > 0)
+        {
+            logger.LogWarning(
+                "Invoice file seeding will not include missing seeded invoices: {InvoiceNumbers}.",
+                missingInvoiceNumbers);
+        }
+
+        var invoicesByNumber = invoices.ToDictionary(invoice => invoice.InvoiceNumber);
+        var invoiceContainer = blobServiceClient.GetBlobContainerClient("invoices");
+        for (var index = 0; index < assignedAssetPaths.Count; index++)
+        {
+            var invoiceNumber = seedInvoiceNumbers[index];
+            if (!invoicesByNumber.TryGetValue(invoiceNumber, out var invoice))
+            {
+                continue;
+            }
+
+            var assetPath = assignedAssetPaths[index];
+            try
+            {
+                var blob = invoiceContainer.GetBlobClient(invoice.Id.ToString());
+                if ((await blob.ExistsAsync(cancellationToken)).Value)
+                {
+                    continue;
+                }
+
+                await using var fileStream = File.OpenRead(assetPath);
+                await invoiceBlobService.UploadAsync(
+                    invoice.Id,
+                    new UploadedInvoiceFile(fileStream, Path.GetFileName(assetPath), "application/pdf"),
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(
+                    ex,
+                    "Failed to seed invoice file {AssetPath} for invoice {InvoiceNumber}.",
+                    assetPath,
+                    invoice.InvoiceNumber);
+            }
+        }
+    }
+
+    private IReadOnlyList<string> GetInvoiceAssetPaths(string directory, bool logUnsupportedAssets)
+    {
+        var assetPaths = GetAssetPaths(directory, "invoice");
+        var pdfPaths = new List<string>();
+
+        foreach (var assetPath in assetPaths)
+        {
+            if (TryGetContentType(assetPath, out var contentType)
+                && string.Equals(contentType, "application/pdf", StringComparison.OrdinalIgnoreCase))
+            {
+                pdfPaths.Add(assetPath);
+            }
+            else if (logUnsupportedAssets)
+            {
+                logger.LogWarning("Invoice seed asset {AssetPath} is not a supported PDF file.", assetPath);
+            }
+        }
+
+        return pdfPaths
+            .OrderBy(GetAssetKey, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
     }
 
     private IEnumerable<string> GetAssetPaths(string directory, string assetType)

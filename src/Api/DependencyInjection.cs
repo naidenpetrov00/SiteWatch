@@ -67,6 +67,12 @@ public static class DependencyInjection
                 AuthorizationPolicies.Administrator,
                 policy => policy.RequireAuthenticatedUser().RequireRole(UserRoles.Administrator)
             );
+            options.AddPolicy(
+                AuthorizationPolicies.AdministratorOrWorker,
+                policy => policy
+                    .RequireAuthenticatedUser()
+                    .RequireRole(UserRoles.Administrator, UserRoles.Worker)
+            );
         });
     }
 }

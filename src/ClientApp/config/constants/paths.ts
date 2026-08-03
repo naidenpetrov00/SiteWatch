@@ -27,4 +27,9 @@ export const paths = {
         getIdsBySiteId: (siteId: string) => `/files/files${siteId}`,
         getById: (fileId: string) => `/files/${fileId}`,
     },
+    invoices: {
+        getBySiteId: (siteId: string) => `/invoices/site/${siteId}`,
+        getFileAccess: (siteId: string, invoiceId: string) =>
+            `/invoices/site/${siteId}/${invoiceId}/file-access`,
+    },
 };

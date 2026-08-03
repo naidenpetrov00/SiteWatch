@@ -133,6 +133,94 @@ public sealed class InvoiceService(ApplicationDbContext dbContext, IMapper mappe
             );
     }
 
+    public async Task<IReadOnlyList<SiteInvoiceDto>> GetSiteInvoicesAsync(
+        Guid siteId,
+        string userId,
+        CancellationToken cancellationToken)
+    {
+        var siteIsAccessible = await dbContext.Sites
+            .AsNoTracking()
+            .AnyAsync(
+                site => site.Id == siteId && site.Users.Any(user => user.Id == userId),
+                cancellationToken);
+
+        if (!siteIsAccessible)
+        {
+            throw new NotFoundException(nameof(Site), siteId.ToString());
+        }
+
+        var invoices = await dbContext.Invoices
+            .AsNoTracking()
+            .Include(invoice => invoice.Supplier)
+            .Include(invoice => invoice.SitePayments)
+            .Where(invoice => invoice.SitePayments.Any(payment => payment.SiteId == siteId))
+            .OrderByDescending(invoice => invoice.Date)
+            .ThenByDescending(invoice => invoice.NumberId)
+            .ToListAsync(cancellationToken);
+
+        return invoices.Select(invoice =>
+        {
+            var allocation = invoice.SitePayments.Single(payment => payment.SiteId == siteId);
+
+            return new SiteInvoiceDto
+            {
+                Id = invoice.Id,
+                NumberId = invoice.NumberId,
+                SupplierId = invoice.SupplierId,
+                SupplierDisplayLabel = invoice.Supplier.DisplayName,
+                InvoiceNumber = invoice.InvoiceNumber,
+                Date = invoice.Date,
+                TaxIdentifier = invoice.TaxIdentifier,
+                Address = invoice.Address,
+                Email = invoice.Email,
+                PhoneNumber = invoice.PhoneNumber,
+                ContactPerson = invoice.ContactPerson,
+                PaymentTerm = invoice.PaymentTerm,
+                TotalValueExcludingVat = invoice.TotalValueExcludingVat,
+                Vat = invoice.Vat,
+                TotalValueIncludingVat = invoice.TotalValueIncludingVat,
+                PaymentDate = invoice.PaymentDate,
+                PaymentTime = invoice.PaymentTime,
+                PaymentMethod = invoice.PaymentMethod,
+                SiteAllocation = new SiteInvoiceAllocationDto(
+                    allocation.Amount,
+                    allocation.Direction.ToString())
+            };
+        }).ToList();
+    }
+
+    public async Task EnsureUserCanAccessInvoiceAsync(
+        Guid siteId,
+        Guid invoiceId,
+        string userId,
+        CancellationToken cancellationToken)
+    {
+        var canAccess = await dbContext.SitePayments
+            .AsNoTracking()
+            .AnyAsync(
+                payment =>
+                    payment.SiteId == siteId
+                    && payment.InvoiceId == invoiceId
+                    && payment.Site.Users.Any(user => user.Id == userId),
+                cancellationToken);
+
+        if (!canAccess)
+        {
+            throw new NotFoundException(nameof(Invoice), invoiceId.ToString());
+        }
+    }
+
+    public async Task EnsureInvoiceExistsAsync(
+        Guid invoiceId,
+        CancellationToken cancellationToken)
+    {
+        if (!await dbContext.Invoices.AsNoTracking()
+                .AnyAsync(invoice => invoice.Id == invoiceId, cancellationToken))
+        {
+            throw new NotFoundException(nameof(Invoice), invoiceId.ToString());
+        }
+    }
+
     private static string GetRequiredAddress(Person supplier)
     {
         var address = supplier.Addresses

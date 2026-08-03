@@ -59,6 +59,7 @@ public static class DependencyInjection
         services.AddScoped<IBlobService, BlobImagesService>();
         services.AddScoped<IFilesBlobService, BlobFilesService>();
         services.AddScoped<IVideosBlobService, BlobVideosService>();
+        services.AddScoped<IInvoiceBlobService, BlobInvoiceService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IInvoiceService, InvoiceService>();
         services.AddScoped<IIdentityService, IdentityService>();

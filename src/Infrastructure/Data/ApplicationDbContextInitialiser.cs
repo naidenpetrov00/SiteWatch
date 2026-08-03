@@ -16,6 +16,14 @@ public class ApplicationDbContextInitialiser(
     ILogger<ApplicationDbContextInitialiser> logger
 )
 {
+    private const string SeededBy = "System";
+    private static readonly string[] SeedSiteAddresses =
+    [
+        "Vitosha 17",
+        "Dondukov 11",
+        "Kestenova Gora 24",
+    ];
+
     private static readonly string[] SeedUserEmails =
     [
         "naiden.petrov.31.12.00@gmail.com",
@@ -139,6 +147,43 @@ public class ApplicationDbContextInitialiser(
 
         await dbContext.Sites.AddRangeAsync(sites);
         await dbContext.SaveChangesAsync();
+    }
+
+    private async Task EnsureThirdSeedSiteAccessAsync(List<ApplicationUser> users)
+    {
+        var firstAdministrator = users.FirstOrDefault(user =>
+            string.Equals(user.Email, SeedUserEmails[0], StringComparison.OrdinalIgnoreCase));
+        if (firstAdministrator is null)
+        {
+            logger.LogWarning(
+                "Third seeded site access was not added: seeded administrator {Email} was not found.",
+                SeedUserEmails[0]);
+            return;
+        }
+
+        var thirdSiteAddress = SeedSiteAddresses[2];
+        var thirdSite = await dbContext.Sites
+            .Include(site => site.Users)
+            .SingleOrDefaultAsync(site => site.Address.Value == thirdSiteAddress);
+        if (thirdSite is null)
+        {
+            logger.LogWarning(
+                "Third seeded site access was not added: site {Address} was not found.",
+                thirdSiteAddress);
+            return;
+        }
+
+        if (thirdSite.Users.Any(user => user.Id == firstAdministrator.Id))
+        {
+            return;
+        }
+
+        thirdSite.AddUser(firstAdministrator);
+        await dbContext.SaveChangesAsync();
+        logger.LogInformation(
+            "Assigned seeded administrator {Email} to site {Address}.",
+            firstAdministrator.Email,
+            thirdSiteAddress);
     }
 
     private async Task ClearSeedDataAsync()
@@ -308,25 +353,109 @@ public class ApplicationDbContextInitialiser(
         return persons;
     }
 
-    private async Task AddInvoices(List<Person> persons)
+    private async Task AddInvoices(List<Person> persons, int invoiceCount)
     {
-        if (await dbContext.Invoices.AnyAsync())
-        {
-            logger.LogInformation("Invoice seeding skipped: invoices already exist.");
-            return;
-        }
-
         if (persons.Count < 3)
         {
             logger.LogWarning("Invoice seeding skipped: not enough persons available.");
             return;
         }
 
-        var invoices = InvoiceSeedData.Create(persons);
+        var invoiceNumbers = InvoiceSeedData.GetInvoiceNumbers(invoiceCount);
+        var existingInvoiceNumbers = await dbContext.Invoices
+            .Where(invoice => invoice.CreatedBy == SeededBy
+                && invoiceNumbers.Contains(invoice.InvoiceNumber))
+            .Select(invoice => invoice.InvoiceNumber)
+            .ToListAsync();
+        var invoices = InvoiceSeedData.Create(persons, invoiceCount)
+            .Where(invoice => !existingInvoiceNumbers.Contains(invoice.InvoiceNumber))
+            .ToList();
+
+        if (invoices.Count == 0)
+        {
+            logger.LogInformation("Invoice seeding skipped: all seeded invoices already exist.");
+            return;
+        }
 
         await dbContext.Invoices.AddRangeAsync(invoices);
         await dbContext.SaveChangesAsync();
         logger.LogInformation("Seeded {InvoiceCount} invoices.", invoices.Count);
+    }
+
+    private async Task AddInvoiceSitePayments(int invoiceCount)
+    {
+        var sites = await dbContext.Sites
+            .Where(site => SeedSiteAddresses.Contains(site.Address.Value))
+            .ToListAsync();
+        var sitesByAddress = sites.ToDictionary(site => site.Address.Value);
+        var missingSiteAddresses = SeedSiteAddresses
+            .Where(address => !sitesByAddress.ContainsKey(address))
+            .ToArray();
+        if (missingSiteAddresses.Length > 0)
+        {
+            logger.LogWarning(
+                "Invoice allocation seeding skipped: seeded sites are missing: {Addresses}.",
+                missingSiteAddresses);
+            return;
+        }
+
+        var orderedSites = SeedSiteAddresses.Select(address => sitesByAddress[address]).ToArray();
+        var invoiceNumbers = InvoiceSeedData.GetInvoiceNumbers(invoiceCount);
+        var invoices = await dbContext.Invoices
+            .Include(invoice => invoice.SitePayments)
+            .Where(invoice => invoice.CreatedBy == SeededBy
+                && invoiceNumbers.Contains(invoice.InvoiceNumber))
+            .ToListAsync();
+
+        if (invoices.Count == 0)
+        {
+            logger.LogWarning("Invoice allocation seeding skipped: no seeded invoices are available.");
+            return;
+        }
+
+        var addedAllocationCount = 0;
+        foreach (var invoice in invoices.Where(invoice => invoice.SitePayments.Count == 0))
+        {
+            var amounts = SplitAmount(invoice.TotalValueIncludingVat, orderedSites.Length);
+            var sitePayments = orderedSites
+                .Select((site, index) => SitePayment.Create(
+                    invoice,
+                    site,
+                    amounts[index],
+                    SitePaymentDirection.Out))
+                .ToList();
+
+            foreach (var sitePayment in sitePayments)
+            {
+                var now = DateTimeOffset.UtcNow;
+                sitePayment.Created = now;
+                sitePayment.CreatedBy = SeededBy;
+                sitePayment.LastModified = now;
+                sitePayment.LastModifiedBy = SeededBy;
+            }
+
+            invoice.ReplaceSitePayments(sitePayments);
+            dbContext.SitePayments.AddRange(sitePayments);
+            addedAllocationCount += sitePayments.Count;
+        }
+
+        if (addedAllocationCount == 0)
+        {
+            logger.LogInformation(
+                "Invoice allocation seeding skipped: all seeded invoices already have allocations.");
+            return;
+        }
+
+        await dbContext.SaveChangesAsync();
+        logger.LogInformation("Seeded {AllocationCount} invoice site allocations.", addedAllocationCount);
+    }
+
+    private static decimal[] SplitAmount(decimal total, int partCount)
+    {
+        var baseAmount = decimal.Floor(total * 100m / partCount) / 100m;
+        var amounts = Enumerable.Repeat(baseAmount, partCount).ToArray();
+        amounts[0] += total - amounts.Sum();
+        return amounts;
     }
 
     public async Task InitializeDatabaseAsync()
@@ -361,10 +490,13 @@ public class ApplicationDbContextInitialiser(
 
             var users = await AddUsers();
             await AddSites(users);
-            await blobInitializer.InitializeAsync();
+            await EnsureThirdSeedSiteAccessAsync(users);
             await AddCameras();
             var persons = await AddPersons();
-            await AddInvoices(persons);
+            var invoiceCount = blobInitializer.GetRequiredSeedInvoiceCount();
+            await AddInvoices(persons, invoiceCount);
+            await AddInvoiceSitePayments(invoiceCount);
+            await blobInitializer.InitializeAsync();
 
             logger.LogInformation("Database initialization completed successfully.");
         }
