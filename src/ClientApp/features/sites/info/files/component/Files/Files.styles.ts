@@ -62,11 +62,6 @@ const filesStyles = StyleSheet.create({
     borderRadius: 16,
     padding: 24,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: "700",
-    textAlign: "center",
-  },
   description: {
     marginTop: 8,
     fontSize: 14,
