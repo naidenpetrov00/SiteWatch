@@ -20,7 +20,7 @@ public interface IIdentityService
 
     Task<bool> AuthorizeAsync(string userId, string policyName);
 
-    Task<IdentityResultModel> AssignAdministratorClaimAsync(string userId);
+    Task<IdentityResultModel> AssignRoleAsync(string userId, string role);
 
     Task<IdentityResultModel> CheckAdministratorPasswordAsync(
         ApplicationUser user,

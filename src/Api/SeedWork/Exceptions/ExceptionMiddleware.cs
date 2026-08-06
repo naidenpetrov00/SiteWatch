@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using Ardalis.GuardClauses;
+using Application.SeedWork.Exceptions;
 using FluentValidation;
 
 namespace Api.SeedWork.Exceptions;
@@ -41,6 +42,14 @@ internal sealed class ExceptionMiddleware(RequestDelegate next)
                 data = ex.Data,
             };
             await context.Response.WriteAsync(JsonSerializer.Serialize(payload));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        }
+        catch (ForbiddenAccessException)
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
         }
         catch (Exception ex)
         {

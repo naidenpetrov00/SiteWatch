@@ -1,4 +1,5 @@
 using Application.SeedWork.Interfaces;
+using Application.SeedWork.Security;
 using Domain.Entities;
 using FluentValidation;
 using MediatR;
@@ -6,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Persons.Queries;
 
+[Authorize(Roles = UserRoles.Administrator)]
 public sealed record PersonSearchQuery : IRequest<List<PersonLookupDto>>
 {
     public string? SearchTerm { get; init; }

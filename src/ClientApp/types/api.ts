@@ -10,13 +10,10 @@ export interface IdentityResultWithToken extends IdentityResult {
 }
 
 export interface IdentityResultWithUser extends IdentityResult {
-  user: {
-    id: string;
-    username: string;
-    email: string;
-  };
+  user: User;
 }
 
 export interface IdentityResultWithUserToken
   extends IdentityResultWithUser,
     IdentityResultWithToken {}
+import { User } from "@/types/identity";

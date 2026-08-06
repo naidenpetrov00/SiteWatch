@@ -1,4 +1,0 @@
-interface:
-  display_name: "Dashboard Routing & Composition"
-  short_description: "Configure Dashboard routes and providers"
-  default_prompt: "Use $dashboard-routing-composition to implement this Dashboard routing or provider change."

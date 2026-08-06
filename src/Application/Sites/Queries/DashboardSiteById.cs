@@ -1,5 +1,6 @@
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Queries;
+using Application.SeedWork.Security;
 using Ardalis.GuardClauses;
 using Domain.Entities;
 using MediatR;
@@ -7,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Sites.Queries;
 
+[Authorize(Roles = UserRoles.Administrator)]
 public sealed record DashboardSiteByIdQuery : IRequest<DashboardSiteDto>
 {
     public Guid SiteId { get; init; }

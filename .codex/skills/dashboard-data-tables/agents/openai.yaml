@@ -1,4 +1,0 @@
-interface:
-  display_name: "Dashboard Data Tables"
-  short_description: "Build server-driven Dashboard data tables"
-  default_prompt: "Use $dashboard-data-tables to implement this Dashboard table behavior."

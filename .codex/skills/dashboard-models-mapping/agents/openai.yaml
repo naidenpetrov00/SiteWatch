@@ -1,4 +1,0 @@
-interface:
-  display_name: "Dashboard Models & Mapping"
-  short_description: "Model and transform Dashboard API data"
-  default_prompt: "Use $dashboard-models-mapping to define and transform this Dashboard data contract."

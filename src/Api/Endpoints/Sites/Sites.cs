@@ -1,6 +1,7 @@
 using Api.SeedWork;
 using Api.SeedWork.Extensions;
 using Application.SeedWork.Models;
+using Application.SeedWork.Security;
 using Application.Sites.Commands;
 using Application.Sites.Queries;
 using MediatR;
@@ -13,9 +14,13 @@ public class Sites : EndpointGroupBase
     public override void Map(WebApplication app)
     {
         var group = app.MapGroupCustom();
-        var dashboardGroup = app.MapGroupCustom(customGroupName: "dashboard").RequireAuthorization();
+        var dashboardGroup = app
+            .MapGroupCustom(customGroupName: "dashboard")
+            .RequireAuthorization(AuthorizationPolicies.Administrator);
 
-        group.MapPost(string.Empty, CreateSite).RequireAuthorization();
+        group
+            .MapPost(string.Empty, CreateSite)
+            .RequireAuthorization(AuthorizationPolicies.Administrator);
         group.MapGet("/sitesByUser/{userId:guid}", SitesByUser).RequireAuthorization();
         dashboardGroup.MapGet("/sites", GetDashboardSites);
         dashboardGroup.MapGet("/sites/search", SearchDashboardSites);

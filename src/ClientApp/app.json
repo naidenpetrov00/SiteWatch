@@ -34,6 +34,13 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Allow ClientApp to use the camera to capture invoice documents.",
+          "photosPermission": "Allow ClientApp to access photos to attach invoice documents."
+        }
+      ],
       "expo-video",
       [
         "expo-splash-screen",

@@ -2,6 +2,7 @@ using Api.SeedWork;
 using Api.SeedWork.Extensions;
 using Application.Sites.Files.Commands;
 using Application.Sites.Files.Queries;
+using Domain.SeedWork.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -34,6 +35,7 @@ public class Files : EndpointGroupBase
     private static async Task<Ok<UploadedFileResult>> AddFileToSite(
         IMediator mediator,
         [FromForm] IFormFile file,
+        [FromForm] FileDocumentType? documentType,
         Guid siteId)
     {
         await using var stream = file.OpenReadStream();
@@ -44,7 +46,10 @@ public class Files : EndpointGroupBase
             FileName = Path.GetFileName(file.FileName),
         };
 
-        var fileId = await mediator.Send(new AddFileCommand(siteId, uploadedFile));
+        var fileId = await mediator.Send(new AddFileCommand(
+            siteId,
+            uploadedFile,
+            documentType));
 
         return TypedResults.Ok(fileId);
     }

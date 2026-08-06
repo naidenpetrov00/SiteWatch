@@ -1,10 +1,12 @@
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models;
 using Application.SeedWork.Queries;
+using Application.SeedWork.Security;
 using MediatR;
 
 namespace Application.Invoices.Queries;
 
+[Authorize(Roles = UserRoles.Administrator)]
 public sealed partial class DashboardInvoicesQuery
     : TableQueryRequest,
         IRequest<PagedResult<DashboardInvoiceDto>>
@@ -13,6 +15,8 @@ public sealed partial class DashboardInvoicesQuery
     public string? SupplierId { get; set; }
     public string? InvoiceNumber { get; set; }
     public string? Date { get; set; }
+    public string? Created { get; set; }
+    public string? SubmittedFromSiteName { get; set; }
     public string? TaxIdentifier { get; set; }
     public string? Address { get; set; }
     public string? Email { get; set; }
@@ -25,6 +29,7 @@ public sealed partial class DashboardInvoicesQuery
     public string? PaymentDate { get; set; }
     public string? PaymentTime { get; set; }
     public string? PaymentMethod { get; set; }
+    public bool? IsComplete { get; set; }
 }
 
 public sealed class DashboardInvoicesQueryHandler(IInvoiceService invoiceService)

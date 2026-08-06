@@ -1,4 +1,0 @@
-interface:
-  display_name: "Minimal API Endpoints"
-  short_description: "Create minimal API endpoint groups"
-  default_prompt: "Use $minimal-api-endpoints to add or change a minimal API endpoint group."

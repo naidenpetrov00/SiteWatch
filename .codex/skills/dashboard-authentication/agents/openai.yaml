@@ -1,4 +1,0 @@
-interface:
-  display_name: "Dashboard Authentication"
-  short_description: "Secure Dashboard authentication client flows"
-  default_prompt: "Use $dashboard-authentication to implement this Dashboard authentication change."

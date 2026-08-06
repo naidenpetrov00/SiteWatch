@@ -5,8 +5,10 @@ using Application.Identity.Commands.DashboardSignIn;
 using Application.Identity.Commands.Email;
 using Application.Identity.Commands.ResetPassword;
 using Application.Identity.Commands.SetAdministratorClaim;
+using Application.Identity.Commands.SetUserRole;
 using Application.Identity.Commands.SignIn;
 using Application.Identity.Commands.SignUp;
+using Application.SeedWork.Security;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -26,7 +28,12 @@ public class Identity : EndpointGroupBase
         group.MapPost("/verifyEmail", VerifyEmail);
         group.MapPost("/sendResetVerification", SendResetPasswordEmail);
         group.MapPost("/resetPassword", ResetPassword);
-        group.MapPost("/assignAdministrator/{userId}", AssignAdministrator);
+        group
+            .MapPost("/assignAdministrator/{userId}", AssignAdministrator)
+            .RequireAuthorization(AuthorizationPolicies.Administrator);
+        group
+            .MapPut("/users/{userId}/role", SetUserRole)
+            .RequireAuthorization(AuthorizationPolicies.Administrator);
         dashboardGroup.MapPost("/signIn", DashboardSignIn);
     }
 
@@ -118,11 +125,12 @@ public class Identity : EndpointGroupBase
 
     public async Task<Results<NoContent, BadRequest<string[]>>> AssignAdministrator(
         IMediator mediator,
-        [FromRoute] string userId
+        [FromRoute] string userId,
+        CancellationToken cancellationToken
     )
     {
         var command = new SetAdministratorClaimCommand { UserId = userId };
-        var result = await mediator.Send(command);
+        var result = await mediator.Send(command, cancellationToken);
 
         if (result.Result.Succeeded)
             return TypedResults.NoContent();
@@ -130,4 +138,23 @@ public class Identity : EndpointGroupBase
         return TypedResults.BadRequest(result.Result.Errors);
     }
 
+    public async Task<Results<NoContent, BadRequest<string[]>>> SetUserRole(
+        IMediator mediator,
+        [FromRoute] string userId,
+        [FromBody] SetUserRoleRequest request,
+        CancellationToken cancellationToken
+    )
+    {
+        var result = await mediator.Send(
+            new SetUserRoleCommand { UserId = userId, Role = request.Role },
+            cancellationToken
+        );
+
+        if (result.Result.Succeeded)
+            return TypedResults.NoContent();
+
+        return TypedResults.BadRequest(result.Result.Errors);
+    }
 }
+
+public sealed record SetUserRoleRequest(string Role);

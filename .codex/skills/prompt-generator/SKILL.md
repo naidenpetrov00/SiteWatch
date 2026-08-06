@@ -1,93 +1,77 @@
 ---
 name: prompt-generator
-description: Generate execution-ready prompts from user instructions and identify the repository skills required for the task. Use when the user invokes /prompt or asks to turn an instruction into a prompt for another agent to execute in this repository.
+description: Rewrite rough, incomplete, or poorly written requests into clear execution prompts for another agent. Use when the user invokes /prompt or asks for a better prompt with relevant skill names and execution settings, without inspecting or implementing the project.
 ---
 
-# Repository Prompt Generator
+# Prompt Generator
 
-When the user invokes `/prompt`, convert the supplied instruction into a precise prompt for an implementation agent. Do not perform the requested task.
+Turn the user's request into a concise, execution-ready prompt for another agent. Improve the instruction; do not perform, investigate, or plan the requested work.
 
-## Workflow
+## Process
 
-1. Extract the requested outcome, affected area, constraints, and expected deliverable.
-2. Identify only the repository skills relevant to the task. Use their exact names when known.
-3. Read each selected skill's instructions far enough to identify its required inputs, expected decisions, prerequisites, and deliverables. Align the generated prompt with those inputs explicitly.
-4. Preserve explicit user requirements and do not invent scope, files, technologies, or acceptance criteria.
-5. If any part of the request or a selected skill's required inputs is unclear, ambiguous, conflicting, or not understood, ask concise clarifying questions and wait for the user's answers. Do not generate the prompt or substitute assumptions until the uncertainty is resolved.
-6. Read [references/models.md](references/models.md) completely. Recommend one model from that catalog based on the task's complexity, risk, latency, and cost. Do not inspect or depend on a runtime model catalog.
-7. Classify task difficulty as low, medium, or high using scope, ambiguity, risk, dependencies, and required depth. Recommend a reasoning level supported by the selected model and execution surface.
-8. Recommend whether Plan mode should be used.
-9. Choose whether Plan mode or Goal Mode should be used. These are mutually exclusive; recommend at most one, or neither for a small self-contained task.
-10. Produce the prompt using the format below.
+1. Infer the user's intent from their wording and any context they supplied.
+2. Rewrite the outcome and requirements clearly without changing scope or inventing details.
+3. Select relevant skills from the active skill catalog using names and descriptions only. Never open candidate `SKILL.md` files.
+4. Recommend a model and reasoning effort using [references/models.md](references/models.md).
+5. Decide whether the implementing agent should use Plan Mode, Goal Mode, or neither.
+6. State the important constraints and expected result.
+7. Return only the generated prompt.
 
-## Output format
+Resolve minor wording gaps with the narrowest reasonable interpretation. When missing information would materially change the work, tell the implementing agent what it must confirm or discover instead of researching it yourself.
+
+## Hard boundary
+
+Do not:
+
+- inspect repository files, source code, configuration, branches, diffs, or implementation details;
+- search for or read `AGENTS.md`; leave instruction discovery to the implementing agent;
+- read skill contents to decide whether a skill applies;
+- browse the web or external documentation;
+- design the implementation, produce a step-by-step plan, or solve the task;
+- claim project context that the user did not provide.
+
+Use only the user's request, user-supplied context, the active skill catalog's names and descriptions, and the model reference. The implementing agent owns repository discovery, scoped `AGENTS.md` discovery, technical decisions, planning, implementation, and verification.
+
+## Output
 
 ```text
 Task
-[A concise statement of the requested work]
+[Clear statement of the work and desired outcome]
 
-Required skills
-- [Exact relevant skill name, or "None"]
-
-Skill-aligned inputs
-- [Input required by a selected skill, its value from the request or repository context, and how the implementing agent should use it]
-
-Execution guidance
-- Model: [Exact model ID from the checked-in catalog, with a short reason]
-- Difficulty: [low, medium, or high]
-- Reasoning: [Supported reasoning level, with a short reason]
-- Plan mode: [Yes or no, with a short reason]
-- Goal Mode: [Yes or no, with a short reason]
-
-Context
-- [Known repository, product, or technical context]
+Execution setup
+- Required skills: [exact skill names, or None]
+- Model: [exact model ID]
+- Reasoning: [supported effort]
+- Mode: [Plan Mode, Goal Mode, or Default Mode]
 
 Requirements
-- [Concrete implementation requirements]
+- Before acting, discover and obey the repository-root and every applicable scoped `AGENTS.md` instruction file.
+- [Requirements derived from the user's request]
 
 Constraints
-- [User-specified or repository constraints; omit this section when empty]
+- [Explicit constraints and important scope boundaries]
 
 Expected result
-- [Known files, behavior, or response the implementing agent must produce]
+- [Concrete result the implementing agent must deliver or verify]
 ```
 
 ## Skill selection
 
-- Select skills based on the task domain, tools, files, and requested output.
-- Include a skill only when it provides necessary instructions or capabilities.
-- Prefer specialized skills over generic ones when both apply.
-- Inspect the runtime skill catalog first and use exact names from it. Never invent a skill name or rely on memory when the catalog is available.
-- If the task spans multiple domains, list each required skill and explain its role briefly.
+- Use exact skill names from the active catalog; never invent names.
+- Include a skill only when its description clearly matches the requested work.
+- Prefer the smallest useful set and the most specific matching skill.
 - Do not include `prompt-generator` in the generated prompt's Required skills.
+- Write `None` when no listed skill is relevant.
 
-## Execution guidance
+## Execution recommendation
 
-Use [references/models.md](references/models.md) as the sole model-selection source. Do not query runtime model metadata. Prefer Terra for normal repository work, Luna for simple high-volume or strongly cost-sensitive work, and Sol when complexity, uncertainty, security, architecture, or debugging risk justifies flagship capability.
+Read [references/models.md](references/models.md) only for model and reasoning selection. Keep the recommendation proportional to the apparent difficulty and risk.
 
-Classify difficulty consistently:
+- Use Plan Mode for bounded work with multiple dependent steps, affected layers, or meaningful tradeoffs.
+- Use Goal Mode for broad or sustained outcome-oriented work likely to need several iterations or turns.
+- Use neither for a small, self-contained request.
+- Never recommend Plan Mode and Goal Mode together.
 
-- Use `low` for simple, localized, well-defined, low-risk work.
-- Use `medium` for multi-file or behavioral changes that follow established repository patterns.
-- Use `high` for architectural changes, ambiguous requirements, security-sensitive work, difficult debugging, or changes spanning multiple subsystems.
+Do not create a plan when recommending Plan Mode. The recommendation only tells the implementing agent which execution mode to use.
 
-Choose reasoning proportionally:
-
-- Use `none` or `low` for mechanical, localized, low-risk work.
-- Use `medium` for normal repository implementation and review work.
-- Use `high` for complex debugging, architecture, security-sensitive work, or substantial ambiguity.
-- Use `xhigh` or `max` only for exceptional, quality-first work where the added latency and cost are justified.
-- Recommend `ultra` only for Codex execution when parallel agent work materially benefits a complex task; never present it as an API reasoning-effort value.
-
-Plan mode and Goal Mode are mutually exclusive. Recommend Plan mode for tasks with multiple dependent steps, several affected layers, repository exploration, or meaningful architectural tradeoffs that can be completed in a bounded execution. Recommend Goal Mode for tasks likely to require sustained work across multiple turns, iterative implementation and verification, broad repository changes, monitoring, or an explicit outcome-oriented request to keep working until completion. Recommend neither for small, localized, well-defined edits, and never recommend both.
-
-## Quality rules
-
-- Generate the prompt only after the request is understood well enough to avoid unresolved assumptions.
-- Make the generated prompt self-contained enough for another agent to execute.
-- Keep it concise and action-oriented.
-- Include execution guidance so the user can choose the appropriate reasoning level, Plan mode, and Goal Mode.
-- When skills are selected, include every required skill input in the prompt, mapped to the user's request or discovered repository context. Do not omit required inputs or invent values; ask the user when a required input cannot be safely discovered.
-- Do not add unrelated cleanup, testing, deployment, or documentation work unless requested.
-- Preserve the repository's `AGENTS.md` and relevant `docs/agents` instructions as part of the implementation context.
-- Mention repository paths only when supplied by the user, present in provided context, or discovered from relevant repository context. Do not guess filenames or paths.
+Keep the generated prompt direct and compact. Preserve explicit user requirements. Omit empty optional sections, duplicated wording, speculative file paths, generic advice, and implementation steps.

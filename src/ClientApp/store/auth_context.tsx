@@ -1,5 +1,20 @@
 import { AuthAction, AuthContextType, AuthState, User } from "@/types/identity";
-import { ReactNode, createContext, useContext, useReducer } from "react";
+import {
+  ReactNode,
+  createContext,
+  useCallback,
+  useContext,
+  useReducer,
+} from "react";
+import {
+  UserRole,
+  hasAnyRole as userHasAnyRole,
+  hasRole as userHasRole,
+  parseUserRoles,
+} from "@/types/authorization";
+import { useQueryClient } from "@tanstack/react-query";
+
+const EMPTY_ROLES: readonly UserRole[] = [];
 
 const initialState: AuthState = {
   user: null,
@@ -7,7 +22,7 @@ const initialState: AuthState = {
   isAuthenticated: false,
 };
 
-const authReducer = (state: AuthState, action: AuthAction): AuthState => {
+export const authReducer = (state: AuthState, action: AuthAction): AuthState => {
   switch (action.type) {
     case "LOGIN":
       return {
@@ -29,17 +44,50 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
+  const queryClient = useQueryClient();
 
-  const login = (user: User, token: string) =>
-    dispatch({ type: "LOGIN", payload: { user, accessToken: token } });
+  const login = useCallback(
+    (user: User, token: string) => {
+      const normalizedUser = { ...user, roles: parseUserRoles(user.roles) };
+      const previousRoles = state.user?.roles ?? EMPTY_ROLES;
+      const identityChanged =
+        state.user?.id !== normalizedUser.id ||
+        previousRoles.length !== normalizedUser.roles.length ||
+        previousRoles.some((role) => !normalizedUser.roles.includes(role));
 
-  const logout = () => dispatch({ type: "LOGOUT" });
+      if (identityChanged) queryClient.removeQueries();
+
+      dispatch({
+        type: "LOGIN",
+        payload: { user: normalizedUser, accessToken: token },
+      });
+    },
+    [queryClient, state.user],
+  );
+
+  const logout = useCallback(() => {
+    queryClient.removeQueries();
+    dispatch({ type: "LOGOUT" });
+  }, [queryClient]);
 
   const setToken = (token: string | null) =>
     dispatch({ type: "SET_TOKEN", payload: token });
 
+  const roles = state.user?.roles ?? EMPTY_ROLES;
+  const hasRole = useCallback(
+    (role: UserRole) => userHasRole(roles, role),
+    [roles],
+  );
+  const hasAnyRole = useCallback(
+    (allowedRoles: readonly UserRole[]) =>
+      userHasAnyRole(roles, allowedRoles),
+    [roles],
+  );
+
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, setToken }}>
+    <AuthContext.Provider
+      value={{ ...state, roles, login, logout, setToken, hasRole, hasAnyRole }}
+    >
       {children}
     </AuthContext.Provider>
   );

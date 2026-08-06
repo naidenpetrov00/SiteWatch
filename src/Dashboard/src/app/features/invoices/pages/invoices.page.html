@@ -23,6 +23,7 @@
     emptyMessage="No invoices available yet."
     filterApplyMode="search"
     [rows]="invoices()"
+    [errorRowPredicate]="isIncompleteInvoice"
     [filteredRowsTotal]="invoicesFilteredCount()"
     [overallRowsTotal]="invoicesTotalCount()"
     [columns]="columns"

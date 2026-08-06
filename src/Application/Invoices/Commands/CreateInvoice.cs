@@ -1,9 +1,10 @@
 using Application.SeedWork.Interfaces;
+using Application.SeedWork.Security;
 using MediatR;
 
 namespace Application.Invoices.Commands;
 
-public sealed record CreateInvoiceCommand : IRequest<Guid>
+public abstract record InvoiceDetailsCommand
 {
     public Guid SupplierId { get; init; }
     public string InvoiceNumber { get; init; } = string.Empty;
@@ -16,6 +17,9 @@ public sealed record CreateInvoiceCommand : IRequest<Guid>
     public string? PaymentTime { get; init; }
     public List<InvoiceSiteAllocationInput> SiteAllocations { get; init; } = [];
 }
+
+[Authorize(Roles = UserRoles.Administrator)]
+public sealed record CreateInvoiceCommand : InvoiceDetailsCommand, IRequest<Guid>;
 
 public sealed class CreateInvoiceHandler(IInvoiceService invoiceService)
     : IRequestHandler<CreateInvoiceCommand, Guid>

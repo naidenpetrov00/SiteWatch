@@ -122,7 +122,11 @@
       }
 
       <tr mat-header-row *matHeaderRowDef="displayedColumns(); sticky: true"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns()"></tr>
+      <tr
+        mat-row
+        *matRowDef="let row; columns: displayedColumns()"
+        [class.data-table__row--error]="isErrorRow(row)"
+      ></tr>
       <tr class="mat-row data-table__empty-row" *matNoDataRow>
         <td class="mat-cell" [attr.colspan]="displayedColumns().length">
           {{ emptyMessage() }}

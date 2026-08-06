@@ -5,7 +5,10 @@ import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-quer
 
 import { buildApiUrl } from '../../../core/api/api-url';
 import { DataTableState } from '../../../shared/data-table/data-table.types';
-import { CreateDashboardInvoiceRequest } from '../models/create-dashboard-invoice-request.model';
+import {
+  CreateDashboardInvoiceRequest,
+  UpdateDashboardInvoiceRequest
+} from '../models/create-dashboard-invoice-request.model';
 import { DashboardInvoice } from '../models/dashboard-invoice.model';
 import { DashboardInvoicesResponse } from '../models/dashboard-invoices-response.model';
 import { UpdateInvoiceSiteAllocationsRequest } from '../models/invoice-site-allocation.model';
@@ -86,6 +89,34 @@ export class DashboardInvoicesService {
     }
   }));
 
+  readonly updateInvoiceMutation = injectMutation<void, Error, UpdateDashboardInvoiceRequest>(() => ({
+    mutationKey: ['invoices', 'update'],
+    mutationFn: async ({ invoiceId, ...request }: UpdateDashboardInvoiceRequest) =>
+      firstValueFrom(
+        this.http.put<void>(buildApiUrl(`/invoices/${invoiceId}`), request)
+      ),
+    onSuccess: async () => {
+      await this.queryClient.invalidateQueries({
+        queryKey: ['invoices', 'dashboard']
+      });
+    }
+  }));
+
+  readonly uploadInvoiceFileMutation = injectMutation<
+    void,
+    Error,
+    { invoiceId: string; file: File }
+  >(() => ({
+    mutationKey: ['invoices', 'file', 'upload'],
+    mutationFn: async ({ invoiceId, file }) => {
+      const formData = new FormData();
+      formData.append('file', file, file.name);
+      await firstValueFrom(
+        this.http.put<void>(buildApiUrl(`/invoices/${invoiceId}/file`), formData)
+      );
+    }
+  }));
+
   setTableState(state: DataTableState<DashboardInvoice>): void {
     const nextState = this.toQueryState(state);
 
@@ -104,12 +135,22 @@ export class DashboardInvoicesService {
     return this.updateSiteAllocationsMutation.mutateAsync(request);
   }
 
+  updateInvoice(request: UpdateDashboardInvoiceRequest): Promise<void> {
+    return this.updateInvoiceMutation.mutateAsync(request);
+  }
+
+  uploadInvoiceFile(invoiceId: string, file: File): Promise<void> {
+    return this.uploadInvoiceFileMutation.mutateAsync({ invoiceId, file });
+  }
+
   private toQueryState(state: DataTableState<DashboardInvoice>): DashboardInvoicesQueryState {
+    const sortDirection = state.sort.direction;
+
     return {
       pageIndex: state.page.pageIndex,
       pageSize: state.page.pageSize,
-      sortActive: state.sort.active,
-      sortDirection: state.sort.direction,
+      sortActive: sortDirection.length > 0 ? state.sort.active : '',
+      sortDirection,
       appliedFilters: { ...state.appliedFilters }
     };
   }

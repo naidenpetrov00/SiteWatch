@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Globalization;
 using System.Security.Claims;
 using System.Text;
 using Ardalis.GuardClauses;
@@ -19,7 +20,7 @@ public class JwtTokenService(
     private readonly IConfiguration _configuration = configuration;
     private readonly UserManager<ApplicationUser> _userManager = userManager;
 
-    public async Task<string> GenerateTokenAsync(ApplicationUser user)
+    public async Task<GeneratedJwtToken> GenerateTokenAsync(ApplicationUser user)
     {
         var claims = new List<Claim>
         {
@@ -29,10 +30,13 @@ public class JwtTokenService(
         };
 
         var userClaims = await _userManager.GetClaimsAsync(user);
-        var userTypeClaim = userClaims.FirstOrDefault(c => c.Type == UserClaimTypes.UserType);
-        if (userTypeClaim is not null)
+        var role = userClaims
+            .Where(claim => claim.Type == UserClaimTypes.UserType)
+            .Select(claim => claim.Value)
+            .FirstOrDefault(UserRoles.IsSupported);
+        if (role is not null)
         {
-            claims.Add(new Claim(UserClaimTypes.UserType, userTypeClaim.Value));
+            claims.Add(new Claim(UserClaimTypes.UserType, role));
         }
 
         var options = Guard.Against.Null(_configuration.GetOptions<JwtOptions>());
@@ -43,15 +47,18 @@ public class JwtTokenService(
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyFromConfiguration));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+        var expireDays = double.Parse(expiresFromConfiguration, CultureInfo.InvariantCulture);
         var token = new JwtSecurityToken(
             issuer: issuerFromConfiguration,
             audience: audienceFromConfiguration,
-            // expires: DateTime.Now.AddDays(int.Parse(expiresFromConfiguration)),
-            expires: DateTime.Now.AddMinutes(1),
+            expires: DateTime.UtcNow.AddDays(expireDays),
             claims: claims,
             signingCredentials: creds
         );
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        return new GeneratedJwtToken(
+            new JwtSecurityTokenHandler().WriteToken(token),
+            role is null ? [] : [role]
+        );
     }
 }

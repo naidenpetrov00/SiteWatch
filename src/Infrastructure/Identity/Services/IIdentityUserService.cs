@@ -7,7 +7,7 @@ namespace Infrastructure.Identity.Services;
 
 public interface IIdentityUserService
 {
-    Task<IdentityResultModel> AssignAdministratorClaimAsync(string userId);
+    Task<IdentityResultModel> AssignRoleAsync(string userId, string role);
 
     Task<IdentityResultModel> CreateUserAsync(string userName, string email, string password);
 

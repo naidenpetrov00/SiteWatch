@@ -1,4 +1,0 @@
-interface:
-  display_name: "Client Mobile Testing"
-  short_description: "Test Expo client behavior"
-  default_prompt: "Use -mobile-testing to add ClientApp behavior tests."

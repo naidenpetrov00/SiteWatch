@@ -31,7 +31,9 @@ Source code cannot prove user preference. Ask before choosing material behavior.
 
 ### Skill-routing rule — keep concise in root AGENTS
 
-Direct agents to discover and use applicable project skills as primary implementation guidance, compose multiple relevant skills, and avoid loading unrelated skills. Name the real registry or discovery path when one exists.
+Direct agents to treat skills explicitly named by the user as required inputs and include them in the working plan without assuming they provide complete task coverage. Require an independent coverage check, add only the additional applicable skills needed for uncovered capabilities, and avoid loading unrelated skills. Name the real registry or discovery path when one exists.
+
+Treat local implementation as evidence of current behavior, not automatic proof of best practice. Do not persist questionable, stale, or legacy implementation patterns as AGENTS rules; route concrete guidance to an applicable skill and use Context7 when available to resolve the technical concern.
 
 ### Task-specific implementation knowledge — move to a skill
 

@@ -120,6 +120,22 @@
   font-size: 0.875rem;
 }
 
+.add-invoice-dialog__file-field {
+  display: grid;
+  gap: 0.5rem;
+  color: rgba(15, 23, 42, 0.78);
+  font-weight: 600;
+}
+
+.add-invoice-dialog__file-field input {
+  max-width: 100%;
+}
+
+.add-invoice-dialog__file-name {
+  margin: 0;
+  color: rgba(15, 23, 42, 0.68);
+}
+
 .add-invoice-dialog__supplier-option-title {
   font-weight: 600;
 }

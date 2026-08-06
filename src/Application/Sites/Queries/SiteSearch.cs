@@ -1,4 +1,5 @@
 using Application.SeedWork.Interfaces;
+using Application.SeedWork.Security;
 using Domain.Entities;
 using FluentValidation;
 using MediatR;
@@ -6,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Sites.Queries;
 
+[Authorize(Roles = UserRoles.Administrator)]
 public sealed record SiteSearchQuery : IRequest<List<SiteLookupDto>>
 {
     public string? SearchTerm { get; init; }

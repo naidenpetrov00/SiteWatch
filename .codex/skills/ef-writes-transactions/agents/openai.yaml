@@ -1,4 +1,0 @@
-interface:
-  display_name: "EF Writes and Transactions"
-  short_description: "Implement reliable EF Core write workflows"
-  default_prompt: "Use $ef-writes-transactions to implement an EF Core write or transaction."

@@ -8,6 +8,7 @@ import { router } from "expo-router";
 import { useAuth } from "@/store/auth_context";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
+import { getPostSignInRoute } from "@/types/authorization";
 
 export const verifyEmailSchema = z.object({
   token: z.string().regex(/^\d{6}$/, "Enter exactly 6 digits"),
@@ -39,7 +40,7 @@ export const useVerifyEmail = ({
     mutationFn: verifyEmail,
     onSuccess: ({ user, token }) => {
       login(user, token);
-      router.replace("/Sites");
+      router.replace(getPostSignInRoute(user.roles));
     },
     onError: (error: AxiosError) => {
       const errors = Array.isArray(error.response?.data)

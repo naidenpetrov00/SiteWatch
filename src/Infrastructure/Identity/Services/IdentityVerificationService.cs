@@ -50,7 +50,7 @@ public class IdentityVerificationService(
             EmailProvider.SMTP.ToString()
         );
 
-        var token = await jwtTokenService.GenerateTokenAsync(user);
+        var generatedToken = await jwtTokenService.GenerateTokenAsync(user);
         return new IdentityResultWithUserToken
         {
             Result = Result.Success(),
@@ -59,8 +59,9 @@ public class IdentityVerificationService(
                 Id = user.Id,
                 Email = user.Email,
                 UserName = user.UserName,
+                Roles = generatedToken.Roles,
             },
-            Token = token,
+            Token = generatedToken.Token,
         };
     }
 

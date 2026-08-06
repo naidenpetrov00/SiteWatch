@@ -1,25 +1,20 @@
-# Infrastructure Instructions
+# Infrastructure layer instructions
 
-These rules supplement the repository root instructions for `src/Infrastructure`.
+## Scope and ownership
 
-## Boundaries
+- This file applies to `src/Infrastructure`.
+- Infrastructure depends on Application and supplies concrete persistence and external-system implementations for application abstractions.
+- EF Core data access and configuration, Identity, storage, email, invoices, site services, and camera/ONVIF integrations belong here when they implement an application-owned boundary.
+- Do not move business policy into infrastructure services merely because they coordinate persistence or an external system.
 
-- This project owns EF Core persistence and implementations for identity, storage, email, cameras, invoices, persons, and sites.
-- Keep abstractions needed by application use cases in `Application`; implement them here. Do not move infrastructure dependencies into `Application` or `Domain` as an incidental shortcut.
+## Data and generated boundaries
 
-## Data and migrations
+- Treat model and EF configuration edits separately from migrations. A requested model/configuration change does not authorize migration generation, migration editing, snapshot changes, or applying a database change. Leave migration generation to the user; never hand-edit migration files or `ApplicationDbContextModelSnapshot.cs`, and never apply EF migrations manually or by command.
+- Never execute a database mutation without explicit approval for the named environment.
+- Treat files under generated-looking paths, including `Cameras/Services/Onvif/Generated`, as generator-owned until their source and regeneration process are identified. Do not hand-edit or regenerate them without authorization.
+- Keep secrets and connection values out of source and agent output. Do not inspect or echo secret values merely to understand configuration.
 
-- Model and EF configuration changes needed by the requested behavior are allowed.
-- Creating, deleting, or editing migrations and `ApplicationDbContextModelSnapshot` requires an explicit user request. `src/Infrastructure/Data/Migrations` is locally present but ignored by Git; do not assume it may be regenerated or discarded.
-- Applying migrations or running any command that changes a database requires explicit approval. Development API startup also applies migrations and seeds data, so it is covered by this restriction.
-- Treat `sqlserver` and `azurelite-data` as runtime data, not authored source. Do not edit, delete, replace, or commit new runtime files there as part of normal implementation.
+## Task guidance
 
-## Generated service clients
-
-- Treat `Cameras/Services/Onvif/Generated` and its `*.g.cs` files as generated output. Do not hand-edit them.
-- No regeneration command is documented in the repository. Change generator inputs or regenerate clients only when the user explicitly requests it, and record the command used.
-
-## Verification
-
-- Prefer checks scoped to the affected backend project. Do not start the API, containers, storage emulator, or database as verification.
-- If verification requires a database or external device, request approval and state the expected side effects first.
+- Use applicable EF Core, ASP.NET Core, or .NET integration skills for implementation details. Keep this file focused on boundaries.
+- If an infrastructure change alters an application abstraction, domain model, API contract, or client behavior, load only those additional scopes that are actually affected.

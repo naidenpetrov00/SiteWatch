@@ -41,10 +41,12 @@ public static class DependencyInjection
         services.AddScoped<IIdentityAuthenticationService, IdentityAuthenticationService>();
         services.AddScoped<IIdentityVerificationService, IdentityVerificationService>();
         services.AddScoped<IIdentityUserService, IdentityUserService>();
-        var blobStorageConnectionString = Guard.Against.NullOrEmpty(
-            configuration.GetOptions<BlobStorageOptions>().ConnectionString);
+        var blobStorageOptions = configuration.GetOptions<BlobStorageOptions>();
+        var blobStorageConnectionString = Guard.Against.NullOrEmpty(blobStorageOptions.ConnectionString);
         services.AddSingleton<BlobServiceClient>(_ =>
-            new BlobServiceClient(blobStorageConnectionString));
+            new BlobServiceClient(
+                blobStorageConnectionString,
+                CreateBlobClientOptions(blobStorageOptions.ServiceVersion)));
 
         services.AddScoped<IApplicationDbContext>(provider =>
             provider.GetRequiredService<ApplicationDbContext>()
@@ -53,9 +55,11 @@ public static class DependencyInjection
         services.AddScoped<IFilesService, FilesService>();
         services.AddScoped<IVideosService, VideosService>();
         services.AddScoped<ApplicationDbContextInitialiser>();
+        services.AddScoped<BlobInitializer>();
         services.AddScoped<IBlobService, BlobImagesService>();
         services.AddScoped<IFilesBlobService, BlobFilesService>();
         services.AddScoped<IVideosBlobService, BlobVideosService>();
+        services.AddScoped<IInvoiceBlobService, BlobInvoiceService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IInvoiceService, InvoiceService>();
         services.AddScoped<IIdentityService, IdentityService>();
@@ -70,5 +74,22 @@ public static class DependencyInjection
             .AddSignInManager();
 
         return services;
+    }
+
+    private static BlobClientOptions CreateBlobClientOptions(string? configuredServiceVersion)
+    {
+        if (string.IsNullOrWhiteSpace(configuredServiceVersion))
+        {
+            return new BlobClientOptions();
+        }
+
+        var enumName = $"V{configuredServiceVersion.Replace('-', '_')}";
+        if (!Enum.TryParse<BlobClientOptions.ServiceVersion>(enumName, ignoreCase: true, out var serviceVersion))
+        {
+            throw new InvalidOperationException(
+                $"Unsupported BlobStorage service version '{configuredServiceVersion}'.");
+        }
+
+        return new BlobClientOptions(serviceVersion);
     }
 }

@@ -1,24 +1,20 @@
-# Expo Client Instructions
+# Client application instructions
 
-These rules supplement the repository root instructions for `src/ClientApp`.
+## Scope and ownership
 
-## Scope and structure
+- This file applies to `src/ClientApp`.
+- ClientApp is an Expo/React Native application using Expo Router and a development build. File-based routes live under `app`; reusable feature behavior belongs under the existing `features`, `components`, `lib`, `store`, `hooks`, and `types` ownership boundaries.
+- Preserve the established API-client and TanStack Query boundaries. Search the affected feature for an existing query, mutation, cache key, component, or model before introducing a parallel implementation.
 
-- `app` owns Expo Router routes and layouts. Put reusable feature behavior in `features`; keep cross-feature UI and utilities in `components`, `hooks`, `lib`, `store`, and `types` according to the existing organization.
-- Prefer the `@/*` path alias configured by `tsconfig.json` for repository-local imports where it keeps imports clear.
-- Use applicable Expo and React Native skills from the active skill catalog for UI, navigation, native behavior, performance, and data fetching. Keep their implementation procedures out of this file.
+## Skill routing
 
-## Package and configuration policy
+- Use `vercel-react-native-skills` for React Native performance and component guidance.
+- Use the applicable Expo skill for Expo Router, native UI, development-client, module, deployment, or platform-specific work.
+- Use `expo:native-data-fetching` for network requests, API calls, or data-fetching work.
+- Keep concrete React Native and Expo syntax or procedures in the selected skills; use Context7 only for unresolved or version-sensitive gaps.
 
-- Use npm for this application because `package-lock.json` is the approved lockfile. Do not create or update a Yarn lockfile even though `package.json` currently contains Yarn package-manager metadata.
-- Preserve strict TypeScript settings. Keep environment-specific API configuration in ignored local configuration; never expose values from `.env` or `app.config.ts`.
-- Treat `.expo`, `dist`, `web-build`, `android`, `ios`, Gradle/CMake output, and generated Expo type files as generated or local output unless a task explicitly requests native project generation or native source work.
+## Development-build and command boundaries
 
-## Commands and cost boundaries
-
-- `npm run lint` is the normal non-destructive lint check for relevant source changes.
-- `npm test` runs Jest in watch mode. Do not start it automatically or leave it running; use it only when the user explicitly requests watch-mode testing.
-- The established Android run command is `npx expo run:android`. It performs a slow native build/run and must not be executed unless the user explicitly tells you to run it. Do not substitute another Android build command as routine verification.
-- `npm run start`, `npm run ios`, and `npm run web` start interactive or long-running tooling and require an explicit request.
-- `npm run reset-project` restructures application source and must never be run without an explicit request.
-- Do not use a native build to verify ordinary TypeScript, UI, or data-fetching changes. Report when lint or other available targeted checks are insufficient.
+- The app uses a development build. If the user authorizes a native action, distinguish starting the existing development build, rebuilding the client, running a named platform, and generating native projects; authorization for one does not imply the others.
+- `package.json` declares Yarn while the repository also contains `package-lock.json` and npm-oriented README guidance. Do not silently choose a package manager. If the user explicitly requests a dependency or command operation without naming one, clarify which package manager to use.
+- Do not directly edit `.expo`, `node_modules`, generated native/build output, or captured device artifacts. Treat `.env` as sensitive and never reveal its contents.

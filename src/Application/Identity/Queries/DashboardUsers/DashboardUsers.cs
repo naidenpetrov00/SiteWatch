@@ -6,7 +6,7 @@ using MediatR;
 
 namespace Application.Identity.Queries.DashboardUsers;
 
-[Authorize(Roles = UserClaimTypes.Administrator)]
+[Authorize(Roles = UserRoles.Administrator)]
 public sealed partial class DashboardUsersQuery
     : TableQueryRequest,
         IRequest<PagedResult<DashboardUserDto>>

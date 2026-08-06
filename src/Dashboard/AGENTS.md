@@ -1,22 +1,18 @@
-# Dashboard Instructions
+# Dashboard instructions
 
-These rules supplement the repository root instructions for `src/Dashboard`.
+## Scope and ownership
 
-## Scope and structure
+- This file applies to `src/Dashboard`.
+- Dashboard is an Angular 21 application. Preserve its standalone application setup, lazy route ownership, feature-oriented structure, core authentication/API concerns, and TanStack Angular Query boundary unless the request calls for an architectural change.
+- Keep feature-specific pages, components, services, and models within the owning feature. Put genuinely application-wide behavior under the existing core or application-level setup.
 
-- `src/app/core` contains application-wide API, authentication, and query infrastructure. `src/app/features` owns feature-specific pages, services, models, and components. `src/app/shared` contains reusable UI and data-table building blocks.
-- Keep feature-specific behavior within its feature. Move code to `shared` only for a concrete cross-feature reuse or ownership need.
-- Preserve the strict TypeScript and Angular template settings in `tsconfig.json`. Follow the existing standalone Angular organization and use applicable Angular skills from the active skill catalog for implementation details.
+## Skill routing
 
-## Package and generated files
+- Use the `angular-developer` skill for Angular implementation and architecture guidance.
+- Use `web-design-guidelines` when the user requests a UI, accessibility, or interface-guideline review.
+- Load additional skills only when the task actually requires them. Keep concrete Angular syntax and procedures in skills, not this AGENTS file.
 
-- Use npm and preserve `package-lock.json` as the lockfile.
-- Treat `dist`, `.angular`, coverage, and other compiled or cached output as generated; do not edit them directly.
-- Prettier is configured, but no repository formatting script exists. Avoid repository-wide formatting or broad autofix churn.
+## Commands and generated content
 
-## Commands and execution boundaries
-
-- `npm run build` is the confirmed production build check for dashboard changes.
-- `npm test` is the confirmed unit-test command. Run relevant existing tests after behavioral changes; if the command enters watch mode, stop it rather than leaving it running.
-- `npm start` and `npm run watch` start long-running development processes and require an explicit request.
-- No lint script is defined. Do not invent or claim a lint check; report that limitation when relevant.
+- `package.json` and `angular.json` are the authoritative command/configuration sources. The defined scripts are `start`, `build`, `watch`, and `test`; execution remains governed by the root authorization policy.
+- Do not directly edit `dist`, `.angular`, `node_modules`, coverage output, or other generated artifacts.

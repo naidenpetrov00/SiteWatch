@@ -1,4 +1,0 @@
-interface:
-  display_name: "Dashboard Service Worker"
-  short_description: "Add safe PWA caching and update behavior"
-  default_prompt: "Use $dashboard-service-worker to design this Dashboard PWA caching change."
