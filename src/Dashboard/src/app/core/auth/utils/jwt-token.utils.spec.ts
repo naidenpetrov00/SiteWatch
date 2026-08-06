@@ -22,11 +22,11 @@ describe('jwt-token.utils', () => {
   it('detects expired tokens', () => {
     const token = createJwt({ exp: Math.floor(Date.now() / 1000) - 10 });
 
-    expect(isTokenExpired(token)).toBeTrue();
+    expect(isTokenExpired(token)).toBe(true);
   });
 
   it('treats malformed tokens as non-expired', () => {
     expect(decodeJwtPayload('bad-token')).toBeNull();
-    expect(isTokenExpired('bad-token')).toBeFalse();
+    expect(isTokenExpired('bad-token')).toBe(false);
   });
 });

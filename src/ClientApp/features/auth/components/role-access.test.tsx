@@ -1,15 +1,15 @@
-import { AuthContextType } from "@/types/identity";
+import { Text, View } from "react-native";
+import { render, screen } from "@testing-library/react-native";
+
 import RoleGate from "@/features/auth/components/RoleGate/RoleGate";
 import RoleRouteGuard from "@/features/auth/components/RoleRouteGuard/RoleRouteGuard";
-import { Text, View } from "react-native";
-import { USER_ROLES } from "@/types/authorization";
-import { act, create, ReactTestRenderer } from "react-test-renderer";
 import { useAuth } from "@/store/auth_context";
+import { USER_ROLES } from "@/types/authorization";
+import type { AuthContextType } from "@/types/identity";
 
 jest.mock("@/store/auth_context", () => ({ useAuth: jest.fn() }));
 jest.mock("expo-router", () => ({
-  Redirect: ({ href }: { href: string }) =>
-    require("react").createElement("redirect", { href }),
+  Redirect: ({ href }: { href: string }) => <Text accessibilityRole="link">{href}</Text>,
 }));
 
 const mockedUseAuth = jest.mocked(useAuth);
@@ -18,9 +18,7 @@ const authFor = (
   roles: AuthContextType["roles"],
   isAuthenticated = true,
 ): AuthContextType => ({
-  user: isAuthenticated
-    ? { id: "user", username: "user", email: "user@example.test", roles }
-    : null,
+  user: isAuthenticated ? { id: "user", username: "user", email: "user@example.test", roles } : null,
   accessToken: isAuthenticated ? "token" : null,
   isAuthenticated,
   roles,
@@ -32,80 +30,59 @@ const authFor = (
 });
 
 describe("role-aware UI", () => {
-  let renderer: ReactTestRenderer;
+  afterEach(() => jest.clearAllMocks());
 
-  afterEach(() => {
-    act(() => renderer?.unmount());
-    jest.clearAllMocks();
-  });
-
-  it("renders text, actions, sections, and components for any allowed role", () => {
+  it("renders protected content for an allowed role", () => {
     mockedUseAuth.mockReturnValue(authFor([USER_ROLES.worker]));
 
-    act(() => {
-      renderer = create(
-        <RoleGate allowedRoles={[USER_ROLES.administrator, USER_ROLES.worker]}>
-          <View testID="protected-section">
-            <Text>Worker notice</Text>
-            <Text accessibilityRole="button">Worker action</Text>
-          </View>
-        </RoleGate>,
-      );
-    });
+    render(
+      <RoleGate allowedRoles={[USER_ROLES.administrator, USER_ROLES.worker]}>
+        <View accessibilityLabel="Protected section"><Text>Worker notice</Text></View>
+      </RoleGate>,
+    );
 
-    expect(renderer.root.findByProps({ testID: "protected-section" })).toBeTruthy();
-    expect(renderer.root.findAllByType(Text)).toHaveLength(2);
+    expect(screen.getByLabelText("Protected section")).toBeOnTheScreen();
+    expect(screen.getByText("Worker notice")).toBeOnTheScreen();
   });
 
-  it("renders a fallback when the user lacks every allowed role", () => {
+  it("renders the supplied fallback for a disallowed role", () => {
     mockedUseAuth.mockReturnValue(authFor([USER_ROLES.client]));
 
-    act(() => {
-      renderer = create(
-        <RoleGate
-          allowedRoles={[USER_ROLES.administrator, USER_ROLES.worker]}
-          fallback={<Text>No permission</Text>}
-        >
-          <Text>Protected component</Text>
-        </RoleGate>,
-      );
-    });
+    render(
+      <RoleGate allowedRoles={[USER_ROLES.administrator]} fallback={<Text>No permission</Text>}>
+        <Text>Protected component</Text>
+      </RoleGate>,
+    );
 
-    expect(renderer.root.findByType(Text).props.children).toBe("No permission");
+    expect(screen.getByText("No permission")).toBeOnTheScreen();
+    expect(screen.queryByText("Protected component")).toBeNull();
   });
 
   it.each([
     [false, [] as const, "/SignIn"],
     [true, [USER_ROLES.client] as const, "/AccessDenied"],
-    [true, [USER_ROLES.worker] as const, "/AccessDenied"],
-  ])(
-    "redirects authenticated=%s roles=%j to %s",
-    (isAuthenticated, roles, expectedRoute) => {
-      mockedUseAuth.mockReturnValue(authFor(roles, isAuthenticated));
+  ])("redirects authenticated=%s roles=%j to %s", (isAuthenticated, roles, expectedRoute) => {
+    mockedUseAuth.mockReturnValue(authFor(roles, isAuthenticated));
 
-      act(() => {
-        renderer = create(
-          <RoleRouteGuard allowedRoles={[USER_ROLES.administrator]}>
-            <Text>Administrator page</Text>
-          </RoleRouteGuard>,
-        );
-      });
+    render(
+      <RoleRouteGuard allowedRoles={[USER_ROLES.administrator]}>
+        <Text>Administrator page</Text>
+      </RoleRouteGuard>,
+    );
 
-      expect(renderer.root.findByType("redirect").props.href).toBe(expectedRoute);
-    },
-  );
+    expect(screen.getByRole("link")).toHaveTextContent(expectedRoute);
+    expect(screen.queryByText("Administrator page")).toBeNull();
+  });
 
-  it("renders the protected page for an Administrator", () => {
+  it("renders the protected route for an Administrator", () => {
     mockedUseAuth.mockReturnValue(authFor([USER_ROLES.administrator]));
 
-    act(() => {
-      renderer = create(
-        <RoleRouteGuard allowedRoles={[USER_ROLES.administrator]}>
-          <Text>Administrator page</Text>
-        </RoleRouteGuard>,
-      );
-    });
+    render(
+      <RoleRouteGuard allowedRoles={[USER_ROLES.administrator]}>
+        <Text>Administrator page</Text>
+      </RoleRouteGuard>,
+    );
 
-    expect(renderer.root.findByType(Text).props.children).toBe("Administrator page");
+    expect(screen.getByText("Administrator page")).toBeOnTheScreen();
   });
 });

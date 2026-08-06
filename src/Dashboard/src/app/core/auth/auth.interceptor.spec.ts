@@ -57,7 +57,7 @@ describe('authInterceptor', () => {
       .subscribe();
 
     const request = httpTesting.expectOne('/dashboard/signIn');
-    expect(request.request.headers.has('Authorization')).toBeFalse();
+    expect(request.request.headers.has('Authorization')).toBe(false);
     request.flush({});
   });
 
@@ -75,7 +75,7 @@ describe('authInterceptor', () => {
     });
 
     expect(authSession.accessToken()).toBeNull();
-    expect(authSession.isLoggedIn()).toBeFalse();
+    expect(authSession.isLoggedIn()).toBe(false);
   });
 
   it('clears the session on forbidden responses', () => {
@@ -92,6 +92,6 @@ describe('authInterceptor', () => {
     });
 
     expect(authSession.accessToken()).toBeNull();
-    expect(authSession.isLoggedIn()).toBeFalse();
+    expect(authSession.isLoggedIn()).toBe(false);
   });
 });

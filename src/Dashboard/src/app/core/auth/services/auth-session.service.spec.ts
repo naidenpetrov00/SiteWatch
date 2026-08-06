@@ -27,7 +27,7 @@ describe('AuthSessionService', () => {
     const service = TestBed.runInInjectionContext(() => new AuthSessionService());
 
     expect(service.accessToken()).toBe(token);
-    expect(service.isLoggedIn()).toBeTrue();
+    expect(service.isLoggedIn()).toBe(true);
   });
 
   it('removes an expired token on startup', () => {
@@ -38,7 +38,7 @@ describe('AuthSessionService', () => {
     const service = TestBed.runInInjectionContext(() => new AuthSessionService());
 
     expect(service.accessToken()).toBeNull();
-    expect(service.isLoggedIn()).toBeFalse();
+    expect(service.isLoggedIn()).toBe(false);
     expect(sessionStorage.getItem('sitewatch.dashboard.access-token')).toBeNull();
   });
 
@@ -50,7 +50,7 @@ describe('AuthSessionService', () => {
     service.logOut();
 
     expect(service.accessToken()).toBeNull();
-    expect(service.isLoggedIn()).toBeFalse();
+    expect(service.isLoggedIn()).toBe(false);
     expect(sessionStorage.getItem('sitewatch.dashboard.access-token')).toBeNull();
   });
 });

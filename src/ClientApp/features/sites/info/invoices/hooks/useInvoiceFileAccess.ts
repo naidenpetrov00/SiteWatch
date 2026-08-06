@@ -10,7 +10,7 @@ type InvoiceFileAccessRequest = {
   invoiceId: string;
 };
 
-const getInvoiceFileAccess = (
+export const getInvoiceFileAccess = (
   request: InvoiceFileAccessRequest,
   accessToken: string,
 ): Promise<InvoiceFileAccess> =>

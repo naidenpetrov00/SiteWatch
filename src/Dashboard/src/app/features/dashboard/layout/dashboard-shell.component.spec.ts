@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter, Router } from '@angular/router';
+import { vi } from 'vitest';
 
 import { IdentityAuthService } from '../../identity/services/identity-auth.service';
 import { DashboardShellComponent } from './dashboard-shell.component';
@@ -88,10 +89,8 @@ describe('DashboardShellComponent', () => {
     const fixture = TestBed.createComponent(DashboardShellComponent);
     const component = fixture.componentInstance;
     const router = TestBed.inject(Router);
-    const navigateSpy = spyOn(router, 'navigateByUrl').and.returnValue(
-      Promise.resolve(true)
-    );
-    const logOutSpy = spyOn(authService, 'logOut');
+    const navigateSpy = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+    const logOutSpy = vi.spyOn(authService, 'logOut');
 
     fixture.detectChanges();
 

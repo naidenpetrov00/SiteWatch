@@ -45,8 +45,8 @@ describe('LoginPage', () => {
       'button[type="submit"]'
     ) as HTMLButtonElement;
 
-    expect(component.loginForm.invalid).toBeTrue();
-    expect(button.disabled).toBeTrue();
+    expect(component.loginForm.invalid).toBe(true);
+    expect(button.disabled).toBe(true);
   });
 
   it('shows validation messages after the form is touched', () => {
