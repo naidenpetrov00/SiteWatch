@@ -75,6 +75,10 @@
   padding-inline: 0.875rem;
 }
 
+.data-table__row--error > td {
+  background-color: #fee2e2 !important;
+}
+
 .data-table__table-shell {
   overflow: auto;
   border-radius: 1rem;

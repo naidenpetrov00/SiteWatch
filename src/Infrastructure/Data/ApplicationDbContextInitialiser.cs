@@ -416,7 +416,12 @@ public class ApplicationDbContextInitialiser(
         var addedAllocationCount = 0;
         foreach (var invoice in invoices.Where(invoice => invoice.SitePayments.Count == 0))
         {
-            var amounts = SplitAmount(invoice.TotalValueIncludingVat, orderedSites.Length);
+            if (!invoice.TotalValueIncludingVat.HasValue)
+            {
+                continue;
+            }
+
+            var amounts = SplitAmount(invoice.TotalValueIncludingVat.Value, orderedSites.Length);
             var sitePayments = orderedSites
                 .Select((site, index) => SitePayment.Create(
                     invoice,

@@ -12,3 +12,7 @@ export interface CreateDashboardInvoiceRequest {
   paymentTime?: string;
   siteAllocations: readonly InvoiceSiteAllocationRequest[];
 }
+
+export interface UpdateDashboardInvoiceRequest extends CreateDashboardInvoiceRequest {
+  invoiceId: string;
+}

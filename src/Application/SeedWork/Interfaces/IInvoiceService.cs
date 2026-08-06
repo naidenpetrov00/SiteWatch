@@ -8,6 +8,14 @@ public interface IInvoiceService
 {
     Task<Guid> CreateAsync(CreateInvoiceCommand request, CancellationToken cancellationToken);
 
+    Task CreateIncompleteAsync(
+        Guid invoiceId,
+        Guid siteId,
+        string userId,
+        CancellationToken cancellationToken);
+
+    Task UpdateAsync(UpdateInvoiceCommand request, CancellationToken cancellationToken);
+
     Task UpdateSiteAllocationsAsync(
         UpdateInvoiceSiteAllocationsCommand request,
         CancellationToken cancellationToken);
@@ -29,4 +37,9 @@ public interface IInvoiceService
         CancellationToken cancellationToken);
 
     Task EnsureInvoiceExistsAsync(Guid invoiceId, CancellationToken cancellationToken);
+
+    Task EnsureUserCanAccessSiteAsync(
+        Guid siteId,
+        string userId,
+        CancellationToken cancellationToken);
 }

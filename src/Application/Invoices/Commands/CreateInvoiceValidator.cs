@@ -3,9 +3,10 @@ using FluentValidation;
 
 namespace Application.Invoices.Commands;
 
-public sealed class CreateInvoiceValidator : AbstractValidator<CreateInvoiceCommand>
+public class InvoiceDetailsCommandValidator<TCommand> : AbstractValidator<TCommand>
+    where TCommand : InvoiceDetailsCommand
 {
-    public CreateInvoiceValidator()
+    public InvoiceDetailsCommandValidator()
     {
         RuleFor(x => x.SupplierId).NotEmpty();
         RuleFor(x => x.InvoiceNumber)
@@ -52,7 +53,7 @@ public sealed class CreateInvoiceValidator : AbstractValidator<CreateInvoiceComm
         });
     }
 
-    private static bool HaveAllocationsWithinInvoiceTotal(CreateInvoiceCommand command)
+    private static bool HaveAllocationsWithinInvoiceTotal(InvoiceDetailsCommand command)
     {
         if (command.TotalValue <= 0m || command.VatRate < 0m || command.VatRate > 100m)
         {
@@ -84,4 +85,8 @@ public sealed class CreateInvoiceValidator : AbstractValidator<CreateInvoiceComm
                 out _
             );
     }
+}
+
+public sealed class CreateInvoiceValidator : InvoiceDetailsCommandValidator<CreateInvoiceCommand>
+{
 }

@@ -1,4 +1,6 @@
 using Application.SeedWork.Interfaces;
+using Application.SeedWork.Exceptions;
+using Application.SeedWork.Models.Internal;
 using Application.SeedWork.Security;
 using MediatR;
 
@@ -11,19 +13,21 @@ public sealed record InvoiceFileAccessDto(
     string ContentType,
     DateTimeOffset ExpiresAt);
 
+public sealed record InvoiceFileInfoDto(
+    string FileName,
+    string ContentType);
+
 [Authorize(Roles = UserRoleGroups.AdministratorOrWorker)]
 public sealed record InvoiceFileAccessQuery(Guid SiteId, Guid InvoiceId)
-    : IRequest<InvoiceFileAccessDto>;
+    : IRequest<InvoiceFileInfoDto>;
 
 public sealed class InvoiceFileAccessQueryHandler(
     IInvoiceService invoiceService,
     IInvoiceBlobService invoiceBlobService,
     IUser user)
-    : IRequestHandler<InvoiceFileAccessQuery, InvoiceFileAccessDto>
+    : IRequestHandler<InvoiceFileAccessQuery, InvoiceFileInfoDto>
 {
-    private static readonly TimeSpan AccessLifetime = TimeSpan.FromMinutes(5);
-
-    public async Task<InvoiceFileAccessDto> Handle(
+    public async Task<InvoiceFileInfoDto> Handle(
         InvoiceFileAccessQuery request,
         CancellationToken cancellationToken)
     {
@@ -33,9 +37,47 @@ public sealed class InvoiceFileAccessQueryHandler(
             user.Id ?? throw new UnauthorizedAccessException(),
             cancellationToken);
 
-        return await invoiceBlobService.CreateReadAccessAsync(
+        return await invoiceBlobService.GetInfoAsync(
             request.InvoiceId,
-            AccessLifetime,
+            cancellationToken);
+    }
+}
+
+public sealed record InvoiceFileDownloadQuery(
+    Guid SiteId,
+    Guid InvoiceId,
+    string UserId) : IRequest<InvoiceFileResponse>;
+
+public sealed class InvoiceFileDownloadQueryHandler(
+    IIdentityService identityService,
+    IInvoiceService invoiceService,
+    IInvoiceBlobService invoiceBlobService)
+    : IRequestHandler<InvoiceFileDownloadQuery, InvoiceFileResponse>
+{
+    public async Task<InvoiceFileResponse> Handle(
+        InvoiceFileDownloadQuery request,
+        CancellationToken cancellationToken)
+    {
+        var isAdministrator = await identityService.IsInRoleAsync(
+            request.UserId,
+            UserRoles.Administrator);
+        var isWorker = await identityService.IsInRoleAsync(
+            request.UserId,
+            UserRoles.Worker);
+
+        if (!isAdministrator && !isWorker)
+        {
+            throw new ForbiddenAccessException();
+        }
+
+        await invoiceService.EnsureUserCanAccessInvoiceAsync(
+            request.SiteId,
+            request.InvoiceId,
+            request.UserId,
+            cancellationToken);
+
+        return await invoiceBlobService.DownloadAsync(
+            request.InvoiceId,
             cancellationToken);
     }
 }

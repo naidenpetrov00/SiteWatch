@@ -29,6 +29,7 @@ export const paths = {
     },
     invoices: {
         getBySiteId: (siteId: string) => `/invoices/site/${siteId}`,
+        createFromFile: (siteId: string) => `/invoices/site/${siteId}/file`,
         getFileAccess: (siteId: string, invoiceId: string) =>
             `/invoices/site/${siteId}/${invoiceId}/file-access`,
     },

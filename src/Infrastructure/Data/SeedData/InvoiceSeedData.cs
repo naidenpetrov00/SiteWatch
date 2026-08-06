@@ -39,7 +39,8 @@ public static class InvoiceSeedData
                 200m,
                 1200m,
                 "Bank transfer",
-                now.AddDays(20)),
+                now.AddDays(20),
+                vatRate: 20m),
             Invoice.Create(
                 persons[1].Id,
                 persons[1],
@@ -55,7 +56,8 @@ public static class InvoiceSeedData
                 150m,
                 900m,
                 "Card",
-                now.AddDays(10)),
+                now.AddDays(10),
+                vatRate: 20m),
             Invoice.Create(
                 persons[2].Id,
                 persons[2],
@@ -71,7 +73,8 @@ public static class InvoiceSeedData
                 500m,
                 3000m,
                 "Bank transfer",
-                now.AddDays(43)),
+                now.AddDays(43),
+                vatRate: 20m),
         };
 
         for (var index = invoices.Count; index < invoiceCount; index++)
@@ -91,7 +94,8 @@ public static class InvoiceSeedData
                 500m,
                 3000m,
                 "Bank transfer",
-                now.AddDays(43)));
+                now.AddDays(43),
+                vatRate: 20m));
         }
 
         foreach (var invoice in invoices)

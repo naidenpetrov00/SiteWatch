@@ -266,7 +266,10 @@ public sealed class BlobInitializer(
         }
 
         var missingInvoiceNumbers = seedInvoiceNumbers
-            .Except(invoices.Select(invoice => invoice.InvoiceNumber))
+            .Except(invoices
+                .Select(invoice => invoice.InvoiceNumber)
+                .Where(invoiceNumber => invoiceNumber is not null)
+                .Select(invoiceNumber => invoiceNumber!))
             .ToArray();
         if (missingInvoiceNumbers.Length > 0)
         {
@@ -275,7 +278,9 @@ public sealed class BlobInitializer(
                 missingInvoiceNumbers);
         }
 
-        var invoicesByNumber = invoices.ToDictionary(invoice => invoice.InvoiceNumber);
+        var invoicesByNumber = invoices
+            .Where(invoice => invoice.InvoiceNumber is not null)
+            .ToDictionary(invoice => invoice.InvoiceNumber!);
         var invoiceContainer = blobServiceClient.GetBlobContainerClient("invoices");
         for (var index = 0; index < assignedAssetPaths.Count; index++)
         {
@@ -297,7 +302,11 @@ public sealed class BlobInitializer(
                 await using var fileStream = File.OpenRead(assetPath);
                 await invoiceBlobService.UploadAsync(
                     invoice.Id,
-                    new UploadedInvoiceFile(fileStream, Path.GetFileName(assetPath), "application/pdf"),
+                    new UploadedInvoiceFile(
+                        fileStream,
+                        Path.GetFileName(assetPath),
+                        "application/pdf",
+                        fileStream.Length),
                     cancellationToken);
             }
             catch (Exception ex)

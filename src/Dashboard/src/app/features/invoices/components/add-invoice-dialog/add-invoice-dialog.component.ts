@@ -59,6 +59,27 @@ import {
 } from '../../utils/invoice-site-allocation-form';
 import { SITE_PAYMENT_DIRECTIONS } from '../../models/invoice-site-allocation.model';
 
+const MAX_INVOICE_FILE_SIZE = 20 * 1024 * 1024;
+const ALLOWED_INVOICE_FILE_TYPES = new Set([
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'image/heic',
+  'image/heif'
+]);
+const INVOICE_FILE_TYPES_BY_EXTENSION: Readonly<Record<string, string>> = {
+  pdf: 'application/pdf',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+  gif: 'image/gif',
+  heic: 'image/heic',
+  heif: 'image/heif'
+};
+
 @Component({
   selector: 'app-add-invoice-dialog',
   imports: [
@@ -105,9 +126,14 @@ export class AddInvoiceDialogComponent implements OnInit {
   );
   readonly siteSearchResults = signal<readonly DashboardSiteLookup[]>([]);
   readonly siteAllocationSaveError = signal<string | null>(null);
+  readonly attachment = signal<File | null>(null);
+  readonly attachmentError = signal<string | null>(null);
+  readonly createdInvoiceId = signal<string | null>(null);
   readonly sitePaymentDirections = SITE_PAYMENT_DIRECTIONS;
   readonly invoiceForm = this.createInvoiceForm();
   readonly isCreatingInvoice = () => this.dashboardInvoicesService.createInvoiceMutation.isPending();
+  readonly isSavingInvoice = () =>
+    this.isCreatingInvoice() || this.dashboardInvoicesService.uploadInvoiceFileMutation.isPending();
   readonly formatInvoiceSupplierOptionLabel = formatDashboardPersonLookupLabel;
   readonly formatInvoiceSupplierOptionSubtitle = formatDashboardPersonLookupSubtitle;
   readonly formatSiteAmount = formatInvoiceAmount;
@@ -186,6 +212,37 @@ export class AddInvoiceDialogComponent implements OnInit {
     this.dialogRef.close();
   }
 
+  onAttachmentSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    this.attachmentError.set(null);
+
+    if (!file) {
+      this.attachment.set(null);
+      return;
+    }
+
+    const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
+    const contentType = file.type || INVOICE_FILE_TYPES_BY_EXTENSION[extension] || '';
+    if (!ALLOWED_INVOICE_FILE_TYPES.has(contentType)) {
+      this.attachment.set(null);
+      this.attachmentError.set('Choose a PDF or supported image file.');
+      input.value = '';
+      return;
+    }
+
+    if (file.size > MAX_INVOICE_FILE_SIZE) {
+      this.attachment.set(null);
+      this.attachmentError.set('The attachment cannot exceed 20 MB.');
+      input.value = '';
+      return;
+    }
+
+    this.attachment.set(
+      file.type === contentType ? file : new File([file], file.name, { type: contentType })
+    );
+  }
+
   async submitInvoice(): Promise<void> {
     if (this.invoiceForm.invalid || !this.supplierDetailsReady()) {
       this.invoiceForm.markAllAsTouched();
@@ -194,22 +251,42 @@ export class AddInvoiceDialogComponent implements OnInit {
     }
 
     this.siteAllocationSaveError.set(null);
-    try {
-      const request = toCreateDashboardInvoiceRequest(this.invoiceForm);
-      await this.dashboardInvoicesService.createInvoice(request);
-      this.dialogRef.close(true);
-    } catch (error) {
-      // Keep the dialog open so the user can fix validation or backend errors.
-      const supplierValidationMessage = this.getSupplierValidationMessage(error);
-      if (supplierValidationMessage) {
-        this.setSupplierSearchError('supplierDetailsIncomplete', supplierValidationMessage);
-        this.supplierSearchControl.markAsTouched();
-      } else {
-        this.siteAllocationSaveError.set(
-          getInvoiceSiteAllocationErrorMessage(error) ?? 'Unable to save site allocations.'
-        );
+    this.attachmentError.set(null);
+
+    let invoiceId = this.createdInvoiceId();
+    if (!invoiceId) {
+      try {
+        const request = toCreateDashboardInvoiceRequest(this.invoiceForm);
+        const response = await this.dashboardInvoicesService.createInvoice(request);
+        invoiceId = response.id;
+        this.createdInvoiceId.set(invoiceId);
+      } catch (error) {
+        const supplierValidationMessage = this.getSupplierValidationMessage(error);
+        if (supplierValidationMessage) {
+          this.setSupplierSearchError('supplierDetailsIncomplete', supplierValidationMessage);
+          this.supplierSearchControl.markAsTouched();
+        } else {
+          this.siteAllocationSaveError.set(
+            getInvoiceSiteAllocationErrorMessage(error) ?? 'Unable to create the invoice.'
+          );
+        }
+        return;
       }
     }
+
+    const attachment = this.attachment();
+    if (attachment) {
+      try {
+        await this.dashboardInvoicesService.uploadInvoiceFile(invoiceId, attachment);
+      } catch {
+        this.attachmentError.set(
+          'The invoice was created, but its attachment could not be uploaded. Submit again to retry the attachment.'
+        );
+        return;
+      }
+    }
+
+    this.dialogRef.close(true);
   }
 
   onSupplierSelected(event: MatAutocompleteSelectedEvent): void {

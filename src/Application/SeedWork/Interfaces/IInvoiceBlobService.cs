@@ -1,5 +1,6 @@
 using Application.Invoices.Commands;
 using Application.Invoices.Queries;
+using Application.SeedWork.Models.Internal;
 
 namespace Application.SeedWork.Interfaces;
 
@@ -10,8 +11,15 @@ public interface IInvoiceBlobService
         UploadedInvoiceFile file,
         CancellationToken cancellationToken = default);
 
-    Task<InvoiceFileAccessDto> CreateReadAccessAsync(
+    Task DeleteIfExistsAsync(
         Guid invoiceId,
-        TimeSpan lifetime,
+        CancellationToken cancellationToken = default);
+
+    Task<InvoiceFileInfoDto> GetInfoAsync(
+        Guid invoiceId,
+        CancellationToken cancellationToken = default);
+
+    Task<InvoiceFileResponse> DownloadAsync(
+        Guid invoiceId,
         CancellationToken cancellationToken = default);
 }

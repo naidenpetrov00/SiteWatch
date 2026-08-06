@@ -7,7 +7,6 @@ using Ardalis.GuardClauses;
 using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
-using Azure.Storage.Sas;
 
 namespace Infrastructure.Storage;
 
@@ -45,9 +44,15 @@ internal sealed class BlobInvoiceService(BlobServiceClient blobServiceClient)
             cancellationToken);
     }
 
-    public async Task<InvoiceFileAccessDto> CreateReadAccessAsync(
+    public async Task DeleteIfExistsAsync(
         Guid invoiceId,
-        TimeSpan lifetime,
+        CancellationToken cancellationToken = default)
+    {
+        await GetBlobClient(invoiceId).DeleteIfExistsAsync(cancellationToken: cancellationToken);
+    }
+
+    public async Task<InvoiceFileInfoDto> GetInfoAsync(
+        Guid invoiceId,
         CancellationToken cancellationToken = default)
     {
         var blobClient = GetBlobClient(invoiceId);
@@ -63,35 +68,41 @@ internal sealed class BlobInvoiceService(BlobServiceClient blobServiceClient)
             throw new NotFoundException("Invoice file", invoiceId.ToString());
         }
 
-        if (!blobClient.CanGenerateSasUri)
-        {
-            throw new InvalidOperationException(
-                "The configured blob credentials cannot generate invoice file access links.");
-        }
-
-        var expiresAt = DateTimeOffset.UtcNow.Add(lifetime);
         var fileName = DecodeFileName(properties.Metadata, invoiceId);
         var contentType = string.IsNullOrWhiteSpace(properties.ContentType)
             ? "application/octet-stream"
             : properties.ContentType;
-        var contentDisposition = string.IsNullOrWhiteSpace(properties.ContentDisposition)
-            ? $"inline; filename*=UTF-8''{Uri.EscapeDataString(fileName)}"
-            : properties.ContentDisposition;
-        var sasBuilder = new BlobSasBuilder(BlobSasPermissions.Read, expiresAt)
-        {
-            BlobContainerName = BlobContainerName.Invoices.ToString(),
-            BlobName = invoiceId.ToString(),
-            Resource = "b",
-            StartsOn = DateTimeOffset.UtcNow.AddMinutes(-1),
-            ContentDisposition = contentDisposition,
-            ContentType = contentType
-        };
 
-        return new InvoiceFileAccessDto(
-            blobClient.GenerateSasUri(sasBuilder).ToString(),
+        return new InvoiceFileInfoDto(fileName, contentType);
+    }
+
+    public async Task<InvoiceFileResponse> DownloadAsync(
+        Guid invoiceId,
+        CancellationToken cancellationToken = default)
+    {
+        var blobClient = GetBlobClient(invoiceId);
+        BlobDownloadStreamingResult download;
+
+        try
+        {
+            download = (await blobClient.DownloadStreamingAsync(
+                cancellationToken: cancellationToken)).Value;
+        }
+        catch (RequestFailedException exception) when (exception.Status == 404)
+        {
+            throw new NotFoundException("Invoice file", invoiceId.ToString());
+        }
+
+        var fileName = DecodeFileName(download.Details.Metadata, invoiceId);
+        var contentType = string.IsNullOrWhiteSpace(download.Details.ContentType)
+            ? "application/octet-stream"
+            : download.Details.ContentType;
+
+        return new InvoiceFileResponse(
+            download.Content,
             fileName,
             contentType,
-            expiresAt);
+            download.Details.ContentLength);
     }
 
     private BlobClient GetBlobClient(Guid invoiceId) => blobServiceClient

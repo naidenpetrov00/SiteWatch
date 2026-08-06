@@ -8,11 +8,15 @@ import invoiceCardStyles from "./InvoiceCard.styles";
 
 type InvoiceCardProps = {
   id: string;
-  invoiceNumber: string;
-  supplierDisplayLabel: string;
-  date: string;
-  totalValueIncludingVat: number;
-  allocatedAmount: number;
+  numberId: number;
+  invoiceNumber: string | null;
+  supplierDisplayLabel: string | null;
+  submittedFromSiteName: string | null;
+  date: string | null;
+  created: string;
+  isComplete: boolean;
+  totalValueIncludingVat: number | null;
+  allocatedAmount: number | null;
   isFileActionDisabled: boolean;
   isOpeningFile: boolean;
   onSelect: (invoiceId: string) => void;
@@ -21,9 +25,13 @@ type InvoiceCardProps = {
 
 const InvoiceCard = memo(function InvoiceCard({
   id,
+  numberId,
   invoiceNumber,
   supplierDisplayLabel,
+  submittedFromSiteName,
   date,
+  created,
+  isComplete,
   totalValueIncludingVat,
   allocatedAmount,
   isFileActionDisabled,
@@ -32,20 +40,22 @@ const InvoiceCard = memo(function InvoiceCard({
   onOpenFile,
 }: InvoiceCardProps) {
   const colorPalette = useColorPalette();
+  const displayName = invoiceNumber ?? `Invoice #${numberId}`;
 
   return (
     <View
       style={[
         invoiceCardStyles.card,
         {
-          backgroundColor: colorPalette.background,
+          backgroundColor:
+            isComplete !== true ? "#fee2e2" : colorPalette.background,
           borderColor: `${colorPalette.secondary}55`,
         },
       ]}
     >
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`View invoice ${invoiceNumber}`}
+        accessibilityLabel={`View ${displayName}`}
         onPress={() => onSelect(id)}
         style={({ pressed }) => [
           invoiceCardStyles.body,
@@ -58,20 +68,27 @@ const InvoiceCard = memo(function InvoiceCard({
             { color: colorPalette.text },
           ]}
         >
-          {invoiceNumber}
+          {displayName}
         </Text>
         <Text
           style={[invoiceCardStyles.supplier, { color: colorPalette.text }]}
         >
-          {supplierDisplayLabel}
+          {supplierDisplayLabel ?? "—"}
         </Text>
+        {submittedFromSiteName ? (
+          <Text
+            style={[invoiceCardStyles.metadata, { color: colorPalette.secondary }]}
+          >
+            Uploaded from {submittedFromSiteName}
+          </Text>
+        ) : null}
         <Text
           style={[
             invoiceCardStyles.metadata,
             { color: colorPalette.secondary },
           ]}
         >
-          {formatInvoiceDate(date)} · Total{" "}
+          {formatInvoiceDate(date ?? created)} · Total{" "}
           {formatInvoiceAmount(totalValueIncludingVat)}
         </Text>
         <Text
@@ -86,7 +103,7 @@ const InvoiceCard = memo(function InvoiceCard({
 
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Open file for invoice ${invoiceNumber}`}
+        accessibilityLabel={`Open file for ${displayName}`}
         disabled={isFileActionDisabled}
         onPress={() => onOpenFile(id)}
         style={({ pressed }) => [

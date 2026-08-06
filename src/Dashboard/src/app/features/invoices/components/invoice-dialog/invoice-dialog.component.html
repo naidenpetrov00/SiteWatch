@@ -1,47 +1,124 @@
-<app-dialog-shell
-  [eyebrow]="dialogEyebrow"
-  [title]="dialogTitle"
-  [subtitle]="dialogSubtitle"
->
+<app-dialog-shell [eyebrow]="dialogEyebrow" [title]="dialogTitle" [subtitle]="dialogSubtitle">
   <form
-    id="invoice-site-allocations-form"
-    class="invoice-dialog__sections"
-    [formGroup]="allocationForm"
+    id="invoice-edit-form"
+    class="invoice-dialog__form"
+    [formGroup]="invoiceForm"
     novalidate
-    (ngSubmit)="saveSiteAllocations()"
+    (ngSubmit)="saveInvoice()"
   >
-    @for (section of detailSections; track section.title) {
-      <section class="invoice-dialog__section" [attr.aria-label]="section.title">
-        <h3 class="invoice-dialog__section-title">{{ section.title }}</h3>
+    <section class="invoice-dialog__section">
+      <h3 class="invoice-dialog__section-title">Supplier</h3>
+      <mat-form-field appearance="outline" class="invoice-dialog__field--full">
+        <mat-label>Supplier</mat-label>
+        <input
+          matInput
+          [formControl]="supplierSearchControl"
+          [matAutocomplete]="supplierAutocomplete"
+          autocomplete="off"
+          inputmode="search"
+        />
+        <mat-hint>Search by name, EGN, or EIK.</mat-hint>
+        @if (supplierSearchControl.touched && !supplierDetailsReady()) {
+          <mat-error>Select a supplier from the results.</mat-error>
+        }
+      </mat-form-field>
 
-        <dl class="invoice-dialog__definition-list">
-          @for (item of section.items; track item.label) {
-            <div class="invoice-dialog__definition-item">
-              <dt>{{ item.label }}</dt>
-              <dd>{{ item.value }}</dd>
-            </div>
+      <mat-autocomplete
+        #supplierAutocomplete="matAutocomplete"
+        [displayWith]="displaySupplierSearchValue"
+        (optionSelected)="onSupplierSelected($event)"
+      >
+        @for (supplier of supplierSearchResults(); track supplier.id) {
+          <mat-option [value]="supplier">
+            <span class="invoice-dialog__option-title">{{ formatInvoiceSupplierOptionLabel(supplier) }}</span>
+            <span class="invoice-dialog__option-subtitle">{{ formatInvoiceSupplierOptionSubtitle(supplier) }}</span>
+          </mat-option>
+        }
+      </mat-autocomplete>
+    </section>
+
+    <section class="invoice-dialog__section">
+      <h3 class="invoice-dialog__section-title">Invoice details</h3>
+      @if (submittedFromSiteName) {
+        <p class="invoice-dialog__summary">Uploaded from {{ submittedFromSiteName }}</p>
+      }
+      <div class="invoice-dialog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Invoice Number</mat-label>
+          <input matInput formControlName="invoiceNumber" />
+          @if (invoiceForm.controls.invoiceNumber.touched && invoiceForm.controls.invoiceNumber.hasError('required')) {
+            <mat-error>Invoice Number is required.</mat-error>
           }
-        </dl>
-      </section>
-    }
+        </mat-form-field>
 
-    <section class="invoice-dialog__section" aria-label="Sites">
+        <app-datepicker label="Date" [control]="invoiceForm.controls.date" />
+        <app-datepicker label="Payment Term" [control]="invoiceForm.controls.paymentTerm" />
+
+        <mat-form-field appearance="outline">
+          <mat-label>Total Value</mat-label>
+          <input matInput formControlName="totalValue" type="number" inputmode="decimal" min="0.01" step="0.01" />
+          @if (invoiceForm.controls.totalValue.touched && invoiceForm.controls.totalValue.invalid) {
+            <mat-error>Enter a positive amount with up to two decimals.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>VAT Rate</mat-label>
+          <input matInput formControlName="vatRate" type="number" inputmode="decimal" min="0" max="100" step="0.01" />
+          @if (invoiceForm.controls.vatRate.touched && invoiceForm.controls.vatRate.invalid) {
+            <mat-error>VAT Rate must be between 0% and 100%.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>VAT Amount</mat-label>
+          <input matInput formControlName="vatAmount" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Total Including VAT</mat-label>
+          <input matInput formControlName="totalValueIncludingVat" />
+        </mat-form-field>
+
+        <app-datepicker
+          label="Payment Date"
+          [control]="invoiceForm.controls.paymentDate"
+          [showRequiredError]="false"
+        />
+
+        <mat-form-field appearance="outline">
+          <mat-label>Payment Time</mat-label>
+          <input matInput formControlName="paymentTime" type="time" />
+          @if (invoiceForm.controls.paymentTime.touched && invoiceForm.controls.paymentTime.invalid) {
+            <mat-error>Payment Time must be valid.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Payment Method</mat-label>
+          <mat-select formControlName="paymentMethod">
+            @for (method of paymentMethodOptions; track method) {
+              <mat-option [value]="method">{{ method }}</mat-option>
+            }
+          </mat-select>
+          @if (invoiceForm.controls.paymentMethod.touched && invoiceForm.controls.paymentMethod.hasError('required')) {
+            <mat-error>Payment Method is required.</mat-error>
+          }
+        </mat-form-field>
+      </div>
+    </section>
+
+    <section class="invoice-dialog__section">
       <div class="invoice-dialog__section-heading">
         <div>
-          <p class="invoice-dialog__eyebrow">Sites</p>
           <h3 class="invoice-dialog__section-title">Site allocations</h3>
-          <p class="invoice-dialog__summary">
-            Assign all or part of the invoice total to one or more sites.
-          </p>
+          <p class="invoice-dialog__summary">Assign all or part of the invoice total to one or more sites.</p>
         </div>
-
-        <button mat-stroked-button type="button" (click)="addSiteAllocation()">
-          Add Site
-        </button>
+        <button mat-stroked-button type="button" (click)="addSiteAllocation()">Add Site</button>
       </div>
 
       <div class="invoice-dialog__allocations" formArrayName="siteAllocations">
-        @for (allocation of allocationForm.controls.siteAllocations.controls; track allocation) {
+        @for (allocation of invoiceForm.controls.siteAllocations.controls; track allocation) {
           <div class="invoice-dialog__allocation-row" [formGroupName]="$index">
             <mat-form-field appearance="outline" class="invoice-dialog__allocation-site">
               <mat-label>Site</mat-label>
@@ -52,7 +129,6 @@
                 autocomplete="off"
                 inputmode="search"
               />
-              <mat-hint>Search by NumberId, name, or address.</mat-hint>
               @if (allocation.controls.siteSearch.touched && allocation.controls.siteId.invalid) {
                 <mat-error>Select a site from the results.</mat-error>
               }
@@ -65,33 +141,21 @@
             >
               @for (site of siteSearchResults(); track site.id) {
                 <mat-option [value]="site">
-                  <span class="invoice-dialog__site-option-title">
-                    #{{ site.numberId }} {{ site.name }}
-                  </span>
-                  <span class="invoice-dialog__site-option-subtitle">{{ site.address }}</span>
+                  <span class="invoice-dialog__option-title">#{{ site.numberId }} {{ site.name }}</span>
+                  <span class="invoice-dialog__option-subtitle">{{ site.address }}</span>
                 </mat-option>
               }
             </mat-autocomplete>
 
-            <mat-form-field appearance="outline" class="invoice-dialog__allocation-amount">
+            <mat-form-field appearance="outline">
               <mat-label>Amount</mat-label>
-              <input
-                matInput
-                formControlName="amount"
-                type="number"
-                inputmode="decimal"
-                min="0.01"
-                step="0.01"
-              />
-              @if (allocation.controls.amount.touched && allocation.controls.amount.hasError('required')) {
-                <mat-error>Amount is required.</mat-error>
-              }
-              @if (allocation.controls.amount.touched && (allocation.controls.amount.hasError('decimal') || allocation.controls.amount.hasError('positiveDecimal'))) {
+              <input matInput formControlName="amount" type="number" inputmode="decimal" min="0.01" step="0.01" />
+              @if (allocation.controls.amount.touched && allocation.controls.amount.invalid) {
                 <mat-error>Enter a positive amount with up to two decimals.</mat-error>
               }
             </mat-form-field>
 
-            <mat-form-field appearance="outline" class="invoice-dialog__allocation-direction">
+            <mat-form-field appearance="outline">
               <mat-label>Direction</mat-label>
               <mat-select formControlName="direction">
                 @for (direction of sitePaymentDirections; track direction) {
@@ -100,28 +164,19 @@
               </mat-select>
             </mat-form-field>
 
-            <button
-              mat-button
-              type="button"
-              class="invoice-dialog__allocation-remove"
-              (click)="removeSiteAllocation($index)"
-            >
-              Remove
-            </button>
+            <button mat-button type="button" (click)="removeSiteAllocation($index)">Remove</button>
           </div>
         }
       </div>
 
-      @if (allocationForm.controls.siteAllocations.touched && allocationForm.controls.siteAllocations.hasError('duplicateSites')) {
-        <p class="invoice-dialog__allocation-error">Each site can only be allocated once.</p>
+      @if (invoiceForm.controls.siteAllocations.touched && invoiceForm.controls.siteAllocations.hasError('duplicateSites')) {
+        <p class="invoice-dialog__error">Each site can only be allocated once.</p>
       }
-      @if (allocationForm.controls.siteAllocations.touched && allocationForm.controls.siteAllocations.hasError('allocatedTotalExceeded')) {
-        <p class="invoice-dialog__allocation-error">
-          Assigned amount cannot exceed the invoice total including VAT.
-        </p>
+      @if (invoiceForm.controls.siteAllocations.touched && invoiceForm.controls.siteAllocations.hasError('allocatedTotalExceeded')) {
+        <p class="invoice-dialog__error">Assigned amount cannot exceed the invoice total including VAT.</p>
       }
-      @if (siteAllocationSaveError()) {
-        <p class="invoice-dialog__allocation-error">{{ siteAllocationSaveError() }}</p>
+      @if (saveError()) {
+        <p class="invoice-dialog__error" role="alert">{{ saveError() }}</p>
       }
 
       <div class="invoice-dialog__allocation-summary">
@@ -134,11 +189,11 @@
   <app-dialog-action-bar
     dialog-shell-actions
     [cancelLabel]="'Close'"
-    [submitLabel]="'Save'"
+    [submitLabel]="submitLabel"
     [showSecondary]="false"
-    [submitFormId]="'invoice-site-allocations-form'"
+    [submitFormId]="'invoice-edit-form'"
     [submitButtonType]="'submit'"
-    [submitDisabled]="allocationForm.invalid || isUpdatingSiteAllocations()"
+    [submitDisabled]="invoiceForm.invalid || !supplierDetailsReady() || isSaving()"
     (cancel)="closeDialog()"
   />
 </app-dialog-shell>

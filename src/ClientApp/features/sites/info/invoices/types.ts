@@ -6,23 +6,34 @@ export type SiteInvoiceAllocation = {
 export type SiteInvoice = {
   id: string;
   numberId: number;
-  supplierId: string;
-  supplierDisplayLabel: string;
-  invoiceNumber: string;
-  date: string;
-  taxIdentifier: string;
-  address: string;
-  email: string;
-  phoneNumber: string;
-  contactPerson: string;
-  paymentTerm: string;
-  totalValueExcludingVat: number;
-  vat: number;
-  totalValueIncludingVat: number;
+  isComplete: boolean;
+  supplierId: string | null;
+  supplierDisplayLabel: string | null;
+  submittedFromSiteName: string | null;
+  invoiceNumber: string | null;
+  date: string | null;
+  created: string;
+  taxIdentifier: string | null;
+  address: string | null;
+  email: string | null;
+  phoneNumber: string | null;
+  contactPerson: string | null;
+  paymentTerm: string | null;
+  totalValueExcludingVat: number | null;
+  vatRate: number | null;
+  vat: number | null;
+  totalValueIncludingVat: number | null;
   paymentDate: string | null;
   paymentTime: string | null;
-  paymentMethod: string;
-  siteAllocation: SiteInvoiceAllocation;
+  paymentMethod: string | null;
+  siteAllocation: SiteInvoiceAllocation | null;
+};
+
+export type InvoiceUploadAsset = {
+  uri: string;
+  fileName: string;
+  contentType: string;
+  fileSize?: number;
 };
 
 export type InvoiceFileAccess = {

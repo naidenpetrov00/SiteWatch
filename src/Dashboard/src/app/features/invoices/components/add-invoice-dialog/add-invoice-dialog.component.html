@@ -258,6 +258,29 @@
       </div>
     </section>
 
+    <section class="add-invoice-dialog__section" aria-label="Attachment">
+      <div class="add-invoice-dialog__section-heading">
+        <p class="add-invoice-dialog__eyebrow">Attachment</p>
+        <h3>Invoice file</h3>
+      </div>
+
+      <label class="add-invoice-dialog__file-field">
+        <span>PDF or image (optional)</span>
+        <input
+          type="file"
+          accept="application/pdf,image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.pdf,.jpg,.jpeg,.png,.webp,.gif,.heic,.heif"
+          [disabled]="createdInvoiceId() !== null || isSavingInvoice()"
+          (change)="onAttachmentSelected($event)"
+        />
+      </label>
+      @if (attachment(); as selectedAttachment) {
+        <p class="add-invoice-dialog__file-name">{{ selectedAttachment.name }}</p>
+      }
+      @if (attachmentError()) {
+        <p class="add-invoice-dialog__allocation-error" role="alert">{{ attachmentError() }}</p>
+      }
+    </section>
+
     <section class="add-invoice-dialog__section">
       <div class="add-invoice-dialog__section-heading add-invoice-dialog__section-heading--actions">
         <div>
@@ -376,7 +399,7 @@
     [showSecondary]="false"
     [submitFormId]="'add-invoice-dialog-form'"
     [submitButtonType]="'submit'"
-    [submitDisabled]="!invoiceForm.valid || !supplierDetailsReady() || isCreatingInvoice()"
+    [submitDisabled]="!invoiceForm.valid || !supplierDetailsReady() || isSavingInvoice()"
     (cancel)="closeDialog()"
   />
 </app-dialog-shell>

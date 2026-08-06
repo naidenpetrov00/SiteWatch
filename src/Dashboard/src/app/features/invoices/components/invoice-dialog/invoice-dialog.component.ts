@@ -1,59 +1,62 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   computed,
+  DestroyRef,
   inject,
   signal
 } from '@angular/core';
-import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { debounceTime, distinctUntilChanged, startWith } from 'rxjs';
-import {
-  MAT_DIALOG_DATA,
-  MatDialogRef
-} from '@angular/material/dialog';
-import {
-  MatAutocompleteModule,
-  MatAutocompleteSelectedEvent
-} from '@angular/material/autocomplete';
+import { debounceTime, distinctUntilChanged, merge, startWith } from 'rxjs';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
+import { provideNativeDateAdapter } from '@angular/material/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 
 import { DialogActionBarComponent } from '../../../../shared/ui/dialog-action-bar/dialog-action-bar.component';
 import { DialogShellComponent } from '../../../../shared/ui/dialog-shell/dialog-shell.component';
+import { DatepickerComponent } from '../../../../shared/ui/datepicker/datepicker.component';
+import { DashboardPersonsService } from '../../../persons/services/dashboard-persons.service';
+import { DashboardPersonLookup } from '../../../persons/models/dashboard-person-lookup.model';
+import {
+  formatDashboardPersonLookupLabel,
+  formatDashboardPersonLookupSubtitle
+} from '../../../persons/utils/dashboard-person-lookup-formatters';
 import { DashboardSitesService } from '../../../sites/services/dashboard-sites.service';
 import { DashboardSiteLookup } from '../../../sites/models/dashboard-site-lookup.model';
 import { DashboardInvoice } from '../../models/dashboard-invoice.model';
 import { SITE_PAYMENT_DIRECTIONS } from '../../models/invoice-site-allocation.model';
 import { DashboardInvoicesService } from '../../services/dashboard-invoices.service';
+import { toCreateDashboardInvoiceRequest } from '../../utils/create-dashboard-invoice-request.mapper';
 import {
   InvoiceSiteAllocationFormGroup,
   calculateAssignedSiteAmount,
   createInvoiceSiteAllocationForm,
   createInvoiceSiteAllocationsFormArray,
-  getInvoiceSiteAllocationErrorMessage,
-  toInvoiceSiteAllocationRequests
+  getInvoiceSiteAllocationErrorMessage
 } from '../../utils/invoice-site-allocation-form';
-import { formatInvoiceAmount } from '../../utils/invoice-calculations';
 import {
-  formatInvoiceAmountValue,
-  formatInvoiceDateTimeValue,
-  formatInvoiceDateValue,
-  formatInvoiceTextValue
-} from '../../utils/invoice-formatters';
-
-interface InvoiceDetailItem {
-  label: string;
-  value: string;
-}
-
-interface InvoiceDetailSection {
-  title: string;
-  items: readonly InvoiceDetailItem[];
-}
+  calculateInvoiceAmounts,
+  formatInvoiceAmount,
+  parseInvoiceDecimal
+} from '../../utils/invoice-calculations';
+import { deriveInvoiceSupplierDetails } from '../../utils/invoice-supplier-details';
+import {
+  ADD_INVOICE_VALIDATION_LIMITS,
+  AddInvoiceDialogFormGroup,
+  PAYMENT_METHOD_OPTIONS
+} from '../add-invoice-dialog/add-invoice-dialog.types';
+import {
+  decimalValidator,
+  positiveDecimalValidator,
+  timeValidator,
+  uuidValidator
+} from '../add-invoice-dialog/add-invoice-dialog.validators';
 
 @Component({
   selector: 'app-invoice-dialog',
@@ -61,6 +64,7 @@ interface InvoiceDetailSection {
     ReactiveFormsModule,
     DialogActionBarComponent,
     DialogShellComponent,
+    DatepickerComponent,
     MatAutocompleteModule,
     MatButtonModule,
     MatFormFieldModule,
@@ -69,6 +73,7 @@ interface InvoiceDetailSection {
   ],
   templateUrl: './invoice-dialog.component.html',
   styleUrl: './invoice-dialog.component.css',
+  providers: [provideNativeDateAdapter()],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class InvoiceDialogComponent {
@@ -77,108 +82,98 @@ export class InvoiceDialogComponent {
   private readonly dialogRef = inject(MatDialogRef<InvoiceDialogComponent>);
   private readonly invoice = inject(MAT_DIALOG_DATA) as DashboardInvoice;
   private readonly dashboardInvoicesService = inject(DashboardInvoicesService);
+  private readonly dashboardPersonsService = inject(DashboardPersonsService);
   private readonly dashboardSitesService = inject(DashboardSitesService);
 
+  private supplierSearchRevision = 0;
+  private supplierDetailsRevision = 0;
   private siteSearchRevision = 0;
 
   readonly dialogEyebrow = 'Invoices';
-  readonly dialogTitle = `Invoice ${this.invoice.invoiceNumber}`;
-  readonly dialogSubtitle = 'Invoice details are read-only. Site allocations can be edited.';
-  readonly invoiceTotalIncludingVat = signal(this.invoice.totalValueIncludingVat);
+  readonly dialogTitle = this.invoice.invoiceNumber ?? `Invoice #${this.invoice.numberId}`;
+  readonly submittedFromSiteName = this.invoice.submittedFromSiteName;
+  readonly dialogSubtitle = this.invoice.isComplete
+    ? 'Modify the invoice details and site allocations.'
+    : 'Complete the missing invoice details.';
+  readonly submitLabel = this.invoice.isComplete ? 'Save' : 'Complete Invoice';
+  readonly validationLimits = ADD_INVOICE_VALIDATION_LIMITS;
+  readonly paymentMethodOptions = PAYMENT_METHOD_OPTIONS;
+  readonly sitePaymentDirections = SITE_PAYMENT_DIRECTIONS;
+  readonly supplierDetailsReady = signal(this.invoice.supplierId !== null);
+  readonly supplierSearchResults = signal<readonly DashboardPersonLookup[]>([]);
+  readonly supplierSearchControl = this.formBuilder.control<string | DashboardPersonLookup | null>(
+    this.invoice.supplierDisplayLabel ?? ''
+  );
+  readonly invoiceTotalIncludingVat = signal<number | null>(
+    this.invoice.totalValueIncludingVat
+  );
   readonly assignedSiteAmount = signal(0);
   readonly remainingSiteAmount = computed(() =>
-    Math.max(this.invoiceTotalIncludingVat() - this.assignedSiteAmount(), 0)
+    Math.max((this.invoiceTotalIncludingVat() ?? 0) - this.assignedSiteAmount(), 0)
   );
   readonly siteSearchResults = signal<readonly DashboardSiteLookup[]>([]);
-  readonly siteAllocationSaveError = signal<string | null>(null);
-  readonly sitePaymentDirections = SITE_PAYMENT_DIRECTIONS;
-  readonly allocationForm = this.formBuilder.group({
-    siteAllocations: createInvoiceSiteAllocationsFormArray(
-      () => this.invoiceTotalIncludingVat(),
-      (this.invoice.siteAllocations ?? []).map((allocation) =>
-        createInvoiceSiteAllocationForm(this.formBuilder, allocation)
-      )
-    )
-  });
-  readonly isUpdatingSiteAllocations = () =>
-    this.dashboardInvoicesService.updateSiteAllocationsMutation.isPending();
+  readonly saveError = signal<string | null>(null);
+  readonly invoiceForm = this.createInvoiceForm();
+  readonly isSaving = () => this.dashboardInvoicesService.updateInvoiceMutation.isPending();
+  readonly formatInvoiceSupplierOptionLabel = formatDashboardPersonLookupLabel;
+  readonly formatInvoiceSupplierOptionSubtitle = formatDashboardPersonLookupSubtitle;
   readonly formatSiteAmount = formatInvoiceAmount;
-  readonly displaySiteSearchValue = (value: string | DashboardSiteLookup | null): string => {
-    if (typeof value === 'string') {
-      return value;
-    }
-
-    return value ? `#${value.numberId} ${value.name}` : '';
-  };
-  readonly detailSections: readonly InvoiceDetailSection[] = [
-    {
-      title: 'Invoice',
-      items: [
-        { label: 'NumberId', value: this.invoice.numberId.toString() },
-        { label: 'Id', value: this.invoice.id },
-        { label: 'Invoice Number', value: this.invoice.invoiceNumber },
-        { label: 'Date', value: formatInvoiceDateValue(this.invoice.date) }
-      ]
-    },
-    {
-      title: 'Supplier',
-      items: [
-        { label: 'Supplier Id', value: this.invoice.supplierId },
-        { label: 'Supplier', value: formatInvoiceTextValue(this.invoice.supplierDisplayLabel) },
-        { label: 'Tax Identifier', value: formatInvoiceTextValue(this.invoice.taxIdentifier) },
-        { label: 'Address', value: formatInvoiceTextValue(this.invoice.address) }
-      ]
-    },
-    {
-      title: 'Contact',
-      items: [
-        { label: 'Email', value: formatInvoiceTextValue(this.invoice.email) },
-        { label: 'Phone Number', value: formatInvoiceTextValue(this.invoice.phoneNumber) },
-        { label: 'Contact Person', value: formatInvoiceTextValue(this.invoice.contactPerson) }
-      ]
-    },
-    {
-      title: 'Payment',
-      items: [
-        { label: 'Payment Term', value: formatInvoiceDateValue(this.invoice.paymentTerm) },
-        {
-          label: 'Total Value Excluding VAT',
-          value: formatInvoiceAmountValue(this.invoice.totalValueExcludingVat)
-        },
-        { label: 'VAT', value: formatInvoiceAmountValue(this.invoice.vat) },
-        {
-          label: 'Total Value Including VAT',
-          value: formatInvoiceAmountValue(this.invoice.totalValueIncludingVat)
-        },
-        { label: 'Payment Date', value: formatInvoiceDateTimeValue(this.invoice.paymentDate) },
-        { label: 'Payment Time', value: formatInvoiceDateTimeValue(this.invoice.paymentTime) },
-        { label: 'Payment Method', value: formatInvoiceTextValue(this.invoice.paymentMethod) }
-      ]
-    }
-  ];
+  readonly displaySupplierSearchValue = (
+    value: string | DashboardPersonLookup | null
+  ): string => typeof value === 'string' ? value : value?.displayName ?? '';
+  readonly displaySiteSearchValue = (
+    value: string | DashboardSiteLookup | null
+  ): string => typeof value === 'string' ? value : value ? `#${value.numberId} ${value.name}` : '';
 
   constructor() {
-    for (const allocation of this.allocationForm.controls.siteAllocations.controls) {
+    const totalValueControl = this.invoiceForm.controls.totalValue;
+    const vatRateControl = this.invoiceForm.controls.vatRate;
+    merge(
+      totalValueControl.valueChanges.pipe(startWith(totalValueControl.value)),
+      vatRateControl.valueChanges.pipe(startWith(vatRateControl.value))
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.updateCalculatedAmounts());
+
+    this.supplierSearchControl.valueChanges
+      .pipe(debounceTime(250), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe((value) => {
+        if (typeof value === 'string') {
+          this.clearSelectedSupplier();
+          void this.searchSuppliers(value);
+        }
+      });
+
+    for (const allocation of this.invoiceForm.controls.siteAllocations.controls) {
       this.registerSiteSearch(allocation);
     }
 
-    this.allocationForm.controls.siteAllocations.valueChanges
+    this.invoiceForm.controls.siteAllocations.valueChanges
       .pipe(
-        startWith(this.allocationForm.controls.siteAllocations.getRawValue()),
+        startWith(this.invoiceForm.controls.siteAllocations.getRawValue()),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe(() => this.updateSiteAllocationSummary());
+    this.updateCalculatedAmounts();
+  }
+
+  onSupplierSelected(event: MatAutocompleteSelectedEvent): void {
+    const supplier = event.option.value as DashboardPersonLookup;
+    this.supplierSearchRevision += 1;
+    this.supplierSearchResults.set([]);
+    this.invoiceForm.controls.supplierId.setValue(supplier.id, { emitEvent: false });
+    void this.loadSupplierDetails(supplier.id);
   }
 
   addSiteAllocation(): void {
     const allocation = createInvoiceSiteAllocationForm(this.formBuilder);
     this.registerSiteSearch(allocation);
-    this.allocationForm.controls.siteAllocations.push(allocation);
+    this.invoiceForm.controls.siteAllocations.push(allocation);
   }
 
   removeSiteAllocation(index: number): void {
-    this.allocationForm.controls.siteAllocations.removeAt(index);
-    this.allocationForm.controls.siteAllocations.markAsTouched();
+    this.invoiceForm.controls.siteAllocations.removeAt(index);
+    this.invoiceForm.controls.siteAllocations.markAsTouched();
   }
 
   onSiteSelected(
@@ -189,28 +184,29 @@ export class InvoiceDialogComponent {
     allocation.controls.siteId.setValue(site.id);
     allocation.controls.siteSearch.setValue(site, { emitEvent: false });
     this.siteSearchResults.set([]);
-    this.allocationForm.controls.siteAllocations.markAsTouched();
-    this.allocationForm.controls.siteAllocations.updateValueAndValidity();
+    this.invoiceForm.controls.siteAllocations.markAsTouched();
+    this.invoiceForm.controls.siteAllocations.updateValueAndValidity();
   }
 
-  async saveSiteAllocations(): Promise<void> {
-    if (this.allocationForm.invalid) {
-      this.allocationForm.markAllAsTouched();
+  async saveInvoice(): Promise<void> {
+    if (this.invoiceForm.invalid || !this.supplierDetailsReady()) {
+      this.invoiceForm.markAllAsTouched();
+      this.supplierSearchControl.markAsTouched();
       return;
     }
 
-    this.siteAllocationSaveError.set(null);
+    this.saveError.set(null);
     try {
-      await this.dashboardInvoicesService.updateSiteAllocations({
+      await this.dashboardInvoicesService.updateInvoice({
         invoiceId: this.invoice.id,
-        siteAllocations: toInvoiceSiteAllocationRequests(
-          this.allocationForm.controls.siteAllocations
-        )
+        ...toCreateDashboardInvoiceRequest(this.invoiceForm)
       });
       this.dialogRef.close(true);
     } catch (error) {
-      this.siteAllocationSaveError.set(
-        getInvoiceSiteAllocationErrorMessage(error) ?? 'Unable to save site allocations.'
+      this.saveError.set(
+        this.getSupplierValidationMessage(error)
+        ?? getInvoiceSiteAllocationErrorMessage(error)
+        ?? 'Unable to save the invoice.'
       );
     }
   }
@@ -219,44 +215,166 @@ export class InvoiceDialogComponent {
     this.dialogRef.close();
   }
 
+  private async searchSuppliers(rawSearchTerm: string): Promise<void> {
+    const searchTerm = rawSearchTerm.trim();
+    const revision = ++this.supplierSearchRevision;
+    this.supplierSearchResults.set([]);
+    if (!searchTerm) return;
+
+    try {
+      const suppliers = await this.dashboardPersonsService.searchSuppliers(searchTerm);
+      if (revision === this.supplierSearchRevision) this.supplierSearchResults.set(suppliers);
+    } catch {
+      if (revision === this.supplierSearchRevision) this.supplierSearchResults.set([]);
+    }
+  }
+
+  private async loadSupplierDetails(supplierId: string): Promise<void> {
+    const revision = ++this.supplierDetailsRevision;
+    this.supplierDetailsReady.set(false);
+    try {
+      const supplier = await this.dashboardPersonsService.getPersonById(supplierId);
+      if (revision !== this.supplierDetailsRevision) return;
+      const result = deriveInvoiceSupplierDetails(supplier);
+      if (!result.details) {
+        this.saveError.set(result.error ?? 'Supplier details are incomplete.');
+        return;
+      }
+
+      this.invoiceForm.controls.address.setValue(result.details.address);
+      this.invoiceForm.controls.email.setValue(result.details.email);
+      this.invoiceForm.controls.phoneNumber.setValue(result.details.phoneNumber);
+      this.invoiceForm.controls.contactPerson.setValue(result.details.contactPerson);
+      this.invoiceForm.controls.iban.setValue(result.details.iban);
+      this.supplierDetailsReady.set(true);
+      this.saveError.set(null);
+    } catch {
+      if (revision === this.supplierDetailsRevision) {
+        this.saveError.set('Unable to load the supplier details.');
+      }
+    }
+  }
+
+  private clearSelectedSupplier(): void {
+    this.supplierDetailsRevision += 1;
+    this.invoiceForm.controls.supplierId.setValue('', { emitEvent: false });
+    this.supplierDetailsReady.set(false);
+  }
+
   private registerSiteSearch(allocation: InvoiceSiteAllocationFormGroup): void {
     allocation.controls.siteSearch.valueChanges
       .pipe(debounceTime(250), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe((value) => {
-        if (typeof value !== 'string') {
-          return;
-        }
-
+        if (typeof value !== 'string') return;
         allocation.controls.siteId.setValue('', { emitEvent: false });
-        this.allocationForm.controls.siteAllocations.updateValueAndValidity();
+        this.invoiceForm.controls.siteAllocations.updateValueAndValidity();
         void this.searchSites(value);
       });
   }
 
   private async searchSites(rawSearchTerm: string): Promise<void> {
     const searchTerm = rawSearchTerm.trim();
-    const searchRevision = ++this.siteSearchRevision;
+    const revision = ++this.siteSearchRevision;
     this.siteSearchResults.set([]);
-
-    if (searchTerm.length === 0) {
-      return;
-    }
+    if (!searchTerm) return;
 
     try {
       const sites = await this.dashboardSitesService.searchSites(searchTerm);
-      if (searchRevision === this.siteSearchRevision) {
-        this.siteSearchResults.set(sites);
-      }
+      if (revision === this.siteSearchRevision) this.siteSearchResults.set(sites);
     } catch {
-      if (searchRevision === this.siteSearchRevision) {
-        this.siteSearchResults.set([]);
-      }
+      if (revision === this.siteSearchRevision) this.siteSearchResults.set([]);
     }
+  }
+
+  private updateCalculatedAmounts(): void {
+    const totalValue = parseInvoiceDecimal(this.invoiceForm.controls.totalValue.value);
+    const vatRate = this.invoiceForm.controls.vatRate.value;
+    if (totalValue === null || vatRate === null || vatRate < 0 || vatRate > 100) {
+      this.invoiceForm.controls.vatAmount.setValue('', { emitEvent: false });
+      this.invoiceForm.controls.totalValueIncludingVat.setValue('', { emitEvent: false });
+      this.invoiceTotalIncludingVat.set(null);
+      return;
+    }
+
+    const amounts = calculateInvoiceAmounts(totalValue, vatRate);
+    this.invoiceForm.controls.vatAmount.setValue(formatInvoiceAmount(amounts.vatAmount), { emitEvent: false });
+    this.invoiceForm.controls.totalValueIncludingVat.setValue(
+      formatInvoiceAmount(amounts.totalValueIncludingVat),
+      { emitEvent: false }
+    );
+    this.invoiceTotalIncludingVat.set(amounts.totalValueIncludingVat);
+    this.invoiceForm.controls.siteAllocations.updateValueAndValidity();
   }
 
   private updateSiteAllocationSummary(): void {
     this.assignedSiteAmount.set(
-      calculateAssignedSiteAmount(this.allocationForm.controls.siteAllocations)
+      calculateAssignedSiteAmount(this.invoiceForm.controls.siteAllocations)
     );
+  }
+
+  private getSupplierValidationMessage(error: unknown): string | null {
+    if (!(error instanceof HttpErrorResponse)) return null;
+    const details = error.error?.details as readonly { field?: string; message?: string }[] | undefined;
+    return details?.find((detail) => detail.field?.toLowerCase() === 'supplierid')?.message ?? null;
+  }
+
+  private createInvoiceForm(): AddInvoiceDialogFormGroup {
+    const total = this.invoice.totalValueExcludingVat;
+    const vatRate = this.invoice.vatRate ?? 20;
+
+    return this.formBuilder.nonNullable.group({
+      supplierId: this.formBuilder.nonNullable.control(this.invoice.supplierId ?? '', {
+        validators: [Validators.required, uuidValidator()]
+      }),
+      invoiceNumber: this.formBuilder.nonNullable.control(this.invoice.invoiceNumber ?? '', {
+        validators: [Validators.required, Validators.maxLength(this.validationLimits.invoiceNumber)]
+      }),
+      date: this.formBuilder.control<Date | null>(this.toDate(this.invoice.date), {
+        validators: [Validators.required]
+      }),
+      address: this.formBuilder.nonNullable.control({ value: this.invoice.address ?? '', disabled: true }),
+      email: this.formBuilder.nonNullable.control({ value: this.invoice.email ?? '', disabled: true }),
+      phoneNumber: this.formBuilder.nonNullable.control({ value: this.invoice.phoneNumber ?? '', disabled: true }),
+      contactPerson: this.formBuilder.nonNullable.control({ value: this.invoice.contactPerson ?? '', disabled: true }),
+      iban: this.formBuilder.nonNullable.control({ value: '', disabled: true }),
+      paymentTerm: this.formBuilder.control<Date | null>(this.toDate(this.invoice.paymentTerm), {
+        validators: [Validators.required]
+      }),
+      totalValue: this.formBuilder.control<number | null>(total, {
+        validators: [Validators.required, decimalValidator(), positiveDecimalValidator()]
+      }),
+      vatRate: this.formBuilder.control<number | null>(vatRate, {
+        validators: [Validators.required, Validators.min(0), Validators.max(100)]
+      }),
+      vatAmount: this.formBuilder.nonNullable.control({ value: '', disabled: true }),
+      totalValueIncludingVat: this.formBuilder.nonNullable.control({ value: '', disabled: true }),
+      paymentDate: this.formBuilder.control<Date | null>(this.toDate(this.invoice.paymentDate)),
+      paymentTime: this.formBuilder.nonNullable.control(this.toTime(this.invoice.paymentTime), {
+        validators: [timeValidator()]
+      }),
+      paymentMethod: this.formBuilder.nonNullable.control(this.invoice.paymentMethod ?? '', {
+        validators: [Validators.required]
+      }),
+      siteAllocations: createInvoiceSiteAllocationsFormArray(
+        () => this.invoiceTotalIncludingVat(),
+        this.invoice.siteAllocations.map((allocation) =>
+          createInvoiceSiteAllocationForm(this.formBuilder, allocation)
+        )
+      )
+    });
+  }
+
+  private toDate(value: string | null): Date | null {
+    if (!value) return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  private toTime(value: string | null): string {
+    if (!value) return '';
+    const date = new Date(value);
+    return Number.isNaN(date.getTime())
+      ? ''
+      : `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
   }
 }

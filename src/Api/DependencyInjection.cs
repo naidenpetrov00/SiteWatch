@@ -6,6 +6,7 @@ using Application.SeedWork.Security;
 using Ardalis.GuardClauses;
 using Infrastructure.SeedWork.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Api;
@@ -18,8 +19,12 @@ public static class DependencyInjection
     )
     {
         builder.Services.AddOpenApi();
+        builder.Services.AddDataProtection();
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddScoped<IUser, CurrentUser>();
+        builder.Services.AddSingleton<
+            IInvoiceFileAccessTicketService,
+            InvoiceFileAccessTicketService>();
         builder.Services.AddAutoMapper(cfg => { }, Assembly.GetExecutingAssembly());
         builder.Services.AddCors(opt =>
         {

@@ -20,34 +20,9 @@ public sealed class InvoiceService(ApplicationDbContext dbContext, IMapper mappe
 {
     public async Task<Guid> CreateAsync(CreateInvoiceCommand request, CancellationToken cancellationToken)
     {
-        var supplier = await dbContext.Persons
-            .Include(person => person.Addresses)
-            .Include(person => person.Contacts)
-            .SingleOrDefaultAsync(person => person.Id == request.SupplierId, cancellationToken);
-
-        if (supplier is null)
-        {
-            throw CreateValidationException(nameof(request.SupplierId), "Supplier must exist.");
-        }
-
-        var taxIdentifier = supplier.Type == PersonType.Company ? supplier.Eik : supplier.Egn;
-        if (string.IsNullOrWhiteSpace(taxIdentifier))
-        {
-            var message = supplier.Type == PersonType.Company
-                ? "Company is missing EIK."
-                : "Individual is missing EGN.";
-            throw CreateValidationException(nameof(request.SupplierId), message);
-        }
-
-        var address = GetRequiredAddress(supplier);
-        var email = GetOptionalContactValue(supplier, ContactType.Email);
-        var phoneNumber = GetOptionalContactValue(supplier, ContactType.Phone);
-        var contactPerson = supplier.DisplayName;
-
-        if (string.IsNullOrWhiteSpace(contactPerson))
-        {
-            throw CreateValidationException(nameof(request.SupplierId), "Supplier is missing a display name.");
-        }
+        var supplierDetails = await GetSupplierDetailsAsync(
+            request.SupplierId,
+            cancellationToken);
 
         var date = ParseDateTimeOffset(request.Date, nameof(request.Date));
         var paymentTerm = ParseDateTimeOffset(request.PaymentTerm, nameof(request.PaymentTerm));
@@ -57,22 +32,23 @@ public sealed class InvoiceService(ApplicationDbContext dbContext, IMapper mappe
         var totalValueIncludingVat = Math.Round(request.TotalValue + vatAmount, 2, MidpointRounding.AwayFromZero);
 
         var invoice = Invoice.Create(
-            supplier.Id,
-            supplier,
+            supplierDetails.Supplier.Id,
+            supplierDetails.Supplier,
             request.InvoiceNumber,
             date,
-            taxIdentifier,
-            address,
-            email,
-            phoneNumber,
-            contactPerson,
+            supplierDetails.TaxIdentifier,
+            supplierDetails.Address,
+            supplierDetails.Email,
+            supplierDetails.PhoneNumber,
+            supplierDetails.ContactPerson,
             paymentTerm,
             request.TotalValue,
             vatAmount,
             totalValueIncludingVat,
             request.PaymentMethod,
             paymentDate,
-            paymentTime
+            paymentTime,
+            request.VatRate
         );
 
         var sitePayments = await CreateSitePaymentsAsync(
@@ -85,6 +61,84 @@ public sealed class InvoiceService(ApplicationDbContext dbContext, IMapper mappe
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return invoice.Id;
+    }
+
+    public async Task CreateIncompleteAsync(
+        Guid invoiceId,
+        Guid siteId,
+        string userId,
+        CancellationToken cancellationToken)
+    {
+        var site = await dbContext.Sites
+            .Include(item => item.Users)
+            .SingleOrDefaultAsync(
+                item => item.Id == siteId && item.Users.Any(user => user.Id == userId),
+                cancellationToken);
+
+        if (site is null)
+        {
+            throw new NotFoundException(nameof(Site), siteId.ToString());
+        }
+
+        dbContext.Invoices.Add(Invoice.CreateIncomplete(invoiceId, site));
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task UpdateAsync(
+        UpdateInvoiceCommand request,
+        CancellationToken cancellationToken)
+    {
+        var invoice = await dbContext.Invoices
+            .Include(item => item.SitePayments)
+            .SingleOrDefaultAsync(item => item.Id == request.InvoiceId, cancellationToken);
+
+        if (invoice is null)
+        {
+            throw new NotFoundException(nameof(Invoice), request.InvoiceId.ToString());
+        }
+
+        var supplierDetails = await GetSupplierDetailsAsync(
+            request.SupplierId,
+            cancellationToken);
+        var date = ParseDateTimeOffset(request.Date, nameof(request.Date));
+        var paymentTerm = ParseDateTimeOffset(request.PaymentTerm, nameof(request.PaymentTerm));
+        var paymentDate = ParseOptionalDateTimeOffset(request.PaymentDate, nameof(request.PaymentDate));
+        var paymentTime = ParseOptionalDateTimeOffset(request.PaymentTime, nameof(request.PaymentTime));
+        var vatAmount = Math.Round(
+            request.TotalValue * request.VatRate / 100m,
+            2,
+            MidpointRounding.AwayFromZero);
+        var totalValueIncludingVat = Math.Round(
+            request.TotalValue + vatAmount,
+            2,
+            MidpointRounding.AwayFromZero);
+
+        invoice.CompleteOrUpdate(
+            supplierDetails.Supplier.Id,
+            supplierDetails.Supplier,
+            request.InvoiceNumber,
+            date,
+            supplierDetails.TaxIdentifier,
+            supplierDetails.Address,
+            supplierDetails.Email,
+            supplierDetails.PhoneNumber,
+            supplierDetails.ContactPerson,
+            paymentTerm,
+            request.TotalValue,
+            request.VatRate,
+            vatAmount,
+            totalValueIncludingVat,
+            request.PaymentMethod,
+            paymentDate,
+            paymentTime);
+
+        var sitePayments = await CreateSitePaymentsAsync(
+            invoice,
+            request.SiteAllocations,
+            cancellationToken);
+        dbContext.SitePayments.RemoveRange(invoice.SitePayments);
+        invoice.ReplaceSitePayments(sitePayments);
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task UpdateSiteAllocationsAsync(
@@ -100,8 +154,15 @@ public sealed class InvoiceService(ApplicationDbContext dbContext, IMapper mappe
             throw new NotFoundException(nameof(Invoice), request.InvoiceId.ToString());
         }
 
+        if (!invoice.IsComplete || !invoice.TotalValueIncludingVat.HasValue)
+        {
+            throw CreateValidationException(
+                nameof(request.SiteAllocations),
+                "The invoice must be completed before site allocations can be updated.");
+        }
+
         if (request.SiteAllocations.Sum(allocation => allocation.Amount)
-            > invoice.TotalValueIncludingVat)
+            > invoice.TotalValueIncludingVat.Value)
         {
             throw CreateValidationException(
                 nameof(request.SiteAllocations),
@@ -152,24 +213,30 @@ public sealed class InvoiceService(ApplicationDbContext dbContext, IMapper mappe
         var invoices = await dbContext.Invoices
             .AsNoTracking()
             .Include(invoice => invoice.Supplier)
+            .Include(invoice => invoice.SubmittedFromSite)
             .Include(invoice => invoice.SitePayments)
-            .Where(invoice => invoice.SitePayments.Any(payment => payment.SiteId == siteId))
-            .OrderByDescending(invoice => invoice.Date)
+            .Where(invoice =>
+                invoice.SubmittedFromSiteId == siteId
+                || invoice.SitePayments.Any(payment => payment.SiteId == siteId))
+            .OrderByDescending(invoice => invoice.Created)
             .ThenByDescending(invoice => invoice.NumberId)
             .ToListAsync(cancellationToken);
 
         return invoices.Select(invoice =>
         {
-            var allocation = invoice.SitePayments.Single(payment => payment.SiteId == siteId);
+            var allocation = invoice.SitePayments.SingleOrDefault(payment => payment.SiteId == siteId);
 
             return new SiteInvoiceDto
             {
                 Id = invoice.Id,
                 NumberId = invoice.NumberId,
+                IsComplete = invoice.IsComplete,
                 SupplierId = invoice.SupplierId,
-                SupplierDisplayLabel = invoice.Supplier.DisplayName,
+                SupplierDisplayLabel = invoice.Supplier?.DisplayName,
+                SubmittedFromSiteName = invoice.SubmittedFromSite?.Name.Value,
                 InvoiceNumber = invoice.InvoiceNumber,
                 Date = invoice.Date,
+                Created = invoice.Created,
                 TaxIdentifier = invoice.TaxIdentifier,
                 Address = invoice.Address,
                 Email = invoice.Email,
@@ -177,14 +244,22 @@ public sealed class InvoiceService(ApplicationDbContext dbContext, IMapper mappe
                 ContactPerson = invoice.ContactPerson,
                 PaymentTerm = invoice.PaymentTerm,
                 TotalValueExcludingVat = invoice.TotalValueExcludingVat,
+                VatRate = invoice.VatRate
+                    ?? (invoice.TotalValueExcludingVat.HasValue
+                        && invoice.TotalValueExcludingVat.Value > 0m
+                        && invoice.Vat.HasValue
+                            ? invoice.Vat.Value * 100m / invoice.TotalValueExcludingVat.Value
+                            : null),
                 Vat = invoice.Vat,
                 TotalValueIncludingVat = invoice.TotalValueIncludingVat,
                 PaymentDate = invoice.PaymentDate,
                 PaymentTime = invoice.PaymentTime,
                 PaymentMethod = invoice.PaymentMethod,
-                SiteAllocation = new SiteInvoiceAllocationDto(
-                    allocation.Amount,
-                    allocation.Direction.ToString())
+                SiteAllocation = allocation is null
+                    ? null
+                    : new SiteInvoiceAllocationDto(
+                        allocation.Amount,
+                        allocation.Direction.ToString())
             };
         }).ToList();
     }
@@ -195,13 +270,15 @@ public sealed class InvoiceService(ApplicationDbContext dbContext, IMapper mappe
         string userId,
         CancellationToken cancellationToken)
     {
-        var canAccess = await dbContext.SitePayments
+        var canAccess = await dbContext.Invoices
             .AsNoTracking()
             .AnyAsync(
-                payment =>
-                    payment.SiteId == siteId
-                    && payment.InvoiceId == invoiceId
-                    && payment.Site.Users.Any(user => user.Id == userId),
+                invoice => invoice.Id == invoiceId
+                    && ((invoice.SubmittedFromSiteId == siteId
+                            && invoice.SubmittedFromSite!.Users.Any(user => user.Id == userId))
+                        || invoice.SitePayments.Any(payment =>
+                            payment.SiteId == siteId
+                            && payment.Site.Users.Any(user => user.Id == userId))),
                 cancellationToken);
 
         if (!canAccess)
@@ -219,6 +296,61 @@ public sealed class InvoiceService(ApplicationDbContext dbContext, IMapper mappe
         {
             throw new NotFoundException(nameof(Invoice), invoiceId.ToString());
         }
+    }
+
+    public async Task EnsureUserCanAccessSiteAsync(
+        Guid siteId,
+        string userId,
+        CancellationToken cancellationToken)
+    {
+        var canAccess = await dbContext.Sites
+            .AsNoTracking()
+            .AnyAsync(
+                site => site.Id == siteId && site.Users.Any(user => user.Id == userId),
+                cancellationToken);
+
+        if (!canAccess)
+        {
+            throw new NotFoundException(nameof(Site), siteId.ToString());
+        }
+    }
+
+    private async Task<SupplierInvoiceDetails> GetSupplierDetailsAsync(
+        Guid supplierId,
+        CancellationToken cancellationToken)
+    {
+        var supplier = await dbContext.Persons
+            .Include(person => person.Addresses)
+            .Include(person => person.Contacts)
+            .SingleOrDefaultAsync(person => person.Id == supplierId, cancellationToken);
+
+        if (supplier is null)
+        {
+            throw CreateValidationException(nameof(supplierId), "Supplier must exist.");
+        }
+
+        var taxIdentifier = supplier.Type == PersonType.Company ? supplier.Eik : supplier.Egn;
+        if (string.IsNullOrWhiteSpace(taxIdentifier))
+        {
+            var message = supplier.Type == PersonType.Company
+                ? "Company is missing EIK."
+                : "Individual is missing EGN.";
+            throw CreateValidationException(nameof(supplierId), message);
+        }
+
+        var contactPerson = supplier.DisplayName;
+        if (string.IsNullOrWhiteSpace(contactPerson))
+        {
+            throw CreateValidationException(nameof(supplierId), "Supplier is missing a display name.");
+        }
+
+        return new SupplierInvoiceDetails(
+            supplier,
+            taxIdentifier,
+            GetRequiredAddress(supplier),
+            GetOptionalContactValue(supplier, ContactType.Email),
+            GetOptionalContactValue(supplier, ContactType.Phone),
+            contactPerson);
     }
 
     private static string GetRequiredAddress(Person supplier)
@@ -300,14 +432,15 @@ public sealed class InvoiceService(ApplicationDbContext dbContext, IMapper mappe
             "Direction must be In or Out.");
     }
 
-    private static string GetOptionalContactValue(Person supplier, ContactType contactType)
+    private static string? GetOptionalContactValue(Person supplier, ContactType contactType)
     {
         var contact = supplier.Contacts
             .Where(item => item.IsActive && item.ContactType == contactType)
             .OrderByDescending(item => item.IsPrimary)
             .FirstOrDefault();
+        var value = contact?.Value;
 
-        return contact?.Value.Trim() ?? string.Empty;
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
     private static DateTimeOffset ParseDateTimeOffset(string value, string parameterName)
@@ -345,4 +478,12 @@ public sealed class InvoiceService(ApplicationDbContext dbContext, IMapper mappe
 
     private static ValidationException CreateValidationException(string propertyName, string message) =>
         new(new[] { new ValidationFailure(propertyName, message) });
+
+    private sealed record SupplierInvoiceDetails(
+        Person Supplier,
+        string TaxIdentifier,
+        string Address,
+        string? Email,
+        string? PhoneNumber,
+        string ContactPerson);
 }

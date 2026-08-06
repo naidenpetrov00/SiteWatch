@@ -22,6 +22,13 @@ const INVOICE_COLUMNS: readonly DataTableColumn<DashboardInvoice>[] = [
     cellType: 'button'
   },
   {
+    key: 'isComplete',
+    label: 'Complete',
+    sortable: true,
+    align: 'center',
+    filter: { kind: 'boolean', placeholder: 'Filter Complete' }
+  },
+  {
     key: 'id',
     label: 'Id',
     sortable: true,
@@ -39,6 +46,19 @@ const INVOICE_COLUMNS: readonly DataTableColumn<DashboardInvoice>[] = [
     sortable: true,
     filter: { kind: 'text', placeholder: 'Filter Date' },
     displayFormatter: (value) => formatInvoiceDateValue(value)
+  },
+  {
+    key: 'created',
+    label: 'Created',
+    sortable: true,
+    filter: { kind: 'text', placeholder: 'Filter Created' },
+    displayFormatter: (value) => formatInvoiceDateValue(value)
+  },
+  {
+    key: 'submittedFromSiteName',
+    label: 'Uploaded From',
+    sortable: true,
+    filter: { kind: 'text', placeholder: 'Filter Uploaded From' }
   },
   {
     key: 'supplierId',
@@ -153,6 +173,8 @@ export class InvoicesPage {
   readonly columns = INVOICE_COLUMNS;
   readonly pageSize = 50;
   readonly pageSizeOptions = [50, 100, 500, 1000] as const;
+  readonly isIncompleteInvoice = (invoice: DashboardInvoice): boolean =>
+    invoice.isComplete !== true;
 
   constructor() {
     effect(() => {

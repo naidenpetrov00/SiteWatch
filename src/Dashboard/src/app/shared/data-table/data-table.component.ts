@@ -58,6 +58,7 @@ export class DataTableComponent<T extends object> {
   readonly pageSize = input(5);
   readonly pageSizeOptions = input<readonly number[]>([5, 10, 25]);
   readonly filterApplyMode = input<DataTableFilterMode>('instant');
+  readonly errorRowPredicate = input<((row: T) => boolean) | null>(null);
 
   readonly tableStateChange = output<DataTableState<T>>();
   readonly searchRequested = output<DataTableState<T>>();
@@ -143,6 +144,11 @@ export class DataTableComponent<T extends object> {
       ...page,
       pageIndex: 0
     }));
+  }
+
+  isErrorRow(row: T): boolean {
+    const predicate = this.errorRowPredicate();
+    return predicate ? predicate(row) : false;
   }
 
   onPageChange(event: PageEvent): void {

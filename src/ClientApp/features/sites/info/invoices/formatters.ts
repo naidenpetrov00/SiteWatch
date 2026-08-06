@@ -17,8 +17,8 @@ const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
   minute: "2-digit",
 });
 
-export const formatInvoiceAmount = (value: number) =>
-  amountFormatter.format(value);
+export const formatInvoiceAmount = (value: number | null) =>
+  value === null ? "—" : amountFormatter.format(value);
 
 export const formatInvoiceDate = (value: string | null) => {
   if (!value) return "—";
@@ -34,5 +34,5 @@ export const formatInvoiceDateTime = (value: string | null) => {
   return Number.isNaN(date.getTime()) ? value : dateTimeFormatter.format(date);
 };
 
-export const formatInvoiceText = (value: string) =>
-  value.trim().length > 0 ? value : "—";
+export const formatInvoiceText = (value: string | null) =>
+  value?.trim().length ? value : "—";

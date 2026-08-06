@@ -39,13 +39,14 @@ const InvoiceDetailsModal = ({
     {
       title: "Invoice",
       items: [
-        { label: "Invoice number", value: invoice.invoiceNumber },
+        { label: "Invoice number", value: formatInvoiceText(invoice.invoiceNumber) },
         { label: "Reference", value: String(invoice.numberId) },
         { label: "Date", value: formatInvoiceDate(invoice.date) },
-        { label: "Supplier", value: invoice.supplierDisplayLabel },
-        { label: "Tax identifier", value: invoice.taxIdentifier },
-        { label: "Address", value: invoice.address },
-        { label: "Contact person", value: invoice.contactPerson },
+        { label: "Uploaded from", value: formatInvoiceText(invoice.submittedFromSiteName) },
+        { label: "Supplier", value: formatInvoiceText(invoice.supplierDisplayLabel) },
+        { label: "Tax identifier", value: formatInvoiceText(invoice.taxIdentifier) },
+        { label: "Address", value: formatInvoiceText(invoice.address) },
+        { label: "Contact person", value: formatInvoiceText(invoice.contactPerson) },
         { label: "Email", value: formatInvoiceText(invoice.email) },
         { label: "Phone", value: formatInvoiceText(invoice.phoneNumber) },
       ],
@@ -64,9 +65,9 @@ const InvoiceDetailsModal = ({
         },
         {
           label: "Site allocation",
-          value: formatInvoiceAmount(invoice.siteAllocation.amount),
+          value: formatInvoiceAmount(invoice.siteAllocation?.amount ?? null),
         },
-        { label: "Direction", value: invoice.siteAllocation.direction },
+        { label: "Direction", value: invoice.siteAllocation?.direction ?? "—" },
       ],
     },
     {
@@ -84,7 +85,7 @@ const InvoiceDetailsModal = ({
           label: "Payment time",
           value: formatInvoiceDateTime(invoice.paymentTime),
         },
-        { label: "Payment method", value: invoice.paymentMethod },
+        { label: "Payment method", value: formatInvoiceText(invoice.paymentMethod) },
       ],
     },
   ];
@@ -125,7 +126,7 @@ const InvoiceDetailsModal = ({
                 { color: colorPalette.text },
               ]}
             >
-              {invoice.invoiceNumber}
+              {invoice.invoiceNumber ?? `Invoice #${invoice.numberId}`}
             </Text>
           </View>
           <Pressable
