@@ -38,14 +38,22 @@ describe("role authorization", () => {
 
   it.each([
     [USER_ROLES.administrator, AUTHENTICATED_ROUTES.currentApp],
-    [USER_ROLES.client, AUTHENTICATED_ROUTES.accessDenied],
-    [USER_ROLES.worker, AUTHENTICATED_ROUTES.accessDenied],
+    [USER_ROLES.client, AUTHENTICATED_ROUTES.currentApp],
+    [USER_ROLES.worker, AUTHENTICATED_ROUTES.currentApp],
   ])("routes %s to the expected authenticated page", (role, expectedRoute) => {
     expect(getPostSignInRoute([role])).toBe(expectedRoute);
   });
 
-  it("keeps the current app policy Administrator-only", () => {
-    expect(ACCESS_POLICIES.currentApp).toEqual([USER_ROLES.administrator]);
+  it("allows every supported role into the current app but limits site invoices", () => {
+    expect(ACCESS_POLICIES.currentApp).toEqual([
+      USER_ROLES.administrator,
+      USER_ROLES.worker,
+      USER_ROLES.client,
+    ]);
+    expect(ACCESS_POLICIES.siteInvoices).toEqual([
+      USER_ROLES.administrator,
+      USER_ROLES.worker,
+    ]);
     expect(getPostSignInRoute(undefined)).toBe(AUTHENTICATED_ROUTES.accessDenied);
   });
 });
