@@ -55,6 +55,7 @@ import {
   decimalValidator,
   positiveDecimalValidator,
   timeValidator,
+  UUID_REGEX,
   uuidValidator
 } from '../add-invoice-dialog/add-invoice-dialog.validators';
 
@@ -139,8 +140,7 @@ export class InvoiceDialogComponent {
       .pipe(debounceTime(250), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe((value) => {
         if (typeof value === 'string') {
-          this.clearSelectedSupplier();
-          void this.searchSuppliers(value);
+          void this.onSupplierSearchTermChanged(value);
         }
       });
 
@@ -161,6 +161,7 @@ export class InvoiceDialogComponent {
     const supplier = event.option.value as DashboardPersonLookup;
     this.supplierSearchRevision += 1;
     this.supplierSearchResults.set([]);
+    this.supplierSearchControl.markAsTouched();
     this.invoiceForm.controls.supplierId.setValue(supplier.id, { emitEvent: false });
     void this.loadSupplierDetails(supplier.id);
   }
@@ -215,50 +216,128 @@ export class InvoiceDialogComponent {
     this.dialogRef.close();
   }
 
-  private async searchSuppliers(rawSearchTerm: string): Promise<void> {
+  private async onSupplierSearchTermChanged(rawSearchTerm: string): Promise<void> {
     const searchTerm = rawSearchTerm.trim();
-    const revision = ++this.supplierSearchRevision;
+
+    this.invalidateSupplierDetailsLookup();
+    this.clearSelectedSupplier();
+    this.clearSupplierSearchErrors();
+
+    const searchRevision = ++this.supplierSearchRevision;
     this.supplierSearchResults.set([]);
-    if (!searchTerm) return;
+
+    if (searchTerm.length === 0) {
+      return;
+    }
 
     try {
       const suppliers = await this.dashboardPersonsService.searchSuppliers(searchTerm);
-      if (revision === this.supplierSearchRevision) this.supplierSearchResults.set(suppliers);
+
+      if (searchRevision !== this.supplierSearchRevision) {
+        return;
+      }
+
+      this.supplierSearchResults.set(suppliers);
     } catch {
-      if (revision === this.supplierSearchRevision) this.supplierSearchResults.set([]);
+      if (searchRevision !== this.supplierSearchRevision) {
+        return;
+      }
+
+      this.supplierSearchResults.set([]);
     }
   }
 
   private async loadSupplierDetails(supplierId: string): Promise<void> {
-    const revision = ++this.supplierDetailsRevision;
+    const lookupRevision = this.nextSupplierDetailsRevision();
+
     this.supplierDetailsReady.set(false);
+    this.clearSupplierDetails();
+
+    if (!UUID_REGEX.test(supplierId)) {
+      this.clearSelectedSupplier();
+      this.setSupplierSearchError('supplierNotFound', true);
+      return;
+    }
+
     try {
       const supplier = await this.dashboardPersonsService.getPersonById(supplierId);
-      if (revision !== this.supplierDetailsRevision) return;
-      const result = deriveInvoiceSupplierDetails(supplier);
-      if (!result.details) {
-        this.saveError.set(result.error ?? 'Supplier details are incomplete.');
+
+      if (lookupRevision !== this.supplierDetailsRevision) {
         return;
       }
 
-      this.invoiceForm.controls.address.setValue(result.details.address);
-      this.invoiceForm.controls.email.setValue(result.details.email);
-      this.invoiceForm.controls.phoneNumber.setValue(result.details.phoneNumber);
-      this.invoiceForm.controls.contactPerson.setValue(result.details.contactPerson);
-      this.invoiceForm.controls.iban.setValue(result.details.iban);
+      const result = deriveInvoiceSupplierDetails(supplier);
+
+      if (!result.details) {
+        this.clearSelectedSupplier();
+        this.setSupplierSearchError('supplierDetailsIncomplete', result.error ?? true);
+        return;
+      }
+
+      this.clearSupplierSearchErrors();
+      this.invoiceForm.controls.supplierId.setValue(supplier.id, { emitEvent: false });
+      this.invoiceForm.controls.address.setValue(result.details.address, { emitEvent: false });
+      this.invoiceForm.controls.email.setValue(result.details.email, { emitEvent: false });
+      this.invoiceForm.controls.phoneNumber.setValue(result.details.phoneNumber, { emitEvent: false });
+      this.invoiceForm.controls.contactPerson.setValue(result.details.contactPerson, {
+        emitEvent: false
+      });
+      this.invoiceForm.controls.iban.setValue(result.details.iban, { emitEvent: false });
       this.supplierDetailsReady.set(true);
       this.saveError.set(null);
-    } catch {
-      if (revision === this.supplierDetailsRevision) {
-        this.saveError.set('Unable to load the supplier details.');
+    } catch (error) {
+      if (lookupRevision !== this.supplierDetailsRevision) {
+        return;
       }
+
+      this.clearSelectedSupplier();
+      const supplierValidationMessage = this.getSupplierValidationMessage(error);
+      this.setSupplierSearchError(
+        supplierValidationMessage ? 'supplierDetailsIncomplete' : 'supplierNotFound',
+        supplierValidationMessage ?? true
+      );
     }
   }
 
   private clearSelectedSupplier(): void {
-    this.supplierDetailsRevision += 1;
     this.invoiceForm.controls.supplierId.setValue('', { emitEvent: false });
+    this.clearSupplierDetails();
     this.supplierDetailsReady.set(false);
+  }
+
+  private invalidateSupplierDetailsLookup(): void {
+    this.supplierDetailsRevision += 1;
+  }
+
+  private nextSupplierDetailsRevision(): number {
+    this.supplierDetailsRevision += 1;
+    return this.supplierDetailsRevision;
+  }
+
+  private clearSupplierDetails(): void {
+    this.invoiceForm.controls.address.setValue('', { emitEvent: false });
+    this.invoiceForm.controls.email.setValue('', { emitEvent: false });
+    this.invoiceForm.controls.phoneNumber.setValue('', { emitEvent: false });
+    this.invoiceForm.controls.contactPerson.setValue('', { emitEvent: false });
+    this.invoiceForm.controls.iban.setValue('', { emitEvent: false });
+  }
+
+  private clearSupplierSearchErrors(): void {
+    this.setSupplierSearchError('supplierNotFound', false);
+    this.setSupplierSearchError('supplierDetailsIncomplete', false);
+  }
+
+  private setSupplierSearchError(errorKey: string, errorValue: boolean | string): void {
+    const supplierSearchControl = this.supplierSearchControl;
+    const nextErrors = { ...(supplierSearchControl.errors ?? {}) };
+
+    if (errorValue) {
+      nextErrors[errorKey] = errorValue;
+    } else {
+      delete nextErrors[errorKey];
+    }
+
+    supplierSearchControl.setErrors(Object.keys(nextErrors).length > 0 ? nextErrors : null);
   }
 
   private registerSiteSearch(allocation: InvoiceSiteAllocationFormGroup): void {

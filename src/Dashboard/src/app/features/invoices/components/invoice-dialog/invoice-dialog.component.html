@@ -8,7 +8,7 @@
   >
     <section class="invoice-dialog__section">
       <h3 class="invoice-dialog__section-title">Supplier</h3>
-      <mat-form-field appearance="outline" class="invoice-dialog__field--full">
+      <mat-form-field appearance="outline" class="invoice-dialog__field--full invoice-dialog__supplier-search">
         <mat-label>Supplier</mat-label>
         <input
           matInput
@@ -18,8 +18,11 @@
           inputmode="search"
         />
         <mat-hint>Search by name, EGN, or EIK.</mat-hint>
-        @if (supplierSearchControl.touched && !supplierDetailsReady()) {
-          <mat-error>Select a supplier from the results.</mat-error>
+        @if (supplierSearchControl.touched && supplierSearchControl.hasError('supplierNotFound')) {
+          <mat-error>Supplier was not found.</mat-error>
+        }
+        @if (supplierSearchControl.touched && supplierSearchControl.hasError('supplierDetailsIncomplete')) {
+          <mat-error>{{ supplierSearchControl.getError('supplierDetailsIncomplete') }}</mat-error>
         }
       </mat-form-field>
 
@@ -35,6 +38,33 @@
           </mat-option>
         }
       </mat-autocomplete>
+
+      <div class="invoice-dialog__grid">
+        <mat-form-field appearance="outline" floatLabel="always">
+          <mat-label>Contact Person</mat-label>
+          <input matInput formControlName="contactPerson" readonly />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" floatLabel="always">
+          <mat-label>Phone Number</mat-label>
+          <input matInput formControlName="phoneNumber" readonly />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="invoice-dialog__field--full" floatLabel="always">
+          <mat-label>Address</mat-label>
+          <textarea matInput formControlName="address" rows="2" readonly></textarea>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" floatLabel="always">
+          <mat-label>Email</mat-label>
+          <input matInput formControlName="email" readonly />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" floatLabel="always">
+          <mat-label>IBAN</mat-label>
+          <input matInput formControlName="iban" readonly />
+        </mat-form-field>
+      </div>
     </section>
 
     <section class="invoice-dialog__section">

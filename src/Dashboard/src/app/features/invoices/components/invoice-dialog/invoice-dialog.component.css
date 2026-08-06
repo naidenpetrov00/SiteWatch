@@ -26,6 +26,10 @@
   width: 100%;
 }
 
+.invoice-dialog__supplier-search {
+  margin-bottom: 1rem;
+}
+
 .invoice-dialog__option-title,
 .invoice-dialog__option-subtitle {
   display: block;
