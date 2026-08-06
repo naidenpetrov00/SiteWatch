@@ -58,6 +58,36 @@ public sealed class InvoiceFileCommandHandlerTests
         await blobs.DidNotReceiveWithAnyArgs().UploadAsync(default, default!, default);
     }
 
+    [Fact]
+    public async Task UploadFile_checks_that_the_invoice_exists_before_replacing_its_blob()
+    {
+        var invoices = Substitute.For<IInvoiceService>();
+        var blobs = Substitute.For<IInvoiceBlobService>();
+        var invoiceId = Guid.NewGuid();
+        var handler = new UploadInvoiceFileCommandHandler(invoices, blobs);
+        await using var input = PdfFile();
+
+        await handler.Handle(new UploadInvoiceFileCommand(invoiceId, input), CancellationToken.None);
+
+        await invoices.Received(1).EnsureInvoiceExistsAsync(invoiceId, CancellationToken.None);
+        await blobs.Received(1).UploadAsync(invoiceId, Arg.Is<UploadedInvoiceFile>(file =>
+            file.FileName == "invoice.pdf" && file.ContentType == "application/pdf"), CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task UploadFile_does_not_write_a_blob_when_validation_fails()
+    {
+        var blobs = Substitute.For<IInvoiceBlobService>();
+        var handler = new UploadInvoiceFileCommandHandler(Substitute.For<IInvoiceService>(), blobs);
+        await using var input = new UploadedInvoiceFile(
+            new MemoryStream([0x25, 0x50, 0x44, 0x46, 0x2D]), "invoice.pdf", "image/png", 5);
+
+        await Assert.ThrowsAsync<FluentValidation.ValidationException>(() => handler.Handle(
+            new UploadInvoiceFileCommand(Guid.NewGuid(), input), CancellationToken.None));
+
+        await blobs.DidNotReceiveWithAnyArgs().UploadAsync(default, default!, default);
+    }
+
     private static UploadedInvoiceFile PdfFile() => new(
         new MemoryStream([0x25, 0x50, 0x44, 0x46, 0x2D]), "invoice.pdf", "application/pdf", 5);
 }
