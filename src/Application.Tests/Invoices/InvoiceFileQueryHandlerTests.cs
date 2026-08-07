@@ -77,4 +77,21 @@ public sealed class InvoiceFileQueryHandlerTests
         Assert.Same(response, result);
         await invoices.Received(1).EnsureUserCanAccessInvoiceAsync(siteId, invoiceId, "worker-1", CancellationToken.None);
     }
+
+    [Fact]
+    public async Task FileDownload_allows_administrators_without_requiring_the_worker_role()
+    {
+        var identity = Substitute.For<IIdentityService>();
+        identity.IsInRoleAsync("admin-1", UserRoles.Administrator).Returns(true);
+        identity.IsInRoleAsync("admin-1", UserRoles.Worker).Returns(false);
+        var invoices = Substitute.For<IInvoiceService>();
+        var blobs = Substitute.For<IInvoiceBlobService>();
+        var response = new InvoiceFileResponse(new MemoryStream([1]), "invoice.pdf", "application/pdf", 1);
+        blobs.DownloadAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(response);
+
+        var result = await new InvoiceFileDownloadQueryHandler(identity, invoices, blobs)
+            .Handle(new InvoiceFileDownloadQuery(Guid.NewGuid(), Guid.NewGuid(), "admin-1"), CancellationToken.None);
+
+        Assert.Same(response, result);
+    }
 }

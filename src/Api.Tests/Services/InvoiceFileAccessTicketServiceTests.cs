@@ -41,6 +41,15 @@ public sealed class InvoiceFileAccessTicketServiceTests
         Assert.Null(access);
     }
 
+    [Fact]
+    public void TryRead_rejects_a_ticket_created_by_a_different_protector()
+    {
+        var ticket = CreateService().Create(Guid.NewGuid(), Guid.NewGuid(), "worker-1", DateTimeOffset.UtcNow.AddMinutes(5));
+
+        Assert.False(CreateService().TryRead(ticket, out var access));
+        Assert.Null(access);
+    }
+
     private static InvoiceFileAccessTicketService CreateService() =>
         new(new EphemeralDataProtectionProvider());
 }

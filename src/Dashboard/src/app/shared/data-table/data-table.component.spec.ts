@@ -21,4 +21,22 @@ describe('DataTableComponent', () => {
 
     expect(fixture.componentInstance.isErrorRow({ id: 1 })).toBe(false);
   });
+
+  it('renders the error-row class only for rows selected by the predicate', async () => {
+    await TestBed.configureTestingModule({ imports: [DataTableComponent] }).compileComponents();
+    const fixture = TestBed.createComponent(DataTableComponent<{ id: number; incomplete: boolean }>);
+    fixture.componentRef.setInput('columns', [{ key: 'id', label: 'Id' }]);
+    fixture.componentRef.setInput('rows', [{ id: 1, incomplete: true }, { id: 2, incomplete: false }]);
+    fixture.componentRef.setInput('filteredRowsTotal', 2);
+    fixture.componentRef.setInput('overallRowsTotal', 2);
+    fixture.componentRef.setInput(
+      'errorRowPredicate',
+      (row: { id: number; incomplete: boolean }) => row.incomplete
+    );
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.querySelectorAll('.data-table__row--error')).toHaveLength(1);
+  });
 });
