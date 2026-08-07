@@ -57,6 +57,16 @@ public sealed class InvoiceFileValidationTests
     }
 
     [Fact]
+    public async Task ValidateAndBufferAsync_rejects_a_declared_file_larger_than_the_limit_before_reading_it()
+    {
+        await using var stream = new MemoryStream([0x25, 0x50, 0x44, 0x46, 0x2D]);
+
+        await Assert.ThrowsAsync<ValidationException>(() => InvoiceFileValidation.ValidateAndBufferAsync(
+            new UploadedInvoiceFile(stream, "invoice.pdf", "application/pdf", InvoiceFileValidation.MaxFileSize + 1),
+            CancellationToken.None));
+    }
+
+    [Fact]
     public async Task ValidateAndBufferAsync_sanitizes_a_path_to_its_file_name()
     {
         await using var stream = new MemoryStream([0x25, 0x50, 0x44, 0x46, 0x2D]);

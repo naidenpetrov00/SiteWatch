@@ -26,6 +26,15 @@ public sealed class CurrentUserTests
     }
 
     [Fact]
+    public void Reads_the_JWT_name_identifier_when_the_standard_claim_is_absent()
+    {
+        var user = CreateUser(new Claim(JwtRegisteredClaimNames.NameId, "user-3"));
+
+        Assert.Equal("user-3", user.Id);
+        Assert.Null(user.Email);
+    }
+
+    [Fact]
     public void Returns_null_when_there_is_no_http_context()
     {
         var user = new CurrentUser(new HttpContextAccessor());

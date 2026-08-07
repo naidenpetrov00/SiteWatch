@@ -60,6 +60,32 @@ public sealed class InvoiceTests
         Assert.Throws<ArgumentException>(() => invoice.ReplaceSitePayments([overTotalPayment]));
     }
 
+    [Fact]
+    public void ReplaceSitePayments_accepts_an_exact_total_but_rejects_duplicate_sites()
+    {
+        var invoice = CompleteInvoice();
+        var site = CreateSite();
+        var exactTotal = SitePayment.Create(invoice, site, 120m, SitePaymentDirection.In);
+        var duplicateSite = SitePayment.Create(invoice, site, 1m, SitePaymentDirection.Out);
+
+        invoice.ReplaceSitePayments([exactTotal]);
+
+        Assert.Single(invoice.SitePayments);
+        Assert.Throws<ArgumentException>(() => invoice.ReplaceSitePayments([exactTotal, duplicateSite]));
+    }
+
+    [Fact]
+    public void CreateIncomplete_preserves_the_submitting_site_until_it_is_completed()
+    {
+        var site = CreateSite();
+        var invoice = Invoice.CreateIncomplete(Guid.NewGuid(), site);
+
+        Assert.False(invoice.IsComplete);
+        Assert.Equal(InvoiceStatus.Incomplete, invoice.Status);
+        Assert.Equal(site.Id, invoice.SubmittedFromSiteId);
+        Assert.Same(site, invoice.SubmittedFromSite);
+    }
+
     private static Invoice CompleteInvoice()
     {
         var supplier = Person.CreateCompany("Acme Ltd", CompanyLegalForm.ООД, "123456789", "BG123456789");

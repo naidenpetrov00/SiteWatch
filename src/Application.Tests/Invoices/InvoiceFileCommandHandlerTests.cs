@@ -59,6 +59,23 @@ public sealed class InvoiceFileCommandHandlerTests
     }
 
     [Fact]
+    public async Task CreateFromFile_does_not_upload_when_the_user_cannot_access_the_site()
+    {
+        var invoices = Substitute.For<IInvoiceService>();
+        invoices.EnsureUserCanAccessSiteAsync(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromException(new UnauthorizedAccessException()));
+        var blobs = Substitute.For<IInvoiceBlobService>();
+        var user = Substitute.For<IUser>();
+        user.Id.Returns("worker-1");
+        await using var input = PdfFile();
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => new CreateInvoiceFromFileCommandHandler(invoices, blobs, user)
+            .Handle(new CreateInvoiceFromFileCommand(Guid.NewGuid(), input), CancellationToken.None));
+
+        await blobs.DidNotReceiveWithAnyArgs().UploadAsync(default, default!, default);
+    }
+
+    [Fact]
     public async Task UploadFile_checks_that_the_invoice_exists_before_replacing_its_blob()
     {
         var invoices = Substitute.For<IInvoiceService>();

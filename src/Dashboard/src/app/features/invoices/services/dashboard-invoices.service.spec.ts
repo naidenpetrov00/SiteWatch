@@ -46,6 +46,22 @@ describe('DashboardInvoicesService', () => {
     await refetch;
   });
 
+  it('omits sorting parameters when the table has no active sort direction', async () => {
+    service.setTableState({
+      overallRowsTotal: 0,
+      filteredRowsTotal: 0,
+      page: { pageIndex: 0, pageSize: 50 },
+      sort: { active: 'invoiceNumber', direction: '' },
+      filters: {}, draftFilters: {}, appliedFilters: {}, exportableColumns: []
+    });
+
+    const refetch = service.dashboardInvoicesQuery.refetch();
+    await Promise.resolve();
+    const request = httpTesting.expectOne(`${buildApiUrl('/dashboard/invoices')}?pageIndex=0&pageSize=50`);
+    request.flush({ items: [], filteredCount: 0, totalCount: 0 });
+    await refetch;
+  });
+
   it('sends uploads as multipart data with the expected invoice URL', async () => {
     const upload = service.uploadInvoiceFile('invoice-1', new File(['pdf'], 'invoice.pdf', { type: 'application/pdf' }));
     await Promise.resolve();
