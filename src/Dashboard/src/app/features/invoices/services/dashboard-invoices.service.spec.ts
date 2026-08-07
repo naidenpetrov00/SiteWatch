@@ -37,11 +37,13 @@ describe('DashboardInvoicesService', () => {
       exportableColumns: []
     });
 
+    const refetch = service.dashboardInvoicesQuery.refetch();
     await Promise.resolve();
     const request = httpTesting.expectOne(
       `${buildApiUrl('/dashboard/invoices')}?pageIndex=2&pageSize=100&sortActive=invoiceNumber&sortDirection=desc&invoiceNumber=inv-42`
     );
     request.flush({ items: [], filteredCount: 0, totalCount: 0 });
+    await refetch;
   });
 
   it('sends uploads as multipart data with the expected invoice URL', async () => {
@@ -76,7 +78,7 @@ describe('DashboardInvoicesService', () => {
     expect(request.request.body).toMatchObject({ invoiceNumber: 'INV-42', vatRate: 20 });
     request.flush(null);
 
-    await expect(update).resolves.toBeUndefined();
+    await expect(update).resolves.toBeNull();
   });
 
   it('wraps allocation updates in the endpoint request contract', async () => {
@@ -93,6 +95,6 @@ describe('DashboardInvoicesService', () => {
     });
     request.flush(null);
 
-    await expect(update).resolves.toBeUndefined();
+    await expect(update).resolves.toBeNull();
   });
 });

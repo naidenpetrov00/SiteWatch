@@ -118,7 +118,7 @@ describe('IdentityAuthService', () => {
 
     expect(result).toEqual({
       succeeded: false,
-      errors: ['Unable to sign in.']
+      errors: ['Network failure']
     });
   });
 });

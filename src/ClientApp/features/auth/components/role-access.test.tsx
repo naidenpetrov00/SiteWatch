@@ -9,7 +9,12 @@ import type { AuthContextType } from "@/types/identity";
 
 jest.mock("@/store/auth_context", () => ({ useAuth: jest.fn() }));
 jest.mock("expo-router", () => ({
-  Redirect: ({ href }: { href: string }) => <Text accessibilityRole="link">{href}</Text>,
+  Redirect: ({ href }: { href: string }) =>
+    require("react").createElement(
+      require("react-native").Text,
+      { accessibilityRole: "link" },
+      href,
+    ),
 }));
 
 const mockedUseAuth = jest.mocked(useAuth);

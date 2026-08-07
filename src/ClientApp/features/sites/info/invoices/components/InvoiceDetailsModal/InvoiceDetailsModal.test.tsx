@@ -1,6 +1,5 @@
 import { Text } from "react-native";
 import { fireEvent, render, screen } from "@testing-library/react-native";
-import type React from "react";
 
 import InvoiceDetailsModal from "./InvoiceDetailsModal";
 
@@ -8,9 +7,10 @@ jest.mock("@/hooks/useColorPalette", () => ({
   useColorPalette: () => ({ background: "white", contrastText: "white", primary: "blue", secondary: "gray", text: "black" }),
 }));
 jest.mock("react-native-safe-area-context", () => ({
-  SafeAreaView: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  SafeAreaView: ({ children }: { children: unknown }) =>
+    require("react").createElement(require("react-native").View, null, children),
 }));
-jest.mock("@expo/vector-icons/Ionicons", () => () => <Text>Icon</Text>);
+jest.mock("@expo/vector-icons/Ionicons", () => () => null);
 
 describe("InvoiceDetailsModal", () => {
   const invoice = {

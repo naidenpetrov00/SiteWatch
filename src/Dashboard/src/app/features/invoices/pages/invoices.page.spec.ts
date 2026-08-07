@@ -1,6 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { QueryClient, provideTanStackQuery } from '@tanstack/angular-query-experimental';
 import { vi } from 'vitest';
+import { DashboardPersonsService } from '../../persons/services/dashboard-persons.service';
+import { DashboardSitesService } from '../../sites/services/dashboard-sites.service';
 import { DashboardInvoicesService } from '../services/dashboard-invoices.service';
 
 import { InvoicesPage } from './invoices.page';
@@ -11,13 +14,18 @@ describe('InvoicesPage', () => {
     setTableState: vi.fn()
   };
   const dialog = { open: vi.fn() };
+  const personsService = { searchSuppliers: vi.fn(), getPersonById: vi.fn() };
+  const sitesService = { searchSites: vi.fn() };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [InvoicesPage],
       providers: [
         { provide: DashboardInvoicesService, useValue: invoicesService },
-        { provide: MatDialog, useValue: dialog }
+        { provide: MatDialog, useValue: dialog },
+        { provide: DashboardPersonsService, useValue: personsService },
+        { provide: DashboardSitesService, useValue: sitesService },
+        provideTanStackQuery(new QueryClient())
       ]
     }).compileComponents();
     dialog.open.mockReset();
@@ -41,6 +49,7 @@ describe('InvoicesPage', () => {
   it('opens the invoice dialog only when the number column is selected', () => {
     const fixture = TestBed.createComponent(InvoicesPage);
     const invoice = { id: 'invoice-1', numberId: 42 } as never;
+    (fixture.componentInstance as unknown as { dialog: typeof dialog }).dialog = dialog;
 
     fixture.componentInstance.onCellButtonClicked({ row: invoice, column: { key: 'id' } as never });
     expect(dialog.open).not.toHaveBeenCalled();
