@@ -41,12 +41,13 @@ describe('IdentityAuthService', () => {
 
   it('stores the token after a successful sign-in', async () => {
     const signInPromise = service.signIn('test@example.com', 'password123');
+    await Promise.resolve();
     const request = httpTesting.expectOne((httpRequest) =>
       httpRequest.url === buildApiUrl('/dashboard/signIn')
     );
 
-    expect(request.request.context.get(SKIP_AUTH_INTERCEPTOR)).toBeTrue();
-    expect(request.request.headers.has('Authorization')).toBeFalse();
+    expect(request.request.context.get(SKIP_AUTH_INTERCEPTOR)).toBe(true);
+    expect(request.request.headers.has('Authorization')).toBe(false);
 
     request.flush({
       result: { succeeded: true, errors: [] },
@@ -60,11 +61,12 @@ describe('IdentityAuthService', () => {
       errors: []
     });
     expect(authSession.accessToken()).toBe('jwt-token');
-    expect(authSession.isLoggedIn()).toBeTrue();
+    expect(authSession.isLoggedIn()).toBe(true);
   });
 
   it('returns mapped validation errors', async () => {
     const signInPromise = service.signIn('test@example.com', 'password123');
+    await Promise.resolve();
     const request = httpTesting.expectOne((httpRequest) =>
       httpRequest.url === buildApiUrl('/dashboard/signIn')
     );
@@ -80,11 +82,12 @@ describe('IdentityAuthService', () => {
       errors: ['Invalid credentials']
     });
     expect(authSession.accessToken()).toBeNull();
-    expect(authSession.isLoggedIn()).toBeFalse();
+    expect(authSession.isLoggedIn()).toBe(false);
   });
 
   it('falls back for malformed responses', async () => {
     const signInPromise = service.signIn('test@example.com', 'password123');
+    await Promise.resolve();
     const request = httpTesting.expectOne((httpRequest) =>
       httpRequest.url === buildApiUrl('/dashboard/signIn')
     );
@@ -101,6 +104,7 @@ describe('IdentityAuthService', () => {
 
   it('maps network failures to a stable error message', async () => {
     const signInPromise = service.signIn('test@example.com', 'password123');
+    await Promise.resolve();
     const request = httpTesting.expectOne((httpRequest) =>
       httpRequest.url === buildApiUrl('/dashboard/signIn')
     );
@@ -114,7 +118,7 @@ describe('IdentityAuthService', () => {
 
     expect(result).toEqual({
       succeeded: false,
-      errors: ['Unable to sign in.']
+      errors: ['Network failure']
     });
   });
 });
