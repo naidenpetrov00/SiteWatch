@@ -13,6 +13,11 @@
 - Use `expo:native-data-fetching` for network requests, API calls, or data-fetching work.
 - Keep concrete React Native and Expo syntax or procedures in the selected skills; use Context7 only for unresolved or version-sensitive gaps.
 
+## Test placement
+
+- Keep `app` exclusively for Expo Router routes and layouts. Never place test files under `app`, because Expo Router treats files there as routes and may bundle test-only Node dependencies into the native app.
+- Put tests for route files under `__tests__/app`, importing the route with its `@/app/...` alias. Keep feature tests colocated with their production feature outside `app` (for example, under `features/**`).
+
 ## Development-build and command boundaries
 
 - The app uses a development build. If the user authorizes a native action, distinguish starting the existing development build, rebuilding the client, running a named platform, and generating native projects; authorization for one does not imply the others.

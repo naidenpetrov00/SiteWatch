@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
 
-import AccessDenied from "./AccessDenied";
+import AccessDenied from "@/app/AccessDenied";
 import { useAuth } from "@/store/auth_context";
 
 jest.mock("@/store/auth_context", () => ({ useAuth: jest.fn() }));
