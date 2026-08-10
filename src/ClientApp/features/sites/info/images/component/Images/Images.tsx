@@ -16,12 +16,18 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ALL_FILTER } from "@/features/sites/info/media-types";
 import { UPLOAD_ACTION_BOTTOM_CLEARANCE } from "@/features/sites/info/uploads/constants";
+import PendingImageUploadTile from "@/features/sites/info/uploads/PendingImageUploadTile";
+import { usePendingSiteMediaUploads } from "@/features/sites/info/uploads/useUploadSiteMedia";
 
 const MIN_TILE_WIDTH = 150;
 
 type SelectedImage = SiteImageIds & {
   thumbnailUri: string;
 };
+
+type DisplayImage =
+  | { type: "image"; item: SiteImageIds }
+  | { type: "pending"; mutationId: number; uri: string };
 
 interface IImages {
   activeFilter: FilterType;
@@ -40,6 +46,7 @@ const Images = ({ activeFilter, siteId }: IImages) => {
     isRefetching,
     refetch,
   } = useGetSiteImageIdsBySiteId({ siteId });
+  const pendingUploads = usePendingSiteMediaUploads("image", siteId);
   const availableWidth = width - HORIZONTAL_PADDING * 2;
   const numColumns = Math.max(
     1,
@@ -54,6 +61,21 @@ const Images = ({ activeFilter, siteId }: IImages) => {
 
     return siteImageIds.filter((image) => image.category === activeFilter);
   }, [activeFilter, siteImageIds]);
+  const displayImages = useMemo<DisplayImage[]>(
+    () => [
+      ...pendingUploads
+        .filter(({ request }) =>
+          activeFilter === ALL_FILTER || request.category === activeFilter,
+        )
+        .map(({ mutationId, request }) => ({
+          type: "pending" as const,
+          mutationId,
+          uri: request.asset.uri,
+        })),
+      ...filteredImages.map((item) => ({ type: "image" as const, item })),
+    ],
+    [activeFilter, filteredImages, pendingUploads],
+  );
 
   const handleRefresh = useCallback(async () => {
     await queryClient.invalidateQueries({
@@ -78,10 +100,14 @@ const Images = ({ activeFilter, siteId }: IImages) => {
 
   return (
     <>
-      <FlatList<SiteImageIds>
-        data={filteredImages}
+      <FlatList<DisplayImage>
+        data={displayImages}
         key={`${numColumns}-${activeFilter}`}
-        keyExtractor={(item) => item.imageId}
+        keyExtractor={(item) =>
+          item.type === "pending"
+            ? `pending-image-${item.mutationId}`
+            : item.item.imageId
+        }
         numColumns={numColumns}
         showsVerticalScrollIndicator={false}
         columnWrapperStyle={
@@ -94,13 +120,17 @@ const Images = ({ activeFilter, siteId }: IImages) => {
         initialNumToRender={numColumns * 3}
         maxToRenderPerBatch={numColumns * 3}
         windowSize={5}
-        renderItem={({ item }) => (
-          <ImageItem
-            tileWidth={tileWidth}
-            item={item}
-            onPress={handleImagePress}
-          />
-        )}
+        renderItem={({ item }) =>
+          item.type === "pending" ? (
+            <PendingImageUploadTile tileWidth={tileWidth} uri={item.uri} />
+          ) : (
+            <ImageItem
+              tileWidth={tileWidth}
+              item={item.item}
+              onPress={handleImagePress}
+            />
+          )
+        }
         ListEmptyComponent={<EmptyImageItem />}
         refreshing={isRefetching}
         onRefresh={handleRefresh}

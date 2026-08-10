@@ -17,3 +17,8 @@ export type UploadSiteMediaRequest = {
   category?: MediaCategory;
   documentType?: FileDocumentType;
 };
+
+export type PendingSiteMediaUpload = {
+  mutationId: number;
+  request: UploadSiteMediaRequest;
+};

@@ -20,7 +20,7 @@ import {
   type FileDocumentType,
 } from "../files/types";
 import type { MediaCategory } from "../media-types";
-import { MAX_UPLOAD_BYTES, UPLOAD_ERROR_COLORS } from "./constants";
+import { MAX_UPLOAD_BYTES } from "./constants";
 import styles from "./SiteMediaUploadAction.styles";
 import type { SiteMediaUploadKind, UploadAsset } from "./types";
 import { useUploadSiteMedia } from "./useUploadSiteMedia";
@@ -84,8 +84,6 @@ const SiteMediaUploadAction = ({
   const [category, setCategory] = useState<MediaCategory | null>(null);
   const [documentType, setDocumentType] = useState<FileDocumentType | null>(null);
   const [activeSource, setActiveSource] = useState<UploadSource | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const label = labelForKind(kind);
   const classificationSelected = kind === "file" ? documentType !== null : category !== null;
@@ -103,9 +101,8 @@ const SiteMediaUploadAction = ({
     [kind],
   );
 
-  const clearFeedback = useCallback(() => {
-    setError(null);
-    setMessage(null);
+  const showUploadFailure = useCallback((message: string) => {
+    Alert.alert("Upload failed", message);
   }, []);
 
   const showPermissionDenied = useCallback((source: "Camera" | "Photos") => {
@@ -119,60 +116,62 @@ const SiteMediaUploadAction = ({
     );
   }, [label]);
 
-  const validateAndUpload = useCallback(async (asset: UploadAsset) => {
+  const validateAndUpload = useCallback((asset: UploadAsset) => {
     const maxSize = MAX_UPLOAD_BYTES[kind];
     if (asset.fileSize === 0) {
-      setError(`Choose a non-empty ${label} file.`);
+      showUploadFailure(`Choose a non-empty ${label} file.`);
       return;
     }
 
     if (asset.fileSize !== undefined && asset.fileSize > maxSize) {
-      setError(`The ${label} file cannot exceed ${Math.round(maxSize / 1024 / 1024)} MB.`);
+      showUploadFailure(`The ${label} file cannot exceed ${Math.round(maxSize / 1024 / 1024)} MB.`);
       return;
     }
 
     if (kind === "image" && !IMAGE_CONTENT_TYPES.has(asset.contentType)) {
-      setError("Choose a JPEG, PNG, WebP, or GIF image.");
+      showUploadFailure("Choose a JPEG, PNG, WebP, or GIF image.");
       return;
     }
 
     if (kind === "video" && !VIDEO_CONTENT_TYPES.has(asset.contentType)) {
-      setError("Choose an MP4, MOV, or WebM video.");
+      showUploadFailure("Choose an MP4, MOV, or WebM video.");
       return;
     }
 
     if (kind === "file" && !asset.contentType.trim()) {
-      setError("The selected file type is unavailable. Choose another file.");
+      showUploadFailure("The selected file type is unavailable. Choose another file.");
       return;
     }
 
     if (!siteId) {
-      setError("The site is unavailable. Return to the site and retry.");
+      showUploadFailure("The site is unavailable. Return to the site and retry.");
       return;
     }
 
     if (kind === "file" && !documentType) {
-      setError("Choose a document type before uploading.");
+      showUploadFailure("Choose a document type before uploading.");
       return;
     }
 
     if (kind !== "file" && !category) {
-      setError("Choose a category before uploading.");
+      showUploadFailure("Choose a category before uploading.");
       return;
     }
 
-    setError(null);
-    setMessage(null);
-    await upload.mutateAsync({
+    setIsOpen(false);
+    void upload.mutateAsync({
       siteId,
       kind,
       asset,
       category: category ?? undefined,
       documentType: documentType ?? undefined,
-    });
-    setMessage(`${label[0].toUpperCase()}${label.slice(1)} uploaded.`);
-    setIsOpen(false);
-  }, [category, documentType, kind, label, siteId, upload]);
+    }).catch(
+      (caughtError) =>
+        showUploadFailure(
+          getUploadErrorMessage(caughtError, `Unable to upload the ${label}.`),
+        ),
+    );
+  }, [category, documentType, kind, label, showUploadFailure, siteId, upload]);
 
   const toUploadAsset = useCallback((asset: {
     uri: string;
@@ -184,7 +183,7 @@ const SiteMediaUploadAction = ({
     const contentType = normaliseContentType(asset.mimeType) ?? contentTypeFromFileName(fileName);
 
     if (!contentType && kind !== "file") {
-      setError(`The selected ${label} type is unavailable. Choose another ${label}.`);
+      showUploadFailure(`The selected ${label} type is unavailable. Choose another ${label}.`);
       return null;
     }
 
@@ -194,11 +193,10 @@ const SiteMediaUploadAction = ({
       contentType: contentType ?? "application/octet-stream",
       fileSize: asset.fileSize ?? undefined,
     };
-  }, [kind, label]);
+  }, [kind, label, showUploadFailure]);
 
   const handleCamera = useCallback(async () => {
     setActiveSource("camera");
-    clearFeedback();
     try {
       const permission = await ImagePicker.requestCameraPermissionsAsync();
       if (!permission.granted) {
@@ -216,15 +214,14 @@ const SiteMediaUploadAction = ({
       const asset = toUploadAsset(result.assets[0]);
       if (asset) await validateAndUpload(asset);
     } catch (caughtError) {
-      setError(getUploadErrorMessage(caughtError, `Unable to capture or upload the ${label}.`));
+      showUploadFailure(getUploadErrorMessage(caughtError, `Unable to capture or upload the ${label}.`));
     } finally {
       setActiveSource(null);
     }
-  }, [clearFeedback, kind, label, showPermissionDenied, toUploadAsset, validateAndUpload]);
+  }, [kind, label, showPermissionDenied, showUploadFailure, toUploadAsset, validateAndUpload]);
 
   const handleGallery = useCallback(async () => {
     setActiveSource("gallery");
-    clearFeedback();
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
@@ -242,15 +239,14 @@ const SiteMediaUploadAction = ({
       const asset = toUploadAsset(result.assets[0]);
       if (asset) await validateAndUpload(asset);
     } catch (caughtError) {
-      setError(getUploadErrorMessage(caughtError, `Unable to select or upload the ${label}.`));
+      showUploadFailure(getUploadErrorMessage(caughtError, `Unable to select or upload the ${label}.`));
     } finally {
       setActiveSource(null);
     }
-  }, [clearFeedback, kind, label, showPermissionDenied, toUploadAsset, validateAndUpload]);
+  }, [kind, label, showPermissionDenied, showUploadFailure, toUploadAsset, validateAndUpload]);
 
   const handleFilePicker = useCallback(async () => {
     setActiveSource("file");
-    clearFeedback();
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: kind === "image" ? "image/*" : kind === "video" ? "video/*" : "*/*",
@@ -267,11 +263,11 @@ const SiteMediaUploadAction = ({
       });
       if (asset) await validateAndUpload(asset);
     } catch (caughtError) {
-      setError(getUploadErrorMessage(caughtError, `Unable to select or upload the ${label}.`));
+      showUploadFailure(getUploadErrorMessage(caughtError, `Unable to select or upload the ${label}.`));
     } finally {
       setActiveSource(null);
     }
-  }, [clearFeedback, kind, label, toUploadAsset, validateAndUpload]);
+  }, [kind, label, showUploadFailure, toUploadAsset, validateAndUpload]);
 
   const handleSource = useCallback((source: UploadSource) => {
     if (source === "camera") return void handleCamera();
@@ -281,8 +277,7 @@ const SiteMediaUploadAction = ({
 
   const toggleOpen = useCallback(() => {
     setIsOpen((open) => !open);
-    clearFeedback();
-  }, [clearFeedback]);
+  }, []);
 
   return (
     <RoleGate allowedRoles={ACCESS_POLICIES.siteMediaUpload}>
@@ -292,16 +287,6 @@ const SiteMediaUploadAction = ({
           { bottom: bottom + 12, left: 16, position: "absolute", right: 16 },
         ]}
       >
-        {message ? (
-          <Text accessibilityRole="alert" style={[styles.feedback, { backgroundColor: "rgba(22, 163, 74, 0.12)", borderColor: UPLOAD_ERROR_COLORS.success, color: colorPalette.text }]}>
-            {message}
-          </Text>
-        ) : null}
-        {error ? (
-          <Text accessibilityRole="alert" style={[styles.feedback, { borderColor: UPLOAD_ERROR_COLORS.error, color: UPLOAD_ERROR_COLORS.error }]}>
-            {error}
-          </Text>
-        ) : null}
         {isOpen ? (
           <View style={[styles.panel, { backgroundColor: colorPalette.background, borderColor: `${colorPalette.secondary}88` }]}>
             <Text style={[styles.panelTitle, { color: colorPalette.text }]}>
@@ -324,7 +309,6 @@ const SiteMediaUploadAction = ({
                       onPress={() => {
                         if (kind === "file") setDocumentType(option as FileDocumentType);
                         else setCategory(option as MediaCategory);
-                        setError(null);
                       }}
                       style={({ pressed }) => [
                         styles.option,

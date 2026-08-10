@@ -1,10 +1,22 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useMutationState, useQueryClient } from "@tanstack/react-query";
 
 import { env } from "@/config/env";
 import { paths } from "@/config/constants/paths";
 import { useAuth } from "@/store/auth_context";
 import { MAX_UPLOAD_BYTES } from "./constants";
-import type { SiteMediaUploadKind, UploadSiteMediaRequest } from "./types";
+import type { SiteFileIds } from "../files/types";
+import type { SiteImageIds } from "../images/types";
+import type { SiteVideoIds } from "../videos/types";
+import type {
+  PendingSiteMediaUpload,
+  SiteMediaUploadKind,
+  UploadSiteMediaRequest,
+} from "./types";
+
+type UploadSiteMediaResponse =
+  | { kind: "image"; originalFileId: string; thumbnailFileId: string }
+  | { kind: "video"; videoFileId: string; snapshotFileId: string; durationSeconds: number | null }
+  | { kind: "file"; fileId: string };
 
 const getUploadPath = (kind: SiteMediaUploadKind, siteId: string) => {
   switch (kind) {
@@ -66,13 +78,30 @@ const queryKeyForKind = (kind: SiteMediaUploadKind) => {
   }
 };
 
+export const usePendingSiteMediaUploads = (
+  kind: SiteMediaUploadKind,
+  siteId?: string,
+) => {
+  const mutations = useMutationState({
+    filters: { mutationKey: ["site-media", "upload"], status: "pending" },
+    select: (mutation): PendingSiteMediaUpload => ({
+      mutationId: mutation.mutationId,
+      request: mutation.state.variables as UploadSiteMediaRequest,
+    }),
+  });
+
+  return mutations.filter(
+    ({ request }) => request.kind === kind && request.siteId === siteId,
+  );
+};
+
 export const useUploadSiteMedia = () => {
   const { accessToken } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationKey: ["site-media", "upload"],
-    mutationFn: async ({ siteId, kind, asset, category, documentType }: UploadSiteMediaRequest) => {
+    mutationFn: async ({ siteId, kind, asset, category, documentType }: UploadSiteMediaRequest): Promise<UploadSiteMediaResponse> => {
       if (!accessToken) {
         throw new Error("Authentication is required to upload site content.");
       }
@@ -110,9 +139,81 @@ export const useUploadSiteMedia = () => {
       if (!response.ok) {
         throw new Error(await getUploadErrorMessage(response, kind));
       }
+
+      const result = await response.json() as Record<string, unknown>;
+      switch (kind) {
+        case "image":
+          return {
+            kind,
+            originalFileId: result.originalFileId as string,
+            thumbnailFileId: result.thumbnailFileId as string,
+          };
+        case "video":
+          return {
+            kind,
+            videoFileId: result.videoFileId as string,
+            snapshotFileId: result.snapshotFileId as string,
+            durationSeconds: result.durationSeconds as number | null,
+          };
+        case "file":
+          return { kind, fileId: result.fileId as string };
+      }
     },
-    onSuccess: async (_response, request) => {
-      await queryClient.invalidateQueries({
+    onSuccess: (response, request) => {
+      if (response.kind === "image" && request.category) {
+        queryClient.setQueryData<SiteImageIds[]>(
+          ["site-image-ids", request.siteId],
+          (items = []) =>
+            items.some((item) => item.imageId === response.originalFileId)
+              ? items
+              : [
+                  {
+                    imageId: response.originalFileId,
+                    thumbnailId: response.thumbnailFileId,
+                    category: request.category,
+                  },
+                  ...items,
+                ],
+        );
+      }
+
+      if (response.kind === "video" && request.category) {
+        queryClient.setQueryData<SiteVideoIds[]>(
+          ["site-video-ids", request.siteId],
+          (items = []) =>
+            items.some((item) => item.videoId === response.videoFileId)
+              ? items
+              : [
+                  {
+                    videoId: response.videoFileId,
+                    snapshotId: response.snapshotFileId,
+                    durationSeconds: response.durationSeconds,
+                    category: request.category,
+                  },
+                  ...items,
+                ],
+        );
+      }
+
+      if (response.kind === "file" && request.documentType) {
+        queryClient.setQueryData<SiteFileIds[]>(
+          ["site-file-ids", request.siteId],
+          (items = []) =>
+            items.some((item) => item.fileId === response.fileId)
+              ? items
+              : [
+                  {
+                    fileId: response.fileId,
+                    fileName: request.asset.fileName,
+                    contentType: request.asset.contentType,
+                    documentType: request.documentType,
+                  },
+                  ...items,
+                ],
+        );
+      }
+
+      void queryClient.invalidateQueries({
         queryKey: [queryKeyForKind(request.kind), request.siteId],
       });
     },

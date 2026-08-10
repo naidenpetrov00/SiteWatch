@@ -18,6 +18,8 @@ import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ALL_FILTER } from "@/features/sites/info/media-types";
 import { UPLOAD_ACTION_BOTTOM_CLEARANCE } from "@/features/sites/info/uploads/constants";
+import PendingVideoUploadTile from "@/features/sites/info/uploads/PendingVideoUploadTile";
+import { usePendingSiteMediaUploads } from "@/features/sites/info/uploads/useUploadSiteMedia";
 
 const MIN_TILE_WIDTH = 150;
 
@@ -25,6 +27,10 @@ interface IVideos {
   activeFilter: FilterType;
   siteId?: string;
 }
+
+type DisplayVideo =
+  | { type: "video"; item: VisibleSiteVideo }
+  | { type: "pending"; mutationId: number };
 
 const Videos = ({ activeFilter, siteId }: IVideos) => {
   const insets = useSafeAreaInsets();
@@ -39,6 +45,7 @@ const Videos = ({ activeFilter, siteId }: IVideos) => {
     isRefetching,
     refetch,
   } = useGetSiteVideoIdsBySiteId({ siteId });
+  const pendingUploads = usePendingSiteMediaUploads("video", siteId);
 
   const availableWidth = width - HORIZONTAL_PADDING * 2;
   const numColumns = Math.max(
@@ -85,6 +92,17 @@ const Videos = ({ activeFilter, siteId }: IVideos) => {
     snapshotQueries.some((query) => query.isPending || query.isFetching);
 
   const showEmptyState = !isResolvingSnapshots && filteredVideos.length === 0;
+  const displayVideos = useMemo<DisplayVideo[]>(
+    () => [
+      ...pendingUploads
+        .filter(({ request }) =>
+          activeFilter === ALL_FILTER || request.category === activeFilter,
+        )
+        .map(({ mutationId }) => ({ type: "pending" as const, mutationId })),
+      ...filteredVideos.map((item) => ({ type: "video" as const, item })),
+    ],
+    [activeFilter, filteredVideos, pendingUploads],
+  );
 
   const handleRefresh = useCallback(async () => {
     await queryClient.invalidateQueries({
@@ -107,10 +125,14 @@ const Videos = ({ activeFilter, siteId }: IVideos) => {
 
   return (
     <>
-      <FlatList<VisibleSiteVideo>
-        data={filteredVideos}
+      <FlatList<DisplayVideo>
+        data={displayVideos}
         key={`${numColumns}-${activeFilter}`}
-        keyExtractor={(item) => item.videoId}
+        keyExtractor={(item) =>
+          item.type === "pending"
+            ? `pending-video-${item.mutationId}`
+            : item.item.videoId
+        }
         numColumns={numColumns}
         showsVerticalScrollIndicator={false}
         columnWrapperStyle={
@@ -123,14 +145,18 @@ const Videos = ({ activeFilter, siteId }: IVideos) => {
         initialNumToRender={numColumns * 3}
         maxToRenderPerBatch={numColumns * 3}
         windowSize={5}
-        renderItem={({ item }) => (
-          <VideoItem
-            tileWidth={tileWidth}
-            item={item}
-            onPress={handleVideoPress}
-          />
-        )}
-        ListEmptyComponent={showEmptyState ? <EmptyVideoItem /> : null}
+        renderItem={({ item }) =>
+          item.type === "pending" ? (
+            <PendingVideoUploadTile tileWidth={tileWidth} />
+          ) : (
+            <VideoItem
+              tileWidth={tileWidth}
+              item={item.item}
+              onPress={handleVideoPress}
+            />
+          )
+        }
+        ListEmptyComponent={showEmptyState && displayVideos.length === 0 ? <EmptyVideoItem /> : null}
         refreshing={isRefetching}
         onRefresh={handleRefresh}
       />
