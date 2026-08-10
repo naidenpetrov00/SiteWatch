@@ -1,5 +1,7 @@
 using Api.SeedWork;
 using Api.SeedWork.Extensions;
+using Api.Endpoints.Sites;
+using Application.SeedWork.Security;
 using Application.Sites.Videos.Commands;
 using Application.Sites.Videos.Queries;
 using Domain.SeedWork.Enums;
@@ -14,7 +16,9 @@ public class Videos : EndpointGroupBase
     public override void Map(WebApplication app)
     {
         var group = app.MapGroupCustom();
-        group.MapPost("/{siteId:guid}", AddVideoToSite).DisableAntiforgery();
+        group.MapPost("/{siteId:guid}", AddVideoToSite)
+            .RequireAuthorization(AuthorizationPolicies.AdministratorOrWorker)
+            .DisableAntiforgery();
         group.MapGet("/{videoId:guid}", GetVideoFromSite);
         group.MapGet("/snapshot/{snapshotId:guid}", GetVideoSnapshotFromSite);
         group.MapDelete("/{videoId:guid}", DeleteVideoFromSite);
@@ -39,12 +43,15 @@ public class Videos : EndpointGroupBase
         return TypedResults.NoContent();
     }
 
+    [RequestSizeLimit(MediaUploadValidation.VideoMaxRequestSize)]
+    [RequestFormLimits(MultipartBodyLengthLimit = MediaUploadValidation.VideoMaxRequestSize)]
     private static async Task<Ok<UploadedVideoResult>> AddVideoToSite(
         IMediator mediator,
         [FromForm] IFormFile file,
         [FromForm] VideoCategory? category,
         Guid siteId)
     {
+        MediaUploadValidation.ValidateVideo(file);
         await using var stream = file.OpenReadStream();
         var uploadedFile = new UploadedFile { Stream = stream, ContentType = file.ContentType };
         var fileId = await mediator.Send(new AddVideoCommand(siteId, uploadedFile, category));

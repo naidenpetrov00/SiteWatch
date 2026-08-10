@@ -15,6 +15,8 @@ import { useColorPalette } from "@/hooks/useColorPalette";
 import useGetSearchParams from "@/hooks/useGetSearchParams";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import filesStyles from "./Files.styles";
+import SiteMediaUploadAction from "@/features/sites/info/uploads/SiteMediaUploadAction";
+import { UPLOAD_ACTION_BOTTOM_CLEARANCE } from "@/features/sites/info/uploads/constants";
 
 const DOCUMENT_TYPE_FILTERS: readonly FileDocumentTypeFilter[] = [
   ALL_FILTER,
@@ -165,7 +167,7 @@ const Files = () => {
       <FlatList<SiteFileIds>
         contentContainerStyle={[
           filesStyles.listContent,
-          { paddingBottom: insets.bottom + 24 },
+          { paddingBottom: insets.bottom + UPLOAD_ACTION_BOTTOM_CLEARANCE },
         ]}
         data={filteredFiles}
         keyExtractor={(item) => item.fileId}
@@ -186,6 +188,7 @@ const Files = () => {
         renderItem={renderFile}
         showsVerticalScrollIndicator={false}
       />
+      <SiteMediaUploadAction kind="file" siteId={siteId} />
     </View>
   );
 };

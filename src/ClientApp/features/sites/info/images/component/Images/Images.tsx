@@ -15,6 +15,7 @@ import { useGetSiteImageIdsBySiteId } from "../../hooks/useGetSiteImageIdsBySite
 import { useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ALL_FILTER } from "@/features/sites/info/media-types";
+import { UPLOAD_ACTION_BOTTOM_CLEARANCE } from "@/features/sites/info/uploads/constants";
 
 const MIN_TILE_WIDTH = 150;
 
@@ -88,7 +89,7 @@ const Images = ({ activeFilter, siteId }: IImages) => {
         }
         contentContainerStyle={[
           siteImagesStyles.galleryContent,
-          { paddingBottom: insets.bottom + 24 },
+          { paddingBottom: insets.bottom + UPLOAD_ACTION_BOTTOM_CLEARANCE },
         ]}
         initialNumToRender={numColumns * 3}
         maxToRenderPerBatch={numColumns * 3}

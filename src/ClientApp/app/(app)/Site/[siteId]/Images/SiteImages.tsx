@@ -11,6 +11,7 @@ import { ALL_FILTER } from "@/features/sites/info/media-types";
 import { useGetSitesByUserId } from "@/features/sites/api/get-sites-by-user";
 import { useColorPalette } from "@/hooks/useColorPalette";
 import useGetSearchParams from "@/hooks/useGetSearchParams";
+import SiteMediaUploadAction from "@/features/sites/info/uploads/SiteMediaUploadAction";
 
 const SiteImages = () => {
   const { siteId } = useGetSearchParams<{ siteId?: string }>();
@@ -54,6 +55,11 @@ const SiteImages = () => {
         setActiveFilter={setActiveFilter}
       />
       <Images activeFilter={resolvedActiveFilter} siteId={siteId} />
+      <SiteMediaUploadAction
+        allowedCategories={site?.mediaPolicy.allowedImageCategories}
+        kind="image"
+        siteId={siteId}
+      />
     </View>
   );
 };

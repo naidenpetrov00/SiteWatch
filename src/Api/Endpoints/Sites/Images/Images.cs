@@ -1,5 +1,7 @@
 using Api.SeedWork;
 using Api.SeedWork.Extensions;
+using Api.Endpoints.Sites;
+using Application.SeedWork.Security;
 using Application.Sites.Images.Commands;
 using Application.Sites.Images.Queries;
 using Domain.SeedWork.Enums;
@@ -13,9 +15,10 @@ public class Images : EndpointGroupBase
 {
     public override void Map(WebApplication app)
     {
-        // var group = app.MapGroupCustom().RequireAuthorization();
         var group = app.MapGroupCustom();
-        group.MapPost("/{siteId:guid}", AddImageToSite).DisableAntiforgery();
+        group.MapPost("/{siteId:guid}", AddImageToSite)
+            .RequireAuthorization(AuthorizationPolicies.AdministratorOrWorker)
+            .DisableAntiforgery();
         group.MapGet("/{imageId:guid}", GetImageFromSite);
         group.MapDelete("/{imageId:guid}", DeleteImageFromSite);
         group.MapGet("/images{siteId:guid}", GetImagesIdsBySiteId);
@@ -33,10 +36,13 @@ public class Images : EndpointGroupBase
         return TypedResults.NoContent();
     }
 
+    [RequestSizeLimit(MediaUploadValidation.ImageMaxRequestSize)]
+    [RequestFormLimits(MultipartBodyLengthLimit = MediaUploadValidation.ImageMaxRequestSize)]
     private static async Task<Ok<UploadedImageResult>> AddImageToSite(IMediator mediator, [FromForm] IFormFile file,
         [FromForm] ImageCategory? category,
         Guid siteId)
     {
+        MediaUploadValidation.ValidateImage(file);
         await using var stream = file.OpenReadStream();
         var uploadedFile = new UploadedFile { Stream = stream, ContentType = file.ContentType };
         var fileId = await mediator.Send(new AddImageCommand

@@ -10,6 +10,7 @@ import { ALL_FILTER } from "@/features/sites/info/media-types";
 import { useGetSitesByUserId } from "@/features/sites/api/get-sites-by-user";
 import { useColorPalette } from "@/hooks/useColorPalette";
 import useGetSearchParams from "@/hooks/useGetSearchParams";
+import SiteMediaUploadAction from "@/features/sites/info/uploads/SiteMediaUploadAction";
 
 const SiteVideos = () => {
   const { siteId } = useGetSearchParams<{ siteId?: string }>();
@@ -51,6 +52,11 @@ const SiteVideos = () => {
         setActiveFilter={setActiveFilter}
       />
       <Videos activeFilter={resolvedActiveFilter} siteId={siteId} />
+      <SiteMediaUploadAction
+        allowedCategories={site?.mediaPolicy.allowedVideoCategories}
+        kind="video"
+        siteId={siteId}
+      />
     </View>
   );
 };
