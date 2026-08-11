@@ -49,6 +49,18 @@ type SiteUploadActionProps = {
 const getUploadErrorMessage = (error: unknown, fallback: string) =>
   error instanceof Error && error.message.trim().length > 0 ? error.message : fallback;
 
+const withOpacity = (color: string, opacity: number) => {
+  const hex = color.trim().replace(/^#/, "");
+  const expandedHex = hex.length === 3 || hex.length === 4
+    ? hex.split("").map((character) => `${character}${character}`).join("")
+    : hex;
+  const rgb = expandedHex.match(/^([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})(?:[0-9a-f]{2})?$/i);
+
+  if (!rgb) return color;
+
+  return `rgba(${parseInt(rgb[1], 16)}, ${parseInt(rgb[2], 16)}, ${parseInt(rgb[3], 16)}, ${opacity})`;
+};
+
 const isIos = Platform.OS === "ios";
 
 const SiteUploadAction = ({
@@ -324,7 +336,7 @@ const SiteUploadAction = ({
       >
         <View style={styles.modalBackdrop}>
           <Pressable accessibilityLabel="Close upload menu" style={styles.modalDismiss} onPress={() => setIsMenuOpen(false)} />
-          <Animated.View entering={FadeInDown.duration(180)} exiting={FadeOutDown.duration(130)} style={[styles.panel, { backgroundColor: colorPalette.background, borderColor: `${colorPalette.secondary}55`, paddingBottom: bottom + 16 }]}>
+          <Animated.View entering={FadeInDown.duration(180)} exiting={FadeOutDown.duration(130)} style={[styles.panel, { backgroundColor: colorPalette.background, borderColor: withOpacity(colorPalette.secondary, 0.33), paddingBottom: bottom + 16 }]}>
             <Text style={[styles.panelTitle, { color: colorPalette.text }]}>{classification?.title ?? `Add ${label}`}</Text>
             {classification ? (
               <View style={styles.options}>
@@ -337,7 +349,7 @@ const SiteUploadAction = ({
                       accessibilityState={{ selected }}
                       disabled={isBusy}
                       onPress={() => { selectClassification(option.value); haptic(); }}
-                      style={({ pressed }) => [styles.option, { backgroundColor: selected ? colorPalette.primary : `${colorPalette.primary}11`, borderColor: selected ? colorPalette.primary : `${colorPalette.secondary}66`, opacity: pressed ? 0.75 : 1 }]}
+                      style={({ pressed }) => [styles.option, { backgroundColor: selected ? colorPalette.primary : withOpacity(colorPalette.primary, 0.07), borderColor: selected ? colorPalette.primary : withOpacity(colorPalette.secondary, 0.4), opacity: pressed ? 0.75 : 1 }]}
                     >
                       <Text style={[styles.optionText, { color: selected ? colorPalette.contrastText : colorPalette.text }]}>{option.label}</Text>
                     </Pressable>
