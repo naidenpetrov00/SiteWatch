@@ -1,4 +1,5 @@
 import { ActivityIndicator, Text, View } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 
 import { useColorPalette } from "@/hooks/useColorPalette";
 import invoiceCardStyles from "./InvoiceCard.styles";
@@ -11,7 +12,8 @@ const PendingInvoiceUploadCard = ({ fileName }: PendingInvoiceUploadCardProps) =
   const colorPalette = useColorPalette();
 
   return (
-    <View
+    <Animated.View
+      entering={FadeInDown.duration(180)}
       accessibilityLabel={`${fileName} uploading`}
       style={[
         invoiceCardStyles.card,
@@ -29,7 +31,7 @@ const PendingInvoiceUploadCard = ({ fileName }: PendingInvoiceUploadCardProps) =
       <Text style={[invoiceCardStyles.metadata, { color: colorPalette.secondary }]}>
         Uploading invoice…
       </Text>
-    </View>
+    </Animated.View>
   );
 };
 

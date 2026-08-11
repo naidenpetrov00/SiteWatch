@@ -13,7 +13,9 @@
   },
   "jest": {
     "preset": "jest-expo",
-    "setupFilesAfterEnv": ["<rootDir>/jest-setup.ts"]
+    "setupFilesAfterEnv": [
+      "<rootDir>/jest-setup.ts"
+    ]
   },
   "dependencies": {
     "@dev-plugins/react-navigation": "^0.4.0",
@@ -33,6 +35,7 @@
     "expo-document-picker": "~14.0.8",
     "expo-file-system": "~19.0.21",
     "expo-font": "~14.0.8",
+    "expo-glass-effect": "~0.1.10",
     "expo-haptics": "~15.0.7",
     "expo-image-picker": "~17.0.11",
     "expo-linking": "~8.0.8",

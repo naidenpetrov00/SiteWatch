@@ -1,7 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
-import { Pressable, Text, View } from "react-native";
-
-import { useColorPalette } from "@/hooks/useColorPalette";
+import { useCallback, useMemo } from "react";
 import {
   FILE_DOCUMENT_TYPE_LABELS,
   FILE_DOCUMENT_TYPES,
@@ -10,7 +7,6 @@ import {
 import type { MediaCategory } from "../media-types";
 import { MAX_UPLOAD_BYTES } from "./constants";
 import SiteUploadAction, { type UploadSourceOption } from "./SiteUploadAction";
-import styles from "./SiteUploadAction.styles";
 import type { SiteMediaUploadKind, UploadAsset } from "./types";
 import { useUploadSiteMedia } from "./useUploadSiteMedia";
 
@@ -25,6 +21,8 @@ const IMAGE_CONTENT_TYPES = new Set([
   "image/png",
   "image/webp",
   "image/gif",
+  "image/heic",
+  "image/heif",
 ]);
 const VIDEO_CONTENT_TYPES = new Set([
   "video/mp4",
@@ -36,6 +34,8 @@ const contentTypeFromFileName = (fileName: string): string | null => {
   const extension = fileName.split(".").pop()?.toLowerCase();
   const contentTypes: Record<string, string> = {
     gif: "image/gif",
+    heic: "image/heic",
+    heif: "image/heif",
     jpeg: "image/jpeg",
     jpg: "image/jpeg",
     mov: "video/quicktime",
@@ -59,13 +59,8 @@ const SiteMediaUploadAction = ({
   siteId,
   allowedCategories = [],
 }: SiteMediaUploadActionProps) => {
-  const colorPalette = useColorPalette();
   const upload = useUploadSiteMedia();
-  const [category, setCategory] = useState<MediaCategory | null>(null);
-  const [documentType, setDocumentType] = useState<FileDocumentType | null>(null);
   const label = labelForKind(kind);
-  const classificationSelected = kind === "file" ? documentType !== null : category !== null;
-  const hasClassificationOptions = kind === "file" || allowedCategories.length > 0;
 
   const sourceOptions = useMemo<readonly UploadSourceOption[]>(
     () =>
@@ -86,7 +81,7 @@ const SiteMediaUploadAction = ({
       return `The ${label} file cannot exceed ${Math.round(maxSize / 1024 / 1024)} MB.`;
     }
     if (kind === "image" && !IMAGE_CONTENT_TYPES.has(asset.contentType)) {
-      return "Choose a JPEG, PNG, WebP, or GIF image.";
+      return "Choose a JPEG, PNG, WebP, GIF, HEIC, or HEIF image.";
     }
     if (kind === "video" && !VIDEO_CONTENT_TYPES.has(asset.contentType)) {
       return "Choose an MP4, MOV, or WebM video.";
@@ -97,69 +92,33 @@ const SiteMediaUploadAction = ({
     return null;
   }, [kind, label]);
 
-  const uploadAsset = useCallback((asset: UploadAsset) =>
+  const uploadAsset = useCallback((asset: UploadAsset, classification?: string) =>
     upload.mutateAsync({
       siteId: siteId!,
       kind,
       asset,
-      category: category ?? undefined,
-      documentType: documentType ?? undefined,
-    }), [category, documentType, kind, siteId, upload]);
+      category: kind === "file" ? undefined : classification as MediaCategory | undefined,
+      documentType: kind === "file" ? classification as FileDocumentType | undefined : undefined,
+    }), [kind, siteId, upload]);
 
-  const panelContent = (
-    <>
-      {hasClassificationOptions ? (
-        <View style={styles.options}>
-          {(kind === "file" ? FILE_DOCUMENT_TYPES : allowedCategories).map((option) => {
-            const selected = kind === "file" ? documentType === option : category === option;
-            const optionLabel = kind === "file"
-              ? FILE_DOCUMENT_TYPE_LABELS[option as FileDocumentType]
-              : option;
-
-            return (
-              <Pressable
-                key={option}
-                accessibilityRole="button"
-                accessibilityState={{ selected }}
-                disabled={upload.isPending}
-                onPress={() => {
-                  if (kind === "file") setDocumentType(option as FileDocumentType);
-                  else setCategory(option as MediaCategory);
-                }}
-                style={({ pressed }) => [
-                  styles.option,
-                  {
-                    backgroundColor: selected ? colorPalette.primary : colorPalette.background,
-                    borderColor: selected ? colorPalette.primary : colorPalette.secondary,
-                  },
-                  pressed ? styles.pressed : null,
-                ]}
-              >
-                <Text style={[styles.optionText, { color: selected ? colorPalette.contrastText : colorPalette.text }]}>
-                  {optionLabel}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      ) : (
-        <Text style={{ color: colorPalette.secondary }}>
-          This site has no allowed {label} categories.
-        </Text>
-      )}
-    </>
-  );
+  const classification = useMemo(() => ({
+    title: kind === "file" ? "Choose document type" : "Choose category",
+    options: (kind === "file" ? FILE_DOCUMENT_TYPES : allowedCategories).map((option) => ({
+      value: option,
+      label: kind === "file"
+        ? FILE_DOCUMENT_TYPE_LABELS[option as FileDocumentType]
+        : option,
+    })),
+  }), [allowedCategories, kind]);
 
   return (
     <SiteUploadAction
-      canUpload={classificationSelected && hasClassificationOptions}
+      classification={classification}
       documentPickerTypes={kind === "image" ? "image/*" : kind === "video" ? "video/*" : "*/*"}
       fallbackFileName={() => `${label}-${Date.now()}`}
       isUploading={upload.isPending}
       label={label}
       onUpload={uploadAsset}
-      panelContent={panelContent}
-      panelTitle={kind === "file" ? "Choose document type" : "Choose category"}
       pickerMediaKind={kind === "video" ? "video" : "image"}
       resolveContentType={(contentType, fileName) =>
         normaliseContentType(contentType) ?? contentTypeFromFileName(fileName) ?? (kind === "file" ? "application/octet-stream" : null)}

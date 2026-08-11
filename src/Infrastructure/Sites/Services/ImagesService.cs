@@ -3,6 +3,7 @@ using Application.Sites.Images.Queries;
 using Domain.Entities;
 using Domain.SeedWork.Enums;
 using Microsoft.EntityFrameworkCore;
+using ImageMagick;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Processing;
@@ -11,9 +12,17 @@ namespace Infrastructure.Sites.Services;
 
 public class ImagesService(IApplicationDbContext dbContext) : IImagesService
 {
-    public async Task<Stream> CreateThumbnailAsync(Stream originalStream, CancellationToken cancellationToken = default)
+    public async Task<Stream> CreateThumbnailAsync(
+        Stream originalStream,
+        string contentType,
+        CancellationToken cancellationToken = default)
     {
         originalStream.Position = 0;
+
+        if (contentType is "image/heic" or "image/heif")
+        {
+            return CreateHeicThumbnail(originalStream);
+        }
 
         using var image = await Image.LoadAsync(originalStream, cancellationToken);
 
@@ -32,6 +41,20 @@ public class ImagesService(IApplicationDbContext dbContext) : IImagesService
 
         output.Position = 0;
 
+        return output;
+    }
+
+    private static Stream CreateHeicThumbnail(Stream originalStream)
+    {
+        using var image = new MagickImage(originalStream);
+        image.AutoOrient();
+        image.Resize(400, 400);
+        image.Format = MagickFormat.Jpeg;
+        image.Quality = 75;
+
+        var output = new MemoryStream();
+        image.Write(output);
+        output.Position = 0;
         return output;
     }
 

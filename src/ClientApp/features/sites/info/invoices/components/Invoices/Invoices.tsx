@@ -36,9 +36,7 @@ const ALLOWED_CONTENT_TYPES = new Set([
   "image/heif",
 ]);
 const INVOICE_UPLOAD_SOURCES: readonly UploadSourceOption[] = [
-  { source: "camera", label: "Take a photo" },
-  { source: "gallery", label: "Choose from photo library" },
-  { source: "file", label: "Choose PDF or image" },
+  { source: "file", label: "Browse files" },
 ];
 
 type InvoiceListItem =
@@ -255,7 +253,6 @@ const Invoices = () => {
         isUploading={createFromFile.isPending}
         label="invoice"
         onUpload={uploadInvoice}
-        pickerMediaKind="image"
         resolveContentType={resolveInvoiceContentType}
         siteId={siteId}
         sourceOptions={INVOICE_UPLOAD_SOURCES}

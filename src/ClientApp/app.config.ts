@@ -27,15 +27,15 @@ export default {
     },
     android: {
       package: "com.naidenpetrov00.myapp",
-      permissions: [
-        "READ_MEDIA_IMAGES",
-        "READ_MEDIA_VIDEO",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "CAMERA",
-      ],
+      permissions: ["CAMERA", "RECORD_AUDIO"],
     },
     plugins: [
+      [
+        "expo-image-picker",
+        {
+          cameraPermission: "Allow SiteWatch to use the camera to add site images and videos.",
+        },
+      ],
       "expo-video",
       [
         "expo-screen-orientation",

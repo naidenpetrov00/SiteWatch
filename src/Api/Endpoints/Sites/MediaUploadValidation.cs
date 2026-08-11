@@ -21,6 +21,8 @@ internal static class MediaUploadValidation
             "image/png",
             "image/webp",
             "image/gif",
+            "image/heic",
+            "image/heif",
         };
 
     private static readonly IReadOnlySet<string> VideoContentTypes =
@@ -32,7 +34,7 @@ internal static class MediaUploadValidation
         };
 
     public static void ValidateImage(IFormFile file) =>
-        Validate(file, ImageMaxFileSize, ImageContentTypes, "image", "JPEG, PNG, WebP, or GIF images");
+        Validate(file, ImageMaxFileSize, ImageContentTypes, "image", "JPEG, PNG, WebP, GIF, HEIC, or HEIF images");
 
     public static void ValidateVideo(IFormFile file) =>
         Validate(file, VideoMaxFileSize, VideoContentTypes, "video", "MP4, MOV, or WebM videos");

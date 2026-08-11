@@ -1,4 +1,5 @@
 import { ActivityIndicator, Text, View } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 
 import { useColorPalette } from "@/hooks/useColorPalette";
 import { FILE_DOCUMENT_TYPE_LABELS, type FileDocumentType } from "../files/types";
@@ -18,7 +19,8 @@ const PendingFileUploadRow = ({
   const colorPalette = useColorPalette();
 
   return (
-    <View
+    <Animated.View
+      entering={FadeInDown.duration(180)}
       accessibilityLabel={`${fileName} uploading`}
       style={[
         filesStyles.fileRow,
@@ -42,7 +44,7 @@ const PendingFileUploadRow = ({
       <Text style={[filesStyles.metadata, { color: colorPalette.secondary }]}>
         Content type: {contentType}
       </Text>
-    </View>
+    </Animated.View>
   );
 };
 

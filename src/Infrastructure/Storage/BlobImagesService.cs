@@ -25,11 +25,14 @@ internal sealed class BlobImagesService(BlobServiceClient blobServiceClient, IIm
             cancellationToken: cancellationToken);
 
         buffer.Position = 0;
-        await using var thumbnailStream = await imagesService.CreateThumbnailAsync(buffer, cancellationToken);
+        await using var thumbnailStream = await imagesService.CreateThumbnailAsync(
+            buffer,
+            contentType,
+            cancellationToken);
         var thumbnailFileId = Guid.NewGuid();
         var thumbnailBlobClient = containerClient.GetBlobClient(thumbnailFileId.ToString());
 
-        await thumbnailBlobClient.UploadAsync(thumbnailStream, new BlobHttpHeaders { ContentType = contentType },
+        await thumbnailBlobClient.UploadAsync(thumbnailStream, new BlobHttpHeaders { ContentType = "image/jpeg" },
             cancellationToken: cancellationToken);
 
         return new UploadedImageResult(originalFileId, thumbnailFileId);

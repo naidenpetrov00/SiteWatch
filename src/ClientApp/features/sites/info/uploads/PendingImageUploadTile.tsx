@@ -1,4 +1,5 @@
 import { ActivityIndicator, Image, Text, View } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 
 import { useColorPalette } from "@/hooks/useColorPalette";
 import { siteImagesStyles } from "../images/component/SiteImages.styles";
@@ -15,7 +16,8 @@ const PendingImageUploadTile = ({
   const colorPalette = useColorPalette();
 
   return (
-    <View
+    <Animated.View
+      entering={FadeInDown.duration(180)}
       accessibilityLabel="Image uploading"
       style={[
         siteImagesStyles.galleryTile,
@@ -43,7 +45,7 @@ const PendingImageUploadTile = ({
           Uploading…
         </Text>
       </View>
-    </View>
+    </Animated.View>
   );
 };
 

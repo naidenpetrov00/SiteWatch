@@ -1,14 +1,22 @@
-import { type ReactNode, useCallback, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  AccessibilityInfo,
+  ActionSheetIOS,
   ActivityIndicator,
   Alert,
   Linking,
+  Modal,
+  Platform,
   Pressable,
   Text,
   View,
 } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
+import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
+import { BlurView } from "expo-blur";
+import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
+import Animated, { FadeInDown, FadeOutDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import RoleGate from "@/features/auth/components/RoleGate/RoleGate";
@@ -18,10 +26,8 @@ import styles from "./SiteUploadAction.styles";
 import type { UploadAsset } from "./types";
 
 export type UploadSource = "camera" | "gallery" | "file";
-export type UploadSourceOption = {
-  source: UploadSource;
-  label: string;
-};
+export type UploadSourceOption = { source: UploadSource; label: string };
+export type UploadClassificationOption = { value: string; label: string };
 
 type PickerMediaKind = "image" | "video";
 
@@ -31,21 +37,19 @@ type SiteUploadActionProps = {
   sourceOptions: readonly UploadSourceOption[];
   pickerMediaKind?: PickerMediaKind;
   documentPickerTypes: string | string[];
+  classification?: { title: string; options: readonly UploadClassificationOption[] };
   allowedRoles?: readonly UserRole[];
   isUploading: boolean;
-  canUpload?: boolean;
-  panelTitle?: string;
-  panelContent?: ReactNode;
-  onUpload: (asset: UploadAsset) => Promise<unknown>;
+  onUpload: (asset: UploadAsset, classification?: string) => Promise<unknown>;
   validateAsset: (asset: UploadAsset) => string | null;
   resolveContentType: (contentType: string | null | undefined, fileName: string) => string | null;
   fallbackFileName: () => string;
 };
 
 const getUploadErrorMessage = (error: unknown, fallback: string) =>
-  error instanceof Error && error.message.trim().length > 0
-    ? error.message
-    : fallback;
+  error instanceof Error && error.message.trim().length > 0 ? error.message : fallback;
+
+const isIos = Platform.OS === "ios";
 
 const SiteUploadAction = ({
   label,
@@ -53,11 +57,9 @@ const SiteUploadAction = ({
   sourceOptions,
   pickerMediaKind,
   documentPickerTypes,
+  classification,
   allowedRoles = ACCESS_POLICIES.siteMediaUpload,
   isUploading,
-  canUpload = true,
-  panelTitle,
-  panelContent,
   onUpload,
   validateAsset,
   resolveContentType,
@@ -65,12 +67,52 @@ const SiteUploadAction = ({
 }: SiteUploadActionProps) => {
   const colorPalette = useColorPalette();
   const { bottom } = useSafeAreaInsets();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeSource, setActiveSource] = useState<UploadSource | null>(null);
+  const [selectedClassification, setSelectedClassification] = useState<string | null>(null);
+  const [retryAsset, setRetryAsset] = useState<UploadAsset | null>(null);
+  const [reduceTransparency, setReduceTransparency] = useState(false);
+  const selectedClassificationRef = useRef<string | null>(null);
+  const retryUploadRef = useRef<(asset: UploadAsset) => void>(() => undefined);
   const isBusy = isUploading || activeSource !== null;
+  const hasClassification = Boolean(classification);
+  const hasOptions = !classification || classification.options.length > 0;
+  const canChooseSource = !hasClassification || selectedClassification !== null;
+  const useLiquidGlass = isIos && !reduceTransparency && isLiquidGlassAvailable();
 
-  const showUploadFailure = useCallback((message: string) => {
-    Alert.alert("Upload failed", message);
+  useEffect(() => {
+    void AccessibilityInfo.isReduceTransparencyEnabled().then(setReduceTransparency);
+  }, []);
+
+  useEffect(() => {
+    if (!classification) {
+      selectedClassificationRef.current = null;
+      setSelectedClassification(null);
+      return;
+    }
+
+    const defaultClassification = classification.options.length === 1
+      ? classification.options[0].value
+      : null;
+    selectedClassificationRef.current = defaultClassification;
+    setSelectedClassification(defaultClassification);
+  }, [classification]);
+
+  const selectClassification = useCallback((value: string) => {
+    selectedClassificationRef.current = value;
+    setSelectedClassification(value);
+  }, []);
+
+  const haptic = useCallback(() => {
+    if (isIos) void Haptics.selectionAsync();
+  }, []);
+
+  const showUploadFailure = useCallback((message: string, asset?: UploadAsset) => {
+    setRetryAsset(asset ?? null);
+    Alert.alert("Upload failed", message, asset ? [
+      { text: "Cancel", style: "cancel" },
+      { text: "Retry", onPress: () => retryUploadRef.current(asset) },
+    ] : undefined);
   }, []);
 
   const showPermissionDenied = useCallback((source: "Camera" | "Photos") => {
@@ -83,24 +125,6 @@ const SiteUploadAction = ({
       ],
     );
   }, [label]);
-
-  const uploadAsset = useCallback((asset: UploadAsset) => {
-    if (!siteId) {
-      showUploadFailure("The site is unavailable. Return to the site and retry.");
-      return;
-    }
-
-    const validationMessage = validateAsset(asset);
-    if (validationMessage) {
-      showUploadFailure(validationMessage);
-      return;
-    }
-
-    setIsOpen(false);
-    void onUpload(asset).catch((error) => {
-      showUploadFailure(getUploadErrorMessage(error, `Unable to upload the ${label}.`));
-    });
-  }, [label, onUpload, showUploadFailure, siteId, validateAsset]);
 
   const toUploadAsset = useCallback((asset: {
     uri: string;
@@ -115,13 +139,31 @@ const SiteUploadAction = ({
       return null;
     }
 
-    return {
-      uri: asset.uri,
-      fileName,
-      contentType,
-      fileSize: asset.fileSize ?? undefined,
-    };
+    return { uri: asset.uri, fileName, contentType, fileSize: asset.fileSize ?? undefined };
   }, [fallbackFileName, label, resolveContentType, showUploadFailure]);
+
+  const uploadAsset = useCallback((asset: UploadAsset) => {
+    if (!siteId) {
+      showUploadFailure("The site is unavailable. Return to the site and retry.");
+      return;
+    }
+
+    const validationMessage = validateAsset(asset);
+    if (validationMessage) {
+      showUploadFailure(validationMessage);
+      return;
+    }
+
+    setIsMenuOpen(false);
+    setRetryAsset(null);
+    const classificationValue = selectedClassificationRef.current
+      ?? (classification?.options.length === 1 ? classification.options[0].value : undefined);
+    void onUpload(asset, classificationValue).catch((error) => {
+      showUploadFailure(getUploadErrorMessage(error, `Unable to upload the ${label}.`), asset);
+    });
+  }, [classification, label, onUpload, showUploadFailure, siteId, validateAsset]);
+
+  retryUploadRef.current = uploadAsset;
 
   const handleCamera = useCallback(async () => {
     setActiveSource("camera");
@@ -137,12 +179,12 @@ const SiteUploadAction = ({
         allowsEditing: false,
         quality: pickerMediaKind === "image" ? 0.9 : undefined,
       });
-      if (result.canceled) return;
-
-      const asset = toUploadAsset(result.assets[0]);
-      if (asset) uploadAsset(asset);
+      if (!result.canceled) {
+        const asset = toUploadAsset(result.assets[0]);
+        if (asset) uploadAsset(asset);
+      }
     } catch (error) {
-      showUploadFailure(getUploadErrorMessage(error, `Unable to capture or upload the ${label}.`));
+      showUploadFailure(getUploadErrorMessage(error, `Unable to capture the ${label}.`));
     } finally {
       setActiveSource(null);
     }
@@ -151,27 +193,21 @@ const SiteUploadAction = ({
   const handleGallery = useCallback(async () => {
     setActiveSource("gallery");
     try {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        showPermissionDenied("Photos");
-        return;
-      }
-
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: pickerMediaKind === "video" ? ["videos"] : ["images"],
         allowsEditing: false,
         quality: pickerMediaKind === "image" ? 1 : undefined,
       });
-      if (result.canceled) return;
-
-      const asset = toUploadAsset(result.assets[0]);
-      if (asset) uploadAsset(asset);
+      if (!result.canceled) {
+        const asset = toUploadAsset(result.assets[0]);
+        if (asset) uploadAsset(asset);
+      }
     } catch (error) {
-      showUploadFailure(getUploadErrorMessage(error, `Unable to select or upload the ${label}.`));
+      showUploadFailure(getUploadErrorMessage(error, `Unable to select the ${label}.`));
     } finally {
       setActiveSource(null);
     }
-  }, [label, pickerMediaKind, showPermissionDenied, showUploadFailure, toUploadAsset, uploadAsset]);
+  }, [label, pickerMediaKind, showUploadFailure, toUploadAsset, uploadAsset]);
 
   const handleFilePicker = useCallback(async () => {
     setActiveSource("file");
@@ -181,78 +217,151 @@ const SiteUploadAction = ({
         multiple: false,
         copyToCacheDirectory: true,
       });
-      if (result.canceled) return;
-
-      const selected = result.assets[0];
-      const asset = toUploadAsset({
-        uri: selected.uri,
-        fileName: selected.name,
-        mimeType: selected.mimeType,
-        fileSize: selected.size,
-      });
-      if (asset) uploadAsset(asset);
+      if (!result.canceled) {
+        const selected = result.assets[0];
+        const asset = toUploadAsset({
+          uri: selected.uri,
+          fileName: selected.name,
+          mimeType: selected.mimeType,
+          fileSize: selected.size,
+        });
+        if (asset) uploadAsset(asset);
+      }
     } catch (error) {
-      showUploadFailure(getUploadErrorMessage(error, `Unable to select or upload the ${label}.`));
+      showUploadFailure(getUploadErrorMessage(error, `Unable to select the ${label}.`));
     } finally {
       setActiveSource(null);
     }
   }, [documentPickerTypes, label, showUploadFailure, toUploadAsset, uploadAsset]);
 
   const handleSource = useCallback((source: UploadSource) => {
+    if (isBusy) return;
+    haptic();
     if (source === "camera") return void handleCamera();
     if (source === "gallery") return void handleGallery();
     return void handleFilePicker();
-  }, [handleCamera, handleFilePicker, handleGallery]);
+  }, [canChooseSource, handleCamera, handleFilePicker, handleGallery, haptic, isBusy]);
+
+  const showIosSources = useCallback(() => {
+    ActionSheetIOS.showActionSheetWithOptions({
+      options: [...sourceOptions.map((option) => option.label), "Cancel"],
+      cancelButtonIndex: sourceOptions.length,
+      title: `Add ${label}`,
+    }, (index) => {
+      const option = sourceOptions[index];
+      if (option) handleSource(option.source);
+    });
+  }, [handleSource, label, sourceOptions]);
+
+  const openIosFlow = useCallback(() => {
+    if (!hasOptions) {
+      Alert.alert(`No ${label} options`, `This site has no available ${classification?.title.toLowerCase() ?? "upload"} options.`);
+      return;
+    }
+
+    haptic();
+    if (!classification || classification.options.length === 1) {
+      showIosSources();
+      return;
+    }
+
+    ActionSheetIOS.showActionSheetWithOptions({
+      options: [...classification.options.map((option) => option.label), "Cancel"],
+      cancelButtonIndex: classification.options.length,
+      title: classification.title,
+    }, (index) => {
+      const option = classification.options[index];
+      if (!option) return;
+      selectClassification(option.value);
+      haptic();
+      setTimeout(showIosSources, 0);
+    });
+  }, [classification, hasOptions, haptic, label, selectClassification, showIosSources]);
+
+  const handleActionPress = useCallback(() => {
+    if (isBusy) return;
+    if (isIos) {
+      openIosFlow();
+      return;
+    }
+    setIsMenuOpen(true);
+    haptic();
+  }, [haptic, isBusy, openIosFlow]);
+
+  const actionLabel = `Add ${label}`;
+  const actionContent = useMemo(() => (
+    <Pressable
+      accessibilityLabel={actionLabel}
+      accessibilityRole="button"
+      accessibilityState={{ busy: isBusy, expanded: isMenuOpen }}
+      disabled={isBusy}
+      onPress={handleActionPress}
+      style={({ pressed }) => [styles.actionButton, { opacity: isBusy ? 0.6 : pressed ? 0.78 : 1 }]}
+    >
+      {isUploading ? <ActivityIndicator color={colorPalette.contrastText} /> : null}
+      <Text style={[styles.actionButtonText, { color: colorPalette.contrastText }]}>+ {actionLabel}</Text>
+    </Pressable>
+  ), [actionLabel, colorPalette.contrastText, handleActionPress, isBusy, isMenuOpen, isUploading]);
+
+  const actionButton: ReactNode = useLiquidGlass ? (
+    <GlassView isInteractive style={styles.glassButton}>{actionContent}</GlassView>
+  ) : isIos ? (
+    <BlurView intensity={70} tint="systemMaterial" style={styles.glassButton}>{actionContent}</BlurView>
+  ) : (
+    <View style={[styles.androidFab, { backgroundColor: colorPalette.primary }]}>{actionContent}</View>
+  );
 
   return (
     <RoleGate allowedRoles={allowedRoles}>
-      <View
-        style={[
-          styles.container,
-          { bottom: bottom + 12, left: 16, position: "absolute", right: 16 },
-        ]}
+      <View style={[styles.container, { bottom: bottom + 12, position: "absolute", right: 16 }]}>
+        {actionButton}
+      </View>
+      <Modal
+        animationType="none"
+        transparent
+        visible={!isIos && isMenuOpen}
+        onRequestClose={() => setIsMenuOpen(false)}
       >
-        {isOpen ? (
-          <View style={[styles.panel, { backgroundColor: colorPalette.background, borderColor: `${colorPalette.secondary}88` }]}>
-            {panelTitle ? <Text style={[styles.panelTitle, { color: colorPalette.text }]}>{panelTitle}</Text> : null}
-            {panelContent}
-            {sourceOptions.map(({ source, label: sourceLabel }) => (
+        <View style={styles.modalBackdrop}>
+          <Pressable accessibilityLabel="Close upload menu" style={styles.modalDismiss} onPress={() => setIsMenuOpen(false)} />
+          <Animated.View entering={FadeInDown.duration(180)} exiting={FadeOutDown.duration(130)} style={[styles.panel, { backgroundColor: colorPalette.background, borderColor: `${colorPalette.secondary}55`, paddingBottom: bottom + 16 }]}>
+            <Text style={[styles.panelTitle, { color: colorPalette.text }]}>{classification?.title ?? `Add ${label}`}</Text>
+            {classification ? (
+              <View style={styles.options}>
+                {classification.options.map((option) => {
+                  const selected = selectedClassification === option.value;
+                  return (
+                    <Pressable
+                      key={option.value}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected }}
+                      disabled={isBusy}
+                      onPress={() => { selectClassification(option.value); haptic(); }}
+                      style={({ pressed }) => [styles.option, { backgroundColor: selected ? colorPalette.primary : `${colorPalette.primary}11`, borderColor: selected ? colorPalette.primary : `${colorPalette.secondary}66`, opacity: pressed ? 0.75 : 1 }]}
+                    >
+                      <Text style={[styles.optionText, { color: selected ? colorPalette.contrastText : colorPalette.text }]}>{option.label}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ) : null}
+            {sourceOptions.map((option) => (
               <Pressable
-                key={source}
+                key={option.source}
                 accessibilityRole="button"
-                disabled={!canUpload || isBusy}
-                onPress={() => handleSource(source)}
-                style={({ pressed }) => [
-                  styles.sourceButton,
-                  {
-                    borderColor: `${colorPalette.secondary}88`,
-                    opacity: !canUpload || isBusy ? 0.5 : 1,
-                  },
-                  pressed ? styles.pressed : null,
-                ]}
+                accessibilityState={{ disabled: !canChooseSource || isBusy }}
+                disabled={!canChooseSource || isBusy}
+                onPress={() => handleSource(option.source)}
+                style={({ pressed }) => [styles.sourceButton, { borderColor: `${colorPalette.secondary}77`, opacity: !canChooseSource || isBusy ? 0.45 : pressed ? 0.72 : 1 }]}
               >
-                {activeSource === source || isUploading ? <ActivityIndicator color={colorPalette.primary} /> : null}
-                <Text style={[styles.sourceText, { color: colorPalette.text }]}>{sourceLabel}</Text>
+                {activeSource === option.source ? <ActivityIndicator color={colorPalette.primary} /> : null}
+                <Text style={[styles.sourceText, { color: colorPalette.text }]}>{option.label}</Text>
               </Pressable>
             ))}
-          </View>
-        ) : null}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ expanded: isOpen }}
-          disabled={isBusy}
-          onPress={() => setIsOpen((open) => !open)}
-          style={({ pressed }) => [
-            styles.actionButton,
-            { backgroundColor: colorPalette.primary, opacity: isBusy ? 0.6 : 1 },
-            pressed ? styles.pressed : null,
-          ]}
-        >
-          <Text style={[styles.actionButtonText, { color: colorPalette.contrastText }]}>
-            {isOpen ? "Close upload" : `Upload ${label}`}
-          </Text>
-        </Pressable>
-      </View>
+            {retryAsset ? <Text accessibilityRole="alert" style={[styles.retryHint, { color: colorPalette.secondary }]}>Your last upload can be retried from the error prompt.</Text> : null}
+          </Animated.View>
+        </View>
+      </Modal>
     </RoleGate>
   );
 };
