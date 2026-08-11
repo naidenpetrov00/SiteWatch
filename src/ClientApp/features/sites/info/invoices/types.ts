@@ -29,12 +29,7 @@ export type SiteInvoice = {
   siteAllocation: SiteInvoiceAllocation | null;
 };
 
-export type InvoiceUploadAsset = {
-  uri: string;
-  fileName: string;
-  contentType: string;
-  fileSize?: number;
-};
+export type { UploadAsset as InvoiceUploadAsset } from "../uploads/types";
 
 export type InvoiceFileAccess = {
   url: string;

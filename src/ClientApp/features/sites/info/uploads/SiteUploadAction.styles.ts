@@ -60,13 +60,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
   },
-  feedback: {
-    borderWidth: 1,
-    borderRadius: 12,
-    borderCurve: "continuous",
-    padding: 10,
-    fontSize: 14,
-  },
   pressed: {
     opacity: 0.72,
   },

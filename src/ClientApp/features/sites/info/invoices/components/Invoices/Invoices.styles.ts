@@ -16,46 +16,6 @@ const invoicesStyles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
   },
-  addButton: {
-    alignSelf: "flex-start",
-    borderRadius: 12,
-    borderCurve: "continuous",
-    paddingHorizontal: 16,
-    paddingVertical: 11,
-  },
-  addButtonText: {
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  sourceActions: {
-    gap: 8,
-    paddingTop: 4,
-  },
-  sourceButton: {
-    minHeight: 46,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    borderWidth: 1,
-    borderRadius: 12,
-    borderCurve: "continuous",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  sourceButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  pressed: {
-    opacity: 0.72,
-  },
-  success: {
-    borderRadius: 12,
-    borderCurve: "continuous",
-    padding: 12,
-    backgroundColor: "rgba(22, 163, 74, 0.12)",
-    fontSize: 14,
-  },
   error: {
     borderWidth: 1,
     borderRadius: 12,

@@ -1,17 +1,22 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useMutationState, useQueryClient } from "@tanstack/react-query";
 
 import { paths } from "@/config/constants/paths";
 import { env } from "@/config/env";
 import { useAuth } from "@/store/auth_context";
 import type { InvoiceUploadAsset } from "../types";
 
-type CreateInvoiceFromFileRequest = {
+export type CreateInvoiceFromFileRequest = {
   siteId: string;
   file: InvoiceUploadAsset;
 };
 
-type CreateInvoiceFromFileResponse = {
+export type CreateInvoiceFromFileResponse = {
   id: string;
+};
+
+export type PendingInvoiceUpload = {
+  mutationId: number;
+  request: CreateInvoiceFromFileRequest;
 };
 
 const getUploadErrorMessage = async (response: Response): Promise<string> => {
@@ -86,4 +91,16 @@ export const useCreateInvoiceFromFile = () => {
       });
     },
   });
+};
+
+export const usePendingInvoiceUploads = (siteId?: string) => {
+  const mutations = useMutationState({
+    filters: { mutationKey: ["invoice", "create-from-file"], status: "pending" },
+    select: (mutation): PendingInvoiceUpload => ({
+      mutationId: mutation.mutationId,
+      request: mutation.state.variables as CreateInvoiceFromFileRequest,
+    }),
+  });
+
+  return mutations.filter(({ request }) => request.siteId === siteId);
 };
