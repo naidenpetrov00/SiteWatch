@@ -3,6 +3,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 
 import { useColorPalette } from "@/hooks/useColorPalette";
 import { siteImagesStyles } from "../images/component/SiteImages.styles";
+import withOpacity from "./withOpacity";
 
 type PendingImageUploadTileProps = {
   tileWidth: number;
@@ -21,7 +22,7 @@ const PendingImageUploadTile = ({
       accessibilityLabel="Image uploading"
       style={[
         siteImagesStyles.galleryTile,
-        { width: tileWidth, backgroundColor: `${colorPalette.primary}22` },
+        { width: tileWidth, backgroundColor: withOpacity(colorPalette.primary, 0.13) },
       ]}
     >
       <Image

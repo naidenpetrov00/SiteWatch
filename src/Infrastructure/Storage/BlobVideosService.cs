@@ -3,12 +3,13 @@ using Application.SeedWork.Models.Internal;
 using Application.Sites.Videos.Commands;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
-using System.Diagnostics;
-using System.Globalization;
 
 namespace Infrastructure.Storage;
 
-internal sealed class BlobVideosService(BlobServiceClient blobServiceClient, IVideosService videosService)
+internal sealed class BlobVideosService(
+    BlobServiceClient blobServiceClient,
+    IVideosService videosService,
+    IVideoFileInspector videoFileInspector)
     : IVideosBlobService
 {
     public async Task<UploadedVideoResult> UploadVideoAsync(
@@ -17,7 +18,6 @@ internal sealed class BlobVideosService(BlobServiceClient blobServiceClient, IVi
         BlobContainerName blobContainerName,
         CancellationToken cancellationToken = default)
     {
-        var containerClient = blobServiceClient.GetBlobContainerClient(blobContainerName.ToString());
         var inputPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.mp4");
 
         try
@@ -32,8 +32,17 @@ internal sealed class BlobVideosService(BlobServiceClient blobServiceClient, IVi
                 await stream.CopyToAsync(inputFile, cancellationToken);
             }
 
-            var durationSeconds = await GetVideoDurationSecondsAsync(inputPath, cancellationToken);
+            var inspection = await videoFileInspector.InspectAsync(
+                inputPath,
+                contentType,
+                cancellationToken);
 
+            await using var snapshotSource = File.OpenRead(inputPath);
+            await using var snapshotStream = await videosService.CreateSnapshotAsync(
+                snapshotSource,
+                cancellationToken);
+
+            var containerClient = blobServiceClient.GetBlobContainerClient(blobContainerName.ToString());
             var videoFileId = Guid.NewGuid();
             var videoBlobClient = containerClient.GetBlobClient(videoFileId.ToString());
 
@@ -45,18 +54,27 @@ internal sealed class BlobVideosService(BlobServiceClient blobServiceClient, IVi
                     cancellationToken: cancellationToken);
             }
 
-            await using var snapshotSource = File.OpenRead(inputPath);
-            await using var snapshotStream = await videosService.CreateSnapshotAsync(snapshotSource, cancellationToken);
             var snapshotFileId = Guid.NewGuid();
             var snapshotContainerClient = blobServiceClient.GetBlobContainerClient(BlobContainerName.Images.ToString());
             var snapshotBlobClient = snapshotContainerClient.GetBlobClient(snapshotFileId.ToString());
 
-            await snapshotBlobClient.UploadAsync(
-                snapshotStream,
-                new BlobHttpHeaders { ContentType = "image/jpeg" },
-                cancellationToken: cancellationToken);
+            try
+            {
+                await snapshotBlobClient.UploadAsync(
+                    snapshotStream,
+                    new BlobHttpHeaders { ContentType = "image/jpeg" },
+                    cancellationToken: cancellationToken);
+            }
+            catch
+            {
+                await videoBlobClient.DeleteIfExistsAsync(cancellationToken: CancellationToken.None);
+                throw;
+            }
 
-            return new UploadedVideoResult(videoFileId, snapshotFileId, durationSeconds);
+            return new UploadedVideoResult(
+                videoFileId,
+                snapshotFileId,
+                inspection.DurationSeconds);
         }
         finally
         {
@@ -99,50 +117,4 @@ internal sealed class BlobVideosService(BlobServiceClient blobServiceClient, IVi
         }
     }
 
-    private static async Task<int?> GetVideoDurationSecondsAsync(
-        string inputPath,
-        CancellationToken cancellationToken)
-    {
-        var processStartInfo = new ProcessStartInfo
-        {
-            FileName = "ffprobe",
-            RedirectStandardError = true,
-            RedirectStandardOutput = true,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-        };
-
-        processStartInfo.ArgumentList.Add("-v");
-        processStartInfo.ArgumentList.Add("error");
-        processStartInfo.ArgumentList.Add("-show_entries");
-        processStartInfo.ArgumentList.Add("format=duration");
-        processStartInfo.ArgumentList.Add("-of");
-        processStartInfo.ArgumentList.Add("default=noprint_wrappers=1:nokey=1");
-        processStartInfo.ArgumentList.Add(inputPath);
-
-        using var process = Process.Start(processStartInfo)
-            ?? throw new InvalidOperationException("Failed to start ffprobe.");
-
-        var stdoutTask = process.StandardOutput.ReadToEndAsync();
-        var stderrTask = process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync(cancellationToken);
-        var stdout = await stdoutTask;
-        _ = await stderrTask;
-
-        if (process.ExitCode != 0)
-        {
-            return null;
-        }
-
-        if (!double.TryParse(
-                stdout.Trim(),
-                NumberStyles.Float,
-                CultureInfo.InvariantCulture,
-                out var durationSeconds))
-        {
-            return null;
-        }
-
-        return Math.Max(0, (int)Math.Round(durationSeconds, MidpointRounding.AwayFromZero));
-    }
 }

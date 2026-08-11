@@ -33,10 +33,10 @@ internal static class MediaUploadValidation
             "video/webm",
         };
 
-    public static void ValidateImage(IFormFile file) =>
+    public static string ValidateImage(IFormFile file) =>
         Validate(file, ImageMaxFileSize, ImageContentTypes, "image", "JPEG, PNG, WebP, GIF, HEIC, or HEIF images");
 
-    public static void ValidateVideo(IFormFile file) =>
+    public static string ValidateVideo(IFormFile file) =>
         Validate(file, VideoMaxFileSize, VideoContentTypes, "video", "MP4, MOV, or WebM videos");
 
     public static void ValidateFile(IFormFile file)
@@ -49,7 +49,7 @@ internal static class MediaUploadValidation
         ValidateLength(file, FileMaxFileSize, "file");
     }
 
-    private static void Validate(
+    private static string Validate(
         IFormFile file,
         long maxFileSize,
         IReadOnlySet<string> allowedContentTypes,
@@ -57,11 +57,25 @@ internal static class MediaUploadValidation
         string allowedDescription)
     {
         ValidateLength(file, maxFileSize, kind);
+        if (string.IsNullOrWhiteSpace(file.ContentType))
+        {
+            throw InvalidFile($"The {kind} content type is required.");
+        }
 
-        if (!allowedContentTypes.Contains(file.ContentType))
+        var contentType = NormalizeContentType(file.ContentType);
+
+        if (!allowedContentTypes.Contains(contentType))
         {
             throw InvalidFile($"Only {allowedDescription} are allowed.");
         }
+
+        return contentType;
+    }
+
+    private static string NormalizeContentType(string contentType)
+    {
+        var normalized = contentType.Trim().ToLowerInvariant();
+        return normalized == "image/jpg" ? "image/jpeg" : normalized;
     }
 
     private static void ValidateLength(IFormFile file, long maxFileSize, string kind)

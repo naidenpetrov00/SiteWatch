@@ -24,6 +24,7 @@ import { useColorPalette } from "@/hooks/useColorPalette";
 import { ACCESS_POLICIES, type UserRole } from "@/types/authorization";
 import styles from "./SiteUploadAction.styles";
 import type { UploadAsset } from "./types";
+import withOpacity from "./withOpacity";
 
 export type UploadSource = "camera" | "gallery" | "file";
 export type UploadSourceOption = { source: UploadSource; label: string };
@@ -48,18 +49,6 @@ type SiteUploadActionProps = {
 
 const getUploadErrorMessage = (error: unknown, fallback: string) =>
   error instanceof Error && error.message.trim().length > 0 ? error.message : fallback;
-
-const withOpacity = (color: string, opacity: number) => {
-  const hex = color.trim().replace(/^#/, "");
-  const expandedHex = hex.length === 3 || hex.length === 4
-    ? hex.split("").map((character) => `${character}${character}`).join("")
-    : hex;
-  const rgb = expandedHex.match(/^([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})(?:[0-9a-f]{2})?$/i);
-
-  if (!rgb) return color;
-
-  return `rgba(${parseInt(rgb[1], 16)}, ${parseInt(rgb[2], 16)}, ${parseInt(rgb[3], 16)}, ${opacity})`;
-};
 
 const isIos = Platform.OS === "ios";
 
@@ -364,7 +353,7 @@ const SiteUploadAction = ({
                 accessibilityState={{ disabled: !canChooseSource || isBusy }}
                 disabled={!canChooseSource || isBusy}
                 onPress={() => handleSource(option.source)}
-                style={({ pressed }) => [styles.sourceButton, { borderColor: `${colorPalette.secondary}77`, opacity: !canChooseSource || isBusy ? 0.45 : pressed ? 0.72 : 1 }]}
+                style={({ pressed }) => [styles.sourceButton, { borderColor: withOpacity(colorPalette.secondary, 0.47), opacity: !canChooseSource || isBusy ? 0.45 : pressed ? 0.72 : 1 }]}
               >
                 {activeSource === option.source ? <ActivityIndicator color={colorPalette.primary} /> : null}
                 <Text style={[styles.sourceText, { color: colorPalette.text }]}>{option.label}</Text>

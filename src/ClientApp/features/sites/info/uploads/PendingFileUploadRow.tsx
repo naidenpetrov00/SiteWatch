@@ -4,6 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useColorPalette } from "@/hooks/useColorPalette";
 import { FILE_DOCUMENT_TYPE_LABELS, type FileDocumentType } from "../files/types";
 import filesStyles from "../files/component/Files/Files.styles";
+import withOpacity from "./withOpacity";
 
 type PendingFileUploadRowProps = {
   contentType: string;
@@ -25,8 +26,8 @@ const PendingFileUploadRow = ({
       style={[
         filesStyles.fileRow,
         {
-          backgroundColor: `${colorPalette.secondary}22`,
-          borderColor: `${colorPalette.secondary}88`,
+          backgroundColor: withOpacity(colorPalette.secondary, 0.13),
+          borderColor: withOpacity(colorPalette.secondary, 0.53),
           gap: 4,
         },
       ]}

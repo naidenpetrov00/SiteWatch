@@ -2,6 +2,7 @@ import { ActivityIndicator, Text, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
 import { useColorPalette } from "@/hooks/useColorPalette";
+import withOpacity from "../../../uploads/withOpacity";
 import invoiceCardStyles from "./InvoiceCard.styles";
 
 type PendingInvoiceUploadCardProps = {
@@ -18,8 +19,8 @@ const PendingInvoiceUploadCard = ({ fileName }: PendingInvoiceUploadCardProps) =
       style={[
         invoiceCardStyles.card,
         {
-          backgroundColor: `${colorPalette.secondary}22`,
-          borderColor: `${colorPalette.secondary}88`,
+          backgroundColor: withOpacity(colorPalette.secondary, 0.13),
+          borderColor: withOpacity(colorPalette.secondary, 0.53),
           gap: 8,
         },
       ]}

@@ -18,7 +18,9 @@ public class Videos : EndpointGroupBase
         var group = app.MapGroupCustom();
         group.MapPost("/{siteId:guid}", AddVideoToSite)
             .RequireAuthorization(AuthorizationPolicies.AdministratorOrWorker)
-            .DisableAntiforgery();
+            .DisableAntiforgery()
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status413PayloadTooLarge);
         group.MapGet("/{videoId:guid}", GetVideoFromSite);
         group.MapGet("/snapshot/{snapshotId:guid}", GetVideoSnapshotFromSite);
         group.MapDelete("/{videoId:guid}", DeleteVideoFromSite);
@@ -49,12 +51,15 @@ public class Videos : EndpointGroupBase
         IMediator mediator,
         [FromForm] IFormFile file,
         [FromForm] VideoCategory? category,
-        Guid siteId)
+        Guid siteId,
+        CancellationToken cancellationToken)
     {
-        MediaUploadValidation.ValidateVideo(file);
+        var contentType = MediaUploadValidation.ValidateVideo(file);
         await using var stream = file.OpenReadStream();
-        var uploadedFile = new UploadedFile { Stream = stream, ContentType = file.ContentType };
-        var fileId = await mediator.Send(new AddVideoCommand(siteId, uploadedFile, category));
+        var uploadedFile = new UploadedFile { Stream = stream, ContentType = contentType };
+        var fileId = await mediator.Send(
+            new AddVideoCommand(siteId, uploadedFile, category),
+            cancellationToken);
 
         return TypedResults.Ok(fileId);
     }

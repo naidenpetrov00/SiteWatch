@@ -18,7 +18,9 @@ public class Images : EndpointGroupBase
         var group = app.MapGroupCustom();
         group.MapPost("/{siteId:guid}", AddImageToSite)
             .RequireAuthorization(AuthorizationPolicies.AdministratorOrWorker)
-            .DisableAntiforgery();
+            .DisableAntiforgery()
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status413PayloadTooLarge);
         group.MapGet("/{imageId:guid}", GetImageFromSite);
         group.MapDelete("/{imageId:guid}", DeleteImageFromSite);
         group.MapGet("/images{siteId:guid}", GetImagesIdsBySiteId);
@@ -40,13 +42,14 @@ public class Images : EndpointGroupBase
     [RequestFormLimits(MultipartBodyLengthLimit = MediaUploadValidation.ImageMaxRequestSize)]
     private static async Task<Ok<UploadedImageResult>> AddImageToSite(IMediator mediator, [FromForm] IFormFile file,
         [FromForm] ImageCategory? category,
-        Guid siteId)
+        Guid siteId,
+        CancellationToken cancellationToken)
     {
-        MediaUploadValidation.ValidateImage(file);
+        var contentType = MediaUploadValidation.ValidateImage(file);
         await using var stream = file.OpenReadStream();
-        var uploadedFile = new UploadedFile { Stream = stream, ContentType = file.ContentType };
+        var uploadedFile = new UploadedFile { Stream = stream, ContentType = contentType };
         var fileId = await mediator.Send(new AddImageCommand
-            (siteId, uploadedFile, category));
+            (siteId, uploadedFile, category), cancellationToken);
 
         return TypedResults.Ok(fileId);
     }

@@ -2,6 +2,8 @@ using Application.SeedWork.Interfaces;
 using Application.Sites.Videos.Queries;
 using Domain.Entities;
 using Domain.SeedWork.Enums;
+using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 
@@ -48,16 +50,16 @@ public class VideosService(IApplicationDbContext dbContext) : IVideosService
 
             var stderrTask = process.StandardError.ReadToEndAsync();
             await process.WaitForExitAsync(cancellationToken);
-            var stderr = await stderrTask;
+            _ = await stderrTask;
 
             if (process.ExitCode != 0)
             {
-                throw new InvalidOperationException($"ffmpeg failed to create a snapshot: {stderr}");
+                throw InvalidVideo();
             }
 
-            if (!File.Exists(outputPath))
+            if (!File.Exists(outputPath) || new FileInfo(outputPath).Length == 0)
             {
-                throw new InvalidOperationException("ffmpeg did not produce a snapshot file.");
+                throw InvalidVideo();
             }
 
             var output = new MemoryStream();
@@ -82,6 +84,11 @@ public class VideosService(IApplicationDbContext dbContext) : IVideosService
             }
         }
     }
+
+    private static ValidationException InvalidVideo() =>
+        new([new ValidationFailure(
+            "file",
+            "The video content is invalid or a snapshot could not be generated.")]);
 
     public Task<List<SiteVideoIdsDto>> GetVideosIdsBySiteId(Guid siteId) => dbContext.SiteVideos
         .AsNoTracking()

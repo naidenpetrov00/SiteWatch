@@ -3,6 +3,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 
 import { useColorPalette } from "@/hooks/useColorPalette";
 import { siteVideosStyles } from "../videos/component/Videos/Videos.styles";
+import withOpacity from "./withOpacity";
 
 type PendingVideoUploadTileProps = {
   tileWidth: number;
@@ -19,7 +20,7 @@ const PendingVideoUploadTile = ({ tileWidth }: PendingVideoUploadTileProps) => {
         siteVideosStyles.galleryTile,
         {
           alignItems: "center",
-          backgroundColor: `${colorPalette.secondary}33`,
+          backgroundColor: withOpacity(colorPalette.secondary, 0.2),
           justifyContent: "center",
           width: tileWidth,
         },
