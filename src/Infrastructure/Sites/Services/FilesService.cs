@@ -11,11 +11,13 @@ public class FilesService(IApplicationDbContext dbContext) : IFilesService
     public Task<List<SiteFileIdsDto>> GetFilesIdsBySiteId(Guid siteId) => dbContext.SiteFiles
         .AsNoTracking()
         .Where(siteFile => siteFile.SiteId == siteId)
+        .OrderByDescending(siteFile => siteFile.Created)
         .Select(siteFile => new SiteFileIdsDto(
             siteFile.FileId,
             siteFile.FileName,
             siteFile.ContentType,
-            siteFile.DocumentType.ToString()))
+            siteFile.DocumentType.ToString(),
+            siteFile.Created))
         .ToListAsync();
 
     public async Task AddFileIdsToSiteAsync(

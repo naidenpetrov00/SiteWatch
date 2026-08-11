@@ -93,11 +93,13 @@ public class VideosService(IApplicationDbContext dbContext) : IVideosService
     public Task<List<SiteVideoIdsDto>> GetVideosIdsBySiteId(Guid siteId) => dbContext.SiteVideos
         .AsNoTracking()
         .Where(siteVideo => siteVideo.SiteId == siteId)
+        .OrderByDescending(siteVideo => siteVideo.Created)
         .Select(siteVideo => new SiteVideoIdsDto(
             siteVideo.VideoId,
             siteVideo.SnapshotId,
             siteVideo.DurationSeconds,
-            siteVideo.Category.ToString()))
+            siteVideo.Category.ToString(),
+            siteVideo.Created))
         .ToListAsync();
 
     public async Task AddVideoIdsToSiteAsync(

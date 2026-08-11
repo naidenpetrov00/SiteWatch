@@ -15,6 +15,7 @@ public sealed class SiteImage : BaseAuditableEntity
         ImageId = imageId;
         ThumbnailImageId = thumbnailImageId;
         Category = category;
+        Created = DateTimeOffset.UtcNow;
     }
 
     public Guid SiteId { get; private set; }

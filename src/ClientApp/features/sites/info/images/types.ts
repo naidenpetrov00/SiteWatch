@@ -4,4 +4,5 @@ export type SiteImageIds = {
   imageId: string;
   thumbnailId: string;
   category: MediaCategory;
+  created: string;
 };

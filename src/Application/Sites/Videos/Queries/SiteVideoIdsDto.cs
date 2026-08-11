@@ -4,4 +4,5 @@ public sealed record SiteVideoIdsDto(
     Guid VideoId,
     Guid SnapshotId,
     int? DurationSeconds,
-    string Category);
+    string Category,
+    DateTimeOffset Created);

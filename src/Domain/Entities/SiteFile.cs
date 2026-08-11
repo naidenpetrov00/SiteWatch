@@ -21,6 +21,7 @@ public sealed class SiteFile : BaseAuditableEntity
         FileName = fileName;
         ContentType = contentType;
         DocumentType = documentType;
+        Created = DateTimeOffset.UtcNow;
     }
 
     public Guid SiteId { get; private set; }
