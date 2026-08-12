@@ -12,8 +12,10 @@ export default {
         bundleIdentifier: "com.naidenpetrov00.myapp",
         infoPlist: {
             NSPhotoLibraryUsageDescription:
-                "Allow access to Photos to organize snapshots into albums",
+                "Allow access to Photos to upload site images and videos",
             NSPhotoLibraryAddUsageDescription: "Allow saving camera snapshots",
+            NSCameraUsageDescription:
+                "Allow access to the camera to add site images and videos",
             NSAppTransportSecurity: {
                 NSAllowsArbitraryLoads: true,
                 NSAllowsArbitraryLoadsInWebContent: true,
@@ -25,13 +27,15 @@ export default {
     },
     android: {
       package: "com.naidenpetrov00.myapp",
-      permissions: [
-        "READ_MEDIA_IMAGES",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-      ],
+      permissions: ["CAMERA", "RECORD_AUDIO"],
     },
     plugins: [
+      [
+        "expo-image-picker",
+        {
+          cameraPermission: "Allow SiteWatch to use the camera to add site images and videos.",
+        },
+      ],
       "expo-video",
       [
         "expo-screen-orientation",

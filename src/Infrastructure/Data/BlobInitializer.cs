@@ -122,8 +122,11 @@ public sealed class BlobInitializer(
         if (!(await thumbnailBlob.ExistsAsync(cancellationToken)).Value)
         {
             await using var originalStream = File.OpenRead(assetPath);
-            await using var thumbnailStream = await imagesService.CreateThumbnailAsync(originalStream, cancellationToken);
-            await thumbnailBlob.UploadAsync(thumbnailStream, new BlobHttpHeaders { ContentType = contentType }, cancellationToken: cancellationToken);
+            await using var thumbnailStream = await imagesService.CreateThumbnailAsync(
+                originalStream,
+                contentType,
+                cancellationToken);
+            await thumbnailBlob.UploadAsync(thumbnailStream, new BlobHttpHeaders { ContentType = "image/jpeg" }, cancellationToken: cancellationToken);
         }
 
         if (!recordExists)

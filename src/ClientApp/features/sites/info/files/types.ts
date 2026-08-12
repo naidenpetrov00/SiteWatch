@@ -31,4 +31,5 @@ export type SiteFileIds = {
   fileName: string;
   contentType: string;
   documentType: FileDocumentType;
+  created: string;
 };

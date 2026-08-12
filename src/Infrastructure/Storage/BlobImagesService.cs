@@ -12,11 +12,16 @@ internal sealed class BlobImagesService(BlobServiceClient blobServiceClient, IIm
         BlobContainerName blobContainerName,
         CancellationToken cancellationToken = default)
     {
-        var containerClient = blobServiceClient.GetBlobContainerClient(blobContainerName.ToString());
-
         await using var buffer = new MemoryStream();
         await stream.CopyToAsync(buffer, cancellationToken);
 
+        buffer.Position = 0;
+        await using var thumbnailStream = await imagesService.CreateThumbnailAsync(
+            buffer,
+            contentType,
+            cancellationToken);
+
+        var containerClient = blobServiceClient.GetBlobContainerClient(blobContainerName.ToString());
         var originalFileId = Guid.NewGuid();
         var originalBlobClient = containerClient.GetBlobClient(originalFileId.ToString());
 
@@ -24,13 +29,21 @@ internal sealed class BlobImagesService(BlobServiceClient blobServiceClient, IIm
         await originalBlobClient.UploadAsync(buffer, new BlobHttpHeaders { ContentType = contentType },
             cancellationToken: cancellationToken);
 
-        buffer.Position = 0;
-        await using var thumbnailStream = await imagesService.CreateThumbnailAsync(buffer, cancellationToken);
         var thumbnailFileId = Guid.NewGuid();
         var thumbnailBlobClient = containerClient.GetBlobClient(thumbnailFileId.ToString());
 
-        await thumbnailBlobClient.UploadAsync(thumbnailStream, new BlobHttpHeaders { ContentType = contentType },
-            cancellationToken: cancellationToken);
+        try
+        {
+            await thumbnailBlobClient.UploadAsync(
+                thumbnailStream,
+                new BlobHttpHeaders { ContentType = "image/jpeg" },
+                cancellationToken: cancellationToken);
+        }
+        catch
+        {
+            await originalBlobClient.DeleteIfExistsAsync(cancellationToken: CancellationToken.None);
+            throw;
+        }
 
         return new UploadedImageResult(originalFileId, thumbnailFileId);
     }

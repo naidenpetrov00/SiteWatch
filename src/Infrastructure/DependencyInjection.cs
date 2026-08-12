@@ -58,6 +58,7 @@ public static class DependencyInjection
         services.AddScoped<BlobInitializer>();
         services.AddScoped<IBlobService, BlobImagesService>();
         services.AddScoped<IFilesBlobService, BlobFilesService>();
+        services.AddSingleton<IVideoFileInspector, FfprobeVideoFileInspector>();
         services.AddScoped<IVideosBlobService, BlobVideosService>();
         services.AddScoped<IInvoiceBlobService, BlobInvoiceService>();
         services.AddScoped<IEmailService, EmailService>();

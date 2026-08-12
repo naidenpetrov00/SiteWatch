@@ -17,11 +17,7 @@
     },
     "android": {
       "package": "com.naidenpetrov00.myapp",
-      "permissions": [
-        "READ_MEDIA_IMAGES",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
-      ],
+      "permissions": ["CAMERA", "RECORD_AUDIO"],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -37,8 +33,7 @@
       [
         "expo-image-picker",
         {
-          "cameraPermission": "Allow ClientApp to use the camera to capture invoice documents.",
-          "photosPermission": "Allow ClientApp to access photos to attach invoice documents."
+          "cameraPermission": "Allow SiteWatch to use the camera to add site images and videos."
         }
       ],
       "expo-video",

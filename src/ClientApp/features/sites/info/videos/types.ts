@@ -5,6 +5,7 @@ export type SiteVideoIds = {
   snapshotId: string;
   durationSeconds: number | null;
   category: MediaCategory;
+  created: string;
 };
 
 export type VisibleSiteVideo = SiteVideoIds & {

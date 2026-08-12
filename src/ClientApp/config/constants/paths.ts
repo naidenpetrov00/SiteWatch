@@ -15,15 +15,18 @@ export const paths = {
         createWithDetails: "/cameras/withDetails",
     },
     images: {
+        create: (siteId: string) => `/images/${siteId}`,
         getIdsBySiteId: (siteId: string) => `/images/images${siteId}`,
         getById: (imageId: string) => `/images/${imageId}`,
     },
     videos: {
+        create: (siteId: string) => `/videos/${siteId}`,
         getIdsBySiteId: (siteId: string) => `/videos/site/${siteId}`,
         getById: (videoId: string) => `/videos/${videoId}`,
         getSnapshotById: (snapshotId: string) => `/videos/snapshot/${snapshotId}`,
     },
     files: {
+        create: (siteId: string) => `/files/${siteId}`,
         getIdsBySiteId: (siteId: string) => `/files/files${siteId}`,
         getById: (fileId: string) => `/files/${fileId}`,
     },

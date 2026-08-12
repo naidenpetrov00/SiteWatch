@@ -7,6 +7,7 @@ public interface IImagesService
 {
     Task<Stream> CreateThumbnailAsync(
         Stream originalStream,
+        string contentType,
         CancellationToken cancellationToken = default);
 
     Task<List<SiteImageIdsDto>> GetImagesIdsBySiteId(Guid siteId);

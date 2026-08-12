@@ -21,6 +21,7 @@ public sealed class SiteVideo : BaseAuditableEntity
         SnapshotId = snapshotId;
         DurationSeconds = durationSeconds;
         Category = category;
+        Created = DateTimeOffset.UtcNow;
     }
 
     public Guid SiteId { get; private set; }

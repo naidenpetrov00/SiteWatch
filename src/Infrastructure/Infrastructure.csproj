@@ -5,11 +5,12 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
     <ItemGroup>
-        <ProjectReference Include="..\Application\Application.csproj"/>
+        <ProjectReference Include="..\Application\Application.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Ardalis.GuardClauses" Version="5.0.0"/>
+        <PackageReference Include="Ardalis.GuardClauses" Version="5.0.0" />
         <PackageReference Include="Azure.Storage.Blobs" Version="12.29.1" />
+        <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.16.0" />
         <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.10" />
         <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.10" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
@@ -30,7 +31,7 @@
         <PackageReference Include="System.ServiceModel.Http" Version="10.0.652802" />
     </ItemGroup>
     <ItemGroup>
-        <Folder Include="Cameras\Services\Onvif\Generated\"/>
+        <Folder Include="Cameras\Services\Onvif\Generated\" />
         <Folder Include="Data\Migrations\" />
     </ItemGroup>
     <ItemGroup>

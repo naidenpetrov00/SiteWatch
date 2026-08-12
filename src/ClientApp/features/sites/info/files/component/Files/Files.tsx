@@ -15,11 +15,25 @@ import { useColorPalette } from "@/hooks/useColorPalette";
 import useGetSearchParams from "@/hooks/useGetSearchParams";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import filesStyles from "./Files.styles";
+import SiteMediaUploadAction from "@/features/sites/info/uploads/SiteMediaUploadAction";
+import { UPLOAD_ACTION_BOTTOM_CLEARANCE } from "@/features/sites/info/uploads/constants";
+import PendingFileUploadRow from "@/features/sites/info/uploads/PendingFileUploadRow";
+import { usePendingSiteMediaUploads } from "@/features/sites/info/uploads/useUploadSiteMedia";
 
 const DOCUMENT_TYPE_FILTERS: readonly FileDocumentTypeFilter[] = [
   ALL_FILTER,
   ...FILE_DOCUMENT_TYPES,
 ];
+
+type DisplayFile =
+  | { type: "file"; item: SiteFileIds }
+  | {
+      type: "pending";
+      mutationId: number;
+      fileName: string;
+      contentType: string;
+      documentType: Exclude<SiteFileIds["documentType"], undefined>;
+    };
 
 const Files = () => {
   const { siteId } = useGetSearchParams<{ siteId?: string }>();
@@ -37,6 +51,7 @@ const Files = () => {
     isRefetching,
     refetch,
   } = useGetSiteFileIdsBySiteId({ siteId });
+  const pendingUploads = usePendingSiteMediaUploads("file", siteId);
 
   const filteredFiles = useMemo(
     () =>
@@ -46,6 +61,29 @@ const Files = () => {
           file.documentType === activeDocumentTypeFilter,
       ),
     [activeDocumentTypeFilter, siteFiles],
+  );
+  const displayFiles = useMemo<DisplayFile[]>(
+    () => [
+      ...pendingUploads.flatMap(({ mutationId, request }) => {
+        if (
+          !request.documentType ||
+          (activeDocumentTypeFilter !== ALL_FILTER &&
+            request.documentType !== activeDocumentTypeFilter)
+        ) {
+          return [];
+        }
+
+        return [{
+          type: "pending" as const,
+          mutationId,
+          fileName: request.asset.fileName,
+          contentType: request.asset.contentType,
+          documentType: request.documentType,
+        }];
+      }),
+      ...filteredFiles.map((item) => ({ type: "file" as const, item })),
+    ],
+    [activeDocumentTypeFilter, filteredFiles, pendingUploads],
   );
 
   useEffect(() => {
@@ -162,13 +200,17 @@ const Files = () => {
         </Text>
       ) : null}
 
-      <FlatList<SiteFileIds>
+      <FlatList<DisplayFile>
         contentContainerStyle={[
           filesStyles.listContent,
-          { paddingBottom: insets.bottom + 24 },
+          { paddingBottom: insets.bottom + UPLOAD_ACTION_BOTTOM_CLEARANCE },
         ]}
-        data={filteredFiles}
-        keyExtractor={(item) => item.fileId}
+        data={displayFiles}
+        keyExtractor={(item) =>
+          item.type === "pending"
+            ? `pending-file-${item.mutationId}`
+            : item.item.fileId
+        }
         ListEmptyComponent={
           <View
             style={[
@@ -183,9 +225,20 @@ const Files = () => {
         }
         onRefresh={() => void refetch()}
         refreshing={isRefetching}
-        renderItem={renderFile}
+        renderItem={({ item }) =>
+          item.type === "pending" ? (
+            <PendingFileUploadRow
+              contentType={item.contentType}
+              documentType={item.documentType}
+              fileName={item.fileName}
+            />
+          ) : (
+            renderFile({ item: item.item })
+          )
+        }
         showsVerticalScrollIndicator={false}
       />
+      <SiteMediaUploadAction kind="file" siteId={siteId} />
     </View>
   );
 };

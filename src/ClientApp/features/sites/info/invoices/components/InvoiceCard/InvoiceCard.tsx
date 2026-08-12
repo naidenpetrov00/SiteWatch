@@ -3,6 +3,7 @@ import { memo } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
 import { useColorPalette } from "@/hooks/useColorPalette";
+import withOpacity from "../../../uploads/withOpacity";
 import { formatInvoiceAmount, formatInvoiceDate } from "../../formatters";
 import invoiceCardStyles from "./InvoiceCard.styles";
 
@@ -49,7 +50,7 @@ const InvoiceCard = memo(function InvoiceCard({
         {
           backgroundColor:
             isComplete !== true ? "#fee2e2" : colorPalette.background,
-          borderColor: `${colorPalette.secondary}55`,
+          borderColor: withOpacity(colorPalette.secondary, 0.33),
         },
       ]}
     >
@@ -108,7 +109,7 @@ const InvoiceCard = memo(function InvoiceCard({
         onPress={() => onOpenFile(id)}
         style={({ pressed }) => [
           invoiceCardStyles.fileButton,
-          { borderLeftColor: `${colorPalette.secondary}55` },
+          { borderLeftColor: withOpacity(colorPalette.secondary, 0.33) },
           pressed ? invoiceCardStyles.pressed : null,
         ]}
       >

@@ -1,5 +1,7 @@
 using Api.SeedWork;
 using Api.SeedWork.Extensions;
+using Api.Endpoints.Sites;
+using Application.SeedWork.Security;
 using Application.Sites.Files.Commands;
 using Application.Sites.Files.Queries;
 using Domain.SeedWork.Enums;
@@ -14,7 +16,9 @@ public class Files : EndpointGroupBase
     public override void Map(WebApplication app)
     {
         var group = app.MapGroupCustom();
-        group.MapPost("/{siteId:guid}", AddFileToSite).DisableAntiforgery();
+        group.MapPost("/{siteId:guid}", AddFileToSite)
+            .RequireAuthorization(AuthorizationPolicies.AdministratorOrWorker)
+            .DisableAntiforgery();
         group.MapGet("/{fileId:guid}", GetFileFromSite);
         group.MapDelete("/{fileId:guid}", DeleteFileFromSite);
         group.MapGet("/files{siteId:guid}", GetFilesIdsBySiteId);
@@ -32,12 +36,15 @@ public class Files : EndpointGroupBase
         return TypedResults.NoContent();
     }
 
+    [RequestSizeLimit(MediaUploadValidation.FileMaxRequestSize)]
+    [RequestFormLimits(MultipartBodyLengthLimit = MediaUploadValidation.FileMaxRequestSize)]
     private static async Task<Ok<UploadedFileResult>> AddFileToSite(
         IMediator mediator,
         [FromForm] IFormFile file,
         [FromForm] FileDocumentType? documentType,
         Guid siteId)
     {
+        MediaUploadValidation.ValidateFile(file);
         await using var stream = file.OpenReadStream();
         var uploadedFile = new UploadedFile
         {
