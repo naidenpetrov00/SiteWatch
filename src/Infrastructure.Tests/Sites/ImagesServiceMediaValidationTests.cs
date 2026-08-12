@@ -1,6 +1,5 @@
 using Application.SeedWork.Interfaces;
 using FluentValidation;
-using ImageMagick;
 using Infrastructure.Sites.Services;
 using NSubstitute;
 using SixLabors.ImageSharp;
@@ -43,7 +42,7 @@ public sealed class ImagesServiceMediaValidationTests
     public async Task CreateThumbnailAsync_accepts_heic_and_heif_as_compatible_variants(
         string contentType)
     {
-        await using var image = CreateHeicImage();
+        await using var image = CreateHeicSample();
 
         await using var thumbnail = await _service.CreateThumbnailAsync(
             image,
@@ -94,15 +93,6 @@ public sealed class ImagesServiceMediaValidationTests
         return stream;
     }
 
-    private static MemoryStream CreateHeicImage()
-    {
-        using var image = new MagickImage(MagickColors.Red, 4, 4)
-        {
-            Format = MagickFormat.Heic,
-        };
-        var stream = new MemoryStream();
-        image.Write(stream);
-        stream.Position = 0;
-        return stream;
-    }
+    private static MemoryStream CreateHeicSample() => new(Convert.FromBase64String(
+        "AAAAHGZ0eXBoZWljAAAAAG1pZjFoZWljbWlhZgAAAaptZXRhAAAAAAAAACFoZGxyAAAAAAAAAABwaWN0AAAAAAAAAAAAAAAAAAAAAA5waXRtAAAAAAACAAAAEGlkYXQAAAAAAAQABAAAADhpbG9jAQAAAERAAAIAAQAAAAAAAAHOAAEAAAAAAAAANAACAAEAAAAAAAAAAQAAAAAAAAAIAAAAOGlpbmYAAAAAAAIAAAAVaW5mZQIAAAEAAQAAaHZjMQAAAAAVaW5mZQIAAAAAAgAAZ3JpZAAAAADVaXBycAAAALNpcGNvAAAAc2h2Y0MBA3AAAAAAAAAAAAAe8AD8/fj4AAAPAyAAAQAYQAEMAf//A3AAAAMAkAAAAwAAAwAeugJAIQABACdCAQEDcAAAAwCQAAADAAADAB6gIIEFluqumubAgAAAAwCAAAADAIQiAAEABkQBwXPBiQAAABRpc3BlAAAAAAAAAEAAAABAAAAAFGlzcGUAAAAAAAAABAAAAAQAAAAQcGl4aQAAAAADCAgIAAAAGmlwbWEAAAAAAAAAAgABAoECAAICA4QAAAAaaXJlZgAAAAAAAAAOZGltZwACAAEAAQAAADxtZGF0AAAAMCgBrxMhZmNA+BD3Z//rvBX/mSE/8zex6c7IR0DA0iCAm0BIk11QCxYQgId2pVbc+A=="));
 }
