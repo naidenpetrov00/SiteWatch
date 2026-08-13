@@ -109,6 +109,11 @@ public sealed class SiteMediaPolicyApiTests
             42,
             "House 42",
             "42 Main Street",
+            "manager-1",
+            "Ada Lovelace",
+            new DateOnly(2026, 3, 3),
+            null,
+            "Planning",
             new SiteMediaPolicyDto
             {
                 Preset = "HouseBuild",

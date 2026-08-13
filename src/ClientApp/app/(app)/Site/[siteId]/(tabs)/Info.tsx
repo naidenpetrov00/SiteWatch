@@ -7,20 +7,17 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import useGetSearchParams from "@/hooks/useGetSearchParams";
 import { useGetSitesByUserId } from "@/features/sites/api/get-sites-by-user";
 import LoadingState from "@/components/app/LoadingState";
-import { useGetSitesByUserId } from "@/features/sites/api/get-sites-by-user";
 
 const Info = () => {
   const colorPalette = useColorPalette();
   const insets = useSafeAreaInsets();
   const { siteId } = useGetSearchParams<{ siteId?: string }>();
-  const { data: sites, isLoading } = useGetSitesByUserId();
+  const { data: sites, isLoading, isRefetching, refetch } = useGetSitesByUserId();
   const site = sites?.find((item) => item.id === siteId);
 
   if (isLoading || !siteId || !site) {
     return <LoadingState label="Loading site information..." />;
   }
-  const { isRefetching, refetch } = useGetSitesByUserId();
-
   return (
     <ScrollView
       style={{

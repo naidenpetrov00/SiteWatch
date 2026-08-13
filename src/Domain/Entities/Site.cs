@@ -1,5 +1,6 @@
 using Ardalis.GuardClauses;
 using Domain.SeedWork;
+using Domain.SeedWork.Enums;
 using Domain.ValueObjects;
 
 namespace Domain.Entities;
@@ -21,7 +22,6 @@ public sealed class Site : BaseAuditableEntity, IHasNumberId
         SiteStatus status = SiteStatus.Planning,
         DateOnly? endDate = null,
         SiteMediaPolicy? mediaPolicy = null)
-    public Site(SiteName name, SiteAddress address, SiteMediaPolicy mediaPolicy)
     {
         Name = name;
         Address = address;
@@ -29,8 +29,7 @@ public sealed class Site : BaseAuditableEntity, IHasNumberId
         StartDate = startDate;
         EndDate = ValidateEndDate(startDate, endDate);
         Status = status;
-        MediaPolicy = mediaPolicy ?? SiteMediaPolicy.Regular();
-        MediaPolicy = Guard.Against.Null(mediaPolicy);
+        MediaPolicy = mediaPolicy ?? SiteMediaPolicy.FromPreset(MediaPolicyPreset.Custom);
     }
 
     // ReSharper disable once UnusedMember.Local
@@ -65,7 +64,6 @@ public sealed class Site : BaseAuditableEntity, IHasNumberId
         DateOnly? endDate,
         SiteStatus status,
         MediaPolicyPreset mediaPolicyPreset)
-    public void UpdateDetails(string name, string address)
     {
         Name = name;
         Address = address;
@@ -73,7 +71,10 @@ public sealed class Site : BaseAuditableEntity, IHasNumberId
         StartDate = startDate;
         EndDate = ValidateEndDate(startDate, endDate);
         Status = status;
-        MediaPolicy.ChangePreset(mediaPolicyPreset);
+        if (MediaPolicy.Preset != mediaPolicyPreset)
+        {
+            MediaPolicy = SiteMediaPolicy.FromPreset(mediaPolicyPreset);
+        }
     }
 
     private static DateOnly? ValidateEndDate(DateOnly startDate, DateOnly? endDate)

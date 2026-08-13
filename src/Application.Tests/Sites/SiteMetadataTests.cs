@@ -1,7 +1,9 @@
 using Application.Sites.Commands;
+using Application.SeedWork.Interfaces;
 using Domain.Entities;
 using Domain.SeedWork.Enums;
 using Domain.ValueObjects;
+using NSubstitute;
 
 namespace Application.Tests.Sites;
 
@@ -108,10 +110,12 @@ public sealed class SiteMetadataTests
             StartDate = "2026-03-03",
             EndDate = "2026-03-02",
             Status = "Planning",
-            MediaPolicyPreset = "Regular"
+            MediaPolicyPreset = "Custom",
+            MediaCategoriesToAdd = null!,
         };
 
-        var result = await new UpdateSiteValidator().ValidateAsync(command);
+        var result = await new UpdateSiteValidator(Substitute.For<IApplicationDbContext>())
+            .ValidateAsync(command);
 
         Assert.Contains(result.Errors, error => error.ErrorMessage == "EndDate cannot be before StartDate.");
     }

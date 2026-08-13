@@ -238,7 +238,12 @@ public sealed class SiteApplicationTests
     public void Site_dtos_expose_media_policy_as_preset_and_shared_categories()
     {
         var policy = SiteMediaPolicy.FromPreset(MediaPolicyPreset.HouseBuild);
-        var site = new Domain.Entities.Site("House 12", "12 Main Street", policy);
+        var site = new Domain.Entities.Site(
+            "House 12",
+            "12 Main Street",
+            "manager-1",
+            new DateOnly(2026, 3, 3),
+            mediaPolicy: policy);
 
         var dashboardDto = DashboardSiteDto.From(site);
         var policyDto = SiteMediaPolicyDto.From(policy);

@@ -2,6 +2,7 @@ using Application.SeedWork.Interfaces;
 using Application.SeedWork.Security;
 using FluentValidation;
 using MediatR;
+using Domain.SeedWork.Enums;
 using Domain.ValueObjects;
 
 namespace Application.Sites.Commands;

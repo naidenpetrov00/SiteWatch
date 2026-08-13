@@ -54,7 +54,6 @@ public sealed record DashboardSiteDto(
     DateOnly StartDate,
     DateOnly? EndDate,
     string Status,
-    string MediaPolicy)
     SiteMediaPolicyDto MediaPolicy)
 {
     public static DashboardSiteDto From(Site site) => new(
@@ -67,6 +66,5 @@ public sealed record DashboardSiteDto(
         site.StartDate,
         site.EndDate,
         site.Status.ToString(),
-        site.MediaPolicy.Preset.ToString());
         SiteMediaPolicyDto.From(site.MediaPolicy));
 }

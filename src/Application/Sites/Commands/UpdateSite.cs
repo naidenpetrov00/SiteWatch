@@ -1,5 +1,6 @@
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Security;
+using Domain.SeedWork.Enums;
 using Domain.ValueObjects;
 using FluentValidation;
 using MediatR;

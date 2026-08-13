@@ -17,11 +17,11 @@ public class ApplicationDbContextInitialiser(
 )
 {
     private const string SeededBy = "System";
-    private static readonly string[] SeedSiteAddresses =
+    private static readonly string[] InvoiceSeedSiteNames =
     [
-        "Vitosha 17",
-        "Dondukov 11",
-        "Kestenova Gora 24",
+        "Central Office",
+        "Regional Office North",
+        "Regional Office South",
     ];
 
     private static readonly string[] SeedUserEmails =
@@ -118,46 +118,68 @@ public class ApplicationDbContextInitialiser(
             return;
 
         var startDate = DateOnly.FromDateTime(DateTime.UtcNow);
+        var now = DateTimeOffset.UtcNow;
         var secondaryManager = users[Math.Min(1, users.Count - 1)];
         var sites = new List<Site>
         {
-            new("Central Office", "Vitosha 17", users[0].Id, startDate)
+            new(
+                "Central Office",
+                "Vitosha 17",
+                users[0].Id,
+                startDate,
+                mediaPolicy: SiteMediaPolicy.FromPreset(MediaPolicyPreset.SiteMaintenance)),
             new(
                 "Vitosha Apartment Renovation",
                 "Vitosha 17",
-                SiteMediaPolicy.FromPreset(MediaPolicyPreset.ApartmentRenovation))
+                users[0].Id,
+                startDate,
+                mediaPolicy: SiteMediaPolicy.FromPreset(MediaPolicyPreset.ApartmentRenovation))
             {
-                Created = DateTimeOffset.UtcNow,
-                CreatedBy = "System",
-                LastModified = DateTimeOffset.UtcNow,
-                LastModifiedBy = "System",
+                Created = now,
+                CreatedBy = SeededBy,
+                LastModified = now,
+                LastModifiedBy = SeededBy,
             },
-            new("Regional Office North", "Dondukov 11", secondaryManager.Id, startDate)
+            new(
+                "Regional Office North",
+                "Dondukov 11",
+                secondaryManager.Id,
+                startDate,
+                mediaPolicy: SiteMediaPolicy.FromPreset(MediaPolicyPreset.HouseBuild)),
             new(
                 "Dondukov House Build",
                 "Dondukov 11",
-                SiteMediaPolicy.FromPreset(MediaPolicyPreset.HouseBuild))
+                secondaryManager.Id,
+                startDate,
+                mediaPolicy: SiteMediaPolicy.FromPreset(MediaPolicyPreset.HouseBuild))
             {
-                Created = DateTimeOffset.UtcNow,
-                CreatedBy = "System",
-                LastModified = DateTimeOffset.UtcNow,
-                LastModifiedBy = "System",
+                Created = now,
+                CreatedBy = SeededBy,
+                LastModified = now,
+                LastModifiedBy = SeededBy,
             },
-            new("Regional Office South", "Kestenova Gora 24", users[0].Id, startDate)
+            new(
+                "Regional Office South",
+                "Kestenova Gora 24",
+                users[0].Id,
+                startDate,
+                mediaPolicy: SiteMediaPolicy.FromPreset(MediaPolicyPreset.CommercialBuild)),
             new(
                 "Kestenova Commercial Build",
                 "Kestenova Gora 24",
-                SiteMediaPolicy.FromPreset(MediaPolicyPreset.CommercialBuild))
+                users[0].Id,
+                startDate,
+                mediaPolicy: SiteMediaPolicy.FromPreset(MediaPolicyPreset.CommercialBuild))
             {
-                Created = DateTimeOffset.UtcNow,
-                CreatedBy = "System",
-                LastModified = DateTimeOffset.UtcNow,
-                LastModifiedBy = "System",
+                Created = now,
+                CreatedBy = SeededBy,
+                LastModified = now,
+                LastModifiedBy = SeededBy,
             },
         };
         sites[0].AddUser(users[0]);
-        sites[1].AddUser(secondaryManager);
-        sites[1].AddUserRange(users);
+        sites[2].AddUser(secondaryManager);
+        sites[2].AddUserRange(users);
 
         await dbContext.Sites.AddRangeAsync(sites);
         await dbContext.SaveChangesAsync();
@@ -175,15 +197,15 @@ public class ApplicationDbContextInitialiser(
             return;
         }
 
-        var thirdSiteAddress = SeedSiteAddresses[2];
+        const string thirdSiteName = "Regional Office South";
         var thirdSite = await dbContext.Sites
             .Include(site => site.Users)
-            .SingleOrDefaultAsync(site => site.Address.Value == thirdSiteAddress);
+            .SingleOrDefaultAsync(site => site.Name.Value == thirdSiteName);
         if (thirdSite is null)
         {
             logger.LogWarning(
-                "Third seeded site access was not added: site {Address} was not found.",
-                thirdSiteAddress);
+                "Third seeded site access was not added: site {SiteName} was not found.",
+                thirdSiteName);
             return;
         }
 
@@ -195,9 +217,9 @@ public class ApplicationDbContextInitialiser(
         thirdSite.AddUser(firstAdministrator);
         await dbContext.SaveChangesAsync();
         logger.LogInformation(
-            "Assigned seeded administrator {Email} to site {Address}.",
+            "Assigned seeded administrator {Email} to site {SiteName}.",
             firstAdministrator.Email,
-            thirdSiteAddress);
+            thirdSiteName);
     }
 
     private async Task ClearSeedDataAsync()
@@ -263,11 +285,12 @@ public class ApplicationDbContextInitialiser(
             return;
         }
 
-        var site = await dbContext.Sites.FirstOrDefaultAsync(s => s.Address.Value == "Dondukov 11");
+        var site = await dbContext.Sites
+            .FirstOrDefaultAsync(site => site.Name.Value == "Regional Office North");
 
         if (site is null)
         {
-            logger.LogWarning("Camera seeding skipped: site with address 'Dondukov 11' not found.");
+            logger.LogWarning("Camera seeding skipped: site 'Regional Office North' not found.");
             return;
         }
 
@@ -296,7 +319,7 @@ public class ApplicationDbContextInitialiser(
         await dbContext.Cameras.AddRangeAsync(cameras);
         await dbContext.SaveChangesAsync();
         logger.LogInformation(
-            "Seeded {CameraCount} cameras to site at address 'Dondukov 11'.",
+            "Seeded {CameraCount} cameras to site 'Regional Office North'.",
             cameras.Count
         );
     }
@@ -399,21 +422,21 @@ public class ApplicationDbContextInitialiser(
     private async Task AddInvoiceSitePayments(int invoiceCount)
     {
         var sites = await dbContext.Sites
-            .Where(site => SeedSiteAddresses.Contains(site.Address.Value))
+            .Where(site => InvoiceSeedSiteNames.Contains(site.Name.Value))
             .ToListAsync();
-        var sitesByAddress = sites.ToDictionary(site => site.Address.Value);
-        var missingSiteAddresses = SeedSiteAddresses
-            .Where(address => !sitesByAddress.ContainsKey(address))
+        var sitesByName = sites.ToDictionary(site => site.Name.Value);
+        var missingSiteNames = InvoiceSeedSiteNames
+            .Where(name => !sitesByName.ContainsKey(name))
             .ToArray();
-        if (missingSiteAddresses.Length > 0)
+        if (missingSiteNames.Length > 0)
         {
             logger.LogWarning(
-                "Invoice allocation seeding skipped: seeded sites are missing: {Addresses}.",
-                missingSiteAddresses);
+                "Invoice allocation seeding skipped: seeded sites are missing: {SiteNames}.",
+                missingSiteNames);
             return;
         }
 
-        var orderedSites = SeedSiteAddresses.Select(address => sitesByAddress[address]).ToArray();
+        var orderedSites = InvoiceSeedSiteNames.Select(name => sitesByName[name]).ToArray();
         var invoiceNumbers = InvoiceSeedData.GetInvoiceNumbers(invoiceCount);
         var invoices = await dbContext.Invoices
             .Include(invoice => invoice.SitePayments)

@@ -3,6 +3,7 @@ using Application.Sites.Commands;
 using Application.Sites.Queries;
 using AutoMapper;
 using Domain.Entities;
+using Domain.SeedWork.Enums;
 using Domain.ValueObjects;
 using Ardalis.GuardClauses;
 using Infrastructure.Data;
@@ -19,9 +20,6 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
             throw new ArgumentException("Unsupported media policy preset.", nameof(request.MediaPolicyPreset));
         }
 
-        var mediaPolicy = preset == MediaPolicyPreset.Regular
-            ? SiteMediaPolicy.Regular()
-            : SiteMediaPolicy.Custom([], []);
         var managerExists = await dbContext.Users
             .AnyAsync(user => user.Id == request.ManagerId, cancellationToken);
 
@@ -33,6 +31,7 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
         var status = ParseStatus(request.Status);
         var startDate = ParseDate(request.StartDate, nameof(request.StartDate));
         var endDate = ParseOptionalDate(request.EndDate, nameof(request.EndDate));
+        var mediaPolicy = SiteMediaPolicy.Create(preset, request.MediaCategories);
         var site = new Site(
             request.Name,
             request.Address,
@@ -41,8 +40,6 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
             status,
             endDate,
             mediaPolicy);
-        var mediaPolicy = SiteMediaPolicy.Create(preset, request.MediaCategories);
-        var site = new Site(request.Name, request.Address, mediaPolicy);
 
         dbContext.Sites.Add(site);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -98,7 +95,6 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
             ParseOptionalDate(request.EndDate, nameof(request.EndDate)),
             ParseStatus(request.Status),
             preset);
-        site.UpdateDetails(request.Name, request.Address);
         site.MediaPolicy.AddCategories(request.MediaCategoriesToAdd);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
