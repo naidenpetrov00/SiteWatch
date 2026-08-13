@@ -93,5 +93,9 @@ public sealed class InvoiceTests
             null, "Ada", DateTimeOffset.UtcNow.AddDays(30), 100m, 20m, 120m, "Transfer");
     }
 
-    private static Site CreateSite() => new((SiteName)"Test site", (SiteAddress)"Test address");
+    private static Site CreateSite() => new(
+        (SiteName)"Test site",
+        (SiteAddress)"Test address",
+        "manager-1",
+        new DateOnly(2026, 3, 3));
 }
