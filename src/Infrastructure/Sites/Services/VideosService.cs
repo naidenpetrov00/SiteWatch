@@ -1,7 +1,6 @@
 using Application.SeedWork.Interfaces;
 using Application.Sites.Videos.Queries;
 using Domain.Entities;
-using Domain.SeedWork.Enums;
 using FluentValidation;
 using FluentValidation.Results;
 using Microsoft.EntityFrameworkCore;
@@ -90,7 +89,9 @@ public class VideosService(IApplicationDbContext dbContext) : IVideosService
             "file",
             "The video content is invalid or a snapshot could not be generated.")]);
 
-    public Task<List<SiteVideoIdsDto>> GetVideosIdsBySiteId(Guid siteId) => dbContext.SiteVideos
+    public Task<List<SiteVideoIdsDto>> GetVideosIdsBySiteId(
+        Guid siteId,
+        CancellationToken cancellationToken = default) => dbContext.SiteVideos
         .AsNoTracking()
         .Where(siteVideo => siteVideo.SiteId == siteId)
         .OrderByDescending(siteVideo => siteVideo.Created)
@@ -98,24 +99,32 @@ public class VideosService(IApplicationDbContext dbContext) : IVideosService
             siteVideo.VideoId,
             siteVideo.SnapshotId,
             siteVideo.DurationSeconds,
-            siteVideo.Category.ToString(),
+            siteVideo.Category,
             siteVideo.Created))
-        .ToListAsync();
+        .ToListAsync(cancellationToken);
 
     public async Task AddVideoIdsToSiteAsync(
         Guid requestSiteId,
         Guid resultVideoFileId,
         Guid resultSnapshotFileId,
         int? durationSeconds,
-        VideoCategory category,
+        string category,
         CancellationToken cancellationToken = default)
     {
+        var site = await dbContext.Sites
+            .AsNoTracking()
+            .SingleAsync(item => item.Id == requestSiteId, cancellationToken);
+        var canonicalCategory = site.MediaPolicy.ResolveCategory(category)
+            ?? throw new ValidationException([
+                new ValidationFailure("category", "Category is not allowed for this site.")
+            ]);
+
         dbContext.SiteVideos.Add(new SiteVideo(
             requestSiteId,
             resultVideoFileId,
             resultSnapshotFileId,
             durationSeconds,
-            category));
+            canonicalCategory));
 
         await dbContext.SaveChangesAsync(cancellationToken);
     }

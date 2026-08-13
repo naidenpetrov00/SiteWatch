@@ -2,7 +2,7 @@ using Application.SeedWork.Interfaces;
 using Application.SeedWork.Security;
 using FluentValidation;
 using MediatR;
-using Domain.SeedWork.Enums;
+using Domain.ValueObjects;
 
 namespace Application.Sites.Commands;
 
@@ -12,6 +12,7 @@ public sealed record CreateSiteCommand : IRequest<Guid>
     public string Name { get; init; } = string.Empty;
     public string Address { get; init; } = string.Empty;
     public string MediaPolicyPreset { get; init; } = string.Empty;
+    public string[] MediaCategories { get; init; } = [];
 }
 
 public sealed class CreateSiteValidator : AbstractValidator<CreateSiteCommand>
@@ -29,10 +30,12 @@ public sealed class CreateSiteValidator : AbstractValidator<CreateSiteCommand>
             .WithMessage("Address must not be empty.")
             .Length(5, 200);
         RuleFor(command => command.MediaPolicyPreset)
-            .Must(value =>
-                Enum.TryParse<MediaPolicyPreset>(value, true, out var preset)
-                && Enum.IsDefined(typeof(MediaPolicyPreset), preset))
+            .Must(value => SiteMediaPolicy.TryParsePreset(value, out _))
             .WithMessage("MediaPolicyPreset must be a valid media policy preset.");
+        RuleFor(command => command.MediaCategories)
+            .Cascade(CascadeMode.Stop)
+            .NotNull()
+            .Custom((values, context) => MediaCategoryValidation.Validate(values, context));
     }
 }
 

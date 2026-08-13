@@ -2,6 +2,9 @@ namespace Domain.SeedWork.Enums;
 
 public enum MediaPolicyPreset
 {
-    Regular,
+    ApartmentRenovation,
+    HouseBuild,
+    CommercialBuild,
+    SiteMaintenance,
     Custom
 }

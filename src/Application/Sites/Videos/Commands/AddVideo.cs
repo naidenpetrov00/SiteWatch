@@ -1,6 +1,5 @@
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models.Internal;
-using Domain.SeedWork.Enums;
 using MediatR;
 
 namespace Application.Sites.Videos.Commands;
@@ -8,7 +7,7 @@ namespace Application.Sites.Videos.Commands;
 public sealed record AddVideoCommand(
     Guid SiteId,
     UploadedFile File,
-    VideoCategory? Category)
+    string? Category)
     : IRequest<UploadedVideoResult>;
 
 public class AddVideoHandler(IVideosBlobService blobService, IVideosService videosService)
@@ -27,7 +26,7 @@ public class AddVideoHandler(IVideosBlobService blobService, IVideosService vide
             result.VideoFileId,
             result.SnapshotFileId,
             result.DurationSeconds,
-            request.Category!.Value,
+            request.Category!,
             cancellationToken);
 
         return result;

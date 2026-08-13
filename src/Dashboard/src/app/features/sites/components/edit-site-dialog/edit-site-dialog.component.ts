@@ -1,14 +1,22 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { COMMA, ENTER } from '@angular/cdk/keycodes';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 
 import { DialogActionBarComponent } from '../../../../shared/ui/dialog-action-bar/dialog-action-bar.component';
 import { DialogShellComponent } from '../../../../shared/ui/dialog-shell/dialog-shell.component';
 import { DashboardSite } from '../../models/dashboard-site.model';
-import { SITE_MEDIA_POLICY_PRESETS } from '../../models/site-media-policy-presets';
+import {
+  ALL_MEDIA_FILTER,
+  formatMediaPolicyPreset,
+  MAX_MEDIA_CATEGORY_COUNT,
+  MAX_MEDIA_CATEGORY_LENGTH,
+  normalizeMediaCategory,
+  OTHER_MEDIA_CATEGORY
+} from '../../models/site-media-policy-presets';
 import { UpdateDashboardSiteRequest } from '../../models/update-dashboard-site-request.model';
 import { DashboardSitesService } from '../../services/dashboard-sites.service';
 
@@ -17,9 +25,9 @@ import { DashboardSitesService } from '../../services/dashboard-sites.service';
   imports: [
     DialogActionBarComponent,
     DialogShellComponent,
+    MatChipsModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSelectModule,
     ReactiveFormsModule
   ],
   templateUrl: './edit-site-dialog.component.html',
@@ -32,13 +40,22 @@ export class EditSiteDialogComponent {
   private readonly dashboardSitesService = inject(DashboardSitesService);
   readonly site = inject(MAT_DIALOG_DATA) as DashboardSite;
 
-  readonly mediaPolicyPresets = SITE_MEDIA_POLICY_PRESETS;
   readonly formId = 'edit-site-dialog-form';
   readonly isSaving = () => this.dashboardSitesService.updateSiteMutation.isPending();
+  readonly newMediaCategories = signal<readonly string[]>([]);
+  readonly categoryError = signal<string | null>(null);
+  readonly separatorKeyCodes = [ENTER, COMMA] as const;
+  readonly otherCategory = OTHER_MEDIA_CATEGORY;
+  readonly maxCategoryLength = MAX_MEDIA_CATEGORY_LENGTH;
+  readonly maxCategoryCount = MAX_MEDIA_CATEGORY_COUNT;
+  readonly savedCategories = this.site.mediaPolicy.categories;
+  readonly savedCategoriesWithoutOther = this.savedCategories.filter(
+    (category) => category !== OTHER_MEDIA_CATEGORY
+  );
+  readonly mediaPolicyDisplayName = formatMediaPolicyPreset(this.site.mediaPolicy.preset);
   readonly siteForm = this.formBuilder.nonNullable.group({
     name: [this.site.name, [Validators.required, Validators.minLength(5), Validators.maxLength(100)]],
-    address: [this.site.address, [Validators.required, Validators.minLength(5), Validators.maxLength(200)]],
-    mediaPolicyPreset: [this.site.mediaPolicy, [Validators.required]]
+    address: [this.site.address, [Validators.required, Validators.minLength(5), Validators.maxLength(200)]]
   });
 
   readonly dialogEyebrow = 'Administration';
@@ -47,6 +64,53 @@ export class EditSiteDialogComponent {
 
   closeDialog(): void {
     this.dialogRef.close();
+  }
+
+  addCategory(event: MatChipInputEvent): void {
+    const category = normalizeMediaCategory(event.value);
+    if (category.length === 0) {
+      event.chipInput.clear();
+      return;
+    }
+
+    if (category.length > MAX_MEDIA_CATEGORY_LENGTH) {
+      this.categoryError.set(
+        `Categories cannot exceed ${MAX_MEDIA_CATEGORY_LENGTH} characters.`
+      );
+      return;
+    }
+
+    if (category.toLowerCase() === ALL_MEDIA_FILTER.toLowerCase()) {
+      this.categoryError.set(`${ALL_MEDIA_FILTER} is reserved for the filter that shows every item.`);
+      return;
+    }
+
+    const existingCategories = [...this.savedCategories, ...this.newMediaCategories()];
+    if (
+      existingCategories.some(
+        (item) => item.toLowerCase() === category.toLowerCase()
+      )
+    ) {
+      event.chipInput.clear();
+      this.categoryError.set(null);
+      return;
+    }
+
+    if (existingCategories.length >= MAX_MEDIA_CATEGORY_COUNT) {
+      this.categoryError.set(`A policy can contain up to ${MAX_MEDIA_CATEGORY_COUNT} categories.`);
+      return;
+    }
+
+    this.newMediaCategories.update((categories) => [...categories, category]);
+    event.chipInput.clear();
+    this.categoryError.set(null);
+  }
+
+  removeNewCategory(category: string): void {
+    this.newMediaCategories.update((categories) =>
+      categories.filter((item) => item !== category)
+    );
+    this.categoryError.set(null);
   }
 
   async saveSite(): Promise<void> {
@@ -60,7 +124,7 @@ export class EditSiteDialogComponent {
       id: this.site.id,
       name: value.name,
       address: value.address,
-      mediaPolicyPreset: value.mediaPolicyPreset
+      mediaCategoriesToAdd: this.newMediaCategories()
     };
 
     try {

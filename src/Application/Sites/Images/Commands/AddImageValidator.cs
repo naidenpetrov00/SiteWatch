@@ -1,6 +1,6 @@
 using Application.SeedWork.Interfaces;
 using FluentValidation;
-using Domain.SeedWork.Enums;
+using Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.Sites.Images.Commands;
@@ -22,22 +22,23 @@ public class AddImageValidator : AbstractValidator<AddImageCommand>
         RuleFor(ai => ai.File).NotNull();
         RuleFor(ai => ai.Category)
             .Cascade(CascadeMode.Stop)
-            .NotNull()
-            .Must(category => category.HasValue && Enum.IsDefined(typeof(ImageCategory), category.Value))
+            .Must(category => SiteMediaPolicy.NormalizeCategory(category) is not null)
             .WithMessage("Category is not valid.")
-            .MustAsync((request, category, cancellationToken) => ImageCategoryAllowedForSite(request, category, cancellationToken))
+            .Must(category => SiteMediaPolicy.NormalizeCategory(category)!.Length <= SiteMediaPolicy.MaxCategoryLength)
+            .WithMessage($"Category cannot exceed {SiteMediaPolicy.MaxCategoryLength} characters.")
+            .MustAsync((request, category, cancellationToken) => MediaCategoryAllowedForSite(request, category, cancellationToken))
             .WithMessage("Category is not allowed for this site.");
     }
 
     private async Task<bool> SiteIdMustExist(Guid siteId, CancellationToken cancellationToken) =>
         await _dbContext.Sites.AsNoTracking().AnyAsync(site => site.Id == siteId, cancellationToken);
 
-    private async Task<bool> ImageCategoryAllowedForSite(
+    private async Task<bool> MediaCategoryAllowedForSite(
         AddImageCommand request,
-        ImageCategory? category,
+        string? category,
         CancellationToken cancellationToken)
     {
-        if (!category.HasValue)
+        if (SiteMediaPolicy.NormalizeCategory(category) is null)
         {
             return false;
         }
@@ -45,6 +46,6 @@ public class AddImageValidator : AbstractValidator<AddImageCommand>
         var site = await _dbContext.Sites.AsNoTracking()
             .FirstOrDefaultAsync(site => site.Id == request.SiteId, cancellationToken);
 
-        return site is null || site.MediaPolicy.AllowsImageCategory(category.Value);
+        return site is null || site.MediaPolicy.AllowsCategory(category);
     }
 }

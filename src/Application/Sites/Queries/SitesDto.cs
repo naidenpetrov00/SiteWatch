@@ -23,14 +23,7 @@ public class SitesDto
 
             CreateMap<SiteMediaPolicy, SiteMediaPolicyDto>()
                 .ForMember(d => d.Preset, o => o.MapFrom(s => s.Preset.ToString()))
-                .ForMember(
-                    d => d.AllowedImageCategories,
-                    o => o.MapFrom(s => s.AllowedImageCategories.Select(category => category.ToString()).ToArray())
-                )
-                .ForMember(
-                    d => d.AllowedVideoCategories,
-                    o => o.MapFrom(s => s.AllowedVideoCategories.Select(category => category.ToString()).ToArray())
-                );
+                .ForMember(d => d.Categories, o => o.MapFrom(s => s.Categories.ToArray()));
         }
     }
 }
@@ -38,6 +31,11 @@ public class SitesDto
 public sealed class SiteMediaPolicyDto
 {
     public string Preset { get; init; } = string.Empty;
-    public string[] AllowedImageCategories { get; init; } = [];
-    public string[] AllowedVideoCategories { get; init; } = [];
+    public string[] Categories { get; init; } = [];
+
+    public static SiteMediaPolicyDto From(SiteMediaPolicy policy) => new()
+    {
+        Preset = policy.Preset.ToString(),
+        Categories = policy.Categories.ToArray(),
+    };
 }

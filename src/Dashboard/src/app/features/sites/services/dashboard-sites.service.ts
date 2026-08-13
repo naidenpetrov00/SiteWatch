@@ -13,6 +13,7 @@ import { CreateDashboardSiteRequest } from '../models/create-dashboard-site-requ
 import { DashboardSite } from '../models/dashboard-site.model';
 import { DashboardSiteLookup } from '../models/dashboard-site-lookup.model';
 import { DashboardSitesResponse } from '../models/dashboard-sites-response.model';
+import { SiteMediaPolicyPresetDefinition } from '../models/site-media-policy-presets';
 import { UpdateDashboardSiteRequest } from '../models/update-dashboard-site-request.model';
 
 interface DashboardSitesQueryState {
@@ -95,6 +96,14 @@ export class DashboardSitesService {
 
   getSiteById(siteId: string): Promise<DashboardSite> {
     return firstValueFrom(this.http.get<DashboardSite>(buildApiUrl(`/dashboard/sites/${siteId}`)));
+  }
+
+  getMediaPolicyPresets(): Promise<readonly SiteMediaPolicyPresetDefinition[]> {
+    return firstValueFrom(
+      this.http.get<readonly SiteMediaPolicyPresetDefinition[]>(
+        buildApiUrl('/dashboard/sites/media-policy-presets')
+      )
+    );
   }
 
   searchSites(searchTerm: string): Promise<readonly DashboardSiteLookup[]> {

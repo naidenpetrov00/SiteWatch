@@ -13,6 +13,11 @@ public class SiteVideoConfiguration : IEntityTypeConfiguration<SiteVideo>
         builder.Property(sv => sv.DurationSeconds)
             .HasColumnType("int");
 
+        builder.Property(sv => sv.Category)
+            .HasColumnType("nvarchar(50)")
+            .HasMaxLength(50)
+            .IsRequired();
+
         builder.HasOne(sv => sv.Site)
             .WithMany(s => s.Videos)
             .HasForeignKey(sv => sv.SiteId)

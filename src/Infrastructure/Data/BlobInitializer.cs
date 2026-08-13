@@ -88,7 +88,7 @@ public sealed class BlobInitializer(
             }
 
             foreach (var site in sites)
-            foreach (var category in site.MediaPolicy.AllowedImageCategories)
+            foreach (var category in site.MediaPolicy.Categories)
             {
                 try
                 {
@@ -102,11 +102,11 @@ public sealed class BlobInitializer(
         }
     }
 
-    private async Task SeedImageAsync(string assetPath, Site site, ImageCategory category, string contentType, CancellationToken cancellationToken)
+    private async Task SeedImageAsync(string assetPath, Site site, string category, string contentType, CancellationToken cancellationToken)
     {
         var assetKey = GetAssetKey(assetPath);
-        var imageId = CreateDeterministicGuid("image", assetKey, site.Address.Value, category.ToString());
-        var thumbnailId = CreateDeterministicGuid("image-thumbnail", assetKey, site.Address.Value, category.ToString());
+        var imageId = CreateDeterministicGuid("image", assetKey, site.Address.Value, category);
+        var thumbnailId = CreateDeterministicGuid("image-thumbnail", assetKey, site.Address.Value, category);
         var recordExists = await dbContext.SiteImages.AnyAsync(
             image => image.SiteId == site.Id && image.ImageId == imageId, cancellationToken);
 
@@ -149,7 +149,7 @@ public sealed class BlobInitializer(
             }
 
             foreach (var site in sites)
-            foreach (var category in site.MediaPolicy.AllowedVideoCategories)
+            foreach (var category in site.MediaPolicy.Categories)
             {
                 try
                 {
@@ -163,11 +163,11 @@ public sealed class BlobInitializer(
         }
     }
 
-    private async Task SeedVideoAsync(string assetPath, Site site, VideoCategory category, string contentType, CancellationToken cancellationToken)
+    private async Task SeedVideoAsync(string assetPath, Site site, string category, string contentType, CancellationToken cancellationToken)
     {
         var assetKey = GetAssetKey(assetPath);
-        var videoId = CreateDeterministicGuid("video", assetKey, site.Address.Value, category.ToString());
-        var snapshotId = CreateDeterministicGuid("video-snapshot", assetKey, site.Address.Value, category.ToString());
+        var videoId = CreateDeterministicGuid("video", assetKey, site.Address.Value, category);
+        var snapshotId = CreateDeterministicGuid("video-snapshot", assetKey, site.Address.Value, category);
         var existingVideo = await dbContext.SiteVideos.SingleOrDefaultAsync(
             video => video.SiteId == site.Id && video.VideoId == videoId, cancellationToken);
 

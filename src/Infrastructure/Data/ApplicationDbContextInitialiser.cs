@@ -119,21 +119,30 @@ public class ApplicationDbContextInitialiser(
 
         var sites = new List<Site>
         {
-            new("Central Office", "Vitosha 17")
+            new(
+                "Vitosha Apartment Renovation",
+                "Vitosha 17",
+                SiteMediaPolicy.FromPreset(MediaPolicyPreset.ApartmentRenovation))
             {
                 Created = DateTimeOffset.UtcNow,
                 CreatedBy = "System",
                 LastModified = DateTimeOffset.UtcNow,
                 LastModifiedBy = "System",
             },
-            new("Regional Office North", "Dondukov 11")
+            new(
+                "Dondukov House Build",
+                "Dondukov 11",
+                SiteMediaPolicy.FromPreset(MediaPolicyPreset.HouseBuild))
             {
                 Created = DateTimeOffset.UtcNow,
                 CreatedBy = "System",
                 LastModified = DateTimeOffset.UtcNow,
                 LastModifiedBy = "System",
             },
-            new("Regional Office South", "Kestenova Gora 24")
+            new(
+                "Kestenova Commercial Build",
+                "Kestenova Gora 24",
+                SiteMediaPolicy.FromPreset(MediaPolicyPreset.CommercialBuild))
             {
                 Created = DateTimeOffset.UtcNow,
                 CreatedBy = "System",

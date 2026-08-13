@@ -23,7 +23,7 @@ const SiteVideos = () => {
     [siteId, sites],
   );
   const filters = useMemo<FilterType[]>(
-    () => [ALL_FILTER, ...(site?.mediaPolicy.allowedVideoCategories ?? [])],
+    () => [ALL_FILTER, ...(site?.mediaPolicy.categories ?? [])],
     [site],
   );
   const resolvedActiveFilter = filters.includes(activeFilter)
@@ -53,7 +53,7 @@ const SiteVideos = () => {
       />
       <Videos activeFilter={resolvedActiveFilter} siteId={siteId} />
       <SiteMediaUploadAction
-        allowedCategories={site?.mediaPolicy.allowedVideoCategories}
+        allowedCategories={site?.mediaPolicy.categories}
         kind="video"
         siteId={siteId}
       />

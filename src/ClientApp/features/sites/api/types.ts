@@ -1,9 +1,13 @@
 import type { MediaCategory } from "../info/media-types";
 
 export interface SiteMediaPolicy {
-  preset: "Regular" | "Custom";
-  allowedImageCategories: MediaCategory[];
-  allowedVideoCategories: MediaCategory[];
+  preset:
+    | "ApartmentRenovation"
+    | "HouseBuild"
+    | "CommercialBuild"
+    | "SiteMaintenance"
+    | "Custom";
+  categories: MediaCategory[];
 }
 
 export interface Site {

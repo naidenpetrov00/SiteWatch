@@ -48,12 +48,12 @@ public sealed record DashboardSiteDto(
     int NumberId,
     string Name,
     string Address,
-    string MediaPolicy)
+    SiteMediaPolicyDto MediaPolicy)
 {
     public static DashboardSiteDto From(Site site) => new(
         site.Id,
         site.NumberId,
         site.Name.Value,
         site.Address.Value,
-        site.MediaPolicy.Preset.ToString());
+        SiteMediaPolicyDto.From(site.MediaPolicy));
 }

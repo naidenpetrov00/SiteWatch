@@ -1,6 +1,6 @@
 using Application.SeedWork.Interfaces;
 using FluentValidation;
-using Domain.SeedWork.Enums;
+using Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.Sites.Videos.Commands;
@@ -22,22 +22,23 @@ public class AddVideoValidator : AbstractValidator<AddVideoCommand>
         RuleFor(av => av.File).NotNull();
         RuleFor(av => av.Category)
             .Cascade(CascadeMode.Stop)
-            .NotNull()
-            .Must(category => category.HasValue && Enum.IsDefined(typeof(VideoCategory), category.Value))
+            .Must(category => SiteMediaPolicy.NormalizeCategory(category) is not null)
             .WithMessage("Category is not valid.")
-            .MustAsync((request, category, cancellationToken) => VideoCategoryAllowedForSite(request, category, cancellationToken))
+            .Must(category => SiteMediaPolicy.NormalizeCategory(category)!.Length <= SiteMediaPolicy.MaxCategoryLength)
+            .WithMessage($"Category cannot exceed {SiteMediaPolicy.MaxCategoryLength} characters.")
+            .MustAsync((request, category, cancellationToken) => MediaCategoryAllowedForSite(request, category, cancellationToken))
             .WithMessage("Category is not allowed for this site.");
     }
 
     private async Task<bool> SiteIdMustExist(Guid siteId, CancellationToken cancellationToken) =>
         await _dbContext.Sites.AsNoTracking().AnyAsync(site => site.Id == siteId, cancellationToken);
 
-    private async Task<bool> VideoCategoryAllowedForSite(
+    private async Task<bool> MediaCategoryAllowedForSite(
         AddVideoCommand request,
-        VideoCategory? category,
+        string? category,
         CancellationToken cancellationToken)
     {
-        if (!category.HasValue)
+        if (SiteMediaPolicy.NormalizeCategory(category) is null)
         {
             return false;
         }
@@ -45,6 +46,6 @@ public class AddVideoValidator : AbstractValidator<AddVideoCommand>
         var site = await _dbContext.Sites.AsNoTracking()
             .FirstOrDefaultAsync(site => site.Id == request.SiteId, cancellationToken);
 
-        return site is null || site.MediaPolicy.AllowsVideoCategory(category.Value);
+        return site is null || site.MediaPolicy.AllowsCategory(category);
     }
 }

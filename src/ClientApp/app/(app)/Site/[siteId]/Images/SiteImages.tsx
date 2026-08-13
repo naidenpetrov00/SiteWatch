@@ -24,7 +24,7 @@ const SiteImages = () => {
     [siteId, sites],
   );
   const filters = useMemo<FilterType[]>(
-    () => [ALL_FILTER, ...(site?.mediaPolicy.allowedImageCategories ?? [])],
+    () => [ALL_FILTER, ...(site?.mediaPolicy.categories ?? [])],
     [site],
   );
   const resolvedActiveFilter = filters.includes(activeFilter)
@@ -56,7 +56,7 @@ const SiteImages = () => {
       />
       <Images activeFilter={resolvedActiveFilter} siteId={siteId} />
       <SiteMediaUploadAction
-        allowedCategories={site?.mediaPolicy.allowedImageCategories}
+        allowedCategories={site?.mediaPolicy.categories}
         kind="image"
         siteId={siteId}
       />

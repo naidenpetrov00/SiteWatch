@@ -14,5 +14,5 @@ public sealed class GetVideosIdsBySiteIdHandler(IVideosService videosService)
     public Task<List<SiteVideoIdsDto>> Handle(
         GetVideosIdsBySiteIdQuery request,
         CancellationToken cancellationToken
-    ) => videosService.GetVideosIdsBySiteId(request.SiteId);
+    ) => videosService.GetVideosIdsBySiteId(request.SiteId, cancellationToken);
 }

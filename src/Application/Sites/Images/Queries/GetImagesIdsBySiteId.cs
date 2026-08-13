@@ -13,5 +13,5 @@ public sealed class GetImagesIdsBySiteIdHandler(IImagesService imagesService)
 {
     public Task<List<SiteImageIdsDto>> Handle(GetImagesIdsBySiteIdQuery request, CancellationToken cancellationToken)
         =>
-            imagesService.GetImagesIdsBySiteId(request.SiteId);
+            imagesService.GetImagesIdsBySiteId(request.SiteId, cancellationToken);
 }

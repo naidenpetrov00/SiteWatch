@@ -1,6 +1,5 @@
 using Ardalis.GuardClauses;
 using Domain.SeedWork;
-using Domain.SeedWork.Enums;
 using Domain.ValueObjects;
 
 namespace Domain.Entities;
@@ -14,11 +13,11 @@ public sealed class Site : BaseAuditableEntity, IHasNumberId
     private readonly HashSet<SiteVideo> _videos = [];
     private readonly HashSet<SitePayment> _payments = [];
 
-    public Site(SiteName name, SiteAddress address, SiteMediaPolicy? mediaPolicy = null)
+    public Site(SiteName name, SiteAddress address, SiteMediaPolicy mediaPolicy)
     {
         Name = name;
         Address = address;
-        MediaPolicy = mediaPolicy ?? SiteMediaPolicy.Regular();
+        MediaPolicy = Guard.Against.Null(mediaPolicy);
     }
 
     // ReSharper disable once UnusedMember.Local
@@ -40,11 +39,10 @@ public sealed class Site : BaseAuditableEntity, IHasNumberId
     public void ChangeMediaPolicy(SiteMediaPolicy mediaPolicy) =>
         MediaPolicy = Guard.Against.Null(mediaPolicy);
 
-    public void UpdateDetails(string name, string address, MediaPolicyPreset mediaPolicyPreset)
+    public void UpdateDetails(string name, string address)
     {
         Name = name;
         Address = address;
-        MediaPolicy.ChangePreset(mediaPolicyPreset);
     }
 
     public void AddImage(SiteImage image) => _images.Add(image);
