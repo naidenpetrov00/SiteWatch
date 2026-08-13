@@ -7,29 +7,43 @@ import { useColorPalette } from "@/hooks/useColorPalette";
 import useGetSearchParams from "@/hooks/useGetSearchParams";
 import { ACCESS_POLICIES } from "@/types/authorization";
 import { useAuth } from "@/store/auth_context";
+import { useGetSiteFileIdsBySiteId } from "@/features/sites/info/files/hooks/useGetSiteFileIdsBySiteId";
+import { useGetSiteImageIdsBySiteId } from "@/features/sites/info/images/hooks/useGetSiteImageIdsBySiteId";
+import { useGetSiteInvoices } from "@/features/sites/info/invoices/hooks/useGetSiteInvoices";
+import { useGetSiteVideoIdsBySiteId } from "@/features/sites/info/videos/hooks/useGetSiteVideoIdsBySiteId";
+
+const temporaryCount = (minimum: number, maximum: number) =>
+  String(Math.floor(Math.random() * (maximum - minimum + 1)) + minimum);
 
 const detailCards: DetailsCardItem[] = [
-  { label: "Images", value: "24", helper: "Galery", path: "Images" },
-  { label: "Videos", value: "—", helper: "Galery", path: "Videos" },
+  { label: "Images", value: "View", helper: "Gallery", path: "Images" },
+  { label: "Videos", value: "View", helper: "Gallery", path: "Videos" },
   {
     label: "Invoices",
-    value: "—",
+    value: "View",
     helper: "Billing documents",
     path: "Invoices",
     allowedRoles: ACCESS_POLICIES.siteInvoices,
   },
-  { label: "Files", value: "—", helper: "Files", path: "Files" },
+  { label: "Files", value: "View", helper: "Files", path: "Files" },
   {
     label: "People On Site",
-    value: "27",
-    helper: "11 contractors active",
+    value: temporaryCount(1, 50),
+    helper: "Temporary data",
+    path: "People",
   },
   {
     label: "Open Issues",
-    value: "2",
-    helper: "1 camera, 1 gate sensor",
+    value: temporaryCount(0, 10),
+    helper: "Temporary data",
+    path: "Issues",
   },
-  { label: "Payments", value: "2000", helper: "All" },
+  {
+    label: "Payments",
+    value: temporaryCount(0, 25),
+    helper: "Temporary data",
+    path: "Payments",
+  },
 ];
 
 const Details = () => {
@@ -37,6 +51,20 @@ const Details = () => {
   const siteId = localParams.siteId;
   const colorPalette = useColorPalette();
   const { hasAnyRole } = useAuth();
+  const canViewInvoices = hasAnyRole(ACCESS_POLICIES.siteInvoices);
+  const imageIdsQuery = useGetSiteImageIdsBySiteId({ siteId });
+  const videoIdsQuery = useGetSiteVideoIdsBySiteId({ siteId });
+  const fileIdsQuery = useGetSiteFileIdsBySiteId({ siteId });
+  const invoicesQuery = useGetSiteInvoices({
+    siteId,
+    enabled: canViewInvoices,
+  });
+  const resourceCounts: Record<string, string> = {
+    Images: imageIdsQuery.isSuccess ? String(imageIdsQuery.data.length) : "—",
+    Videos: videoIdsQuery.isSuccess ? String(videoIdsQuery.data.length) : "—",
+    Invoices: invoicesQuery.isSuccess ? String(invoicesQuery.data.length) : "—",
+    Files: fileIdsQuery.isSuccess ? String(fileIdsQuery.data.length) : "—",
+  };
   const visibleDetailCards = detailCards.filter(
     (card) => !card.allowedRoles || hasAnyRole(card.allowedRoles),
   );
@@ -63,7 +91,7 @@ const Details = () => {
                 {card.label}
               </Text>
               <Text style={[detailsStyles.value, { color: colorPalette.text }]}>
-                {card.value}
+                {resourceCounts[card.label] ?? card.value}
               </Text>
               <Text
                 style={[

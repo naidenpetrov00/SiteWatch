@@ -11,6 +11,10 @@ public sealed record CreateSiteCommand : IRequest<Guid>
 {
     public string Name { get; init; } = string.Empty;
     public string Address { get; init; } = string.Empty;
+    public string ManagerId { get; init; } = string.Empty;
+    public string StartDate { get; init; } = string.Empty;
+    public string? EndDate { get; init; }
+    public string Status { get; init; } = SiteStatus.Planning.ToString();
     public string MediaPolicyPreset { get; init; } = string.Empty;
     public string[] MediaCategories { get; init; } = [];
 }
@@ -29,6 +33,24 @@ public sealed class CreateSiteValidator : AbstractValidator<CreateSiteCommand>
             .Must(value => !string.IsNullOrWhiteSpace(value))
             .WithMessage("Address must not be empty.")
             .Length(5, 200);
+        RuleFor(command => command.ManagerId).NotEmpty();
+        RuleFor(command => command.StartDate)
+            .Must(value => DateOnly.TryParse(value, out _))
+            .WithMessage("StartDate must be a valid date.");
+        RuleFor(command => command.EndDate)
+            .Must(value => string.IsNullOrWhiteSpace(value) || DateOnly.TryParse(value, out _))
+            .WithMessage("EndDate must be a valid date.");
+        RuleFor(command => command)
+            .Must(command =>
+                !DateOnly.TryParse(command.StartDate, out var startDate)
+                || string.IsNullOrWhiteSpace(command.EndDate)
+                || !DateOnly.TryParse(command.EndDate, out var endDate)
+                || endDate >= startDate)
+            .WithMessage("EndDate cannot be before StartDate.");
+        RuleFor(command => command.Status)
+            .Must(value => Enum.TryParse<SiteStatus>(value, true, out var status)
+                && Enum.IsDefined(typeof(SiteStatus), status))
+            .WithMessage("Status must be a valid site status.");
         RuleFor(command => command.MediaPolicyPreset)
             .Must(value => SiteMediaPolicy.TryParsePreset(value, out _))
             .WithMessage("MediaPolicyPreset must be a valid media policy preset.");

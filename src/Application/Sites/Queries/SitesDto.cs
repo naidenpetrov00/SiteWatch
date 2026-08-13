@@ -10,6 +10,11 @@ public class SitesDto
 
     public string? Name { get; init; }
     public string? Address { get; init; }
+    public string ManagerId { get; init; } = string.Empty;
+    public string ManagerDisplayName { get; init; } = string.Empty;
+    public DateOnly StartDate { get; init; }
+    public DateOnly? EndDate { get; init; }
+    public string Status { get; init; } = string.Empty;
     public SiteMediaPolicyDto MediaPolicy { get; init; } = null!;
 
     public class Mapping : Profile
@@ -19,6 +24,8 @@ public class SitesDto
             CreateMap<Site, SitesDto>()
                 .ForMember(d => d.Name, o => o.MapFrom(s => s.Name.Value))
                 .ForMember(d => d.Address, o => o.MapFrom(s => s.Address.Value))
+                .ForMember(d => d.ManagerDisplayName, o => o.MapFrom(s => s.Manager.UserName ?? s.Manager.Email ?? string.Empty))
+                .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()))
                 .ForMember(d => d.MediaPolicy, o => o.MapFrom(s => s.MediaPolicy));
 
             CreateMap<SiteMediaPolicy, SiteMediaPolicyDto>()

@@ -5,7 +5,12 @@ export default function SiteLayout() {
   const colorPalette = useColorPalette();
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        headerTintColor: colorPalette.primary,
+      }}
+    >
       <Stack.Screen
         name="(tabs)"
         options={({ route }) => ({
@@ -21,6 +26,18 @@ export default function SiteLayout() {
       <Stack.Screen name="Images" />
       <Stack.Screen name="Videos" />
       <Stack.Screen name="Invoices" />
+      <Stack.Screen
+        name="People"
+        options={{ headerShown: true, title: "People On Site" }}
+      />
+      <Stack.Screen
+        name="Issues"
+        options={{ headerShown: true, title: "Open Issues" }}
+      />
+      <Stack.Screen
+        name="Payments"
+        options={{ headerShown: true, title: "Payments" }}
+      />
     </Stack>
   );
 }

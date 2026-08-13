@@ -19,6 +19,28 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
             throw new ArgumentException("Unsupported media policy preset.", nameof(request.MediaPolicyPreset));
         }
 
+        var mediaPolicy = preset == MediaPolicyPreset.Regular
+            ? SiteMediaPolicy.Regular()
+            : SiteMediaPolicy.Custom([], []);
+        var managerExists = await dbContext.Users
+            .AnyAsync(user => user.Id == request.ManagerId, cancellationToken);
+
+        if (!managerExists)
+        {
+            throw new ArgumentException("Site manager was not found.", nameof(request.ManagerId));
+        }
+
+        var status = ParseStatus(request.Status);
+        var startDate = ParseDate(request.StartDate, nameof(request.StartDate));
+        var endDate = ParseOptionalDate(request.EndDate, nameof(request.EndDate));
+        var site = new Site(
+            request.Name,
+            request.Address,
+            request.ManagerId,
+            startDate,
+            status,
+            endDate,
+            mediaPolicy);
         var mediaPolicy = SiteMediaPolicy.Create(preset, request.MediaCategories);
         var site = new Site(request.Name, request.Address, mediaPolicy);
 
@@ -36,6 +58,7 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
         var sites = await dbContext
             .Sites.AsNoTracking()
             .Where(site => site.Users.Any(user => user.Id == userId.ToString()))
+            .Include(site => site.Manager)
             .ToListAsync(cancellationToken);
 
         return mapper.Map<List<SitesDto>>(sites);
@@ -51,8 +74,56 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
             throw new NotFoundException(nameof(Site), request.Id.ToString());
         }
 
+        if (
+            !Enum.TryParse<MediaPolicyPreset>(request.MediaPolicyPreset, true, out var preset)
+            || !Enum.IsDefined(typeof(MediaPolicyPreset), preset)
+        )
+        {
+            throw new ArgumentException("Unsupported media policy preset.", nameof(request.MediaPolicyPreset));
+        }
+
+        var managerExists = await dbContext.Users
+            .AnyAsync(user => user.Id == request.ManagerId, cancellationToken);
+
+        if (!managerExists)
+        {
+            throw new ArgumentException("Site manager was not found.", nameof(request.ManagerId));
+        }
+
+        site.UpdateDetails(
+            request.Name,
+            request.Address,
+            request.ManagerId,
+            ParseDate(request.StartDate, nameof(request.StartDate)),
+            ParseOptionalDate(request.EndDate, nameof(request.EndDate)),
+            ParseStatus(request.Status),
+            preset);
         site.UpdateDetails(request.Name, request.Address);
         site.MediaPolicy.AddCategories(request.MediaCategoriesToAdd);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
+
+    private static SiteStatus ParseStatus(string value)
+    {
+        if (Enum.TryParse<SiteStatus>(value, true, out var status)
+            && Enum.IsDefined(typeof(SiteStatus), status))
+        {
+            return status;
+        }
+
+        throw new ArgumentException("Unsupported site status.", nameof(value));
+    }
+
+    private static DateOnly ParseDate(string value, string parameterName)
+    {
+        if (DateOnly.TryParse(value, out var date))
+        {
+            return date;
+        }
+
+        throw new ArgumentException("Invalid date.", parameterName);
+    }
+
+    private static DateOnly? ParseOptionalDate(string? value, string parameterName) =>
+        string.IsNullOrWhiteSpace(value) ? null : ParseDate(value, parameterName);
 }
