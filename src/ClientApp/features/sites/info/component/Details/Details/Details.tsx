@@ -12,6 +12,9 @@ import { useGetSiteImageIdsBySiteId } from "@/features/sites/info/images/hooks/u
 import { useGetSiteInvoices } from "@/features/sites/info/invoices/hooks/useGetSiteInvoices";
 import { useGetSiteVideoIdsBySiteId } from "@/features/sites/info/videos/hooks/useGetSiteVideoIdsBySiteId";
 
+const temporaryCount = (minimum: number, maximum: number) =>
+  String(Math.floor(Math.random() * (maximum - minimum + 1)) + minimum);
+
 const detailCards: DetailsCardItem[] = [
   { label: "Images", value: "View", helper: "Gallery", path: "Images" },
   { label: "Videos", value: "View", helper: "Gallery", path: "Videos" },
@@ -25,15 +28,22 @@ const detailCards: DetailsCardItem[] = [
   { label: "Files", value: "View", helper: "Files", path: "Files" },
   {
     label: "People On Site",
-    value: "Unavailable",
-    helper: "Not available yet",
+    value: temporaryCount(1, 50),
+    helper: "Temporary data",
+    path: "People",
   },
   {
     label: "Open Issues",
-    value: "Unavailable",
-    helper: "Not available yet",
+    value: temporaryCount(0, 10),
+    helper: "Temporary data",
+    path: "Issues",
   },
-  { label: "Payments", value: "Unavailable", helper: "Not available yet" },
+  {
+    label: "Payments",
+    value: temporaryCount(0, 25),
+    helper: "Temporary data",
+    path: "Payments",
+  },
 ];
 
 const Details = () => {
