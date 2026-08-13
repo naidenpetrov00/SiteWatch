@@ -7,6 +7,10 @@ import { useColorPalette } from "@/hooks/useColorPalette";
 import useGetSearchParams from "@/hooks/useGetSearchParams";
 import { ACCESS_POLICIES } from "@/types/authorization";
 import { useAuth } from "@/store/auth_context";
+import { useGetSiteFileIdsBySiteId } from "@/features/sites/info/files/hooks/useGetSiteFileIdsBySiteId";
+import { useGetSiteImageIdsBySiteId } from "@/features/sites/info/images/hooks/useGetSiteImageIdsBySiteId";
+import { useGetSiteInvoices } from "@/features/sites/info/invoices/hooks/useGetSiteInvoices";
+import { useGetSiteVideoIdsBySiteId } from "@/features/sites/info/videos/hooks/useGetSiteVideoIdsBySiteId";
 
 const detailCards: DetailsCardItem[] = [
   { label: "Images", value: "View", helper: "Gallery", path: "Images" },
@@ -37,6 +41,20 @@ const Details = () => {
   const siteId = localParams.siteId;
   const colorPalette = useColorPalette();
   const { hasAnyRole } = useAuth();
+  const canViewInvoices = hasAnyRole(ACCESS_POLICIES.siteInvoices);
+  const imageIdsQuery = useGetSiteImageIdsBySiteId({ siteId });
+  const videoIdsQuery = useGetSiteVideoIdsBySiteId({ siteId });
+  const fileIdsQuery = useGetSiteFileIdsBySiteId({ siteId });
+  const invoicesQuery = useGetSiteInvoices({
+    siteId,
+    enabled: canViewInvoices,
+  });
+  const resourceCounts: Record<string, string> = {
+    Images: imageIdsQuery.isSuccess ? String(imageIdsQuery.data.length) : "—",
+    Videos: videoIdsQuery.isSuccess ? String(videoIdsQuery.data.length) : "—",
+    Invoices: invoicesQuery.isSuccess ? String(invoicesQuery.data.length) : "—",
+    Files: fileIdsQuery.isSuccess ? String(fileIdsQuery.data.length) : "—",
+  };
   const visibleDetailCards = detailCards.filter(
     (card) => !card.allowedRoles || hasAnyRole(card.allowedRoles),
   );
@@ -63,7 +81,7 @@ const Details = () => {
                 {card.label}
               </Text>
               <Text style={[detailsStyles.value, { color: colorPalette.text }]}>
-                {card.value}
+                {resourceCounts[card.label] ?? card.value}
               </Text>
               <Text
                 style={[
