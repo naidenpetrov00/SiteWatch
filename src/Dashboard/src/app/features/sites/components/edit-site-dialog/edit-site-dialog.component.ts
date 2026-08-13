@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { debounceTime, distinctUntilChanged, filter } from 'rxjs';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -18,6 +18,7 @@ import { UpdateDashboardSiteRequest } from '../../models/update-dashboard-site-r
 import { DashboardSitesService } from '../../services/dashboard-sites.service';
 import { DashboardUsersService } from '../../../users/services/dashboard-users.service';
 import { DashboardUserLookup } from '../../../users/models/dashboard-user-lookup.model';
+import { siteDateRangeValidator } from '../site-date-range.validator';
 
 @Component({
   selector: 'app-edit-site-dialog',
@@ -52,15 +53,18 @@ export class EditSiteDialogComponent {
   );
   readonly formId = 'edit-site-dialog-form';
   readonly isSaving = () => this.dashboardSitesService.updateSiteMutation.isPending();
-  readonly siteForm = this.formBuilder.nonNullable.group({
-    name: [this.site.name, [Validators.required, Validators.minLength(5), Validators.maxLength(100)]],
-    address: [this.site.address, [Validators.required, Validators.minLength(5), Validators.maxLength(200)]],
-    managerId: [this.site.managerId, [Validators.required]],
-    startDate: this.formBuilder.control<Date | null>(this.fromDateOnly(this.site.startDate), [Validators.required]),
-    endDate: this.formBuilder.control<Date | null>(this.fromDateOnly(this.site.endDate)),
-    status: [this.site.status, [Validators.required]],
-    mediaPolicyPreset: [this.site.mediaPolicy, [Validators.required]]
-  });
+  readonly siteForm = this.formBuilder.nonNullable.group(
+    {
+      name: [this.site.name, [Validators.required, Validators.minLength(5), Validators.maxLength(100)]],
+      address: [this.site.address, [Validators.required, Validators.minLength(5), Validators.maxLength(200)]],
+      managerId: [this.site.managerId, [Validators.required]],
+      startDate: this.formBuilder.control<Date | null>(this.fromDateOnly(this.site.startDate), [Validators.required]),
+      endDate: this.formBuilder.control<Date | null>(this.fromDateOnly(this.site.endDate)),
+      status: [this.site.status, [Validators.required]],
+      mediaPolicyPreset: [this.site.mediaPolicy, [Validators.required]]
+    },
+    { validators: siteDateRangeValidator() }
+  );
 
   readonly dialogEyebrow = 'Administration';
   readonly dialogTitle = `Edit Site #${this.site.numberId}`;
@@ -71,13 +75,25 @@ export class EditSiteDialogComponent {
 
   constructor() {
     this.managerSearchControl.valueChanges
-      .pipe(debounceTime(250), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((value) => {
         if (typeof value !== 'string') {
           return;
         }
 
+        this.managerSearchRevision += 1;
+        this.managerSearchResults.set([]);
         this.siteForm.controls.managerId.setValue('', { emitEvent: false });
+      });
+
+    this.managerSearchControl.valueChanges
+      .pipe(
+        filter((value): value is string => typeof value === 'string'),
+        debounceTime(250),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((value) => {
         void this.searchManagers(value);
       });
   }
@@ -97,12 +113,6 @@ export class EditSiteDialogComponent {
     if (this.siteForm.invalid) {
       this.siteForm.markAllAsTouched();
       this.managerSearchControl.markAsTouched();
-      return;
-    }
-
-    if (this.hasInvalidDateRange()) {
-      this.siteForm.controls.endDate.setErrors({ dateRange: true });
-      this.siteForm.controls.endDate.markAsTouched();
       return;
     }
 
@@ -157,10 +167,5 @@ export class EditSiteDialogComponent {
     const month = String(value.getMonth() + 1).padStart(2, '0');
     const day = String(value.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
-  }
-
-  private hasInvalidDateRange(): boolean {
-    const { startDate, endDate } = this.siteForm.getRawValue();
-    return startDate !== null && endDate !== null && endDate < startDate;
   }
 }

@@ -53,7 +53,7 @@
 
     <app-datepicker label="Start Date" [control]="siteForm.controls.startDate" />
     <app-datepicker label="End Date" [control]="siteForm.controls.endDate" [showRequiredError]="false" />
-    @if (siteForm.controls.endDate.touched && siteForm.controls.endDate.hasError('dateRange')) {
+    @if (siteForm.hasError('dateRange') && (siteForm.controls.startDate.touched || siteForm.controls.endDate.touched)) {
       <p class="edit-site-dialog__error">End Date cannot be before Start Date.</p>
     }
 

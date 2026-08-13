@@ -16,6 +16,7 @@ import { SITE_STATUSES } from '../../models/site-statuses';
 import { DashboardSitesService } from '../../services/dashboard-sites.service';
 import { DashboardUsersService } from '../../../users/services/dashboard-users.service';
 import { DashboardUserLookup } from '../../../users/models/dashboard-user-lookup.model';
+import { siteDateRangeValidator } from '../site-date-range.validator';
 
 @Component({
   selector: 'app-add-site-dialog',
@@ -47,15 +48,18 @@ export class AddSiteDialogComponent {
   readonly managerSearchControl = this.formBuilder.control<string | DashboardUserLookup | null>('');
   readonly formId = 'add-site-dialog-form';
   readonly isCreating = () => this.dashboardSitesService.createSiteMutation.isPending();
-  readonly siteForm = this.formBuilder.nonNullable.group({
-    name: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(100)]],
-    address: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(200)]],
-    managerId: ['', [Validators.required]],
-    startDate: this.formBuilder.control<Date | null>(new Date(), [Validators.required]),
-    endDate: this.formBuilder.control<Date | null>(null),
-    status: ['Planning', [Validators.required]],
-    mediaPolicyPreset: [this.mediaPolicyPresets[0], [Validators.required]]
-  });
+  readonly siteForm = this.formBuilder.nonNullable.group(
+    {
+      name: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(100)]],
+      address: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(200)]],
+      managerId: ['', [Validators.required]],
+      startDate: this.formBuilder.control<Date | null>(new Date(), [Validators.required]),
+      endDate: this.formBuilder.control<Date | null>(null),
+      status: ['Planning', [Validators.required]],
+      mediaPolicyPreset: [this.mediaPolicyPresets[0], [Validators.required]]
+    },
+    { validators: siteDateRangeValidator() }
+  );
 
   readonly dialogEyebrow = 'Administration';
   readonly dialogTitle = 'Add Site';
@@ -92,12 +96,6 @@ export class AddSiteDialogComponent {
     if (this.siteForm.invalid) {
       this.siteForm.markAllAsTouched();
       this.managerSearchControl.markAsTouched();
-      return;
-    }
-
-    if (this.hasInvalidDateRange()) {
-      this.siteForm.controls.endDate.setErrors({ dateRange: true });
-      this.siteForm.controls.endDate.markAsTouched();
       return;
     }
 
@@ -145,10 +143,5 @@ export class AddSiteDialogComponent {
     const month = String(value.getMonth() + 1).padStart(2, '0');
     const day = String(value.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
-  }
-
-  private hasInvalidDateRange(): boolean {
-    const { startDate, endDate } = this.siteForm.getRawValue();
-    return startDate !== null && endDate !== null && endDate < startDate;
   }
 }
