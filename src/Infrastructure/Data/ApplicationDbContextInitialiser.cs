@@ -117,23 +117,25 @@ public class ApplicationDbContextInitialiser(
         if (users.Count == 0 || await dbContext.Sites.AnyAsync())
             return;
 
+        var startDate = DateOnly.FromDateTime(DateTime.UtcNow);
+        var secondaryManager = users[Math.Min(1, users.Count - 1)];
         var sites = new List<Site>
         {
-            new("Central Office", "Vitosha 17")
+            new("Central Office", "Vitosha 17", users[0].Id, startDate)
             {
                 Created = DateTimeOffset.UtcNow,
                 CreatedBy = "System",
                 LastModified = DateTimeOffset.UtcNow,
                 LastModifiedBy = "System",
             },
-            new("Regional Office North", "Dondukov 11")
+            new("Regional Office North", "Dondukov 11", secondaryManager.Id, startDate)
             {
                 Created = DateTimeOffset.UtcNow,
                 CreatedBy = "System",
                 LastModified = DateTimeOffset.UtcNow,
                 LastModifiedBy = "System",
             },
-            new("Regional Office South", "Kestenova Gora 24")
+            new("Regional Office South", "Kestenova Gora 24", users[0].Id, startDate)
             {
                 Created = DateTimeOffset.UtcNow,
                 CreatedBy = "System",
@@ -142,7 +144,7 @@ public class ApplicationDbContextInitialiser(
             },
         };
         sites[0].AddUser(users[0]);
-        sites[1].AddUser(users[1]);
+        sites[1].AddUser(secondaryManager);
         sites[1].AddUserRange(users);
 
         await dbContext.Sites.AddRangeAsync(sites);

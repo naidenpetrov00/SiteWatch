@@ -24,18 +24,19 @@ export const getSiteInvoices = ({
 
 type UseGetSiteInvoicesOptions = {
   siteId?: string;
+  enabled?: boolean;
   queryConfig?: QueryConfig<typeof getSiteInvoices>;
 };
 
 export const useGetSiteInvoices = ({
   siteId,
+  enabled = true,
   queryConfig: customQueryConfig,
 }: UseGetSiteInvoicesOptions) => {
   const { accessToken } = useAuth();
 
   return useQuery({
     queryKey: ["site-invoices", siteId],
-    enabled: Boolean(siteId && accessToken),
     queryFn: () =>
       getSiteInvoices({
         siteId: siteId!,
@@ -43,5 +44,6 @@ export const useGetSiteInvoices = ({
       }),
     ...queryConfig,
     ...customQueryConfig,
+    enabled: enabled && Boolean(siteId && accessToken),
   });
 };

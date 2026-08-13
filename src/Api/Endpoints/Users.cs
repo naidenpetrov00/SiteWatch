@@ -22,6 +22,9 @@ public class Users : EndpointGroupBase
         dashboardGroup
             .MapGet("/users", GetDashboardUsers)
             .RequireAuthorization(AuthorizationPolicies.Administrator);
+        dashboardGroup
+            .MapGet("/users/search", SearchDashboardUsers)
+            .RequireAuthorization(AuthorizationPolicies.Administrator);
     }
 
     public async Task<Results<Ok<IdentityResultWithUser>, BadRequest<string[]>>> GetUserByEmail(
@@ -46,6 +49,15 @@ private static async Task<Ok<PagedResult<DashboardUserDto>>> GetDashboardUsers(
     {
         var users = await mediator.Send(query);
 
+        return TypedResults.Ok(users);
+    }
+
+    private static async Task<Ok<List<DashboardUserLookupDto>>> SearchDashboardUsers(
+        IMediator mediator,
+        [AsParameters] DashboardUserSearchQuery query,
+        CancellationToken cancellationToken)
+    {
+        var users = await mediator.Send(query, cancellationToken);
         return TypedResults.Ok(users);
     }
 }

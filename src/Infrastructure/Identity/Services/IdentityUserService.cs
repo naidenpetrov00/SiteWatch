@@ -147,6 +147,32 @@ public class IdentityUserService(
                 cancellationToken
             );
 
+    public async Task<List<DashboardUserLookupDto>> SearchUsersAsync(
+        string? searchTerm,
+        CancellationToken cancellationToken)
+    {
+        var normalizedSearchTerm = searchTerm?.Trim();
+
+        if (string.IsNullOrWhiteSpace(normalizedSearchTerm))
+        {
+            return [];
+        }
+
+        return await userManager.Users
+            .AsNoTracking()
+            .Where(user =>
+                (user.UserName != null && user.UserName.Contains(normalizedSearchTerm))
+                || (user.Email != null && user.Email.Contains(normalizedSearchTerm)))
+            .OrderBy(user => user.UserName)
+            .ThenBy(user => user.Id)
+            .Take(20)
+            .Select(user => new DashboardUserLookupDto(
+                user.Id,
+                user.UserName ?? user.Email ?? string.Empty,
+                user.Email))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<ApplicationUser?> FindUserByEmailAsync(string email) =>
         await userManager.FindByEmailAsync(email);
 
