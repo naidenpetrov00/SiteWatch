@@ -101,7 +101,19 @@ public sealed class SiteMediaPolicy : ValueObject
 
     public void AddCategories(IEnumerable<string> categories)
     {
-        Categories = Normalize(Categories.Concat(categories));
+        var updatedCategories = Normalize(Categories.Concat(categories));
+        if (Categories.Count == updatedCategories.Count
+            && Categories.All(category =>
+                updatedCategories.Contains(category, StringComparer.OrdinalIgnoreCase)))
+        {
+            return;
+        }
+
+        Categories = updatedCategories;
+        if (Preset != MediaPolicyPreset.Custom)
+        {
+            Preset = MediaPolicyPreset.Custom;
+        }
     }
 
     public string ToStorageValue()
