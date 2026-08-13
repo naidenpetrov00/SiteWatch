@@ -96,6 +96,7 @@ public sealed class InvoiceTests
     private static Site CreateSite() => new(
         (SiteName)"Test site",
         (SiteAddress)"Test address",
+        SiteMediaPolicy.FromPreset(MediaPolicyPreset.Custom),
         "manager-1",
         new DateOnly(2026, 3, 3));
 }

@@ -1,3 +1,5 @@
+import { SiteMediaPolicy } from './site-media-policy-presets';
+
 export interface DashboardSite {
   id: string;
   numberId: number;
@@ -8,5 +10,5 @@ export interface DashboardSite {
   startDate: string;
   endDate: string | null;
   status: string;
-  mediaPolicy: string;
+  mediaPolicy: SiteMediaPolicy;
 }

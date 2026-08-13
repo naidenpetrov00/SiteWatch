@@ -1,12 +1,13 @@
 import Details from "@/features/sites/info/component/Details/Details/Details";
 import React from "react";
-import { ScrollView } from "react-native";
+import { RefreshControl, ScrollView } from "react-native";
 import Summary from "@/features/sites/info/component/Summary/Summary";
 import { useColorPalette } from "@/hooks/useColorPalette";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import useGetSearchParams from "@/hooks/useGetSearchParams";
 import { useGetSitesByUserId } from "@/features/sites/api/get-sites-by-user";
 import LoadingState from "@/components/app/LoadingState";
+import { useGetSitesByUserId } from "@/features/sites/api/get-sites-by-user";
 
 const Info = () => {
   const colorPalette = useColorPalette();
@@ -18,6 +19,7 @@ const Info = () => {
   if (isLoading || !siteId || !site) {
     return <LoadingState label="Loading site information..." />;
   }
+  const { isRefetching, refetch } = useGetSitesByUserId();
 
   return (
     <ScrollView
@@ -29,6 +31,14 @@ const Info = () => {
         paddingBottom: insets.bottom + 80,
         paddingTop: 16,
       }}
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefetching}
+          onRefresh={refetch}
+          tintColor={colorPalette.primary}
+          colors={[colorPalette.primary]}
+        />
+      }
     >
       <Summary site={site} />
       <Details />

@@ -2,7 +2,6 @@ using Application.SeedWork.Interfaces;
 using Application.Sites.Commands;
 using Application.Sites.Queries;
 using AutoMapper;
-using Domain.SeedWork.Enums;
 using Domain.Entities;
 using Domain.ValueObjects;
 using Ardalis.GuardClauses;
@@ -15,10 +14,7 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
 {
     public async Task<Guid> CreateAsync(CreateSiteCommand request, CancellationToken cancellationToken)
     {
-        if (
-            !Enum.TryParse<MediaPolicyPreset>(request.MediaPolicyPreset, true, out var preset)
-            || !Enum.IsDefined(typeof(MediaPolicyPreset), preset)
-        )
+        if (!SiteMediaPolicy.TryParsePreset(request.MediaPolicyPreset, out var preset))
         {
             throw new ArgumentException("Unsupported media policy preset.", nameof(request.MediaPolicyPreset));
         }
@@ -45,6 +41,8 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
             status,
             endDate,
             mediaPolicy);
+        var mediaPolicy = SiteMediaPolicy.Create(preset, request.MediaCategories);
+        var site = new Site(request.Name, request.Address, mediaPolicy);
 
         dbContext.Sites.Add(site);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -100,6 +98,8 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
             ParseOptionalDate(request.EndDate, nameof(request.EndDate)),
             ParseStatus(request.Status),
             preset);
+        site.UpdateDetails(request.Name, request.Address);
+        site.MediaPolicy.AddCategories(request.MediaCategoriesToAdd);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 

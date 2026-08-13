@@ -43,7 +43,7 @@ describe("useUploadSiteMedia", () => {
       fileName: "photo.jpg",
       contentType: "image/jpeg",
     },
-    category: "Pipes",
+    category: "HVAC Controls",
   };
 
   it("uploads an image with authorization, updates the image cache, and refreshes it", async () => {
@@ -51,7 +51,7 @@ describe("useUploadSiteMedia", () => {
       {
         imageId: "existing-image",
         thumbnailId: "existing-thumbnail",
-        category: "Pipes",
+        category: "HVAC Controls",
         created: "2026-01-01T00:00:00Z",
       },
     ]);
@@ -81,7 +81,7 @@ describe("useUploadSiteMedia", () => {
       expect.objectContaining({
         imageId: "image-1",
         thumbnailId: "thumbnail-1",
-        category: "Pipes",
+        category: "HVAC Controls",
       }),
       expect.objectContaining({ imageId: "existing-image" }),
     ]);
@@ -107,7 +107,7 @@ describe("useUploadSiteMedia", () => {
           fileName: "clip.mp4",
           contentType: "video/mp4",
         },
-        category: "Pipes",
+        category: "Access Control",
       },
       { videoFileId: "video-1", snapshotFileId: "snapshot-1", durationSeconds: 12 },
     ],
@@ -145,7 +145,7 @@ describe("useUploadSiteMedia", () => {
           videoId: "video-1",
           snapshotId: "snapshot-1",
           durationSeconds: 12,
-          category: "Pipes",
+          category: "Access Control",
         }),
       ]);
     } else {

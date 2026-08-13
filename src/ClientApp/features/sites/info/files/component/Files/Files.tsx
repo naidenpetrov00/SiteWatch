@@ -1,4 +1,11 @@
-import { FlatList, Linking, Pressable, Text, View } from "react-native";
+import {
+  FlatList,
+  Linking,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { ALL_FILTER } from "@/features/sites/info/media-types";
@@ -154,7 +161,13 @@ const Files = () => {
         <Text style={[filesStyles.filterLabel, { color: colorPalette.text }]}>
           Document type
         </Text>
-        <View style={filesStyles.filters}>
+        <ScrollView
+          horizontal
+          contentInsetAdjustmentBehavior="automatic"
+          contentContainerStyle={filesStyles.filters}
+          showsHorizontalScrollIndicator={false}
+          style={filesStyles.filterScroller}
+        >
           {DOCUMENT_TYPE_FILTERS.map((filter) => {
             const isActive = filter === activeDocumentTypeFilter;
 
@@ -191,7 +204,7 @@ const Files = () => {
               </Pressable>
             );
           })}
-        </View>
+        </ScrollView>
       </View>
 
       {openError ? (

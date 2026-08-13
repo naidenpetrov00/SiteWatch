@@ -1,3 +1,5 @@
+import { SiteMediaPolicyPreset } from './site-media-policy-presets';
+
 export interface CreateDashboardSiteRequest {
   name: string;
   address: string;
@@ -5,5 +7,6 @@ export interface CreateDashboardSiteRequest {
   startDate: string;
   endDate: string | null;
   status: string;
-  mediaPolicyPreset: string;
+  mediaPolicyPreset: SiteMediaPolicyPreset;
+  mediaCategories: readonly string[];
 }

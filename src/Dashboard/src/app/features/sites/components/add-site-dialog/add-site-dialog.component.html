@@ -78,12 +78,55 @@
 
     <mat-form-field appearance="outline">
       <mat-label>Media Policy</mat-label>
-      <mat-select formControlName="mediaPolicyPreset">
-        @for (preset of mediaPolicyPresets; track preset) {
-          <mat-option [value]="preset">{{ preset }}</mat-option>
+      <mat-select
+        formControlName="mediaPolicyPreset"
+        [disabled]="isLoadingPresets() || presetLoadFailed()"
+        (selectionChange)="selectPreset($event.value)"
+      >
+        @for (preset of mediaPolicyPresets(); track preset.preset) {
+          <mat-option [value]="preset.preset">{{ preset.displayName }}</mat-option>
         }
       </mat-select>
+      @if (isLoadingPresets()) {
+        <mat-hint>Loading media policies…</mat-hint>
+      }
     </mat-form-field>
+
+    @if (presetLoadFailed()) {
+      <p class="add-site-dialog__error" role="alert">
+        Media policies could not be loaded. Close the dialog and try again.
+      </p>
+    }
+
+    <div class="add-site-dialog__policy-copy">
+      These categories are used as filters for the site’s images and videos in the mobile app.
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Media Categories</mat-label>
+      <mat-chip-grid #categoryGrid aria-label="Media categories">
+        @for (category of mediaCategories(); track category) {
+          <mat-chip-row [removable]="category !== otherCategory" (removed)="removeCategory(category)">
+            {{ category }}
+            @if (category !== otherCategory) {
+              <button matChipRemove type="button" [attr.aria-label]="'Remove ' + category">×</button>
+            }
+          </mat-chip-row>
+        }
+        <input
+          placeholder="Add category"
+          [maxLength]="maxCategoryLength"
+          [matChipInputFor]="categoryGrid"
+          [matChipInputSeparatorKeyCodes]="separatorKeyCodes"
+          [matChipInputAddOnBlur]="true"
+          (matChipInputTokenEnd)="addCategory($event)"
+        />
+      </mat-chip-grid>
+      <mat-hint>{{ mediaCategories().length }}/{{ maxCategoryCount }} categories</mat-hint>
+    </mat-form-field>
+    @if (categoryError(); as error) {
+      <p class="add-site-dialog__error" role="alert">{{ error }}</p>
+    }
   </form>
 
   <app-dialog-action-bar
@@ -92,7 +135,7 @@
     [submitLabel]="'Submit'"
     [submitFormId]="formId"
     [submitButtonType]="'submit'"
-    [submitDisabled]="!siteForm.valid || isCreating()"
+    [submitDisabled]="!siteForm.valid || isCreating() || isLoadingPresets() || presetLoadFailed() || categoryError() !== null"
     (cancel)="closeDialog()"
   />
 </app-dialog-shell>

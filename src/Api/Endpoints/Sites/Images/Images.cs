@@ -4,7 +4,6 @@ using Api.Endpoints.Sites;
 using Application.SeedWork.Security;
 using Application.Sites.Images.Commands;
 using Application.Sites.Images.Queries;
-using Domain.SeedWork.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -41,7 +40,7 @@ public class Images : EndpointGroupBase
     [RequestSizeLimit(MediaUploadValidation.ImageMaxRequestSize)]
     [RequestFormLimits(MultipartBodyLengthLimit = MediaUploadValidation.ImageMaxRequestSize)]
     private static async Task<Ok<UploadedImageResult>> AddImageToSite(IMediator mediator, [FromForm] IFormFile file,
-        [FromForm] ImageCategory? category,
+        [FromForm] string? category,
         Guid siteId,
         CancellationToken cancellationToken)
     {
@@ -54,9 +53,14 @@ public class Images : EndpointGroupBase
         return TypedResults.Ok(fileId);
     }
 
-    private static async Task<Ok<List<SiteImageIdsDto>>> GetImagesIdsBySiteId(IMediator mediator, Guid siteId)
+    private static async Task<Ok<List<SiteImageIdsDto>>> GetImagesIdsBySiteId(
+        IMediator mediator,
+        Guid siteId,
+        CancellationToken cancellationToken)
     {
-        var imagesIds = await mediator.Send(new GetImagesIdsBySiteIdQuery { SiteId = siteId });
+        var imagesIds = await mediator.Send(
+            new GetImagesIdsBySiteIdQuery { SiteId = siteId },
+            cancellationToken);
         return TypedResults.Ok(imagesIds);
     }
 }

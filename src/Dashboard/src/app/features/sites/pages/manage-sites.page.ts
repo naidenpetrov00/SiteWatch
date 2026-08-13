@@ -8,6 +8,7 @@ import { DashboardSite } from '../models/dashboard-site.model';
 import { DashboardSitesService } from '../services/dashboard-sites.service';
 import { EditSiteDialogComponent } from '../components/edit-site-dialog/edit-site-dialog.component';
 import { AddSiteDialogComponent } from '../components/add-site-dialog/add-site-dialog.component';
+import { formatMediaPolicyPreset } from '../models/site-media-policy-presets';
 
 const SITE_COLUMNS: readonly DataTableColumn<DashboardSite>[] = [
   {
@@ -53,7 +54,9 @@ const SITE_COLUMNS: readonly DataTableColumn<DashboardSite>[] = [
   },
   {
     key: 'mediaPolicy',
-    label: 'Media Policy'
+    label: 'Media Policy',
+    valueAccessor: (site) => site.mediaPolicy.preset,
+    displayFormatter: (_, site) => formatMediaPolicyPreset(site.mediaPolicy.preset)
   }
 ] as const;
 

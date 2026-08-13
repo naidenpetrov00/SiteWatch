@@ -4,7 +4,6 @@ using Api.Endpoints.Sites;
 using Application.SeedWork.Security;
 using Application.Sites.Videos.Commands;
 using Application.Sites.Videos.Queries;
-using Domain.SeedWork.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -50,7 +49,7 @@ public class Videos : EndpointGroupBase
     private static async Task<Ok<UploadedVideoResult>> AddVideoToSite(
         IMediator mediator,
         [FromForm] IFormFile file,
-        [FromForm] VideoCategory? category,
+        [FromForm] string? category,
         Guid siteId,
         CancellationToken cancellationToken)
     {
@@ -64,9 +63,14 @@ public class Videos : EndpointGroupBase
         return TypedResults.Ok(fileId);
     }
 
-    private static async Task<Ok<List<SiteVideoIdsDto>>> GetVideosIdsBySiteId(IMediator mediator, Guid siteId)
+    private static async Task<Ok<List<SiteVideoIdsDto>>> GetVideosIdsBySiteId(
+        IMediator mediator,
+        Guid siteId,
+        CancellationToken cancellationToken)
     {
-        var videosIds = await mediator.Send(new GetVideosIdsBySiteIdQuery { SiteId = siteId });
+        var videosIds = await mediator.Send(
+            new GetVideosIdsBySiteIdQuery { SiteId = siteId },
+            cancellationToken);
         return TypedResults.Ok(videosIds);
     }
 }

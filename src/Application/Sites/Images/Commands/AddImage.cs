@@ -1,6 +1,5 @@
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models.Internal;
-using Domain.SeedWork.Enums;
 using MediatR;
 
 namespace Application.Sites.Images.Commands;
@@ -8,7 +7,7 @@ namespace Application.Sites.Images.Commands;
 public sealed record AddImageCommand(
     Guid SiteId,
     UploadedFile File,
-    ImageCategory? Category)
+    string? Category)
     : IRequest<UploadedImageResult>;
 
 public class AddImageHandler(IBlobService blobService, IImagesService imagesService)
@@ -21,7 +20,7 @@ public class AddImageHandler(IBlobService blobService, IImagesService imagesServ
             cancellationToken);
 
         await imagesService.AddImageIdsToSiteAsync(request.SiteId, result.OriginalFileId, result.ThumbnailFileId,
-            request.Category!.Value,
+            request.Category!,
             cancellationToken);
 
         return result;

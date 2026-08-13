@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from "react-native";
+import { Pressable, ScrollView, Text } from "react-native";
 
 import { FilterType } from "../types";
 import { filtersStyles } from "./Filters.styles";
@@ -14,13 +14,21 @@ const Filters = ({ activeFilter, filters, setActiveFilter }: IFilters) => {
   const colorPalette = useColorPalette();
 
   return (
-    <View style={filtersStyles.filters}>
+    <ScrollView
+      horizontal
+      contentInsetAdjustmentBehavior="automatic"
+      contentContainerStyle={filtersStyles.filters}
+      showsHorizontalScrollIndicator={false}
+      style={filtersStyles.filterScroller}
+    >
       {filters.map((filter) => {
         const isActive = filter === activeFilter;
 
         return (
           <Pressable
             key={filter}
+            accessibilityRole="button"
+            accessibilityState={{ selected: isActive }}
             onPress={() => setActiveFilter(filter)}
             style={[
               filtersStyles.filterChip,
@@ -49,7 +57,7 @@ const Filters = ({ activeFilter, filters, setActiveFilter }: IFilters) => {
           </Pressable>
         );
       })}
-    </View>
+    </ScrollView>
   );
 };
 

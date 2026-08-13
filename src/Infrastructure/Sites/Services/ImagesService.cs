@@ -1,7 +1,6 @@
 using Application.SeedWork.Interfaces;
 using Application.Sites.Images.Queries;
 using Domain.Entities;
-using Domain.SeedWork.Enums;
 using FluentValidation;
 using FluentValidation.Results;
 using ImageMagick;
@@ -103,22 +102,36 @@ public class ImagesService(IApplicationDbContext dbContext) : IImagesService
             "The image content is invalid or does not match its declared type.")]);
 
 
-    public Task<List<SiteImageIdsDto>> GetImagesIdsBySiteId(Guid siteId) => dbContext.SiteImages
+    public Task<List<SiteImageIdsDto>> GetImagesIdsBySiteId(
+        Guid siteId,
+        CancellationToken cancellationToken = default) => dbContext.SiteImages
         .AsNoTracking()
         .Where(siteImage => siteImage.SiteId == siteId)
         .OrderByDescending(siteImage => siteImage.Created)
         .Select(siteImage => new SiteImageIdsDto(
             siteImage.ImageId,
             siteImage.ThumbnailImageId,
-            siteImage.Category.ToString(),
+            siteImage.Category,
             siteImage.Created))
-        .ToListAsync();
+        .ToListAsync(cancellationToken);
 
     public async Task AddImageIdsToSiteAsync(Guid requestSiteId, Guid resultOriginalFileId, Guid resultThumbnailFileId,
-        ImageCategory category,
+        string category,
         CancellationToken cancellationToken = default)
     {
-        dbContext.SiteImages.Add(new SiteImage(requestSiteId, resultOriginalFileId, resultThumbnailFileId,category));
+        var site = await dbContext.Sites
+            .AsNoTracking()
+            .SingleAsync(item => item.Id == requestSiteId, cancellationToken);
+        var canonicalCategory = site.MediaPolicy.ResolveCategory(category)
+            ?? throw new ValidationException([
+                new ValidationFailure("category", "Category is not allowed for this site.")
+            ]);
+
+        dbContext.SiteImages.Add(new SiteImage(
+            requestSiteId,
+            resultOriginalFileId,
+            resultThumbnailFileId,
+            canonicalCategory));
 
         await dbContext.SaveChangesAsync(cancellationToken);
     }

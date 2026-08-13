@@ -122,6 +122,10 @@ public class ApplicationDbContextInitialiser(
         var sites = new List<Site>
         {
             new("Central Office", "Vitosha 17", users[0].Id, startDate)
+            new(
+                "Vitosha Apartment Renovation",
+                "Vitosha 17",
+                SiteMediaPolicy.FromPreset(MediaPolicyPreset.ApartmentRenovation))
             {
                 Created = DateTimeOffset.UtcNow,
                 CreatedBy = "System",
@@ -129,6 +133,10 @@ public class ApplicationDbContextInitialiser(
                 LastModifiedBy = "System",
             },
             new("Regional Office North", "Dondukov 11", secondaryManager.Id, startDate)
+            new(
+                "Dondukov House Build",
+                "Dondukov 11",
+                SiteMediaPolicy.FromPreset(MediaPolicyPreset.HouseBuild))
             {
                 Created = DateTimeOffset.UtcNow,
                 CreatedBy = "System",
@@ -136,6 +144,10 @@ public class ApplicationDbContextInitialiser(
                 LastModifiedBy = "System",
             },
             new("Regional Office South", "Kestenova Gora 24", users[0].Id, startDate)
+            new(
+                "Kestenova Commercial Build",
+                "Kestenova Gora 24",
+                SiteMediaPolicy.FromPreset(MediaPolicyPreset.CommercialBuild))
             {
                 Created = DateTimeOffset.UtcNow,
                 CreatedBy = "System",

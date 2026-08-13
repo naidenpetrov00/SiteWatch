@@ -71,14 +71,45 @@
       <input matInput formControlName="address" />
     </mat-form-field>
 
+    <div class="edit-site-dialog__readonly-policy">
+      <span>Media Policy</span>
+      <strong>{{ mediaPolicyDisplayName }}</strong>
+    </div>
+
+    <div class="edit-site-dialog__policy-copy">
+      These categories are used as filters for the site’s images and videos in the mobile app.
+      Saved categories cannot be removed, but new categories can be added.
+    </div>
+
     <mat-form-field appearance="outline">
-      <mat-label>Media Policy</mat-label>
-      <mat-select formControlName="mediaPolicyPreset">
-        @for (preset of mediaPolicyPresets; track preset) {
-          <mat-option [value]="preset">{{ preset }}</mat-option>
+      <mat-label>Media Categories</mat-label>
+      <mat-chip-grid #categoryGrid aria-label="Media categories">
+        @for (category of savedCategoriesWithoutOther; track category) {
+          <mat-chip-row [removable]="false">{{ category }}</mat-chip-row>
         }
-      </mat-select>
+        @for (category of newMediaCategories(); track category) {
+          <mat-chip-row (removed)="removeNewCategory(category)">
+            {{ category }}
+            <button matChipRemove type="button" [attr.aria-label]="'Remove ' + category">×</button>
+          </mat-chip-row>
+        }
+        <mat-chip-row [removable]="false">{{ otherCategory }}</mat-chip-row>
+        <input
+          placeholder="Add category"
+          [maxLength]="maxCategoryLength"
+          [matChipInputFor]="categoryGrid"
+          [matChipInputSeparatorKeyCodes]="separatorKeyCodes"
+          [matChipInputAddOnBlur]="true"
+          (matChipInputTokenEnd)="addCategory($event)"
+        />
+      </mat-chip-grid>
+      <mat-hint>
+        {{ savedCategories.length + newMediaCategories().length }}/{{ maxCategoryCount }} categories
+      </mat-hint>
     </mat-form-field>
+    @if (categoryError(); as error) {
+      <p class="edit-site-dialog__error" role="alert">{{ error }}</p>
+    }
   </form>
 
   <app-dialog-action-bar
@@ -87,7 +118,7 @@
     [submitLabel]="'Save'"
     [submitFormId]="formId"
     [submitButtonType]="'submit'"
-    [submitDisabled]="!siteForm.valid || isSaving()"
+    [submitDisabled]="!siteForm.valid || isSaving() || categoryError() !== null"
     (cancel)="closeDialog()"
   />
 </app-dialog-shell>

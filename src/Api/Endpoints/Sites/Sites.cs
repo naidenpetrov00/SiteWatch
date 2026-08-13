@@ -23,6 +23,7 @@ public class Sites : EndpointGroupBase
             .RequireAuthorization(AuthorizationPolicies.Administrator);
         group.MapGet("/sitesByUser/{userId:guid}", SitesByUser).RequireAuthorization();
         dashboardGroup.MapGet("/sites", GetDashboardSites);
+        dashboardGroup.MapGet("/sites/media-policy-presets", GetMediaPolicyPresets);
         dashboardGroup.MapGet("/sites/search", SearchDashboardSites);
         dashboardGroup.MapGet("/sites/{siteId:guid}", GetDashboardSite);
         dashboardGroup.MapPut("/sites/{siteId:guid}", UpdateDashboardSite);
@@ -30,34 +31,50 @@ public class Sites : EndpointGroupBase
 
     private static async Task<Ok<List<SitesDto>>> SitesByUser(
         IMediator mediator,
-        [AsParameters] SitesByUserQuery query
+        [AsParameters] SitesByUserQuery query,
+        CancellationToken cancellationToken
     )
     {
-        var sites = await mediator.Send(query);
+        var sites = await mediator.Send(query, cancellationToken);
         return TypedResults.Ok(sites);
     }
 
-    private static async Task<IResult> CreateSite(IMediator mediator, CreateSiteCommand command)
+    private static async Task<IResult> CreateSite(
+        IMediator mediator,
+        CreateSiteCommand command,
+        CancellationToken cancellationToken)
     {
-        var siteId = await mediator.Send(command);
+        var siteId = await mediator.Send(command, cancellationToken);
         return TypedResults.Created($"/dashboard/sites/{siteId}", new { id = siteId });
     }
 
     private static async Task<Ok<PagedResult<DashboardSiteDto>>> GetDashboardSites(
         IMediator mediator,
-        [AsParameters] DashboardSitesQuery query
+        [AsParameters] DashboardSitesQuery query,
+        CancellationToken cancellationToken
     )
     {
-        var sites = await mediator.Send(query);
+        var sites = await mediator.Send(query, cancellationToken);
         return TypedResults.Ok(sites);
+    }
+
+    private static async Task<Ok<IReadOnlyList<SiteMediaPolicyPresetDto>>> GetMediaPolicyPresets(
+        IMediator mediator,
+        CancellationToken cancellationToken)
+    {
+        var presets = await mediator.Send(new SiteMediaPolicyPresetsQuery(), cancellationToken);
+        return TypedResults.Ok(presets);
     }
 
     private static async Task<Ok<DashboardSiteDto>> GetDashboardSite(
         IMediator mediator,
-        Guid siteId
+        Guid siteId,
+        CancellationToken cancellationToken
     )
     {
-        var site = await mediator.Send(new DashboardSiteByIdQuery { SiteId = siteId });
+        var site = await mediator.Send(
+            new DashboardSiteByIdQuery { SiteId = siteId },
+            cancellationToken);
         return TypedResults.Ok(site);
     }
 
@@ -73,11 +90,12 @@ public class Sites : EndpointGroupBase
     private static async Task<NoContent> UpdateDashboardSite(
         IMediator mediator,
         Guid siteId,
-        UpdateSiteCommand command
+        UpdateSiteCommand command,
+        CancellationToken cancellationToken
     )
     {
         command.Id = siteId;
-        await mediator.Send(command);
+        await mediator.Send(command, cancellationToken);
         return TypedResults.NoContent();
     }
 }
