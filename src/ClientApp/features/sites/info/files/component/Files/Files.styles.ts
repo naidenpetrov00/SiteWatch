@@ -14,10 +14,16 @@ const filesStyles = StyleSheet.create({
     marginBottom: 20,
     fontSize: 14,
   },
+  filterScroller: {
+    flexGrow: 0,
+    flexShrink: 0,
+    height: 46,
+  },
   filters: {
+    alignItems: "center",
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 10,
+    paddingRight: 16,
   },
   filterGroup: {
     gap: 8,
