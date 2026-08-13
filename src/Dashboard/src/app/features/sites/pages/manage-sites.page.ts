@@ -36,6 +36,22 @@ const SITE_COLUMNS: readonly DataTableColumn<DashboardSite>[] = [
     filter: { kind: 'text', placeholder: 'Filter Address' }
   },
   {
+    key: 'managerDisplayName',
+    label: 'Site Manager'
+  },
+  {
+    key: 'startDate',
+    label: 'Start Date'
+  },
+  {
+    key: 'endDate',
+    label: 'End Date'
+  },
+  {
+    key: 'status',
+    label: 'Status'
+  },
+  {
     key: 'mediaPolicy',
     label: 'Media Policy'
   }

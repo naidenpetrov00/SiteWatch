@@ -3,5 +3,10 @@ export interface DashboardSite {
   numberId: number;
   name: string;
   address: string;
+  managerId: string;
+  managerDisplayName: string;
+  startDate: string;
+  endDate: string | null;
+  status: string;
   mediaPolicy: string;
 }

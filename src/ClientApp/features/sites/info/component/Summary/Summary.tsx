@@ -2,25 +2,21 @@ import { Text, View } from "react-native";
 
 import summaryStyles from "./Summary.styles";
 import { useColorPalette } from "@/hooks/useColorPalette";
+import { Site } from "@/features/sites/api/types";
+import { formatSiteDate, formatSiteDuration } from "../site-info-formatters";
 
-const Summary = () => {
+type SummaryProps = {
+  site: Site;
+};
+
+const Summary = ({ site }: SummaryProps) => {
   const colorPalette = useColorPalette();
-  const siteSummary = {
-    name: "North Gate Logistics Hub",
-    address: "1420 Industrial Park Rd, Building C, Sofia",
-    status: "Operational",
-    manager: "Elena Petrova",
-    camerasOnline: "18 / 20",
-    schedule: "03 Mar 2026 - 18 Apr 2026",
-    currentDuration: "3 weeks, 1 day",
-  };
 
   const details = [
-    { label: "Status", value: siteSummary.status },
-    { label: "Site Manager", value: siteSummary.manager },
-    { label: "Cameras Online", value: siteSummary.camerasOnline },
-    { label: "Start / End Date", value: siteSummary.schedule },
-    { label: "Current Duration", value: siteSummary.currentDuration },
+    { label: "Status", value: site.status },
+    { label: "Site Manager", value: site.managerDisplayName },
+    { label: "Start / End Date", value: `${formatSiteDate(site.startDate)} - ${formatSiteDate(site.endDate)}` },
+    { label: "Current Duration", value: formatSiteDuration(site.startDate, site.endDate) },
   ];
 
   return (
@@ -35,12 +31,12 @@ const Summary = () => {
         ]}
       >
         <Text style={[summaryStyles.title, { color: colorPalette.text }]}>
-          {siteSummary.name}
+          {site.name}
         </Text>
         <Text
           style={[summaryStyles.address, { color: colorPalette.secondary }]}
         >
-          {siteSummary.address}
+          {site.address}
         </Text>
 
         <View
@@ -55,7 +51,7 @@ const Summary = () => {
               { color: colorPalette.background },
             ]}
           >
-            {siteSummary.status}
+            {site.status}
           </Text>
         </View>
 

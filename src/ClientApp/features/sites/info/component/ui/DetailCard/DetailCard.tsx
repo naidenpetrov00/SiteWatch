@@ -18,8 +18,7 @@ const DetailCard = ({ path, siteId, children, style }: IDetailCard) => {
   const router = useRouter();
 
   const handleOnPress = () => {
-    if (!siteId) {
-      console.warn("siteId missing, cannot navigate");
+    if (!siteId || !path) {
       return;
     }
 
@@ -32,7 +31,7 @@ const DetailCard = ({ path, siteId, children, style }: IDetailCard) => {
     <Card
       backgroundColor={colorPalette.background}
       borderColor={colorPalette.primary}
-      onPress={handleOnPress}
+      onPress={path ? handleOnPress : undefined}
       style={[detailCardStyles.card, style]}
     >
       {children}

@@ -9,27 +9,27 @@ import { ACCESS_POLICIES } from "@/types/authorization";
 import { useAuth } from "@/store/auth_context";
 
 const detailCards: DetailsCardItem[] = [
-  { label: "Images", value: "24", helper: "Galery", path: "Images" },
-  { label: "Videos", value: "—", helper: "Galery", path: "Videos" },
+  { label: "Images", value: "View", helper: "Gallery", path: "Images" },
+  { label: "Videos", value: "View", helper: "Gallery", path: "Videos" },
   {
     label: "Invoices",
-    value: "—",
+    value: "View",
     helper: "Billing documents",
     path: "Invoices",
     allowedRoles: ACCESS_POLICIES.siteInvoices,
   },
-  { label: "Files", value: "—", helper: "Files", path: "Files" },
+  { label: "Files", value: "View", helper: "Files", path: "Files" },
   {
     label: "People On Site",
-    value: "27",
-    helper: "11 contractors active",
+    value: "Unavailable",
+    helper: "Not available yet",
   },
   {
     label: "Open Issues",
-    value: "2",
-    helper: "1 camera, 1 gate sensor",
+    value: "Unavailable",
+    helper: "Not available yet",
   },
-  { label: "Payments", value: "2000", helper: "All" },
+  { label: "Payments", value: "Unavailable", helper: "Not available yet" },
 ];
 
 const Details = () => {

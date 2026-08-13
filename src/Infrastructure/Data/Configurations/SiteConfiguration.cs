@@ -13,6 +13,19 @@ public class SiteConfiguration : IEntityTypeConfiguration<Site>
     public void Configure(EntityTypeBuilder<Site> builder)
     {
         builder.HasMany(site => site.Users).WithMany(user => user.Sites);
+        builder.HasOne(site => site.Manager)
+            .WithMany(user => user.ManagedSites)
+            .HasForeignKey(site => site.ManagerId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Property(site => site.Status)
+            .HasConversion<string>()
+            .HasMaxLength(32)
+            .IsRequired();
+
+        builder.Property(site => site.StartDate).IsRequired();
+        builder.Property(site => site.EndDate);
 
         builder.Property(site => site.NumberId)
             .ValueGeneratedOnAdd()

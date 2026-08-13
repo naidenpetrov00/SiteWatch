@@ -23,6 +23,50 @@
     </mat-form-field>
 
     <mat-form-field appearance="outline">
+      <mat-label>Site Manager</mat-label>
+      <input
+        matInput
+        [formControl]="managerSearchControl"
+        [matAutocomplete]="managerAutocomplete"
+        autocomplete="off"
+        inputmode="search"
+      />
+      <mat-hint>Search by username or email.</mat-hint>
+      @if (managerSearchControl.touched && siteForm.controls.managerId.hasError('required')) {
+        <mat-error>Site Manager is required.</mat-error>
+      }
+    </mat-form-field>
+    <mat-autocomplete
+      #managerAutocomplete="matAutocomplete"
+      [displayWith]="displayManagerSearchValue"
+      (optionSelected)="onManagerSelected($event)"
+    >
+      @for (manager of managerSearchResults(); track manager.id) {
+        <mat-option [value]="manager">
+          {{ manager.displayName }}
+          @if (manager.email) {
+            · {{ manager.email }}
+          }
+        </mat-option>
+      }
+    </mat-autocomplete>
+
+    <app-datepicker label="Start Date" [control]="siteForm.controls.startDate" />
+    <app-datepicker label="End Date" [control]="siteForm.controls.endDate" [showRequiredError]="false" />
+    @if (siteForm.controls.endDate.touched && siteForm.controls.endDate.hasError('dateRange')) {
+      <p class="edit-site-dialog__error">End Date cannot be before Start Date.</p>
+    }
+
+    <mat-form-field appearance="outline">
+      <mat-label>Status</mat-label>
+      <mat-select formControlName="status">
+        @for (status of siteStatuses; track status) {
+          <mat-option [value]="status">{{ status }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
       <mat-label>Address</mat-label>
       <input matInput formControlName="address" />
     </mat-form-field>

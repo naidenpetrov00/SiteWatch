@@ -6,6 +6,7 @@ import { injectQuery } from '@tanstack/angular-query-experimental';
 import { buildApiUrl } from '../../../core/api/api-url';
 import { DataTableState } from '../../../shared/data-table/data-table.types';
 import { DashboardUser } from '../models/dashboard-user.model';
+import { DashboardUserLookup } from '../models/dashboard-user-lookup.model';
 import { DashboardUsersResponse } from '../models/dashboard-users-response.model';
 
 interface DashboardUsersQueryState {
@@ -53,6 +54,20 @@ export class DashboardUsersService {
     }
 
     this.queryState.set(nextState);
+  }
+
+  searchUsers(searchTerm: string): Promise<readonly DashboardUserLookup[]> {
+    const normalizedSearchTerm = searchTerm.trim();
+
+    if (normalizedSearchTerm.length === 0) {
+      return Promise.resolve([]);
+    }
+
+    return firstValueFrom(
+      this.http.get<readonly DashboardUserLookup[]>(buildApiUrl('/dashboard/users/search'), {
+        params: new HttpParams().set('searchTerm', normalizedSearchTerm)
+      })
+    );
   }
 
   private toQueryState(state: DataTableState<DashboardUser>): DashboardUsersQueryState {

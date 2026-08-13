@@ -17,3 +17,9 @@
   font-weight: 500;
   overflow-wrap: anywhere;
 }
+
+.edit-site-dialog__error {
+  margin: -0.75rem 0 0;
+  color: var(--mat-sys-error);
+  font-size: 0.75rem;
+}
