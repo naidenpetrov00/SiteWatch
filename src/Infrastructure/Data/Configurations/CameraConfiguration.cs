@@ -11,6 +11,9 @@ public class CameraConfiguration : IEntityTypeConfiguration<Camera>
     public void Configure(EntityTypeBuilder<Camera> builder)
     {
         builder.HasOne(site => site.Site).WithMany(site => site.Cameras);
+        builder.Property(camera => camera.NumberId)
+            .HasDefaultValueSql("NEXT VALUE FOR [dbo].[CameraNumberIds]");
+        builder.HasIndex(camera => camera.NumberId);
 
         builder.OwnsOne(
             c => c.CameraName,

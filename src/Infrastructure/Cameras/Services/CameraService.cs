@@ -1,9 +1,11 @@
 using Application.Cameras.Queries;
+using Application.Cameras.Commands;
 using Application.SeedWork.Interfaces;
 using Ardalis.GuardClauses;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Domain.Entities;
+using Domain.SeedWork.Enums;
 using Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
@@ -57,4 +59,51 @@ public class CameraService(IApplicationDbContext dbContext, IMapper mapper) : IC
 
         await dbContext.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<Guid> CreateDashboardCameraAsync(CameraUpsertDto request, CancellationToken cancellationToken)
+    {
+        var camera = Camera.Create(
+            request.Name,
+            CameraBrand.Create(ParseBrand(request.Brand), request.Model),
+            request.Username,
+            request.Password,
+            request.IpAddress,
+            request.RtspPort,
+            request.SiteId);
+        camera.UpdatePtzPort(request.PtzPort);
+
+        await dbContext.Cameras.AddAsync(camera, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return camera.Id;
+    }
+
+    public async Task UpdateDashboardCameraAsync(Guid cameraId, CameraUpsertDto request, CancellationToken cancellationToken)
+    {
+        var camera = await _GetCameraAsync(cameraId);
+        camera.UpdateName(request.Name);
+        camera.UpdateBrand(CameraBrand.Create(ParseBrand(request.Brand), request.Model));
+        camera.UpdateUsername(request.Username);
+        camera.UpdatePassword(request.Password);
+        camera.UpdateIpAddress(request.IpAddress);
+        camera.UpdateRtspPort(request.RtspPort);
+        camera.UpdatePtzPort(request.PtzPort);
+        camera.AssignToSite(request.SiteId);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task DeleteCameraAsync(Guid cameraId, CancellationToken cancellationToken)
+    {
+        var deletedRows = await dbContext.Cameras
+            .Where(camera => camera.Id == cameraId)
+            .ExecuteDeleteAsync(cancellationToken);
+
+        if (deletedRows == 0)
+        {
+            throw new NotFoundException(nameof(Camera), cameraId.ToString());
+        }
+    }
+
+    private static Brand ParseBrand(string value) =>
+        Enum.Parse<Brand>(value, ignoreCase: true);
 }

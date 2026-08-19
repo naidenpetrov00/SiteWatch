@@ -1,0 +1,4 @@
+<app-dialog-shell eyebrow="Administration" title="Delete Camera" subtitle="This action cannot be undone.">
+  <p>Delete camera #{{ camera.numberId }} — {{ camera.name }}?</p>
+  <app-dialog-action-bar dialog-shell-actions cancelLabel="Cancel" submitLabel="Delete" (cancel)="cancel()" (submit)="confirm()" />
+</app-dialog-shell>

@@ -1,3 +1,4 @@
+using Application.Cameras.Commands;
 using Application.Cameras.Queries;
 using Domain.Entities;
 using Domain.ValueObjects;
@@ -21,4 +22,7 @@ public interface ICameraService
     );
 
     Task UpdateAdrressCameraAsync(Guid cameraId, string? ipAddress, int ptzPort, CancellationToken cancellationToken);
+    Task<Guid> CreateDashboardCameraAsync(CameraUpsertDto request, CancellationToken cancellationToken);
+    Task UpdateDashboardCameraAsync(Guid cameraId, CameraUpsertDto request, CancellationToken cancellationToken);
+    Task DeleteCameraAsync(Guid cameraId, CancellationToken cancellationToken);
 }

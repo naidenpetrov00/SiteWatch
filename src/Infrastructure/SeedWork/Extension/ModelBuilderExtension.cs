@@ -16,5 +16,8 @@ internal static class ModelBuilderExtension
         modelBuilder.HasSequence<int>("ApplicationUserNumberIds", "dbo")
             .StartsAt(1)
             .IncrementsBy(1);
+        modelBuilder.HasSequence<int>("CameraNumberIds", "dbo")
+            .StartsAt(1)
+            .IncrementsBy(1);
     }
 }

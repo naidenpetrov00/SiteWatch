@@ -3,8 +3,9 @@ using Domain.ValueObjects;
 
 namespace Domain.Entities;
 
-public sealed class Camera : BaseAuditableEntity
+public sealed class Camera : BaseAuditableEntity, IHasNumberId
 {
+    public int NumberId { get; private set; }
     public CameraName CameraName { get; private set; } = null!;
     public CameraBrand CameraBrand { get; private set; } = null!;
     public string? Username { get; private set; }
@@ -50,9 +51,12 @@ public sealed class Camera : BaseAuditableEntity
     public void RemoveFromSite() => Site = null;
 
     public void UpdateIpAddress(string? ipAddress) => IpAddress = ipAddress;
-    public void UpdateRtspPort(int port) => RtspPort = port;
-    public void UpdatePtzPort(int port) => PtzPort = port;
+    public void UpdateRtspPort(int? port) => RtspPort = port;
+    public void UpdatePtzPort(int? port) => PtzPort = port;
 
-    public void UpdateUsername(string username) => Username = username;
-    public void UpdatePassword(string password) => Password = password;
+    public void UpdateName(CameraName cameraName) => CameraName = cameraName;
+    public void UpdateBrand(CameraBrand cameraBrand) => CameraBrand = cameraBrand;
+    public void UpdateUsername(string? username) => Username = username;
+    public void UpdatePassword(string? password) => Password = password;
+    public void AssignToSite(Guid siteId) => SiteId = siteId;
 }
