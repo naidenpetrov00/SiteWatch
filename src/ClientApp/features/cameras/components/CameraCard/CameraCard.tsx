@@ -24,6 +24,7 @@ const CameraCard: React.FC<Props> = ({ camera, onPress }) => {
   } = useGetCameraSnapshot({
     data: {
       ipAddress: camera.ipAddress,
+      protocol: camera.protocol,
       username: camera.username,
       password: camera.password,
     },

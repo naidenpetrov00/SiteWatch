@@ -16,6 +16,7 @@ import { DashboardCameraDetails } from '../../models/dashboard-camera-details.mo
 import { DashboardCamerasService } from '../../services/dashboard-cameras.service';
 
 const BRAND_OPTIONS = ['Dahua'] as const;
+const PROTOCOL_OPTIONS = ['Http', 'Https'] as const;
 
 @Component({
   selector: 'app-edit-camera-dialog',
@@ -34,6 +35,7 @@ export class EditCameraDialogComponent {
   readonly camera = inject(MAT_DIALOG_DATA) as DashboardCameraDetails;
 
   readonly brands = BRAND_OPTIONS;
+  readonly protocols = PROTOCOL_OPTIONS;
   readonly siteResults = signal<readonly DashboardSiteLookup[]>([]);
   readonly siteSearchControl = this.formBuilder.control<string | DashboardSiteLookup | null>(this.camera.siteName ?? '');
   readonly formId = 'edit-camera-dialog-form';
@@ -47,6 +49,7 @@ export class EditCameraDialogComponent {
     ipAddress: [this.camera.ipAddress ?? '', [Validators.maxLength(39)]],
     rtspPort: [this.camera.rtspPort ?? 554, [Validators.required, Validators.min(1), Validators.max(65535)]],
     ptzPort: [this.camera.ptzPort ?? 443, [Validators.required, Validators.min(1), Validators.max(65535)]],
+    protocol: [this.camera.protocol, [Validators.required]],
     siteId: [this.camera.siteId ?? '', [Validators.required]]
   });
   readonly displaySite = (value: string | DashboardSiteLookup | null): string => typeof value === 'string' ? value : value?.name ?? '';

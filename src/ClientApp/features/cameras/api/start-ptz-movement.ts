@@ -10,6 +10,7 @@ import {z} from "zod";
 
 export const startPtzMovementSchema = z.object({
     ipAddress: z.string().min(1),
+    protocol: z.enum(["Http", "Https"]),
     port: z.number(),
     username: z.string().min(2),
     password: z.string().min(2),
@@ -23,6 +24,7 @@ export type StartPtzMovementInput = z.infer<typeof startPtzMovementSchema>;
 
 export const startPtzMovement = async ({
                                            ipAddress,
+                                           protocol,
                                            port,
                                            username,
                                            password,
@@ -40,7 +42,7 @@ export const startPtzMovement = async ({
         arg2: String(arg2),
         arg3: String(arg3),
     }).toString();
-    const url = buildPtzBaseUrl(ipAddress, port, query);
+    const url = buildPtzBaseUrl(protocol, ipAddress, port, query);
     console.log(url)
     const response = await client.fetch(url);
     console.log("after")

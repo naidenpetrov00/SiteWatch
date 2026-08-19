@@ -7,6 +7,7 @@ export interface CameraRequest {
   ipAddress: string | null;
   rtspPort: number;
   ptzPort: number;
+  protocol: string;
   siteId: string;
 }
 

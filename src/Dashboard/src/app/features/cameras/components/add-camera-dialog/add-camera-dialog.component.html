@@ -10,6 +10,7 @@
     <mat-form-field appearance="outline"><mat-label>IP Address</mat-label><input matInput formControlName="ipAddress" maxlength="39" /></mat-form-field>
     <mat-form-field appearance="outline"><mat-label>RTSP Port</mat-label><input matInput type="number" formControlName="rtspPort" min="1" max="65535" /></mat-form-field>
     <mat-form-field appearance="outline"><mat-label>PTZ Port</mat-label><input matInput type="number" formControlName="ptzPort" min="1" max="65535" /></mat-form-field>
+    <mat-form-field appearance="outline"><mat-label>Protocol</mat-label><mat-select formControlName="protocol">@for (protocol of protocols; track protocol) { <mat-option [value]="protocol">{{ protocol.toUpperCase() }}</mat-option> }</mat-select></mat-form-field>
   </form>
   <app-dialog-action-bar dialog-shell-actions cancelLabel="Cancel" submitLabel="Add Camera" [submitFormId]="formId" submitButtonType="submit" [submitDisabled]="cameraForm.invalid || isCreating()" (cancel)="closeDialog()" />
 </app-dialog-shell>

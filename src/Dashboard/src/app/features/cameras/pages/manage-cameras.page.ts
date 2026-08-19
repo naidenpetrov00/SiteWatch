@@ -20,6 +20,7 @@ const CAMERA_COLUMNS: readonly DataTableColumn<DashboardCamera>[] = [
   { key: 'ipAddress', label: 'IP Address', sortable: true, filter: { kind: 'text', placeholder: 'Filter IP Address' } },
   { key: 'rtspPort', label: 'RTSP Port' },
   { key: 'ptzPort', label: 'PTZ Port' },
+  { key: 'protocol', label: 'Protocol' },
   { key: 'siteName', label: 'Site', sortable: true, filter: { kind: 'text', placeholder: 'Filter Site' } },
   { key: 'junk', label: 'Junk', cellType: 'button', sortable: false, valueAccessor: () => 'Junk' }
 ] as const;

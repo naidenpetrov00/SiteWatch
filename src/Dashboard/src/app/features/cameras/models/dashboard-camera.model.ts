@@ -7,6 +7,7 @@ export interface DashboardCamera {
   ipAddress: string | null;
   rtspPort: number | null;
   ptzPort: number | null;
+  protocol: string;
   siteId: string | null;
   siteName: string | null;
   junk?: null;

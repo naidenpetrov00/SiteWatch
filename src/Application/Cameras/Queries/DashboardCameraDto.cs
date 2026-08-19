@@ -11,6 +11,7 @@ public sealed record DashboardCameraDto(
     string? IpAddress,
     int? RtspPort,
     int? PtzPort,
+    string Protocol,
     Guid? SiteId,
     string? SiteName)
 {
@@ -23,6 +24,7 @@ public sealed record DashboardCameraDto(
         camera.IpAddress,
         camera.RtspPort,
         camera.PtzPort,
+        camera.Protocol.ToString(),
         camera.SiteId,
         camera.Site?.Name.Value);
 }
@@ -38,6 +40,7 @@ public sealed record DashboardCameraDetailsDto(
     string? IpAddress,
     int? RtspPort,
     int? PtzPort,
+    string Protocol,
     Guid? SiteId,
     string? SiteName)
 {
@@ -52,6 +55,7 @@ public sealed record DashboardCameraDetailsDto(
         camera.IpAddress,
         camera.RtspPort,
         camera.PtzPort,
+        camera.Protocol.ToString(),
         camera.SiteId,
         camera.Site?.Name.Value);
 }

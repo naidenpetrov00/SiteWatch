@@ -33,9 +33,10 @@ const CameraManagmentCard = ({
 
   const { isFetching, refetch } = useGetCameraSnapshot({
     data: {
-      ipAddress: camera?.ipAddress,
-      username: camera?.username,
-      password: camera?.password,
+      ipAddress: camera.ipAddress,
+      protocol: camera.protocol,
+      username: camera.username,
+      password: camera.password,
     },
   });
 

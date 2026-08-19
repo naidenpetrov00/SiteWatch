@@ -7,6 +7,8 @@ import {z} from "zod";
 
 export const stopPtzMovementSchema = z.object({
     ipAddress: z.string().min(1),
+    protocol: z.enum(["Http", "Https"]),
+    port: z.number(),
     username: z.string().min(2),
     password: z.string().min(2),
     direction: ptzDirectionSchema,
@@ -19,6 +21,8 @@ export type StopPtzMovementInput = z.infer<typeof stopPtzMovementSchema>;
 
 export const stopPtzMovement = async ({
                                           ipAddress,
+                                          protocol,
+                                          port,
                                           username,
                                           password,
                                           direction,
@@ -35,7 +39,7 @@ export const stopPtzMovement = async ({
         arg2: String(arg2),
         arg3: String(arg3),
     }).toString();
-    const url = buildPtzBaseUrl(ipAddress, query);
+    const url = buildPtzBaseUrl(protocol, ipAddress, port, query);
     console.log(url)
     const response = await client.fetch(url);
     console.log("after")

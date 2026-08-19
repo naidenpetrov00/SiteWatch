@@ -12,6 +12,7 @@ public abstract record CameraUpsertDto
     public string? IpAddress { get; init; }
     public int RtspPort { get; init; }
     public int PtzPort { get; init; }
+    public string Protocol { get; init; } = string.Empty;
     public Guid SiteId { get; init; }
 }
 
@@ -32,6 +33,11 @@ public class CameraUpsertValidator<TRequest> : AbstractValidator<TRequest>
         RuleFor(camera => camera.IpAddress).MaximumLength(39);
         RuleFor(camera => camera.RtspPort).InclusiveBetween(1, 65535);
         RuleFor(camera => camera.PtzPort).InclusiveBetween(1, 65535);
+        RuleFor(camera => camera.Protocol)
+            .NotEmpty()
+            .Must(value => string.Equals(value, nameof(Domain.SeedWork.Enums.CameraProtocol.Http), StringComparison.OrdinalIgnoreCase)
+                || string.Equals(value, nameof(Domain.SeedWork.Enums.CameraProtocol.Https), StringComparison.OrdinalIgnoreCase))
+            .WithMessage("Protocol must be HTTP or HTTPS.");
         RuleFor(camera => camera.SiteId).NotEmpty();
     }
 }

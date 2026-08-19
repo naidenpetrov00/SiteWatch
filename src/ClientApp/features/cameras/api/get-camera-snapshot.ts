@@ -8,7 +8,7 @@ import { z } from "zod";
 
 export const getCameraSnapshotSchema = z.object({
   ipAddress: z.string().min(1),
-  port: z.number(),
+  protocol: z.enum(["Http", "Https"]),
   username: z.string().min(2),
   password: z.string().min(2),
   channel: z.number().int().optional(),
@@ -21,7 +21,7 @@ const SNAPSHOT_TIMEOUT_MS = 10_000;
 
 export const getCameraSnapshot = async ({
   ipAddress,
-  port,
+  protocol,
   username,
   password,
   channel = 1,
@@ -32,7 +32,7 @@ export const getCameraSnapshot = async ({
     channel: String(channel),
     type: String(type),
   }).toString();
-  const url = buildSnapshotBaseUrl(ipAddress, port, query);
+  const url = buildSnapshotBaseUrl(protocol, ipAddress, query);
   console.log(`URL: ${url}`);
 
   const controller = new AbortController();
@@ -83,7 +83,7 @@ export const useGetCameraSnapshot = ({
   queryConfig,
 }: UseGetCameraSnapshotOptions) => {
   return useQuery({
-    queryKey: ["camera-snapshot", data.ipAddress],
+    queryKey: ["camera-snapshot", data.protocol, data.ipAddress],
     queryFn: () => getCameraSnapshot(data),
     retry: false,
     refetchOnWindowFocus: false,

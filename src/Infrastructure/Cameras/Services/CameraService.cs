@@ -69,7 +69,8 @@ public class CameraService(IApplicationDbContext dbContext, IMapper mapper) : IC
             request.Password,
             request.IpAddress,
             request.RtspPort,
-            request.SiteId);
+            request.SiteId,
+            ParseProtocol(request.Protocol));
         camera.UpdatePtzPort(request.PtzPort);
 
         await dbContext.Cameras.AddAsync(camera, cancellationToken);
@@ -87,6 +88,7 @@ public class CameraService(IApplicationDbContext dbContext, IMapper mapper) : IC
         camera.UpdateIpAddress(request.IpAddress);
         camera.UpdateRtspPort(request.RtspPort);
         camera.UpdatePtzPort(request.PtzPort);
+        camera.UpdateProtocol(ParseProtocol(request.Protocol));
         camera.AssignToSite(request.SiteId);
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -106,4 +108,7 @@ public class CameraService(IApplicationDbContext dbContext, IMapper mapper) : IC
 
     private static Brand ParseBrand(string value) =>
         Enum.Parse<Brand>(value, ignoreCase: true);
+
+    private static CameraProtocol ParseProtocol(string value) =>
+        Enum.Parse<CameraProtocol>(value, ignoreCase: true);
 }

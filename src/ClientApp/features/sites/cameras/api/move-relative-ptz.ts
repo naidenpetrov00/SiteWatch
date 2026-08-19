@@ -7,6 +7,7 @@ import {z} from "zod";
 
 export const moveRelativePtzSchema = z.object({
     ipAddress: z.string().min(1),
+    protocol: z.enum(["Http", "Https"]),
     port: z.number(),
     username: z.string().min(2),
     password: z.string().min(2),
@@ -19,6 +20,7 @@ export type MoveRelativePtzInput = z.infer<typeof moveRelativePtzSchema>;
 
 export const moveRelativePtz = async ({
                                           ipAddress,
+                                          protocol,
                                           port,
                                           username,
                                           password,
@@ -34,7 +36,7 @@ export const moveRelativePtz = async ({
         arg2: String(arg2),
         arg3: String(arg3),
     }).toString();
-    const url = buildPtzBaseUrl(ipAddress, port, query);
+    const url = buildPtzBaseUrl(protocol, ipAddress, port, query);
     const response = await client.fetch(url);
 
     if (!response.ok) {

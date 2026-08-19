@@ -52,6 +52,8 @@ const CameraJoystick = ({
     const handleStart = (direction: PtzDirection) => {
         startPtzMovement({
             ipAddress: camera.ipAddress,
+            protocol: camera.protocol,
+            port: camera.port,
 
             username: camera.username,
             password: camera.password,
@@ -62,6 +64,8 @@ const CameraJoystick = ({
     const handleStop = (direction: PtzDirection) => {
         stopPtzMovement({
             ipAddress: camera.ipAddress,
+            protocol: camera.protocol,
+            port: camera.port,
             username: camera.username,
             password: camera.password,
             direction,
@@ -80,6 +84,7 @@ const CameraJoystick = ({
 
         moveRelativePtz({
             ipAddress: camera.ipAddress,
+            protocol: camera.protocol,
             port: camera.port,
             username: camera.username,
             password: camera.password,

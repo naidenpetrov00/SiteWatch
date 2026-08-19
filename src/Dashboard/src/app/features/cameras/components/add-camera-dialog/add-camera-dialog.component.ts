@@ -15,6 +15,7 @@ import { DashboardSitesService } from '../../../sites/services/dashboard-sites.s
 import { DashboardCamerasService } from '../../services/dashboard-cameras.service';
 
 const BRAND_OPTIONS = ['Dahua'] as const;
+const PROTOCOL_OPTIONS = ['Http', 'Https'] as const;
 
 @Component({
   selector: 'app-add-camera-dialog',
@@ -32,6 +33,7 @@ export class AddCameraDialogComponent {
   private readonly dashboardSitesService = inject(DashboardSitesService);
 
   readonly brands = BRAND_OPTIONS;
+  readonly protocols = PROTOCOL_OPTIONS;
   readonly siteResults = signal<readonly DashboardSiteLookup[]>([]);
   readonly siteSearchControl = this.formBuilder.control<string | DashboardSiteLookup | null>('');
   readonly formId = 'add-camera-dialog-form';
@@ -45,6 +47,7 @@ export class AddCameraDialogComponent {
     ipAddress: ['', [Validators.maxLength(39)]],
     rtspPort: [554, [Validators.required, Validators.min(1), Validators.max(65535)]],
     ptzPort: [443, [Validators.required, Validators.min(1), Validators.max(65535)]],
+    protocol: ['Https', [Validators.required]],
     siteId: ['', [Validators.required]]
   });
   readonly displaySite = (value: string | DashboardSiteLookup | null): string => typeof value === 'string' ? value : value?.name ?? '';
