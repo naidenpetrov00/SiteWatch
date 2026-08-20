@@ -15,7 +15,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Cameras.Services;
 
-public sealed class CameraService(IApplicationDbContext dbContext, IMapper mapper) : ICameraService
+public sealed class CameraService(
+    IApplicationDbContext dbContext,
+    IMapper mapper,
+    ILogger<CameraService> logger) : ICameraService
 {
     private const int CameraChannel = 1;
     private const int PtzSpeed = 5;
@@ -57,8 +60,17 @@ public sealed class CameraService(IApplicationDbContext dbContext, IMapper mappe
                 new("type", "0"),
             ]);
 
+        logger.LogInformation(
+            "Requesting snapshot from camera {CameraId} at {CameraUri}.",
+            camera.Id,
+            snapshotUri);
         using var client = CreateDahuaClient(camera);
         using var response = await SendGetAsync(client, snapshotUri, cancellationToken);
+        logger.LogInformation(
+            "Snapshot response from camera {CameraId}: status {StatusCode}, content type {ContentType}.",
+            camera.Id,
+            (int)response.StatusCode,
+            response.Content.Headers.ContentType?.MediaType ?? "none");
         if (!response.IsSuccessStatusCode ||
             !string.Equals(
                 response.Content.Headers.ContentType?.MediaType,
@@ -71,14 +83,20 @@ public sealed class CameraService(IApplicationDbContext dbContext, IMapper mappe
         try
         {
             var content = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            logger.LogInformation(
+                "Snapshot received from camera {CameraId}: {ContentLength} bytes.",
+                camera.Id,
+                content.Length);
             return new FileResponse(new MemoryStream(content, writable: false), "image/jpeg");
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
+            logger.LogWarning("Snapshot request to camera {CameraId} timed out.", camera.Id);
             throw new CameraCommunicationException();
         }
         catch (HttpRequestException exception)
         {
+            logger.LogWarning(exception, "Snapshot request to camera {CameraId} failed.", camera.Id);
             throw new CameraCommunicationException(exception);
         }
     }
@@ -141,6 +159,15 @@ public sealed class CameraService(IApplicationDbContext dbContext, IMapper mappe
         await dbContext.Cameras.AddAsync(camera, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        logger.LogInformation(
+            "Created camera {CameraId} for site {SiteId}. Brand {Brand}, RTSP port {RtspPort}, PTZ protocol {Protocol} on port {PtzPort}.",
+            camera.Id,
+            siteId,
+            cameraBrand.Brand,
+            camera.RtspPort,
+            camera.Protocol,
+            camera.PtzPort);
+
         return camera;
     }
 
@@ -153,6 +180,10 @@ public sealed class CameraService(IApplicationDbContext dbContext, IMapper mappe
         cameraFromDb.UpdatePtzPort(ptzPort);
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation(
+            "Updated connection settings for camera {CameraId}. PTZ port {PtzPort}.",
+            cameraId,
+            ptzPort);
     }
 
     public async Task<Guid> CreateDashboardCameraAsync(CameraUpsertDto request, CancellationToken cancellationToken)
@@ -170,6 +201,14 @@ public sealed class CameraService(IApplicationDbContext dbContext, IMapper mappe
 
         await dbContext.Cameras.AddAsync(camera, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation(
+            "Created dashboard camera {CameraId} for site {SiteId}. Brand {Brand}, RTSP port {RtspPort}, PTZ protocol {Protocol} on port {PtzPort}.",
+            camera.Id,
+            request.SiteId,
+            request.Brand,
+            request.RtspPort,
+            request.Protocol,
+            request.PtzPort);
         return camera.Id;
     }
 
@@ -187,6 +226,13 @@ public sealed class CameraService(IApplicationDbContext dbContext, IMapper mappe
         camera.AssignToSite(request.SiteId);
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation(
+            "Updated dashboard camera {CameraId}. Site {SiteId}, RTSP port {RtspPort}, PTZ protocol {Protocol} on port {PtzPort}.",
+            cameraId,
+            request.SiteId,
+            request.RtspPort,
+            request.Protocol,
+            request.PtzPort);
     }
 
     public async Task DeleteCameraAsync(Guid cameraId, CancellationToken cancellationToken)
@@ -199,6 +245,8 @@ public sealed class CameraService(IApplicationDbContext dbContext, IMapper mappe
         {
             throw new NotFoundException(nameof(Camera), cameraId.ToString());
         }
+
+        logger.LogInformation("Deleted camera {CameraId}.", cameraId);
     }
 
     private static Brand ParseBrand(string value) =>
@@ -229,16 +277,30 @@ public sealed class CameraService(IApplicationDbContext dbContext, IMapper mappe
                 new("arg3", arg3),
             ]);
 
+        logger.LogInformation(
+            "Sending PTZ command to camera {CameraId}. Action {Action}, direction {Direction}, URI {CameraUri}.",
+            camera.Id,
+            action,
+            direction,
+            ptzUri);
         await SendPtzRequestAsync(camera, ptzUri, cancellationToken);
     }
 
-    private static async Task SendPtzRequestAsync(
+    private async Task SendPtzRequestAsync(
         Camera camera,
         Uri requestUri,
         CancellationToken cancellationToken)
     {
+        logger.LogInformation(
+            "Sending PTZ request to camera {CameraId} at {CameraUri}.",
+            camera.Id,
+            requestUri);
         using var client = CreateDahuaClient(camera);
         using var response = await SendGetAsync(client, requestUri, cancellationToken);
+        logger.LogInformation(
+            "PTZ response from camera {CameraId}: status {StatusCode}.",
+            camera.Id,
+            (int)response.StatusCode);
         if (!response.IsSuccessStatusCode)
         {
             throw new CameraCommunicationException();
@@ -249,20 +311,28 @@ public sealed class CameraService(IApplicationDbContext dbContext, IMapper mappe
             var body = await response.Content.ReadAsStringAsync(cancellationToken);
             if (!string.Equals(body.Trim(), "OK", StringComparison.OrdinalIgnoreCase))
             {
+                logger.LogWarning(
+                    "PTZ response from camera {CameraId} was successful HTTP but was not accepted by the camera. Response length {ResponseLength}.",
+                    camera.Id,
+                    body.Length);
                 throw new CameraCommunicationException();
             }
+
+            logger.LogInformation("PTZ command completed successfully for camera {CameraId}.", camera.Id);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
+            logger.LogWarning("PTZ response from camera {CameraId} timed out.", camera.Id);
             throw new CameraCommunicationException();
         }
         catch (HttpRequestException exception)
         {
+            logger.LogWarning(exception, "PTZ response from camera {CameraId} failed.", camera.Id);
             throw new CameraCommunicationException(exception);
         }
     }
 
-    private static async Task<HttpResponseMessage> SendGetAsync(
+    private async Task<HttpResponseMessage> SendGetAsync(
         HttpClient client,
         Uri requestUri,
         CancellationToken cancellationToken)
@@ -276,15 +346,17 @@ public sealed class CameraService(IApplicationDbContext dbContext, IMapper mappe
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
+            logger.LogWarning("Camera request to {CameraUri} timed out after {TimeoutSeconds} seconds.", requestUri, CameraRequestTimeout.TotalSeconds);
             throw new CameraCommunicationException();
         }
         catch (HttpRequestException exception)
         {
+            logger.LogWarning(exception, "Camera request to {CameraUri} failed.", requestUri);
             throw new CameraCommunicationException(exception);
         }
     }
 
-    private static HttpClient CreateDahuaClient(Camera camera)
+    private HttpClient CreateDahuaClient(Camera camera)
     {
         EnsureDahuaConnectionDetails(camera);
 
@@ -302,7 +374,7 @@ public sealed class CameraService(IApplicationDbContext dbContext, IMapper mappe
         };
     }
 
-    private static Uri BuildCameraUri(
+    private Uri BuildCameraUri(
         Camera camera,
         string path,
         IReadOnlyCollection<KeyValuePair<string, string>> parameters)
@@ -326,11 +398,12 @@ public sealed class CameraService(IApplicationDbContext dbContext, IMapper mappe
         }
         catch (UriFormatException exception)
         {
+            logger.LogWarning(exception, "Could not construct a camera URI for camera {CameraId}.", camera.Id);
             throw new CameraCommunicationException(exception);
         }
     }
 
-    private static void EnsureDahuaConnectionDetails(Camera camera)
+    private void EnsureDahuaConnectionDetails(Camera camera)
     {
         if (camera.CameraBrand.Brand != Brand.Dahua ||
             string.IsNullOrWhiteSpace(camera.IpAddress) ||
@@ -338,6 +411,14 @@ public sealed class CameraService(IApplicationDbContext dbContext, IMapper mappe
             string.IsNullOrWhiteSpace(camera.Username) ||
             string.IsNullOrWhiteSpace(camera.Password))
         {
+            logger.LogWarning(
+                "Camera {CameraId} has incomplete or unsupported connection details. Brand {Brand}, has IP {HasIpAddress}, has username {HasUsername}, has password {HasPassword}, PTZ port {PtzPort}.",
+                camera.Id,
+                camera.CameraBrand.Brand,
+                !string.IsNullOrWhiteSpace(camera.IpAddress),
+                !string.IsNullOrWhiteSpace(camera.Username),
+                !string.IsNullOrWhiteSpace(camera.Password),
+                camera.PtzPort);
             throw new CameraCommunicationException();
         }
     }
