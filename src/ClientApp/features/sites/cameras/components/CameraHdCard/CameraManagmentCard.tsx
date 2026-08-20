@@ -54,18 +54,18 @@ const CameraManagmentCard = ({
       }
 
       const result = await refetch();
-      const dataUrl = result.data;
+      const snapshotUri = result.data;
 
-      if (!dataUrl) {
+      if (!snapshotUri) {
         console.warn("No snapshot returned.");
         return;
       }
 
-      await saveSnapshot(dataUrl, camera.id);
+      await saveSnapshot(snapshotUri);
       setPlayerKey((prev) => prev + 1);
       Alert.alert("Saved", "Snapshot saved to your device.");
-    } catch (e) {
-      throw e;
+    } catch {
+      Alert.alert("Unable to save", "The snapshot could not be saved to your device.");
     }
   };
 
