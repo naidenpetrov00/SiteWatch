@@ -20,6 +20,7 @@ public class CameraDto
         {
             CreateMap<Camera, CameraDto>().ForMember(d => d.Name, o => o.MapFrom(s => s.CameraName.Value))
                 .ForMember(cDto => cDto.Brand, o => o.MapFrom(c => c.CameraBrand.Brand.ToString()))
+                .ForMember(cDto => cDto.Port, o => o.MapFrom(c => c.RtspPort))
                 .ForMember(cDto => cDto.Protocol, o => o.MapFrom(c => c.Protocol.ToString()));
         }
     }

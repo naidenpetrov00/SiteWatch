@@ -15,8 +15,3 @@ export interface CameraAuth {
   username: string;
   password: string;
 }
-
-export interface CameraSnapshot extends CameraAuth {
-  ipAddress: string;
-  channel?: string;
-}

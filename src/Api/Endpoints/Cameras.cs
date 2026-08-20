@@ -20,6 +20,38 @@ public class Cameras : EndpointGroupBase
             .RequireAuthorization(AuthorizationPolicies.Administrator);
 
         group.MapGet("/{cameraId:guid}", CameraById).RequireAuthorization();
+        group.MapGet("/{cameraId:guid}/snapshot", GetCameraSnapshot)
+            .RequireAuthorization()
+            .WithName("GetCameraSnapshot")
+            .WithSummary("Get a current camera snapshot")
+            .WithDescription("Returns a JPEG snapshot retrieved from the configured Dahua camera.")
+            .Produces(StatusCodes.Status200OK, contentType: "image/jpeg")
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status502BadGateway);
+        group.MapPost("/{cameraId:guid}/ptz/start", StartPtzMovement)
+            .RequireAuthorization()
+            .WithName("StartCameraPtzMovement")
+            .WithSummary("Start moving a PTZ camera")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status502BadGateway);
+        group.MapPost("/{cameraId:guid}/ptz/stop", StopPtzMovement)
+            .RequireAuthorization()
+            .WithName("StopCameraPtzMovement")
+            .WithSummary("Stop moving a PTZ camera")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status502BadGateway);
+        group.MapPost("/{cameraId:guid}/ptz/relative", MovePtzRelatively)
+            .RequireAuthorization()
+            .WithName("MoveCameraPtzRelatively")
+            .WithSummary("Move a PTZ camera by normalized offsets")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status502BadGateway);
         group.MapPatch("/{cameraId:guid}/connections", UpdateCameraIpAndPort).RequireAuthorization();
         group.MapGet("/site/{siteId:guid}/cameras", CamerasBySite).RequireAuthorization();
         group.MapPost("/withDetails", CreateCameraWithDetails).RequireAuthorization();
@@ -37,6 +69,61 @@ public class Cameras : EndpointGroupBase
     {
         var camera = await mediator.Send(new CameraByIdQuery { CameraId = cameraId });
         return TypedResults.Ok(camera);
+    }
+
+    private static async Task<FileStreamHttpResult> GetCameraSnapshot(
+        IMediator mediator,
+        HttpContext httpContext,
+        Guid cameraId,
+        CancellationToken cancellationToken)
+    {
+        var snapshot = await mediator.Send(
+            new GetCameraSnapshotQuery(cameraId),
+            cancellationToken);
+        httpContext.Response.Headers.CacheControl = "private, no-store";
+        httpContext.Response.Headers["X-Content-Type-Options"] = "nosniff";
+
+        return TypedResults.File(snapshot.Stream, snapshot.ContentType);
+    }
+
+    private static async Task<NoContent> StartPtzMovement(
+        IMediator mediator,
+        Guid cameraId,
+        PtzDirectionRequest request,
+        CancellationToken cancellationToken)
+    {
+        await mediator.Send(
+            new StartPtzMovementCommand(cameraId, request.Direction),
+            cancellationToken);
+        return TypedResults.NoContent();
+    }
+
+    private static async Task<NoContent> StopPtzMovement(
+        IMediator mediator,
+        Guid cameraId,
+        PtzDirectionRequest request,
+        CancellationToken cancellationToken)
+    {
+        await mediator.Send(
+            new StopPtzMovementCommand(cameraId, request.Direction),
+            cancellationToken);
+        return TypedResults.NoContent();
+    }
+
+    private static async Task<NoContent> MovePtzRelatively(
+        IMediator mediator,
+        Guid cameraId,
+        MovePtzRelativelyRequest request,
+        CancellationToken cancellationToken)
+    {
+        await mediator.Send(
+            new MovePtzRelativelyCommand(
+                cameraId,
+                request.Horizontal,
+                request.Vertical,
+                request.Zoom),
+            cancellationToken);
+        return TypedResults.NoContent();
     }
 
     private static async Task<NoContent> UpdateCameraIpAndPort(IMediator mediator, Guid cameraId,
@@ -106,5 +193,19 @@ public class Cameras : EndpointGroupBase
     {
         var camera = await mediator.Send(new DashboardCameraByIdQuery(cameraId), cancellationToken);
         return TypedResults.Ok(camera);
+    }
+
+    /// <summary>Specifies a supported PTZ movement direction.</summary>
+    public sealed record PtzDirectionRequest
+    {
+        public required string Direction { get; init; }
+    }
+
+    /// <summary>Specifies normalized relative PTZ movement values.</summary>
+    public sealed record MovePtzRelativelyRequest
+    {
+        public double Horizontal { get; init; }
+        public double Vertical { get; init; }
+        public double Zoom { get; init; }
     }
 }

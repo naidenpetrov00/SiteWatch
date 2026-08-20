@@ -7,12 +7,6 @@ export const ptzDirectionSchema = z.enum(["Up", "Down", "Left", "Right"]);
 
 export type PtzDirection = z.infer<typeof ptzDirectionSchema>;
 
-export const buildPtzBaseUrl = (protocol: string, ipAddress: string, port: number, query: string) =>
-    `${protocol.toLowerCase()}://${ipAddress}:${port}/cgi-bin/ptz.cgi?${query}`;
-
-export const buildSnapshotBaseUrl = (protocol: string, ipAddress: string, query: string) =>
-    `${protocol.toLowerCase()}://${ipAddress}/cgi-bin/snapshot.cgi?${query}`;
-
 export const blobToDataUrl = (blob: Blob) =>
     new Promise<string>((resolve, reject) => {
         const reader = new FileReader();

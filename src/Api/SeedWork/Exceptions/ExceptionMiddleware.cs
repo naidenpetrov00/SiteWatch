@@ -1,11 +1,14 @@
 ﻿using System.Text.Json;
+using Application.Cameras;
 using Ardalis.GuardClauses;
 using Application.SeedWork.Exceptions;
 using FluentValidation;
 
 namespace Api.SeedWork.Exceptions;
 
-internal sealed class ExceptionMiddleware(RequestDelegate next)
+internal sealed class ExceptionMiddleware(
+    RequestDelegate next,
+    ILogger<ExceptionMiddleware> logger)
 {
     public async Task InvokeAsync(HttpContext context)
     {
@@ -50,6 +53,20 @@ internal sealed class ExceptionMiddleware(RequestDelegate next)
         catch (ForbiddenAccessException)
         {
             context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        }
+        catch (CameraCommunicationException ex)
+        {
+            logger.LogWarning(ex, "A camera communication request failed.");
+            context.Response.StatusCode = StatusCodes.Status502BadGateway;
+            context.Response.ContentType = "application/problem+json";
+
+            await context.Response.WriteAsync(JsonSerializer.Serialize(new
+            {
+                status = StatusCodes.Status502BadGateway,
+                title = "Camera unavailable",
+                detail = "The camera did not accept the request.",
+                instance = context.Request.Path.Value,
+            }));
         }
         catch (Exception ex)
         {

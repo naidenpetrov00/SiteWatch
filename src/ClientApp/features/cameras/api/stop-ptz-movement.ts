@@ -1,71 +1,48 @@
-import {buildPtzBaseUrl, ptzDirectionSchema} from "../utils";
+import { MutationConfig } from "@/lib/react-query";
+import { paths } from "@/config/constants/paths";
+import { useAuth } from "@/store/auth_context";
+import { useMutation } from "@tanstack/react-query";
+import { z } from "zod";
 
-import DigestClient from "digest-fetch";
-import {MutationConfig} from "@/lib/react-query";
-import {useMutation} from "@tanstack/react-query";
-import {z} from "zod";
+import { cameraApiFetch } from "./camera-api-fetch";
+import { ptzDirectionSchema } from "../utils";
 
 export const stopPtzMovementSchema = z.object({
-    ipAddress: z.string().min(1),
-    protocol: z.enum(["Http", "Https"]),
-    port: z.number(),
-    username: z.string().min(2),
-    password: z.string().min(2),
-    direction: ptzDirectionSchema,
-    arg1: z.number().int().optional(),
-    arg2: z.number().int().optional(),
-    arg3: z.number().int().optional(),
+  cameraId: z.string().uuid("Invalid GUID format"),
+  direction: ptzDirectionSchema,
 });
 
 export type StopPtzMovementInput = z.infer<typeof stopPtzMovementSchema>;
 
-export const stopPtzMovement = async ({
-                                          ipAddress,
-                                          protocol,
-                                          port,
-                                          username,
-                                          password,
-                                          direction,
-                                          arg1 = 0,
-                                          arg2 = 0,
-                                          arg3 = 0,
-                                      }: StopPtzMovementInput): Promise<void> => {
-    const client = new DigestClient(username, password);
-    const query = new URLSearchParams({
-        action: "stop",
-        channel: "1",
-        code: direction,
-        arg1: String(arg1),
-        arg2: String(arg2),
-        arg3: String(arg3),
-    }).toString();
-    const url = buildPtzBaseUrl(protocol, ipAddress, port, query);
-    console.log(url)
-    const response = await client.fetch(url);
-    console.log("after")
-
-    if (!response.ok) {
-        const responseText = await response.text().catch(() => "");
-        const suffix = responseText ? `: ${responseText}` : "";
-        throw new Error(
-            `PTZ stop failed (${response.status} ${response.statusText})${suffix}`
-        );
-    }
-    const data = await response.json();
-    if (data.result !== 0) {
-        throw new Error(`PTZ stop failed: ${data.message}`);
-    }
+const stopPtzMovement = async (
+  { cameraId, direction }: StopPtzMovementInput,
+  accessToken: string,
+): Promise<void> => {
+  await cameraApiFetch(paths.cameras.stopPtzMovement(cameraId), accessToken, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ direction }),
+  });
 };
 
+type StopPtzMovementMutation = (
+  input: StopPtzMovementInput,
+) => Promise<void>;
+
 type UseStopPtzMovementOptions = {
-    mutationConfig?: MutationConfig<typeof stopPtzMovement>;
+  mutationConfig?: MutationConfig<StopPtzMovementMutation>;
 };
 
 export const useStopPtzMovement = ({
-                                       mutationConfig,
-                                   }: UseStopPtzMovementOptions = {}) => {
-    return useMutation({
-        mutationFn: (data) => stopPtzMovement({...data}),
-        ...mutationConfig,
-    });
+  mutationConfig,
+}: UseStopPtzMovementOptions = {}) => {
+  const { accessToken } = useAuth();
+
+  return useMutation({
+    mutationFn: (data: StopPtzMovementInput) => {
+      if (!accessToken) throw new Error("Authentication required.");
+      return stopPtzMovement(data, accessToken);
+    },
+    ...mutationConfig,
+  });
 };

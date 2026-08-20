@@ -32,12 +32,7 @@ const CameraManagmentCard = ({
   const colorPalette = useColorPalette();
 
   const { isFetching, refetch } = useGetCameraSnapshot({
-    data: {
-      ipAddress: camera.ipAddress,
-      protocol: camera.protocol,
-      username: camera.username,
-      password: camera.password,
-    },
+    cameraId: camera.id,
   });
 
   const handleChannelChange = () => {

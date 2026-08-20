@@ -1,5 +1,6 @@
 using Application.Cameras.Commands;
 using Application.Cameras.Queries;
+using Application.SeedWork.Models.Internal;
 using Domain.Entities;
 using Domain.ValueObjects;
 
@@ -9,6 +10,15 @@ public interface ICameraService
 {
     Task<List<CameraDto>> GetCamerasBySiteIdAsync(Guid siteId, CancellationToken cancellationToken);
     Task<CameraDto> GetCameraByIdAsync(Guid requestId, CancellationToken cancellationToken);
+    Task<FileResponse> GetSnapshotAsync(Guid cameraId, CancellationToken cancellationToken);
+    Task StartPtzMovementAsync(Guid cameraId, string direction, CancellationToken cancellationToken);
+    Task StopPtzMovementAsync(Guid cameraId, string direction, CancellationToken cancellationToken);
+    Task MovePtzRelativelyAsync(
+        Guid cameraId,
+        double horizontal,
+        double vertical,
+        double zoom,
+        CancellationToken cancellationToken);
 
     Task<Camera> CreateCameraAsync(
         CameraName cameraName,
