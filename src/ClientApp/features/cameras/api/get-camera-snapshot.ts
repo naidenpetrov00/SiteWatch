@@ -1,11 +1,17 @@
+import * as FileSystem from "expo-file-system/legacy";
+
 import { QueryConfig } from "@/lib/react-query";
-import { paths } from "@/config/constants/paths";
 import { useAuth } from "@/store/auth_context";
+import { paths } from "@/config/constants/paths";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 
-import { blobToDataUrl } from "../utils";
-import { cameraApiFetch } from "./camera-api-fetch";
+import { cameraApiDownload } from "./camera-api-fetch";
+
+const SNAPSHOT_CACHE_DIRECTORY = `${FileSystem.cacheDirectory ?? ""}camera-snapshots/`;
+
+const getSnapshotFileUri = (cameraId: string) =>
+  `${SNAPSHOT_CACHE_DIRECTORY}camera-snapshot-${cameraId}.jpg`;
 
 export const getCameraSnapshotSchema = z.object({
   cameraId: z.string().uuid("Invalid GUID format"),
@@ -18,29 +24,35 @@ export const getCameraSnapshot = async ({
   cameraId,
   accessToken,
 }: GetCameraSnapshotInput): Promise<string> => {
-  const response = await cameraApiFetch(
-    paths.cameras.getSnapshot(cameraId),
-    accessToken,
-    { headers: { Accept: "image/jpeg" } },
-  );
+  if (!FileSystem.cacheDirectory) {
+    throw new Error("Snapshot cache directory is unavailable.");
+  }
+
+  const snapshotUri = getSnapshotFileUri(cameraId);
 
   try {
-    const blob = await response.blob();
-    console.info("Camera snapshot received.", {
-      cameraId,
-      contentType: response.headers.get("content-type"),
-      byteLength: blob.size,
+    await FileSystem.makeDirectoryAsync(SNAPSHOT_CACHE_DIRECTORY, {
+      intermediates: true,
     });
 
-    const snapshotUri = await blobToDataUrl(blob);
-    console.info("Camera snapshot converted to an image URI.", {
+    const result = await cameraApiDownload(
+      paths.cameras.getSnapshot(cameraId),
+      accessToken,
+      snapshotUri,
+    );
+
+    console.info("Camera snapshot downloaded to cache.", {
       cameraId,
-      uriLength: snapshotUri.length,
+      contentType:
+        result.mimeType ??
+        result.headers["content-type"] ??
+        result.headers["Content-Type"],
+      status: result.status,
     });
 
-    return snapshotUri;
+    return result.uri;
   } catch (error) {
-    console.warn("Camera snapshot could not be converted for display.", {
+    console.warn("Camera snapshot download failed.", {
       cameraId,
       error: error instanceof Error ? error.message : String(error),
     });
