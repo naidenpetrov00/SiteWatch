@@ -23,7 +23,29 @@ export const getCameraSnapshot = async ({
     accessToken,
     { headers: { Accept: "image/jpeg" } },
   );
-  return blobToDataUrl(await response.blob());
+
+  try {
+    const blob = await response.blob();
+    console.info("Camera snapshot received.", {
+      cameraId,
+      contentType: response.headers.get("content-type"),
+      byteLength: blob.size,
+    });
+
+    const snapshotUri = await blobToDataUrl(blob);
+    console.info("Camera snapshot converted to an image URI.", {
+      cameraId,
+      uriLength: snapshotUri.length,
+    });
+
+    return snapshotUri;
+  } catch (error) {
+    console.warn("Camera snapshot could not be converted for display.", {
+      cameraId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
 };
 
 type UseGetCameraSnapshotOptions = {
