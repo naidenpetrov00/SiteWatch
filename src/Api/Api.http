@@ -1,6 +1,42 @@
 @Api_HostAddress = http://localhost:5293
+@AccessToken = replace-with-access-token
+@CameraId = 00000000-0000-0000-0000-000000000000
 
 GET {{Api_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+### Get a camera snapshot
+GET {{Api_HostAddress}}/cameras/{{CameraId}}/snapshot
+Authorization: Bearer {{AccessToken}}
+Accept: image/jpeg
+
+### Start PTZ movement
+POST {{Api_HostAddress}}/cameras/{{CameraId}}/ptz/start
+Authorization: Bearer {{AccessToken}}
+Content-Type: application/json
+
+{
+  "direction": "Up"
+}
+
+### Stop PTZ movement
+POST {{Api_HostAddress}}/cameras/{{CameraId}}/ptz/stop
+Authorization: Bearer {{AccessToken}}
+Content-Type: application/json
+
+{
+  "direction": "Up"
+}
+
+### Move PTZ relatively
+POST {{Api_HostAddress}}/cameras/{{CameraId}}/ptz/relative
+Authorization: Bearer {{AccessToken}}
+Content-Type: application/json
+
+{
+  "horizontal": 0.1,
+  "vertical": 0,
+  "zoom": 0
+}

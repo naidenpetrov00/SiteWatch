@@ -1,0 +1,11 @@
+<main class="manage-cameras-page">
+  <header class="manage-cameras-page__header">
+    <div>
+      <p class="manage-cameras-page__eyebrow">Administration</p>
+      <h1>Manage Cameras</h1>
+      <p class="manage-cameras-page__summary">Review and maintain camera connections and site assignments.</p>
+    </div>
+    <div class="manage-cameras-page__actions"><app-action-button label="Add Camera" variant="primary" (clicked)="openAddCameraDialog()" /></div>
+  </header>
+  <app-data-table tableEyebrow="Cameras" tableLabel="Manage Cameras" emptyMessage="No cameras match the current filters." filterApplyMode="search" [rows]="cameras()" [filteredRowsTotal]="camerasFilteredCount()" [overallRowsTotal]="camerasTotalCount()" [columns]="columns" [pageSize]="pageSize" [pageSizeOptions]="pageSizeOptions" (tableStateChange)="onTableStateChange($event)" (cellButtonClicked)="onCellButtonClicked($event)" />
+</main>

@@ -7,17 +7,27 @@ description: Design, create, review, and modernize unit, component, integration,
 
 Create durable tests around observable behavior. Treat existing tests as evidence, not authority: preserve sound conventions, replace questionable practices in new work, and do not spread legacy patterns.
 
-## Establish authority and context
+## Start with the change set
 
-1. Read the root `AGENTS.md` and the scoped instructions for both the test path and production behavior under test.
-2. Confirm the user authorized test-source changes. Treat authorization to run tests or add dependencies as separate decisions.
-3. Inspect the relevant manifest, runner configuration, production code, and a small representative set of nearby tests.
-4. Classify local precedent as current, modernizable, questionable, or legacy. Follow repository architecture and permissions, but prefer this skill over weak local testing style.
-5. Read only the needed reference:
+1. Read the root `AGENTS.md` and the scoped instructions for both the test path and the production behavior under test.
+2. Inspect the changes relative to `main` with `git diff main...HEAD`. Also inspect staged and unstaged changes when present, since the requested change may not be committed yet. If `main` is unavailable, report that the comparison could not be made rather than silently choosing an unrelated baseline.
+3. Identify the changed behavior, its observable contract, and the risks introduced by each meaningful change. Do not infer test work from changed lines alone; understand the behavior those lines implement.
+4. Inspect the relevant manifest, runner configuration, production code, and a small representative set of nearby tests. Search for tests by subject, method, endpoint, component, and behavior—not only by filename.
+5. Classify local precedent as current, modernizable, questionable, or legacy. Follow repository architecture and permissions, but prefer this skill over weak local testing style.
+6. Read only the needed reference:
    - .NET and ASP.NET Core: [dotnet.md](references/dotnet.md)
    - Angular Dashboard: [angular.md](references/angular.md)
    - Expo/React Native ClientApp: [expo-react-native.md](references/expo-react-native.md)
    - Test-level, data, fixture, and coverage decisions: [test-design.md](references/test-design.md)
+
+Use `references/test-design.md` as the testing handbook and apply its risk, case-set, test-double, and quality rules together with the focused framework reference. Keep the decision process short and concrete: changed behavior -> credible risk -> smallest test level -> existing test to update or new test to add.
+
+## Implement when implementation is requested
+
+- Confirm the user authorized test-source changes. Treat authorization to run tests or add dependencies as separate decisions.
+- When the request is to write or implement tests and authorization is present, edit the appropriate test files after inspection. A brief plan is useful, but it must not replace the implementation.
+- When the request is only for review, strategy, or explanation, do not modify test files.
+- Do not add, replace, or upgrade dependencies without approval. Do not run project commands unless execution is explicitly authorized.
 
 ## Choose the smallest valuable test
 
@@ -27,6 +37,14 @@ Create durable tests around observable behavior. Treat existing tests as evidenc
 - Use an end-to-end test only for critical journeys whose cross-system behavior cannot be proven more cheaply.
 
 Prefer a focused regression test at the defect boundary. Do not repeat the same assertion at every layer unless each protects a distinct risk.
+
+## Reuse and update existing coverage
+
+- Before adding a test, locate the existing tests for the changed method, class, endpoint, component, or behavior.
+- If an existing test already covers the changed behavior, update that test to reflect the new contract. Do not add a second test merely because the production method changed.
+- Add a new test only when the change introduces a distinct behavior, boundary, failure mode, or regression risk that existing tests do not cover.
+- Do not duplicate equivalent tests within the same test level or repeat coverage across layers unless each test protects a different integration boundary.
+- Preserve valuable existing scenarios while removing or reshaping assertions that describe the old contract. Keep the final suite focused and explainable.
 
 ## Design tests around behavior
 

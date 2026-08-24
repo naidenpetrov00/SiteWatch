@@ -12,6 +12,10 @@ export const paths = {
     cameras: {
         getBySiteId: (siteId: string) => `/cameras/site/${siteId}/cameras`,
         getById: (cameraId: string) => `/cameras/${cameraId}`,
+        getSnapshot: (cameraId: string) => `/cameras/${cameraId}/snapshot`,
+        startPtzMovement: (cameraId: string) => `/cameras/${cameraId}/ptz/start`,
+        stopPtzMovement: (cameraId: string) => `/cameras/${cameraId}/ptz/stop`,
+        movePtzRelatively: (cameraId: string) => `/cameras/${cameraId}/ptz/relative`,
         createWithDetails: "/cameras/withDetails",
     },
     images: {

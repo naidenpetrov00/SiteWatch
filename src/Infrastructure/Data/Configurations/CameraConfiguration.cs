@@ -1,4 +1,5 @@
 using Domain.Entities;
+using Domain.SeedWork.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -11,6 +12,9 @@ public class CameraConfiguration : IEntityTypeConfiguration<Camera>
     public void Configure(EntityTypeBuilder<Camera> builder)
     {
         builder.HasOne(site => site.Site).WithMany(site => site.Cameras);
+        builder.Property(camera => camera.NumberId)
+            .HasDefaultValueSql("NEXT VALUE FOR [dbo].[CameraNumberIds]");
+        builder.HasIndex(camera => camera.NumberId);
 
         builder.OwnsOne(
             c => c.CameraName,
@@ -29,5 +33,9 @@ public class CameraConfiguration : IEntityTypeConfiguration<Camera>
         builder.Property(c => c.RtspPort).HasMaxLength(5);
         builder.Property(c => c.Username).HasMaxLength(CredentialMaxLength);
         builder.Property(c => c.Password).HasMaxLength(CredentialMaxLength);
+        builder.Property(c => c.Protocol)
+            .HasConversion<int>()
+            .HasDefaultValue(CameraProtocol.Https)
+            .IsRequired();
     }
 }

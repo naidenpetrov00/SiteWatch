@@ -62,7 +62,7 @@ public sealed record DashboardSiteDto(
         site.Name.Value,
         site.Address.Value,
         site.ManagerId,
-        site.Manager.UserName ?? site.Manager.Email ?? string.Empty,
+        site.Manager?.UserName ?? site.Manager?.Email ?? string.Empty,
         site.StartDate,
         site.EndDate,
         site.Status.ToString(),

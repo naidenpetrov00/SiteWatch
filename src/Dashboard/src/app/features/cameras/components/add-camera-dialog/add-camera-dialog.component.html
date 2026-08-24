@@ -1,0 +1,16 @@
+<app-dialog-shell eyebrow="Administration" title="Add Camera" subtitle="Enter the camera connection and site assignment.">
+  <form [id]="formId" class="camera-dialog__form" [formGroup]="cameraForm" novalidate (ngSubmit)="submitCamera()">
+    <mat-form-field appearance="outline"><mat-label>Name</mat-label><input matInput formControlName="name" maxlength="100" />@if (cameraForm.controls.name.touched && cameraForm.controls.name.invalid) { <mat-error>A name is required.</mat-error> }</mat-form-field>
+    <mat-form-field appearance="outline"><mat-label>Brand</mat-label><mat-select formControlName="brand">@for (brand of brands; track brand) { <mat-option [value]="brand">{{ brand }}</mat-option> }</mat-select></mat-form-field>
+    <mat-form-field appearance="outline"><mat-label>Model</mat-label><input matInput formControlName="model" maxlength="100" />@if (cameraForm.controls.model.touched && cameraForm.controls.model.invalid) { <mat-error>Model must be 2–100 characters.</mat-error> }</mat-form-field>
+    <mat-form-field appearance="outline"><mat-label>Site</mat-label><input matInput [formControl]="siteSearchControl" [matAutocomplete]="siteAutocomplete" autocomplete="off" inputmode="search" /><mat-hint>Search by site name, address, or NumberId.</mat-hint>@if (siteSearchControl.touched && cameraForm.controls.siteId.invalid) { <mat-error>Site is required.</mat-error> }</mat-form-field>
+    <mat-autocomplete #siteAutocomplete="matAutocomplete" [displayWith]="displaySite" (optionSelected)="onSiteSelected($event)">@for (site of siteResults(); track site.id) { <mat-option [value]="site">#{{ site.numberId }} · {{ site.name }} · {{ site.address }}</mat-option> }</mat-autocomplete>
+    <mat-form-field appearance="outline"><mat-label>Username</mat-label><input matInput formControlName="username" maxlength="50" /></mat-form-field>
+    <mat-form-field appearance="outline"><mat-label>Password</mat-label><input matInput type="password" formControlName="password" maxlength="50" /></mat-form-field>
+    <mat-form-field appearance="outline"><mat-label>IP Address</mat-label><input matInput formControlName="ipAddress" maxlength="39" /></mat-form-field>
+    <mat-form-field appearance="outline"><mat-label>RTSP Port</mat-label><input matInput type="number" formControlName="rtspPort" min="1" max="65535" /></mat-form-field>
+    <mat-form-field appearance="outline"><mat-label>PTZ Port</mat-label><input matInput type="number" formControlName="ptzPort" min="1" max="65535" /></mat-form-field>
+    <mat-form-field appearance="outline"><mat-label>Protocol</mat-label><mat-select formControlName="protocol">@for (protocol of protocols; track protocol) { <mat-option [value]="protocol">{{ protocol.toUpperCase() }}</mat-option> }</mat-select></mat-form-field>
+  </form>
+  <app-dialog-action-bar dialog-shell-actions cancelLabel="Cancel" submitLabel="Add Camera" [submitFormId]="formId" submitButtonType="submit" [submitDisabled]="cameraForm.invalid || isCreating()" (cancel)="closeDialog()" />
+</app-dialog-shell>

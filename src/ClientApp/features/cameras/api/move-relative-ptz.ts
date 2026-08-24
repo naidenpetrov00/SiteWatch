@@ -1,60 +1,49 @@
-import {buildPtzBaseUrl} from "../utils";
+import { MutationConfig } from "@/lib/react-query";
+import { paths } from "@/config/constants/paths";
+import { useAuth } from "@/store/auth_context";
+import { useMutation } from "@tanstack/react-query";
+import { z } from "zod";
 
-import DigestClient from "digest-fetch";
-import {MutationConfig} from "@/lib/react-query";
-import {useMutation} from "@tanstack/react-query";
-import {z} from "zod";
+import { cameraApiFetch } from "./camera-api-fetch";
 
 export const moveRelativePtzSchema = z.object({
-    ipAddress: z.string().min(1),
-    port: z.number(),
-    username: z.string().min(2),
-    password: z.string().min(2),
-    arg1: z.number().optional(),
-    arg2: z.number().optional(),
-    arg3: z.number().optional(),
+  cameraId: z.string().uuid("Invalid GUID format"),
+  horizontal: z.number().min(-1).max(1),
+  vertical: z.number().min(-1).max(1),
+  zoom: z.number().min(-1).max(1),
 });
 
 export type MoveRelativePtzInput = z.infer<typeof moveRelativePtzSchema>;
 
-export const moveRelativePtz = async ({
-                                          ipAddress,
-                                          port,
-                                          username,
-                                          password,
-                                          arg1 = 0,
-                                          arg2 = 0,
-                                          arg3 = 0,
-                                      }: MoveRelativePtzInput): Promise<void> => {
-    const client = new DigestClient(username, password);
-    const query = new URLSearchParams({
-        action: "moveRelatively",
-        channel: "1",
-        arg1: String(arg1),
-        arg2: String(arg2),
-        arg3: String(arg3),
-    }).toString();
-    const url = buildPtzBaseUrl(ipAddress, port, query);
-    const response = await client.fetch(url);
-
-    if (!response.ok) {
-        const responseText = await response.text().catch(() => "");
-        const suffix = responseText ? `: ${responseText}` : "";
-        throw new Error(
-            `PTZ relative move failed (${response.status} ${response.statusText})${suffix}`
-        );
-    }
+const moveRelativePtz = async (
+  { cameraId, horizontal, vertical, zoom }: MoveRelativePtzInput,
+  accessToken: string,
+): Promise<void> => {
+  await cameraApiFetch(paths.cameras.movePtzRelatively(cameraId), accessToken, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ horizontal, vertical, zoom }),
+  });
 };
 
+type MoveRelativePtzMutation = (
+  input: MoveRelativePtzInput,
+) => Promise<void>;
+
 type UseMoveRelativePtzOptions = {
-    mutationConfig?: MutationConfig<typeof moveRelativePtz>;
+  mutationConfig?: MutationConfig<MoveRelativePtzMutation>;
 };
 
 export const useMoveRelativePtz = ({
-                                       mutationConfig,
-                                   }: UseMoveRelativePtzOptions = {}) => {
-    return useMutation({
-        mutationFn: (data) => moveRelativePtz({...data}),
-        ...mutationConfig,
-    });
+  mutationConfig,
+}: UseMoveRelativePtzOptions = {}) => {
+  const { accessToken } = useAuth();
+
+  return useMutation({
+    mutationFn: (data: MoveRelativePtzInput) => {
+      if (!accessToken) throw new Error("Authentication required.");
+      return moveRelativePtz(data, accessToken);
+    },
+    ...mutationConfig,
+  });
 };

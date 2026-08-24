@@ -1,0 +1,2 @@
+.camera-dialog__form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+@media (max-width: 42rem) { .camera-dialog__form { grid-template-columns: 1fr; } }

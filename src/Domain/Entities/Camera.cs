@@ -1,10 +1,12 @@
 using Domain.SeedWork;
+using Domain.SeedWork.Enums;
 using Domain.ValueObjects;
 
 namespace Domain.Entities;
 
-public sealed class Camera : BaseAuditableEntity
+public sealed class Camera : BaseAuditableEntity, IHasNumberId
 {
+    public int NumberId { get; private set; }
     public CameraName CameraName { get; private set; } = null!;
     public CameraBrand CameraBrand { get; private set; } = null!;
     public string? Username { get; private set; }
@@ -12,6 +14,7 @@ public sealed class Camera : BaseAuditableEntity
     public string? IpAddress { get; private set; }
     public int? RtspPort { get; private set; } = 554;
     public int? PtzPort { get; private set; } = 443;
+    public CameraProtocol Protocol { get; private set; } = CameraProtocol.Https;
     public Guid? SiteId { get; private set; }
     public Site? Site { get; private set; }
 
@@ -33,7 +36,8 @@ public sealed class Camera : BaseAuditableEntity
         string? password = null,
         string? ipAddress = null,
         int? port = null,
-        Guid? siteId = null) =>
+        Guid? siteId = null,
+        CameraProtocol protocol = CameraProtocol.Https) =>
         new()
         {
             Id = Guid.NewGuid(),
@@ -43,16 +47,21 @@ public sealed class Camera : BaseAuditableEntity
             Password = password,
             IpAddress = ipAddress,
             RtspPort = port,
-            SiteId = siteId
+            SiteId = siteId,
+            Protocol = protocol,
         };
 
     public void AddToSite(Site site) => Site = site;
     public void RemoveFromSite() => Site = null;
 
     public void UpdateIpAddress(string? ipAddress) => IpAddress = ipAddress;
-    public void UpdateRtspPort(int port) => RtspPort = port;
-    public void UpdatePtzPort(int port) => PtzPort = port;
+    public void UpdateRtspPort(int? port) => RtspPort = port;
+    public void UpdatePtzPort(int? port) => PtzPort = port;
+    public void UpdateProtocol(CameraProtocol protocol) => Protocol = protocol;
 
-    public void UpdateUsername(string username) => Username = username;
-    public void UpdatePassword(string password) => Password = password;
+    public void UpdateName(CameraName cameraName) => CameraName = cameraName;
+    public void UpdateBrand(CameraBrand cameraBrand) => CameraBrand = cameraBrand;
+    public void UpdateUsername(string? username) => Username = username;
+    public void UpdatePassword(string? password) => Password = password;
+    public void AssignToSite(Guid siteId) => SiteId = siteId;
 }

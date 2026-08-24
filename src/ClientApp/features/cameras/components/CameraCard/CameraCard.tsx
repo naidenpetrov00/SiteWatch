@@ -22,11 +22,7 @@ const CameraCard: React.FC<Props> = ({ camera, onPress }) => {
     isLoading,
     error,
   } = useGetCameraSnapshot({
-    data: {
-      ipAddress: camera.ipAddress,
-      username: camera.username,
-      password: camera.password,
-    },
+    cameraId: camera.id,
   });
 
   return (

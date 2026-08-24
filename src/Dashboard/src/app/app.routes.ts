@@ -67,6 +67,14 @@ export const routes: Routes = [
           import('./features/persons/pages/manage-persons.page').then(
             (m) => m.ManagePersonsPage
           )
+      },
+      {
+        path: 'manage-cameras',
+        title: 'Manage Cameras',
+        loadComponent: () =>
+          import('./features/cameras/pages/manage-cameras.page').then(
+            (m) => m.ManageCamerasPage
+          )
       }
     ]
   }

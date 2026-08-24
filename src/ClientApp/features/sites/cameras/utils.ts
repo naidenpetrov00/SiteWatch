@@ -1,4 +1,3 @@
-import * as FileSystem from "expo-file-system/legacy";
 import * as MediaLibrary from "expo-media-library";
 
 import {z} from "zod";
@@ -6,12 +5,6 @@ import {z} from "zod";
 export const ptzDirectionSchema = z.enum(["Up", "Down", "Left", "Right"]);
 
 export type PtzDirection = z.infer<typeof ptzDirectionSchema>;
-
-export const buildPtzBaseUrl = (ipAddress: string, port: number, query: string) =>
-    `https://${ipAddress}:${port}/cgi-bin/ptz.cgi?${query}`;
-
-export const buildSnapshotBaseUrl = (ipAddress: string, port: number, query: string) =>
-    `https://${ipAddress}/cgi-bin/snapshot.cgi?${query}`;
 
 export const blobToDataUrl = (blob: Blob) =>
     new Promise<string>((resolve, reject) => {
@@ -21,23 +14,8 @@ export const blobToDataUrl = (blob: Blob) =>
         reader.readAsDataURL(blob);
     });
 
-export async function saveSnapshot(dataUrl: string, cameraId: string | number) {
-    const match = dataUrl.match(/^data:([^;]+);base64,(.*)$/);
-    if (!match) throw new Error("Invalid data URL");
-
-    const base64 = match[2];
-
-    const extension = base64.startsWith("/9j") ? "jpg" : "png";
-
-    const fileUri = `${
-        FileSystem.documentDirectory
-    }snapshot-${cameraId}-${Date.now()}.${extension}`;
-
-    await FileSystem.writeAsStringAsync(fileUri, base64, {
-        encoding: "base64",
-    });
-
-    const asset = await MediaLibrary.createAssetAsync(fileUri);
+export async function saveSnapshot(snapshotUri: string) {
+    const asset = await MediaLibrary.createAssetAsync(snapshotUri);
 
     try {
         const albumName = "Sites";

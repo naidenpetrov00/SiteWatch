@@ -46,6 +46,10 @@ describe('DashboardSitesService', () => {
     const create = service.createSite({
       name: 'Apartment 42',
       address: '42 Main Street',
+      managerId: 'manager-1',
+      startDate: '2026-03-03',
+      endDate: null,
+      status: 'Planning',
       mediaPolicyPreset: 'Custom',
       mediaCategories: ['HVAC Controls', 'Other']
     });
@@ -56,6 +60,10 @@ describe('DashboardSitesService', () => {
     expect(request.request.body).toEqual({
       name: 'Apartment 42',
       address: '42 Main Street',
+      managerId: 'manager-1',
+      startDate: '2026-03-03',
+      endDate: null,
+      status: 'Planning',
       mediaPolicyPreset: 'Custom',
       mediaCategories: ['HVAC Controls', 'Other']
     });
@@ -69,6 +77,11 @@ describe('DashboardSitesService', () => {
       id: 'site-42',
       name: 'Apartment 42',
       address: '42 Main Street',
+      managerId: 'manager-1',
+      startDate: '2026-03-03',
+      endDate: null,
+      status: 'Planning',
+      mediaPolicyPreset: 'Custom',
       mediaCategoriesToAdd: ['Access Control']
     });
     await Promise.resolve();
@@ -79,6 +92,11 @@ describe('DashboardSitesService', () => {
       id: 'site-42',
       name: 'Apartment 42',
       address: '42 Main Street',
+      managerId: 'manager-1',
+      startDate: '2026-03-03',
+      endDate: null,
+      status: 'Planning',
+      mediaPolicyPreset: 'Custom',
       mediaCategoriesToAdd: ['Access Control']
     });
     request.flush(null);

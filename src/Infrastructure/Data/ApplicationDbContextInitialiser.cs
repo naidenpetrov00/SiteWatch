@@ -300,7 +300,7 @@ public class ApplicationDbContextInitialiser(
         for (var i = 1; i <= 5; i++)
         {
             var cameraBrand = CameraBrand.Create(Brand.Dahua, "SD2A500NB");
-            cameras.Add(Camera.Create(i.ToString(), cameraBrand));
+            cameras.Add(Camera.Create(i.ToString(), cameraBrand, protocol: CameraProtocol.Https));
         }
 
         foreach (var cam in cameras)

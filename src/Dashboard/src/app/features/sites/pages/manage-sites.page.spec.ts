@@ -32,6 +32,11 @@ describe('ManageSitesPage', () => {
       numberId: 42,
       name: 'Commercial Site',
       address: '42 Main Street',
+      managerId: 'manager-1',
+      managerDisplayName: 'Manager One',
+      startDate: '2026-03-03',
+      endDate: null,
+      status: 'Planning',
       mediaPolicy: { preset: 'CommercialBuild', categories: ['Structure', 'Other'] }
     } satisfies DashboardSite;
 
