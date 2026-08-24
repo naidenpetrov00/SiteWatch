@@ -3,6 +3,7 @@ using Application.SeedWork.Exceptions;
 using FluentValidation;
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging.Abstractions;
 using System.Text;
 
 namespace Api.Tests.SeedWork.Exceptions;
@@ -17,7 +18,8 @@ public sealed class ExceptionMiddlewareTests
         int expectedStatus)
     {
         var middleware = new ExceptionMiddleware(_ =>
-            Task.FromException((Exception)Activator.CreateInstance(exceptionType)!));
+            Task.FromException((Exception)Activator.CreateInstance(exceptionType)!),
+            NullLogger<ExceptionMiddleware>.Instance);
         var context = new DefaultHttpContext();
 
         await middleware.InvokeAsync(context);
@@ -29,7 +31,8 @@ public sealed class ExceptionMiddlewareTests
     public async Task InvokeAsync_returns_field_details_for_validation_failures()
     {
         var middleware = new ExceptionMiddleware(_ => Task.FromException(new ValidationException(
-            [new ValidationFailure("invoiceNumber", "Invoice number is required.", "NotEmptyValidator")])));
+            [new ValidationFailure("invoiceNumber", "Invoice number is required.", "NotEmptyValidator")])),
+            NullLogger<ExceptionMiddleware>.Instance);
         var context = new DefaultHttpContext();
         context.Response.Body = new MemoryStream();
 

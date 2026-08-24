@@ -23,11 +23,13 @@ public sealed class SiteApplicationTests
         {
             Name = "Apartment 42",
             Address = "42 Main Street",
+            ManagerId = "manager-1",
+            StartDate = "2026-03-03",
             MediaPolicyPreset = " apartmentrenovation ",
             MediaCategories = ["Design", "Demolition", "Electricity", "Pipes", "Finishes", "Other"],
         };
 
-        var result = await new CreateSiteValidator().ValidateAsync(command);
+        var result = await new CreateSiteValidator().ValidateAsync(command, TestContext.Current.CancellationToken);
 
         Assert.True(result.IsValid);
     }

@@ -130,6 +130,6 @@ public sealed class SiteMetadataTests
         ManagerId = "manager-1",
         StartDate = "2026-03-03",
         Status = "Planning",
-        MediaPolicyPreset = "Regular"
+        MediaPolicyPreset = "ApartmentRenovation"
     };
 }
