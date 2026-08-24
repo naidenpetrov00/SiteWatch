@@ -1,6 +1,9 @@
 import { StyleSheet } from "react-native";
 
 export const cameraCardStyles = StyleSheet.create({
+  cardContainer: {
+    gap: 8,
+  },
   card: {
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
@@ -8,6 +11,13 @@ export const cameraCardStyles = StyleSheet.create({
     paddingBottom: 0,
     paddingLeft: 0,
     paddingRight: 0,
+  },
+  manageButton: {
+    alignItems: "center",
+    alignSelf: "flex-end",
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
   },
   header: {
     paddingHorizontal: 12,

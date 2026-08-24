@@ -15,3 +15,20 @@ export interface CameraAuth {
   username: string;
   password: string;
 }
+
+export interface CameraUpsertRequest {
+  name: string;
+  brand: "Dahua";
+  model: string;
+  username: string;
+  password: string;
+  ipAddress: string;
+  rtspPort: number;
+  ptzPort: number;
+  protocol: CameraProtocol;
+  siteId: string;
+}
+
+export interface CreateCameraResponse {
+  id: string;
+}

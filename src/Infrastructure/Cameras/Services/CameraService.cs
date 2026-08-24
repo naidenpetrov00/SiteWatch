@@ -236,6 +236,15 @@ public sealed class CameraService(
             request.PtzPort);
     }
 
+    public async Task MoveCameraToSiteAsync(Guid cameraId, Guid siteId, CancellationToken cancellationToken)
+    {
+        var camera = await GetCameraAsync(cameraId, cancellationToken);
+        camera.AssignToSite(siteId);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation("Moved camera {CameraId} to site {SiteId}.", cameraId, siteId);
+    }
+
     public async Task DeleteCameraAsync(Guid cameraId, CancellationToken cancellationToken)
     {
         var deletedRows = await dbContext.Cameras
