@@ -22,7 +22,7 @@ const CAMERA_COLUMNS: readonly DataTableColumn<DashboardCamera>[] = [
   { key: 'ptzPort', label: 'PTZ Port' },
   { key: 'protocol', label: 'Protocol' },
   { key: 'siteName', label: 'Site', sortable: true, filter: { kind: 'text', placeholder: 'Filter Site' } },
-  { key: 'junk', label: 'Junk', cellType: 'button', sortable: false, valueAccessor: () => 'Junk' }
+  { key: 'deleteAction', label: 'Delete', cellType: 'button', sortable: false, valueAccessor: () => 'Delete' }
 ] as const;
 
 @Component({
@@ -71,7 +71,7 @@ export class ManageCamerasPage {
       } catch { /* Keep the table usable if loading details fails. */ }
       return;
     }
-    if (event.column.key !== 'junk') return;
+    if (event.column.key !== 'deleteAction') return;
 
     const confirmed = await firstValueFrom(this.dialog.open(DeleteCameraDialogComponent, {
       autoFocus: false,

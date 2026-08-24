@@ -10,5 +10,5 @@ export interface DashboardCamera {
   protocol: string;
   siteId: string | null;
   siteName: string | null;
-  junk?: null;
+  deleteAction?: null;
 }
