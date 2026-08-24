@@ -18,7 +18,7 @@ export interface CameraAuth {
 
 export interface CameraUpsertRequest {
   name: string;
-  brand: "Dahua";
+  brand: string;
   model: string;
   username: string;
   password: string;

@@ -22,6 +22,7 @@ type CameraAddSheetProps = {
 
 type FormValues = {
   name: string;
+  brand: string;
   model: string;
   username: string;
   password: string;
@@ -33,6 +34,7 @@ type FormValues = {
 
 const initialValues: FormValues = {
   name: "",
+  brand: "Dahua",
   model: "Dahua",
   username: "",
   password: "",
@@ -64,12 +66,13 @@ const CameraAddSheet = ({ siteId, visible, onClose }: CameraAddSheetProps) => {
 
   const submit = async () => {
     const name = values.name.trim();
+    const brand = values.brand.trim();
     const model = values.model.trim();
     const rtspPort = Number(values.rtspPort);
     const ptzPort = Number(values.ptzPort);
 
-    if (!name || name.length > 100 || !model || model.length < 2 || model.length > 100) {
-      setValidationError("Enter a camera name and a model between 2 and 100 characters.");
+    if (!name || name.length > 100 || !brand || !model || model.length < 2 || model.length > 100) {
+      setValidationError("Enter a camera name, brand, and a model between 2 and 100 characters.");
       return;
     }
     if (!values.username.trim() || !values.password.trim() || !values.ipAddress.trim()) {
@@ -89,7 +92,7 @@ const CameraAddSheet = ({ siteId, visible, onClose }: CameraAddSheetProps) => {
 
     const request: CameraUpsertRequest = {
       name,
-      brand: "Dahua",
+      brand,
       model,
       username: values.username.trim(),
       password: values.password.trim(),
@@ -127,8 +130,8 @@ const CameraAddSheet = ({ siteId, visible, onClose }: CameraAddSheetProps) => {
           This camera will be added to the current site.
         </Text>
         <Field label="Camera name" value={values.name} onChangeText={(value) => update("name", value)} color={colorPalette.text} />
-        <Field label="Brand" value="Dahua" editable={false} color={colorPalette.text} />
-        <Field label="Model" value={values.model} editable={false} color={colorPalette.text} />
+        <Field label="Brand" value={values.brand} onChangeText={(value) => update("brand", value)} color={colorPalette.text} />
+        <Field label="Model" value={values.model} onChangeText={(value) => update("model", value)} color={colorPalette.text} />
         <Field label="Username" value={values.username} onChangeText={(value) => update("username", value)} color={colorPalette.text} autoCapitalize="none" />
         <Field label="Password" value={values.password} onChangeText={(value) => update("password", value)} color={colorPalette.text} secureTextEntry autoCapitalize="none" />
         <Field label="IP address" value={values.ipAddress} onChangeText={(value) => update("ipAddress", value)} color={colorPalette.text} autoCapitalize="none" />
