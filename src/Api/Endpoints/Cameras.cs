@@ -56,11 +56,16 @@ public class Cameras : EndpointGroupBase
         group.MapGet("/site/{siteId:guid}/cameras", CamerasBySite).RequireAuthorization();
         group.MapPost("/withDetails", CreateCameraWithDetails).RequireAuthorization();
         group.MapPost(string.Empty, CreateDashboardCamera)
-            .RequireAuthorization(AuthorizationPolicies.Administrator);
+            .RequireAuthorization(AuthorizationPolicies.AdministratorOrWorker);
         group.MapPut("/{cameraId:guid}", UpdateDashboardCamera)
             .RequireAuthorization(AuthorizationPolicies.Administrator);
+        group.MapPatch("/{cameraId:guid}/site", MoveCameraToSite)
+            .RequireAuthorization(AuthorizationPolicies.AdministratorOrWorker)
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .Produces(StatusCodes.Status404NotFound);
         group.MapDelete("/{cameraId:guid}", DeleteCamera)
-            .RequireAuthorization(AuthorizationPolicies.Administrator);
+            .RequireAuthorization(AuthorizationPolicies.AdministratorOrWorker);
         dashboardGroup.MapGet("/cameras", GetDashboardCameras);
         dashboardGroup.MapGet("/cameras/{cameraId:guid}", GetDashboardCamera);
     }
@@ -168,6 +173,16 @@ public class Cameras : EndpointGroupBase
         return TypedResults.NoContent();
     }
 
+    private static async Task<NoContent> MoveCameraToSite(
+        IMediator mediator,
+        Guid cameraId,
+        MoveCameraToSiteRequest request,
+        CancellationToken cancellationToken)
+    {
+        await mediator.Send(new MoveCameraToSiteCommand(cameraId, request.SiteId), cancellationToken);
+        return TypedResults.NoContent();
+    }
+
     private static async Task<NoContent> DeleteCamera(
         IMediator mediator,
         Guid cameraId,
@@ -208,4 +223,7 @@ public class Cameras : EndpointGroupBase
         public double Vertical { get; init; }
         public double Zoom { get; init; }
     }
+
+    /// <summary>Specifies the site to which a camera is reassigned.</summary>
+    public sealed record MoveCameraToSiteRequest(Guid SiteId);
 }

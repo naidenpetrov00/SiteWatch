@@ -34,5 +34,6 @@ public interface ICameraService
     Task UpdateAdrressCameraAsync(Guid cameraId, string? ipAddress, int ptzPort, CancellationToken cancellationToken);
     Task<Guid> CreateDashboardCameraAsync(CameraUpsertDto request, CancellationToken cancellationToken);
     Task UpdateDashboardCameraAsync(Guid cameraId, CameraUpsertDto request, CancellationToken cancellationToken);
+    Task MoveCameraToSiteAsync(Guid cameraId, Guid siteId, CancellationToken cancellationToken);
     Task DeleteCameraAsync(Guid cameraId, CancellationToken cancellationToken);
 }

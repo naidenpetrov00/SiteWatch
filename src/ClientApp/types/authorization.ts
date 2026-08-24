@@ -35,6 +35,7 @@ export const ACCESS_POLICIES = {
   ],
   siteInvoices: [USER_ROLES.administrator, USER_ROLES.worker],
   siteMediaUpload: [USER_ROLES.administrator, USER_ROLES.worker],
+  cameraManagement: [USER_ROLES.administrator, USER_ROLES.worker],
 } as const satisfies Record<string, readonly UserRole[]>;
 
 export const AUTHENTICATED_ROUTES = {

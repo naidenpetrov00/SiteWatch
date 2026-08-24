@@ -12,9 +12,9 @@ import { DialogActionBarComponent } from '../../../../shared/ui/dialog-action-ba
 import { DialogShellComponent } from '../../../../shared/ui/dialog-shell/dialog-shell.component';
 import { DashboardSiteLookup } from '../../../sites/models/dashboard-site-lookup.model';
 import { DashboardSitesService } from '../../../sites/services/dashboard-sites.service';
+import { CAMERA_BRAND_OPTIONS, DEFAULT_CAMERA_BRAND } from '../../models/camera-brand-options.model';
 import { DashboardCamerasService } from '../../services/dashboard-cameras.service';
 
-const BRAND_OPTIONS = ['Dahua'] as const;
 const PROTOCOL_OPTIONS = ['Http', 'Https'] as const;
 
 @Component({
@@ -32,7 +32,7 @@ export class AddCameraDialogComponent {
   private readonly dashboardCamerasService = inject(DashboardCamerasService);
   private readonly dashboardSitesService = inject(DashboardSitesService);
 
-  readonly brands = BRAND_OPTIONS;
+  readonly brands = CAMERA_BRAND_OPTIONS;
   readonly protocols = PROTOCOL_OPTIONS;
   readonly siteResults = signal<readonly DashboardSiteLookup[]>([]);
   readonly siteSearchControl = this.formBuilder.control<string | DashboardSiteLookup | null>('');
@@ -40,7 +40,7 @@ export class AddCameraDialogComponent {
   readonly isCreating = () => this.dashboardCamerasService.createCameraMutation.isPending();
   readonly cameraForm = this.formBuilder.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(100)]],
-    brand: ['Dahua', [Validators.required]],
+    brand: [DEFAULT_CAMERA_BRAND, [Validators.required]],
     model: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
     username: ['', [Validators.maxLength(50)]],
     password: ['', [Validators.maxLength(50)]],

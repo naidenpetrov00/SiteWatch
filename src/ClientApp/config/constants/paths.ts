@@ -17,6 +17,9 @@ export const paths = {
         stopPtzMovement: (cameraId: string) => `/cameras/${cameraId}/ptz/stop`,
         movePtzRelatively: (cameraId: string) => `/cameras/${cameraId}/ptz/relative`,
         createWithDetails: "/cameras/withDetails",
+        create: "/cameras",
+        delete: (cameraId: string) => `/cameras/${cameraId}`,
+        moveToSite: (cameraId: string) => `/cameras/${cameraId}/site`,
     },
     images: {
         create: (siteId: string) => `/images/${siteId}`,

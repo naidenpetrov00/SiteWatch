@@ -28,9 +28,9 @@ public class CameraUpsertValidator<TRequest> : AbstractValidator<TRequest>
                 && brand != Domain.SeedWork.Enums.Brand.Unknown)
             .WithMessage("Brand must be a supported camera brand.");
         RuleFor(camera => camera.Model).NotEmpty().Length(2, 100);
-        RuleFor(camera => camera.Username).MaximumLength(50);
-        RuleFor(camera => camera.Password).MaximumLength(50);
-        RuleFor(camera => camera.IpAddress).MaximumLength(39);
+        RuleFor(camera => camera.Username).NotEmpty().MaximumLength(50);
+        RuleFor(camera => camera.Password).NotEmpty().MaximumLength(50);
+        RuleFor(camera => camera.IpAddress).NotEmpty().MaximumLength(39);
         RuleFor(camera => camera.RtspPort).InclusiveBetween(1, 65535);
         RuleFor(camera => camera.PtzPort).InclusiveBetween(1, 65535);
         RuleFor(camera => camera.Protocol)

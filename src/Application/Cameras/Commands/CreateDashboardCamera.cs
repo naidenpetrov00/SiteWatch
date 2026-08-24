@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Cameras.Commands;
 
-[Authorize(Roles = UserRoles.Administrator)]
+[Authorize(Roles = UserRoleGroups.AdministratorOrWorker)]
 public sealed record CreateDashboardCameraCommand : CameraUpsertDto, IRequest<Guid>;
 
 public sealed class CreateDashboardCameraHandler(ICameraService cameraService)

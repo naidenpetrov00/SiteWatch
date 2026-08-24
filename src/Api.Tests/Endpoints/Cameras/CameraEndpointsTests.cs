@@ -126,21 +126,27 @@ public sealed class CameraEndpointsTests
     public async Task Ptz_endpoints_bind_the_camera_identifier_and_request_body()
     {
         await using var factory = new SiteWatchApiFactory();
-        var cameraId = Guid.Parse("66666666-6666-6666-6666-666666666666");
+        var cameraId = Guid.Parse("77777777-7777-7777-7777-777777777777");
         factory.Mediator.Send(Arg.Any<StartPtzMovementCommand>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        factory.Mediator.Send(Arg.Any<StopPtzMovementCommand>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         factory.Mediator.Send(Arg.Any<MovePtzRelativelyCommand>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         using var client = factory.CreateHttpsClient();
 
         var start = await client.PostAsJsonAsync($"/cameras/{cameraId}/ptz/start", new { direction = "Left" });
+        var stop = await client.PostAsJsonAsync($"/cameras/{cameraId}/ptz/stop", new { direction = "Down" });
         var relative = await client.PostAsJsonAsync($"/cameras/{cameraId}/ptz/relative",
             new { horizontal = -1d, vertical = 0.5d, zoom = 1d });
 
         Assert.Equal(HttpStatusCode.NoContent, start.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, stop.StatusCode);
         Assert.Equal(HttpStatusCode.NoContent, relative.StatusCode);
         await factory.Mediator.Received(1)
             .Send(new StartPtzMovementCommand(cameraId, "Left"), Arg.Any<CancellationToken>());
+        await factory.Mediator.Received(1)
+            .Send(new StopPtzMovementCommand(cameraId, "Down"), Arg.Any<CancellationToken>());
         await factory.Mediator.Received(1)
             .Send(new MovePtzRelativelyCommand(cameraId, -1, 0.5, 1), Arg.Any<CancellationToken>());
     }
