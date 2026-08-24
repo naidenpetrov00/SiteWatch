@@ -1,4 +1,5 @@
 using Api.SeedWork.Exceptions;
+using Application.Cameras;
 using Application.SeedWork.Exceptions;
 using FluentValidation;
 using FluentValidation.Results;
@@ -44,5 +45,27 @@ public sealed class ExceptionMiddlewareTests
         Assert.Contains("validation_error", payload);
         Assert.Contains("invoiceNumber", payload);
         Assert.Contains("Invoice number is required.", payload);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_returns_a_safe_bad_gateway_problem_for_camera_communication_failures()
+    {
+        var middleware = new ExceptionMiddleware(
+            _ => Task.FromException(new CameraCommunicationException()),
+            NullLogger<ExceptionMiddleware>.Instance);
+        var context = new DefaultHttpContext();
+        context.Request.Path = "/cameras/camera-42/snapshot";
+        context.Response.Body = new MemoryStream();
+
+        await middleware.InvokeAsync(context);
+
+        context.Response.Body.Position = 0;
+        var payload = await new StreamReader(context.Response.Body, Encoding.UTF8).ReadToEndAsync();
+        Assert.Equal(StatusCodes.Status502BadGateway, context.Response.StatusCode);
+        Assert.Equal("application/problem+json", context.Response.ContentType);
+        Assert.Contains("Camera unavailable", payload);
+        Assert.Contains("The camera did not accept the request.", payload);
+        Assert.DoesNotContain("Unable to communicate", payload);
+        Assert.Contains("/cameras/camera-42/snapshot", payload);
     }
 }
