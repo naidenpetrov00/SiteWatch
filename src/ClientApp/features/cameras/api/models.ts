@@ -1,4 +1,4 @@
-import { Brand } from "../types";
+import { Brand, SupportedCameraBrand } from "../types";
 
 export type CameraProtocol = "Http" | "Https";
 
@@ -18,7 +18,7 @@ export interface CameraAuth {
 
 export interface CameraUpsertRequest {
   name: string;
-  brand: string;
+  brand: SupportedCameraBrand;
   model: string;
   username: string;
   password: string;

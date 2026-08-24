@@ -10,6 +10,7 @@ import {
 } from "react-native";
 
 import { CameraProtocol, CameraUpsertRequest } from "../../api/models";
+import { CAMERA_BRAND_OPTIONS, SupportedCameraBrand } from "../../types";
 import { useCreateCamera } from "../../api/manage-cameras";
 import { useColorPalette } from "@/hooks/useColorPalette";
 import cameraManagementStyles from "./camera-management.styles";
@@ -22,7 +23,7 @@ type CameraAddSheetProps = {
 
 type FormValues = {
   name: string;
-  brand: string;
+  brand: SupportedCameraBrand;
   model: string;
   username: string;
   password: string;
@@ -34,7 +35,7 @@ type FormValues = {
 
 const initialValues: FormValues = {
   name: "",
-  brand: "Dahua",
+  brand: CAMERA_BRAND_OPTIONS[0],
   model: "Dahua",
   username: "",
   password: "",
@@ -59,7 +60,7 @@ const CameraAddSheet = ({ siteId, visible, onClose }: CameraAddSheetProps) => {
     setValidationError(null);
   }, [visible]);
 
-  const update = (field: keyof FormValues, value: string) => {
+  const update = <Field extends keyof FormValues>(field: Field, value: FormValues[Field]) => {
     setValues((current) => ({ ...current, [field]: value }));
     setValidationError(null);
   };
@@ -130,7 +131,32 @@ const CameraAddSheet = ({ siteId, visible, onClose }: CameraAddSheetProps) => {
           This camera will be added to the current site.
         </Text>
         <Field label="Camera name" value={values.name} onChangeText={(value) => update("name", value)} color={colorPalette.text} />
-        <Field label="Brand" value={values.brand} onChangeText={(value) => update("brand", value)} color={colorPalette.text} />
+        <View accessibilityRole="radiogroup" style={cameraManagementStyles.field}>
+          <Text selectable style={{ color: colorPalette.text }}>Brand</Text>
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            {CAMERA_BRAND_OPTIONS.map((brand) => (
+              <Pressable
+                key={brand}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: values.brand === brand }}
+                onPress={() => update("brand", brand)}
+                style={({ pressed }) => [
+                  cameraManagementStyles.button,
+                  {
+                    backgroundColor: values.brand === brand ? colorPalette.primary : colorPalette.background,
+                    borderColor: colorPalette.primary,
+                    borderWidth: values.brand === brand ? 0 : 1,
+                    opacity: pressed ? 0.78 : 1,
+                  },
+                ]}
+              >
+                <Text style={{ color: values.brand === brand ? colorPalette.background : colorPalette.text }}>
+                  {brand}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
         <Field label="Model" value={values.model} onChangeText={(value) => update("model", value)} color={colorPalette.text} />
         <Field label="Username" value={values.username} onChangeText={(value) => update("username", value)} color={colorPalette.text} autoCapitalize="none" />
         <Field label="Password" value={values.password} onChangeText={(value) => update("password", value)} color={colorPalette.text} secureTextEntry autoCapitalize="none" />
