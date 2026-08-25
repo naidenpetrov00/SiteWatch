@@ -5,6 +5,7 @@ import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 
 import { cameraApiFetch } from "./camera-api-fetch";
+import { logPtzMetric, type PtzMetricContext } from "../latency-metrics";
 
 export const moveRelativePtzSchema = z.object({
   cameraId: z.string().uuid("Invalid GUID format"),
@@ -13,17 +14,26 @@ export const moveRelativePtzSchema = z.object({
   zoom: z.number().min(-1).max(1),
 });
 
-export type MoveRelativePtzInput = z.infer<typeof moveRelativePtzSchema>;
+export type MoveRelativePtzInput = z.infer<typeof moveRelativePtzSchema> & {
+  metric?: PtzMetricContext;
+};
 
 const moveRelativePtz = async (
-  { cameraId, horizontal, vertical, zoom }: MoveRelativePtzInput,
+  { cameraId, horizontal, vertical, zoom, metric }: MoveRelativePtzInput,
   accessToken: string,
 ): Promise<void> => {
-  await cameraApiFetch(paths.cameras.movePtzRelatively(cameraId), accessToken, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ horizontal, vertical, zoom }),
-  });
+  logPtzMetric(metric, "request_start", "relative");
+  try {
+    await cameraApiFetch(paths.cameras.movePtzRelatively(cameraId), accessToken, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ horizontal, vertical, zoom }),
+    });
+    logPtzMetric(metric, "api_response", "relative");
+  } catch (error) {
+    logPtzMetric(metric, "failure", "relative");
+    throw error;
+  }
 };
 
 type MoveRelativePtzMutation = (

@@ -5,6 +5,7 @@ import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 
 import { cameraApiFetch } from "./camera-api-fetch";
+import { logPtzMetric, type PtzMetricContext } from "../latency-metrics";
 import { ptzDirectionSchema } from "../utils";
 
 export const startPtzMovementSchema = z.object({
@@ -12,17 +13,26 @@ export const startPtzMovementSchema = z.object({
   direction: ptzDirectionSchema,
 });
 
-export type StartPtzMovementInput = z.infer<typeof startPtzMovementSchema>;
+export type StartPtzMovementInput = z.infer<typeof startPtzMovementSchema> & {
+  metric?: PtzMetricContext;
+};
 
 const startPtzMovement = async (
-  { cameraId, direction }: StartPtzMovementInput,
+  { cameraId, direction, metric }: StartPtzMovementInput,
   accessToken: string,
 ): Promise<void> => {
-  await cameraApiFetch(paths.cameras.startPtzMovement(cameraId), accessToken, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ direction }),
-  });
+  logPtzMetric(metric, "request_start", "start");
+  try {
+    await cameraApiFetch(paths.cameras.startPtzMovement(cameraId), accessToken, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ direction }),
+    });
+    logPtzMetric(metric, "api_response", "start");
+  } catch (error) {
+    logPtzMetric(metric, "failure", "start");
+    throw error;
+  }
 };
 
 type StartPtzMovementMutation = (

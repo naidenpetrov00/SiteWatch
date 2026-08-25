@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Api.SeedWork;
 using Api.SeedWork.Extensions;
 using Application.Cameras.Commands;
@@ -93,42 +94,95 @@ public class Cameras : EndpointGroupBase
 
     private static async Task<NoContent> StartPtzMovement(
         IMediator mediator,
+        ILogger<Cameras> logger,
+        IHostEnvironment environment,
         Guid cameraId,
         PtzDirectionRequest request,
         CancellationToken cancellationToken)
     {
-        await mediator.Send(
-            new StartPtzMovementCommand(cameraId, request.Direction),
-            cancellationToken);
-        return TypedResults.NoContent();
+        return await ExecutePtzAsync(
+            () => mediator.Send(
+                new StartPtzMovementCommand(cameraId, request.Direction),
+                cancellationToken),
+            "start",
+            cameraId,
+            logger,
+            environment);
     }
 
     private static async Task<NoContent> StopPtzMovement(
         IMediator mediator,
+        ILogger<Cameras> logger,
+        IHostEnvironment environment,
         Guid cameraId,
         PtzDirectionRequest request,
         CancellationToken cancellationToken)
     {
-        await mediator.Send(
-            new StopPtzMovementCommand(cameraId, request.Direction),
-            cancellationToken);
-        return TypedResults.NoContent();
+        return await ExecutePtzAsync(
+            () => mediator.Send(
+                new StopPtzMovementCommand(cameraId, request.Direction),
+                cancellationToken),
+            "stop",
+            cameraId,
+            logger,
+            environment);
     }
 
     private static async Task<NoContent> MovePtzRelatively(
         IMediator mediator,
+        ILogger<Cameras> logger,
+        IHostEnvironment environment,
         Guid cameraId,
         MovePtzRelativelyRequest request,
         CancellationToken cancellationToken)
     {
-        await mediator.Send(
-            new MovePtzRelativelyCommand(
-                cameraId,
-                request.Horizontal,
-                request.Vertical,
-                request.Zoom),
-            cancellationToken);
-        return TypedResults.NoContent();
+        return await ExecutePtzAsync(
+            () => mediator.Send(
+                new MovePtzRelativelyCommand(
+                    cameraId,
+                    request.Horizontal,
+                    request.Vertical,
+                    request.Zoom),
+                cancellationToken),
+            "relative",
+            cameraId,
+            logger,
+            environment);
+    }
+
+    private static async Task<NoContent> ExecutePtzAsync(
+        Func<Task> execute,
+        string operation,
+        Guid cameraId,
+        ILogger<Cameras> logger,
+        IHostEnvironment environment)
+    {
+        var stopwatch = environment.IsDevelopment() ? Stopwatch.StartNew() : null;
+        var outcome = "success";
+
+        try
+        {
+            await execute();
+            return TypedResults.NoContent();
+        }
+        catch
+        {
+            outcome = "failure";
+            throw;
+        }
+        finally
+        {
+            if (stopwatch is not null)
+            {
+                stopwatch.Stop();
+                logger.LogInformation(
+                    "[PTZ_METRIC] endpoint_complete {Operation} camera {CameraId} outcome {Outcome} elapsed {ElapsedMs}ms.",
+                    operation,
+                    cameraId,
+                    outcome,
+                    stopwatch.ElapsedMilliseconds);
+            }
+        }
     }
 
     private static async Task<NoContent> UpdateCameraIpAndPort(IMediator mediator, Guid cameraId,
