@@ -22,6 +22,7 @@ import {
   shouldLogFirstError,
   shouldLogFirstLoad,
 } from "../../latency-metrics";
+import { createVlcRtspSource } from "../../vlc-rtsp-config";
 import { playerStyles } from "./Player.styles";
 import useOverlayVisibility from "../../hooks/useOverlayVisibility";
 import usePlayerOrientation from "../../hooks/usePlayerOrientation";
@@ -134,10 +135,7 @@ const Player = React.forwardRef<PlayerHandle, PlayerProps>(
           autoAspectRatio={true}
           muted={isMuted}
           volume={isMuted ? 0 : 100}
-          source={{
-            uri: rtsp,
-            initOptions: ["--rtsp-tcp"],
-          }}
+          source={createVlcRtspSource(rtsp)}
           resizeMode="fill"
           onBuffering={() => {
             const session = rtspMetricSessionRef.current;
