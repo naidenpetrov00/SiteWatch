@@ -13,6 +13,7 @@ using Domain.Entities;
 using Domain.SeedWork.Enums;
 using Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Cameras.Services;
