@@ -17,6 +17,11 @@ import {useMoveRelativePtz} from "@/features/cameras/api/move-relative-ptz";
 import {useStartPtzMovement} from "@/features/cameras/api/start-ptz-movement";
 import {useStopPtzMovement} from "@/features/cameras/api/stop-ptz-movement";
 import {useWindowDimensions} from "react-native";
+import {
+    createPtzMetricContext,
+    logPtzMetric,
+    type PtzMetricContext,
+} from "@/features/cameras/latency-metrics";
 
 const joystickDirections: PtzDirection[] = ["Up", "Down", "Left", "Right"];
 
@@ -48,22 +53,25 @@ const CameraJoystick = ({
         null
     );
     const isLongPressRef = React.useRef(false);
+    const interactionRef = React.useRef<PtzMetricContext | null>(null);
 
-    const handleStart = (direction: PtzDirection) => {
+    const handleStart = (direction: PtzDirection, metric: PtzMetricContext) => {
         startPtzMovement({
             cameraId: camera.id,
             direction,
+            metric,
         });
     };
 
-    const handleStop = (direction: PtzDirection) => {
+    const handleStop = (direction: PtzDirection, metric: PtzMetricContext) => {
         stopPtzMovement({
             cameraId: camera.id,
             direction,
+            metric,
         });
     };
 
-    const handleRelativeMove = (direction: PtzDirection) => {
+    const handleRelativeMove = (direction: PtzDirection, metric: PtzMetricContext) => {
         const motion =
             direction === "Left"
                 ? {arg1: -relativeStep, arg2: 0}
@@ -78,6 +86,7 @@ const CameraJoystick = ({
             horizontal: motion.arg1,
             vertical: motion.arg2,
             zoom: 0,
+            metric,
         });
     };
 
@@ -86,9 +95,13 @@ const CameraJoystick = ({
             clearTimeout(pressTimeoutRef.current);
         }
         isLongPressRef.current = false;
+        interactionRef.current = createPtzMetricContext(camera.id, direction);
+        logPtzMetric(interactionRef.current, "interaction");
         pressTimeoutRef.current = setTimeout(() => {
             isLongPressRef.current = true;
-            handleStart(direction);
+            if (interactionRef.current) {
+                handleStart(direction, interactionRef.current);
+            }
         }, longPressDelayMs);
     };
 
@@ -99,12 +112,16 @@ const CameraJoystick = ({
         }
 
         if (isLongPressRef.current) {
-            handleStop(direction);
+            if (interactionRef.current) {
+                handleStop(direction, interactionRef.current);
+            }
             isLongPressRef.current = false;
             return;
         }
 
-        handleRelativeMove(direction);
+        if (interactionRef.current) {
+            handleRelativeMove(direction, interactionRef.current);
+        }
     };
 
     const directionPositionStyles: Record<PtzDirection, StyleProp<ViewStyle>> = {

@@ -5,6 +5,7 @@ import { Alert, Modal, Pressable, StatusBar, View } from "react-native";
 import { PlaybackMethods, VLCPlayer } from "react-native-vlc-media-player";
 import React, {
   useCallback,
+  useEffect,
   useImperativeHandle,
   useRef,
   useState,
@@ -13,6 +14,15 @@ import React, {
 import OverlayControls from "./OverlayControls";
 import { PlayerHandle } from "../../types";
 import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  createRtspMetricSession,
+  logRtspMetric,
+  recordPlaying,
+  shouldLogFirstBuffering,
+  shouldLogFirstError,
+  shouldLogFirstLoad,
+} from "../../latency-metrics";
+import { createVlcRtspSource } from "../../vlc-rtsp-config";
 import { playerStyles } from "./Player.styles";
 import useOverlayVisibility from "../../hooks/useOverlayVisibility";
 import usePlayerOrientation from "../../hooks/usePlayerOrientation";
@@ -42,10 +52,24 @@ const Player = React.forwardRef<PlayerHandle, PlayerProps>(
     ref,
   ) => {
     const playerRef = useRef<VLCPlayer>(null);
+    const rtspMetricSessionRef = useRef(createRtspMetricSession());
+    const previousPlayerKeyRef = useRef<number | null>(null);
     const [isMuted, setIsMuted] = useState(true);
     const { isLandscape, toggleFullscreen } = usePlayerOrientation();
     const { overlayVisible, handleOverlayPress, onInteraction } =
       useOverlayVisibility(isLandscape);
+
+    useEffect(() => {
+      const isRecreate = previousPlayerKeyRef.current !== null;
+      rtspMetricSessionRef.current = createRtspMetricSession();
+      previousPlayerKeyRef.current = playerKey;
+
+      logRtspMetric(rtspMetricSessionRef.current, "viewer_init");
+      logRtspMetric(rtspMetricSessionRef.current, "player_load_start");
+      if (isRecreate) {
+        logRtspMetric(rtspMetricSessionRef.current, "player_recreate");
+      }
+    }, [playerKey, rtsp]);
 
     const handleOnRecordingCreatedAsync = async (recordingPath: string) => {
       console.log("Recording created at:", recordingPath);
@@ -111,11 +135,41 @@ const Player = React.forwardRef<PlayerHandle, PlayerProps>(
           autoAspectRatio={true}
           muted={isMuted}
           volume={isMuted ? 0 : 100}
-          source={{
-            uri: rtsp,
-            initOptions: ["--rtsp-tcp"],
-          }}
+          source={createVlcRtspSource(rtsp)}
           resizeMode="fill"
+          onBuffering={() => {
+            const session = rtspMetricSessionRef.current;
+            if (shouldLogFirstBuffering(session)) {
+              logRtspMetric(session, "buffering");
+            }
+          }}
+          onLoad={() => {
+            const session = rtspMetricSessionRef.current;
+            if (shouldLogFirstLoad(session)) {
+              logRtspMetric(session, "loaded");
+            }
+          }}
+          onPlaying={() => {
+            const session = rtspMetricSessionRef.current;
+            const { isFirstUsableFrame, isReconnection, shouldLogPlaying } =
+              recordPlaying(session);
+
+            if (shouldLogPlaying) {
+              logRtspMetric(session, "playing");
+            }
+            if (isFirstUsableFrame) {
+              logRtspMetric(session, "first_usable_frame_proxy");
+            }
+            if (isReconnection) {
+              logRtspMetric(session, "reconnection");
+            }
+          }}
+          onError={() => {
+            const session = rtspMetricSessionRef.current;
+            if (shouldLogFirstError(session)) {
+              logRtspMetric(session, "error");
+            }
+          }}
           onRecordingCreated={(path) => {
             console.log("onRecordingCreated callback:", path);
             if (path) handleOnRecordingCreatedAsync(path);

@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Net;
+using System.Diagnostics;
 using Application.Cameras;
 using Application.Cameras.Queries;
 using Application.Cameras.Commands;
@@ -12,6 +13,7 @@ using Domain.Entities;
 using Domain.SeedWork.Enums;
 using Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Cameras.Services;
@@ -19,7 +21,8 @@ namespace Infrastructure.Cameras.Services;
 public sealed class CameraService(
     IApplicationDbContext dbContext,
     IMapper mapper,
-    ILogger<CameraService> logger) : ICameraService
+    ILogger<CameraService> logger,
+    IHostEnvironment environment) : ICameraService
 {
     private const int CameraChannel = 1;
     private const int PtzSpeed = 5;
@@ -147,7 +150,7 @@ public sealed class CameraService(
                 new("arg3", zoom.ToString(CultureInfo.InvariantCulture)),
             ]);
 
-        await SendPtzRequestAsync(camera, ptzUri, cancellationToken);
+        await SendPtzRequestAsync(camera, ptzUri, "relative", cancellationToken);
     }
 
     public async Task<Camera> CreateCameraAsync(CameraName cameraName, CameraBrand cameraBrand,
@@ -288,36 +291,34 @@ public sealed class CameraService(
             ]);
 
         logger.LogInformation(
-            "Sending PTZ command to camera {CameraId}. Action {Action}, direction {Direction}, URI {CameraUri}.",
+            "Sending PTZ command to camera {CameraId}. Action {Action}, direction {Direction}.",
             camera.Id,
             action,
-            direction,
-            ptzUri);
-        await SendPtzRequestAsync(camera, ptzUri, cancellationToken);
+            direction);
+        await SendPtzRequestAsync(camera, ptzUri, action, cancellationToken);
     }
 
     private async Task SendPtzRequestAsync(
         Camera camera,
         Uri requestUri,
+        string operation,
         CancellationToken cancellationToken)
     {
-        logger.LogInformation(
-            "Sending PTZ request to camera {CameraId} at {CameraUri}.",
-            camera.Id,
-            requestUri);
-        using var client = CreateDahuaClient(camera);
-        using var response = await SendGetAsync(client, requestUri, cancellationToken);
-        logger.LogInformation(
-            "PTZ response from camera {CameraId}: status {StatusCode}.",
-            camera.Id,
-            (int)response.StatusCode);
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new CameraCommunicationException();
-        }
-
+        var stopwatch = environment.IsDevelopment() ? Stopwatch.StartNew() : null;
+        var outcome = "failure";
         try
         {
+            using var client = CreateDahuaClient(camera);
+            using var response = await SendGetAsync(client, requestUri, cancellationToken);
+            logger.LogInformation(
+                "PTZ response from camera {CameraId}: status {StatusCode}.",
+                camera.Id,
+                (int)response.StatusCode);
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new CameraCommunicationException();
+            }
+
             var body = await response.Content.ReadAsStringAsync(cancellationToken);
             if (!string.Equals(body.Trim(), "OK", StringComparison.OrdinalIgnoreCase))
             {
@@ -329,6 +330,7 @@ public sealed class CameraService(
             }
 
             logger.LogInformation("PTZ command completed successfully for camera {CameraId}.", camera.Id);
+            outcome = "success";
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
@@ -339,6 +341,19 @@ public sealed class CameraService(
         {
             logger.LogWarning(exception, "PTZ response from camera {CameraId} failed.", camera.Id);
             throw new CameraCommunicationException(exception);
+        }
+        finally
+        {
+            if (stopwatch is not null)
+            {
+                stopwatch.Stop();
+                logger.LogInformation(
+                    "[PTZ_METRIC] camera_request_complete {Operation} camera {CameraId} outcome {Outcome} elapsed {ElapsedMs}ms.",
+                    operation,
+                    camera.Id,
+                    outcome,
+                    stopwatch.ElapsedMilliseconds);
+            }
         }
     }
 
@@ -356,12 +371,12 @@ public sealed class CameraService(
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            logger.LogWarning("Camera request to {CameraUri} timed out after {TimeoutSeconds} seconds.", requestUri, CameraRequestTimeout.TotalSeconds);
+            logger.LogWarning("Camera request timed out after {TimeoutSeconds} seconds.", CameraRequestTimeout.TotalSeconds);
             throw new CameraCommunicationException();
         }
         catch (HttpRequestException exception)
         {
-            logger.LogWarning(exception, "Camera request to {CameraUri} failed.", requestUri);
+            logger.LogWarning(exception, "Camera request failed.");
             throw new CameraCommunicationException(exception);
         }
     }
