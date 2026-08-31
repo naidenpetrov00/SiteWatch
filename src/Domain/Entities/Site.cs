@@ -13,6 +13,7 @@ public sealed class Site : BaseAuditableEntity, IHasNumberId
     private readonly HashSet<SiteFile> _files = [];
     private readonly HashSet<SiteVideo> _videos = [];
     private readonly HashSet<SitePayment> _payments = [];
+    private readonly HashSet<Issue> _issues = [];
 
     public Site(
         SiteName name,
@@ -52,6 +53,7 @@ public sealed class Site : BaseAuditableEntity, IHasNumberId
     public IReadOnlyCollection<SiteFile> Files => _files;
     public IReadOnlyCollection<SiteVideo> Videos => _videos;
     public IReadOnlyCollection<SitePayment> Payments => _payments;
+    public IReadOnlyCollection<Issue> Issues => _issues;
 
     public void ChangeMediaPolicy(SiteMediaPolicy mediaPolicy) =>
         MediaPolicy = Guard.Against.Null(mediaPolicy);

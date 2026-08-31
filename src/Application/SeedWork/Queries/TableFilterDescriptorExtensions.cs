@@ -29,4 +29,17 @@ public static class TableFilterDescriptorExtensions
             request => TableFilterPredicates.IntEquals(selector, valueSelector(request))
         );
     }
+
+    public static TableFilterDescriptor<TEntity, TRequest> DateOnlySearch<TEntity, TRequest>(
+        string key,
+        Func<TRequest, string?> valueSelector,
+        Expression<Func<TEntity, DateOnly?>> selector
+    )
+        where TRequest : TableQueryRequest
+    {
+        return new TableFilterDescriptor<TEntity, TRequest>(
+            key,
+            request => TableFilterPredicates.DateOnlySearch(selector, valueSelector(request))
+        );
+    }
 }
