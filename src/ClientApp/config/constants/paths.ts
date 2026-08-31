@@ -43,4 +43,9 @@ export const paths = {
         getFileAccess: (siteId: string, invoiceId: string) =>
             `/invoices/site/${siteId}/${invoiceId}/file-access`,
     },
+    issues: {
+        create: "/issues",
+        getById: (issueId: string) => `/issues/${issueId}`,
+        getBySiteId: (siteId: string) => `/issues/site/${siteId}`,
+    },
 };

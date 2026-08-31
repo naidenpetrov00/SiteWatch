@@ -104,6 +104,28 @@ public sealed class IssueService(
         return IssueDetailsDto.From(issue);
     }
 
+    public async Task<IReadOnlyList<IssueDetailsDto>> GetBySiteAsync(
+        Guid siteId,
+        CancellationToken cancellationToken)
+    {
+        await GetSiteAsync(siteId, cancellationToken);
+        if (!await IsAdministratorAsync(cancellationToken))
+        {
+            await EnsureCurrentUserCanAccessSiteAsync(siteId, cancellationToken);
+        }
+
+        var issues = await dbContext.Issues
+            .AsNoTracking()
+            .Include(issue => issue.Site)
+            .Include(issue => issue.AssignedWorkers)
+            .Where(issue => issue.SiteId == siteId)
+            .OrderByDescending(issue => issue.Created)
+            .ThenByDescending(issue => issue.NumberId)
+            .ToListAsync(cancellationToken);
+
+        return issues.Select(IssueDetailsDto.From).ToList();
+    }
+
     public async Task<PagedResult<IssueDetailsDto>> GetDashboardIssuesAsync(
         DashboardIssuesQuery request,
         CancellationToken cancellationToken)

@@ -31,10 +31,6 @@ export default function SiteLayout() {
         options={{ headerShown: true, title: "People On Site" }}
       />
       <Stack.Screen
-        name="Issues"
-        options={{ headerShown: true, title: "Open Issues" }}
-      />
-      <Stack.Screen
         name="Payments"
         options={{ headerShown: true, title: "Payments" }}
       />

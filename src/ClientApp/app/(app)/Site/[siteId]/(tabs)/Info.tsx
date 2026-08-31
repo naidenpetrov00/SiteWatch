@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import useGetSearchParams from "@/hooks/useGetSearchParams";
 import { useGetSitesByUserId } from "@/features/sites/api/get-sites-by-user";
 import LoadingState from "@/components/app/LoadingState";
+import IssuesCard from "@/features/sites/info/issues/components/IssuesCard";
 
 const Info = () => {
   const colorPalette = useColorPalette();
@@ -39,6 +40,7 @@ const Info = () => {
     >
       <Summary site={site} />
       <Details />
+      <IssuesCard siteId={siteId} />
     </ScrollView>
   );
 };

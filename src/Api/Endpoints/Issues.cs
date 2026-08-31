@@ -29,6 +29,12 @@ public sealed class Issues : EndpointGroupBase
             .Produces<IssueDetailsDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status403Forbidden)
             .Produces(StatusCodes.Status404NotFound);
+        group.MapGet("/site/{siteId:guid}", GetSiteIssues)
+            .WithName("GetSiteIssues")
+            .WithSummary("Get issues for a site")
+            .Produces<IReadOnlyList<IssueDetailsDto>>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces(StatusCodes.Status404NotFound);
         group.MapPut("/{issueId:guid}", UpdateIssue)
             .RequireAuthorization(AuthorizationPolicies.Administrator)
             .WithName("UpdateIssue")
@@ -59,6 +65,15 @@ public sealed class Issues : EndpointGroupBase
     {
         var issue = await mediator.Send(new IssueByIdQuery(issueId), cancellationToken);
         return TypedResults.Ok(issue);
+    }
+
+    private static async Task<Ok<IReadOnlyList<IssueDetailsDto>>> GetSiteIssues(
+        IMediator mediator,
+        Guid siteId,
+        CancellationToken cancellationToken)
+    {
+        var issues = await mediator.Send(new SiteIssuesQuery(siteId), cancellationToken);
+        return TypedResults.Ok(issues);
     }
 
     private static async Task<NoContent> UpdateIssue(

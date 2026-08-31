@@ -33,12 +33,6 @@ const detailCards: DetailsCardItem[] = [
     path: "People",
   },
   {
-    label: "Open Issues",
-    value: temporaryCount(0, 10),
-    helper: "Temporary data",
-    path: "Issues",
-  },
-  {
     label: "Payments",
     value: temporaryCount(0, 25),
     helper: "Temporary data",
