@@ -24,6 +24,12 @@ public class IdentityService(
         CancellationToken cancellationToken) =>
         userService.SearchUsersAsync(searchTerm, cancellationToken);
 
+    public Task<List<DashboardUserLookupDto>> SearchUsersAsync(
+        string? searchTerm,
+        string? role,
+        CancellationToken cancellationToken) =>
+        userService.SearchUsersAsync(searchTerm, role, cancellationToken);
+
     public Task<IdentityResultModel> CreateUserAsync(
         string userName,
         string email,

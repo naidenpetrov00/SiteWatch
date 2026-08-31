@@ -9,6 +9,7 @@ namespace Application.Identity.Queries.DashboardUsers;
 public sealed record DashboardUserSearchQuery : IRequest<List<DashboardUserLookupDto>>
 {
     public string? SearchTerm { get; init; }
+    public string? Role { get; init; }
 }
 
 public sealed class DashboardUserSearchQueryValidator : AbstractValidator<DashboardUserSearchQuery>
@@ -16,6 +17,9 @@ public sealed class DashboardUserSearchQueryValidator : AbstractValidator<Dashbo
     public DashboardUserSearchQueryValidator()
     {
         RuleFor(query => query.SearchTerm).MaximumLength(200);
+        RuleFor(query => query.Role)
+            .Must(role => string.IsNullOrWhiteSpace(role) || UserRoles.IsSupported(role.Trim()))
+            .WithMessage("Role must be a supported user role.");
     }
 }
 
@@ -24,6 +28,10 @@ public sealed class DashboardUserSearchQueryHandler(IIdentityService identitySer
 {
     public Task<List<DashboardUserLookupDto>> Handle(
         DashboardUserSearchQuery request,
-        CancellationToken cancellationToken) =>
-        identityService.SearchUsersAsync(request.SearchTerm, cancellationToken);
+        CancellationToken cancellationToken)
+    {
+        return string.IsNullOrWhiteSpace(request.Role)
+            ? identityService.SearchUsersAsync(request.SearchTerm, cancellationToken)
+            : identityService.SearchUsersAsync(request.SearchTerm, request.Role, cancellationToken);
+    }
 }

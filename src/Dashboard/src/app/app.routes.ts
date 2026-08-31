@@ -53,6 +53,14 @@ export const routes: Routes = [
           )
       },
       {
+        path: 'manage-issues',
+        title: 'Manage Issues',
+        loadComponent: () =>
+          import('./features/issues/pages/manage-issues.page').then(
+            (m) => m.ManageIssuesPage
+          )
+      },
+      {
         path: 'manage-users',
         title: 'Manage Users',
         loadComponent: () =>

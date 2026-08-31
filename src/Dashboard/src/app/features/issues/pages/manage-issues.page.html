@@ -1,0 +1,27 @@
+<main class="manage-issues-page">
+  <header class="manage-issues-page__header">
+    <div>
+      <p class="manage-issues-page__eyebrow">Sites Management</p>
+      <h1>Manage Issues</h1>
+      <p class="manage-issues-page__summary">Review, create, and maintain site issues.</p>
+    </div>
+    <div class="manage-issues-page__actions">
+      <app-action-button label="Add Issue" variant="primary" (clicked)="openAddIssueDialog()" />
+    </div>
+  </header>
+
+  <app-data-table
+    tableEyebrow="Issues"
+    tableLabel="Manage Issues"
+    emptyMessage="No issues match the current filters."
+    filterApplyMode="search"
+    [rows]="issues()"
+    [filteredRowsTotal]="issuesFilteredCount()"
+    [overallRowsTotal]="issuesTotalCount()"
+    [columns]="columns"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="pageSizeOptions"
+    (tableStateChange)="onTableStateChange($event)"
+    (cellButtonClicked)="onNumberIdClick($event.row)"
+  />
+</main>

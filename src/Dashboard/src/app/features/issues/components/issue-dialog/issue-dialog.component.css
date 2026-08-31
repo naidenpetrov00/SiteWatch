@@ -1,0 +1,5 @@
+.issue-dialog__form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.issue-dialog__full-width { grid-column: 1 / -1; }
+.issue-dialog__workers { display: grid; gap: .5rem; }
+.issue-dialog__validation-error, .issue-dialog__save-error { grid-column: 1 / -1; margin: -.5rem 0 0; color: #b91c1c; font-size: .875rem; }
+@media (max-width: 40rem) { .issue-dialog__form { grid-template-columns: 1fr; } }
