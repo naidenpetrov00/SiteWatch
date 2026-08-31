@@ -1,6 +1,5 @@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatChipsModule } from '@angular/material/chips';
@@ -17,9 +16,14 @@ import { DashboardSiteLookup } from '../../../sites/models/dashboard-site-lookup
 import { DashboardSitesService } from '../../../sites/services/dashboard-sites.service';
 import { DashboardUserLookup } from '../../../users/models/dashboard-user-lookup.model';
 import { DashboardUsersService } from '../../../users/services/dashboard-users.service';
-import { DashboardIssue, DashboardIssueWorker } from '../../models/dashboard-issue.model';
-import { IssueRequest } from '../../models/issue-request.model';
+import { DashboardIssue } from '../../models/dashboard-issue.model';
 import { DashboardIssuesService } from '../../services/dashboard-issues.service';
+import {
+  getIssueSaveError,
+  toDashboardUserLookup,
+  toIssueRequest,
+  toLocalDate
+} from '../../utils/issue-dialog.utils';
 
 const ISSUE_STATUS_OPTIONS = [
   'Open',
@@ -68,7 +72,7 @@ export class IssueDialogComponent {
   readonly siteResults = signal<readonly DashboardSiteLookup[]>([]);
   readonly workerResults = signal<readonly DashboardUserLookup[]>([]);
   readonly selectedWorkers = signal<readonly DashboardUserLookup[]>(
-    this.issue?.assignedWorkers.map(toUserLookup) ?? []
+    this.issue?.assignedWorkers.map(toDashboardUserLookup) ?? []
   );
   readonly saveError = signal<string | null>(null);
   readonly siteSearchControl = this.formBuilder.control<string | DashboardSiteLookup | null>(
@@ -80,8 +84,8 @@ export class IssueDialogComponent {
     title: [this.issue?.title ?? '', [Validators.required, Validators.maxLength(200)]],
     description: [this.issue?.description ?? '', [Validators.required, Validators.maxLength(4000)]],
     status: [this.issue?.status ?? 'Open', [Validators.required]],
-    startDate: [toDate(this.issue?.startDate ?? null)],
-    endDate: [toDate(this.issue?.endDate ?? null)],
+    startDate: [toLocalDate(this.issue?.startDate ?? null)],
+    endDate: [toLocalDate(this.issue?.endDate ?? null)],
     assignedWorkerIds: [this.issue?.assignedWorkers.map((worker) => worker.id) ?? []]
   }, { validators: dateRangeValidator });
   readonly isSaving = () =>
@@ -145,7 +149,7 @@ export class IssueDialogComponent {
     }
 
     this.saveError.set(null);
-    const request = this.toIssueRequest();
+    const request = toIssueRequest(this.issueForm.getRawValue());
     try {
       if (this.issue) {
         await this.dashboardIssuesService.updateIssue({ id: this.issue.id, ...request });
@@ -154,21 +158,8 @@ export class IssueDialogComponent {
       }
       this.dialogRef.close(true);
     } catch (error) {
-      this.saveError.set(getErrorMessage(error));
+      this.saveError.set(getIssueSaveError(error));
     }
-  }
-
-  private toIssueRequest(): IssueRequest {
-    const value = this.issueForm.getRawValue();
-    return {
-      siteId: value.siteId ?? '',
-      title: value.title?.trim() ?? '',
-      description: value.description?.trim() ?? '',
-      status: value.status ?? 'Open',
-      startDate: toDateOnly(value.startDate),
-      endDate: toDateOnly(value.endDate),
-      assignedWorkerIds: value.assignedWorkerIds ?? []
-    };
   }
 
   private async searchSites(rawSearchTerm: string): Promise<void> {
@@ -196,28 +187,4 @@ export class IssueDialogComponent {
       if (revision === this.workerSearchRevision) this.workerResults.set([]);
     }
   }
-}
-
-function toUserLookup(worker: DashboardIssueWorker): DashboardUserLookup {
-  return { id: worker.id, displayName: worker.userName ?? worker.email ?? worker.id, email: worker.email };
-}
-
-function toDate(value: string | null): Date | null {
-  if (!value) return null;
-  const [year, month, day] = value.split('-').map(Number);
-  return new Date(year, month - 1, day);
-}
-
-function toDateOnly(value: Date | null | undefined): string | null {
-  if (!value) return null;
-  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
-}
-
-function getErrorMessage(error: unknown): string {
-  if (error instanceof HttpErrorResponse) {
-    const errors = error.error?.errors as Record<string, string[]> | undefined;
-    const message = errors && Object.values(errors).flat().find(Boolean);
-    if (message) return message;
-  }
-  return 'Unable to save the issue. Please review the details and try again.';
 }
