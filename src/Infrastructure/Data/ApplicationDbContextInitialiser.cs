@@ -224,13 +224,15 @@ public class ApplicationDbContextInitialiser(
 
     private async Task ClearSeedDataAsync()
     {
+        var deletedIssues = await dbContext.Issues.ExecuteDeleteAsync();
         var deletedCameras = await dbContext.Cameras.ExecuteDeleteAsync();
         var deletedSites = await dbContext.Sites.ExecuteDeleteAsync();
 
-        if (deletedCameras > 0 || deletedSites > 0)
+        if (deletedIssues > 0 || deletedCameras > 0 || deletedSites > 0)
         {
             logger.LogInformation(
-                "Cleared {CameraCount} cameras and {SiteCount} sites.",
+                "Cleared {IssueCount} issues, {CameraCount} cameras and {SiteCount} sites.",
+                deletedIssues,
                 deletedCameras,
                 deletedSites
             );
@@ -322,6 +324,94 @@ public class ApplicationDbContextInitialiser(
             "Seeded {CameraCount} cameras to site 'Regional Office North'.",
             cameras.Count
         );
+    }
+
+    private async Task AddIssues()
+    {
+        if (await dbContext.Issues.AnyAsync())
+        {
+            logger.LogInformation("Issue seeding skipped: issues already exist.");
+            return;
+        }
+
+        var sites = await dbContext.Sites
+            .Where(site => InvoiceSeedSiteNames.Contains(site.Name.Value))
+            .ToDictionaryAsync(site => site.Name.Value);
+        var missingSiteNames = InvoiceSeedSiteNames
+            .Where(name => !sites.ContainsKey(name))
+            .ToArray();
+        if (missingSiteNames.Length > 0)
+        {
+            logger.LogWarning(
+                "Issue seeding skipped: seeded sites are missing: {SiteNames}.",
+                missingSiteNames);
+            return;
+        }
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var now = DateTimeOffset.UtcNow;
+        var issueDefinitions = new[]
+        {
+            (
+                SiteName: "Central Office",
+                Title: "Replace lobby access reader",
+                Description: "The lobby access reader intermittently fails to recognize registered cards.",
+                Status: IssueStatus.Open,
+                StartDate: (DateOnly?)null,
+                EndDate: (DateOnly?)null),
+            (
+                SiteName: "Regional Office North",
+                Title: "Review perimeter camera coverage",
+                Description: "Confirm that the new loading-area layout remains within camera coverage.",
+                Status: IssueStatus.InReview,
+                StartDate: today.AddDays(-2),
+                EndDate: today.AddDays(3)),
+            (
+                SiteName: "Regional Office South",
+                Title: "Complete emergency lighting inspection",
+                Description: "Resolve the findings from the scheduled emergency lighting inspection.",
+                Status: IssueStatus.WorkingOn,
+                StartDate: today.AddDays(-7),
+                EndDate: today.AddDays(7)),
+            (
+                SiteName: "Central Office",
+                Title: "Approve loading dock repair payment",
+                Description: "The loading dock repair is complete and awaits payment approval.",
+                Status: IssueStatus.ApprovedWaitingPayment,
+                StartDate: today.AddDays(-14),
+                EndDate: today.AddDays(-1)),
+            (
+                SiteName: "Regional Office North",
+                Title: "Replace server room temperature sensor",
+                Description: "The faulty temperature sensor was replaced and the readings are stable.",
+                Status: IssueStatus.Completed,
+                StartDate: today.AddDays(-10),
+                EndDate: today.AddDays(-3)),
+        };
+
+        var issues = issueDefinitions.Select(definition =>
+        {
+            var issue = Issue.Create(
+                sites[definition.SiteName],
+                definition.Title,
+                definition.Description,
+                definition.Status);
+            issue.UpdateDetails(
+                definition.Title,
+                definition.Description,
+                definition.Status,
+                definition.StartDate,
+                definition.EndDate);
+            issue.Created = now;
+            issue.CreatedBy = SeededBy;
+            issue.LastModified = now;
+            issue.LastModifiedBy = SeededBy;
+            return issue;
+        }).ToList();
+
+        await dbContext.Issues.AddRangeAsync(issues);
+        await dbContext.SaveChangesAsync();
+        logger.LogInformation("Seeded {IssueCount} issues.", issues.Count);
     }
 
     private async Task<List<Person>> AddPersons()
@@ -534,6 +624,7 @@ public class ApplicationDbContextInitialiser(
             await AddSites(users);
             await EnsureThirdSeedSiteAccessAsync(users);
             await AddCameras();
+            await AddIssues();
             var persons = await AddPersons();
             var invoiceCount = blobInitializer.GetRequiredSeedInvoiceCount();
             await AddInvoices(persons, invoiceCount);
