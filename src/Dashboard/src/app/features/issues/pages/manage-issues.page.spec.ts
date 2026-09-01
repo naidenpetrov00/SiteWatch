@@ -15,10 +15,11 @@ describe('ManageIssuesPage', () => {
       imports: [ManageIssuesPage],
       providers: [
         { provide: DashboardIssuesService, useValue: issuesService },
-        { provide: MatDialog, useValue: dialog },
         provideTanStackQuery(new QueryClient())
       ]
-    }).compileComponents();
+    })
+      .overrideProvider(MatDialog, { useValue: dialog })
+      .compileComponents();
     vi.clearAllMocks();
   });
 

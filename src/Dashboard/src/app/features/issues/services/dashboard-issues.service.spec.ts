@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { QueryClient, provideTanStackQuery } from '@tanstack/angular-query-experimental';
 import { vi } from 'vitest';
 
-import { buildApiUrl } from '../../../../core/api/api-url';
+import { buildApiUrl } from '../../../core/api/api-url';
 import { DashboardIssuesService } from './dashboard-issues.service';
 
 describe('DashboardIssuesService', () => {
@@ -39,6 +39,7 @@ describe('DashboardIssuesService', () => {
     const queryClient = TestBed.inject(QueryClient);
     const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
     const create = service.createIssue({ siteId: 'site-1', title: 'Gate', description: 'Broken', status: 'Open', startDate: null, endDate: null, assignedWorkerIds: [] });
+    await Promise.resolve();
     const createRequest = httpTesting.expectOne(buildApiUrl('/issues'));
     expect(createRequest.request.method).toBe('POST');
     createRequest.flush({ id: 'issue-1' });
@@ -46,6 +47,7 @@ describe('DashboardIssuesService', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['issues', 'dashboard'] });
 
     const update = service.updateIssue({ id: 'issue-1', siteId: 'site-1', title: 'Gate', description: 'Fixed', status: 'Completed', startDate: null, endDate: null, assignedWorkerIds: [] });
+    await Promise.resolve();
     const updateRequest = httpTesting.expectOne(buildApiUrl('/issues/issue-1'));
     expect(updateRequest.request.method).toBe('PUT');
     expect(updateRequest.request.body).not.toHaveProperty('id');
