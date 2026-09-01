@@ -25,6 +25,8 @@ describe('DashboardShellComponent', () => {
           { path: 'sign-in', component: DummyComponent },
           { path: 'invoices', component: DummyComponent },
           { path: 'scan-invoice', component: DummyComponent },
+          { path: 'manage-sites', component: DummyComponent },
+          { path: 'manage-issues', component: DummyComponent },
           { path: 'manage-users', component: DummyComponent }
         ]),
         { provide: IdentityAuthService, useValue: authService }
@@ -83,6 +85,20 @@ describe('DashboardShellComponent', () => {
     trigger.click();
     fixture.detectChanges();
     await fixture.whenStable();
+  });
+
+  it('opens the sites menu with the Manage Issues entry', async () => {
+    const fixture = TestBed.createComponent(DashboardShellComponent);
+    fixture.detectChanges();
+    const trigger = (fixture.nativeElement as HTMLElement).querySelector(
+      'button[aria-label="Sites management menu"]'
+    ) as HTMLButtonElement;
+
+    trigger.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(document.body.querySelector('.dashboard-shell__menu-panel')?.textContent).toContain('Manage Issues');
   });
 
   it('logs out and navigates to sign-in', async () => {

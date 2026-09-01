@@ -140,6 +140,31 @@ public static class TableFilterPredicates
         return null;
     }
 
+    public static Expression<Func<TEntity, bool>>? DateOnlySearch<TEntity>(
+        Expression<Func<TEntity, DateOnly?>> selector,
+        string? rawValue
+    )
+    {
+        var normalizedValue = Normalize(rawValue);
+        if (normalizedValue.Length == 0
+            || !DateOnly.TryParse(
+                normalizedValue,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.AllowWhiteSpaces,
+                out var parsedDate))
+        {
+            return null;
+        }
+
+        var hasValue = Expression.Property(selector.Body, nameof(Nullable<DateOnly>.HasValue));
+        var value = Expression.Property(selector.Body, nameof(Nullable<DateOnly>.Value));
+        var body = Expression.AndAlso(
+            hasValue,
+            Expression.Equal(value, Expression.Constant(parsedDate)));
+
+        return Expression.Lambda<Func<TEntity, bool>>(body, selector.Parameters);
+    }
+
     private static Expression<Func<TEntity, bool>> BuildYearPredicate<TEntity>(
         Expression<Func<TEntity, DateTimeOffset?>> selector,
         int year

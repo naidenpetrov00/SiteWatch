@@ -56,7 +56,10 @@ export class DashboardUsersService {
     this.queryState.set(nextState);
   }
 
-  searchUsers(searchTerm: string): Promise<readonly DashboardUserLookup[]> {
+  searchUsers(
+    searchTerm: string,
+    role?: string
+  ): Promise<readonly DashboardUserLookup[]> {
     const normalizedSearchTerm = searchTerm.trim();
 
     if (normalizedSearchTerm.length === 0) {
@@ -65,9 +68,15 @@ export class DashboardUsersService {
 
     return firstValueFrom(
       this.http.get<readonly DashboardUserLookup[]>(buildApiUrl('/dashboard/users/search'), {
-        params: new HttpParams().set('searchTerm', normalizedSearchTerm)
+        params: new HttpParams()
+          .set('searchTerm', normalizedSearchTerm)
+          .set('role', role ?? '')
       })
     );
+  }
+
+  searchWorkers(searchTerm: string): Promise<readonly DashboardUserLookup[]> {
+    return this.searchUsers(searchTerm, 'Worker');
   }
 
   private toQueryState(state: DataTableState<DashboardUser>): DashboardUsersQueryState {

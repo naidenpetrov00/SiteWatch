@@ -149,6 +149,12 @@ public class IdentityUserService(
 
     public async Task<List<DashboardUserLookupDto>> SearchUsersAsync(
         string? searchTerm,
+        CancellationToken cancellationToken) =>
+        await SearchUsersAsync(searchTerm, null, cancellationToken);
+
+    public async Task<List<DashboardUserLookupDto>> SearchUsersAsync(
+        string? searchTerm,
+        string? role,
         CancellationToken cancellationToken)
     {
         var normalizedSearchTerm = searchTerm?.Trim();
@@ -158,19 +164,35 @@ public class IdentityUserService(
             return [];
         }
 
-        return await userManager.Users
+        var normalizedRole = role?.Trim();
+        var candidates = await userManager.Users
             .AsNoTracking()
             .Where(user =>
                 (user.UserName != null && user.UserName.Contains(normalizedSearchTerm))
                 || (user.Email != null && user.Email.Contains(normalizedSearchTerm)))
             .OrderBy(user => user.UserName)
             .ThenBy(user => user.Id)
-            .Take(20)
+            .Take(string.IsNullOrWhiteSpace(normalizedRole) ? 20 : 100)
+            .ToListAsync(cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(normalizedRole))
+        {
+            candidates = (await Task.WhenAll(candidates.Select(async candidate =>
+                (Candidate: candidate, Claims: await userManager.GetClaimsAsync(candidate)))))
+                .Where(item => item.Claims.Any(claim =>
+                    claim.Type == UserClaimTypes.UserType
+                    && claim.Value.Equals(normalizedRole, StringComparison.Ordinal)))
+                .Select(item => item.Candidate)
+                .Take(20)
+                .ToList();
+        }
+
+        return candidates
             .Select(user => new DashboardUserLookupDto(
                 user.Id,
                 user.UserName ?? user.Email ?? string.Empty,
                 user.Email))
-            .ToListAsync(cancellationToken);
+            .ToList();
     }
 
     public async Task<ApplicationUser?> FindUserByEmailAsync(string email) =>

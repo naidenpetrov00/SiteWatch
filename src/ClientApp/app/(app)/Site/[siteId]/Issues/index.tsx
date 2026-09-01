@@ -1,10 +1,5 @@
-import ComingSoon from "@/components/ui/ComingSoon";
+import IssuesCard from "@/features/sites/info/issues/components/IssuesCard";
 
-const OpenIssuesScreen = () => (
-  <ComingSoon
-    title="Open Issues"
-    description="Issue tracking is in progress and will be available soon."
-  />
-);
+const IssuesScreen = () => <IssuesCard />;
 
-export default OpenIssuesScreen;
+export default IssuesScreen;

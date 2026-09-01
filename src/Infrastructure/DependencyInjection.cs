@@ -7,6 +7,7 @@ using Infrastructure.Cameras.Services;
 using Infrastructure.Data;
 using Infrastructure.Email;
 using Infrastructure.Invoices.Services;
+using Infrastructure.Issues.Services;
 using Infrastructure.Identity.Services;
 using Infrastructure.Persons.Services;
 using Infrastructure.SeedWork.Options;
@@ -63,6 +64,7 @@ public static class DependencyInjection
         services.AddScoped<IInvoiceBlobService, BlobInvoiceService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IInvoiceService, InvoiceService>();
+        services.AddScoped<IIssueService, IssueService>();
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<ISiteService, SiteService>();
         services.AddScoped<ICameraService, CameraService>();

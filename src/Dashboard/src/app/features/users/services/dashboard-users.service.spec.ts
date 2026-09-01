@@ -34,7 +34,7 @@ describe('DashboardUsersService', () => {
   it('trims the manager search term before sending it to the dashboard lookup endpoint', async () => {
     const search = service.searchUsers('  Ada  ');
     const request = httpTesting.expectOne(
-      `${buildApiUrl('/dashboard/users/search')}?searchTerm=Ada`
+      `${buildApiUrl('/dashboard/users/search')}?searchTerm=Ada&role=`
     );
 
     expect(request.request.method).toBe('GET');
@@ -43,5 +43,16 @@ describe('DashboardUsersService', () => {
     await expect(search).resolves.toEqual([
       { id: 'user-1', displayName: 'Ada Lovelace', email: 'ada@example.com' }
     ]);
+  });
+
+  it('searches workers with the worker role filter', async () => {
+    const search = service.searchWorkers('  Ada  ');
+    const request = httpTesting.expectOne(
+      `${buildApiUrl('/dashboard/users/search')}?searchTerm=Ada&role=Worker`
+    );
+
+    request.flush([]);
+
+    await expect(search).resolves.toEqual([]);
   });
 });

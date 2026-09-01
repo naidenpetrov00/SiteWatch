@@ -26,13 +26,10 @@ export default function SiteLayout() {
       <Stack.Screen name="Images" />
       <Stack.Screen name="Videos" />
       <Stack.Screen name="Invoices" />
+      <Stack.Screen name="Issues" />
       <Stack.Screen
         name="People"
         options={{ headerShown: true, title: "People On Site" }}
-      />
-      <Stack.Screen
-        name="Issues"
-        options={{ headerShown: true, title: "Open Issues" }}
       />
       <Stack.Screen
         name="Payments"
