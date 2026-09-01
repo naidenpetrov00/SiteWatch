@@ -57,4 +57,17 @@ public sealed class DashboardUserSearchTests
 
         await identityService.Received(1).SearchUsersAsync(null, CancellationToken.None);
     }
+
+    [Fact]
+    public async Task Handler_forwards_a_requested_role_to_the_identity_service()
+    {
+        var identityService = Substitute.For<IIdentityService>();
+        identityService.SearchUsersAsync("Ada", "Worker", CancellationToken.None)
+            .Returns(Task.FromResult(new List<DashboardUserLookupDto>()));
+        var handler = new DashboardUserSearchQueryHandler(identityService);
+
+        await handler.Handle(new DashboardUserSearchQuery { SearchTerm = "Ada", Role = "Worker" }, CancellationToken.None);
+
+        await identityService.Received(1).SearchUsersAsync("Ada", "Worker", CancellationToken.None);
+    }
 }
