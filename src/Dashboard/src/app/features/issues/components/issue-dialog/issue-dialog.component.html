@@ -1,70 +1,158 @@
 <app-dialog-shell
   eyebrow="Sites Management"
-  [title]="issue ? 'Manage Issue #' + issue.numberId : 'Add Issue'"
-  [subtitle]="issue ? 'Update the issue details, schedule, and assigned workers.' : 'Enter the issue details and site assignment.'"
+  [title]="dialogTitle()"
+  [subtitle]="dialogSubtitle()"
+  [closeDisabled]="isSaving()"
 >
-  <form [id]="formId" class="issue-dialog__form" [formGroup]="issueForm" novalidate (ngSubmit)="submitIssue()">
-    <mat-form-field appearance="outline">
-      <mat-label>Site</mat-label>
-      <input matInput [formControl]="siteSearchControl" [matAutocomplete]="siteAutocomplete" autocomplete="off" inputmode="search" />
-      <mat-hint>Search by site name, address, or Number Id.</mat-hint>
-      @if (siteSearchControl.touched && issueForm.controls.siteId.invalid) { <mat-error>Site is required.</mat-error> }
-    </mat-form-field>
-    <mat-autocomplete #siteAutocomplete="matAutocomplete" [displayWith]="displaySite" (optionSelected)="onSiteSelected($event)">
-      @for (site of siteResults(); track site.id) { <mat-option [value]="site">#{{ site.numberId }} · {{ site.name }} · {{ site.address }}</mat-option> }
-    </mat-autocomplete>
+  <form
+    [id]="formId"
+    class="issue-dialog__form"
+    [formGroup]="issueForm"
+    novalidate
+    (ngSubmit)="submitIssue()"
+  >
+    <app-dialog-wizard-tabs
+      [tabs]="tabs"
+      [selectedTabId]="selectedTabId()"
+      ariaLabel="Issue sections"
+      (selectedTabIdChange)="setSelectedTab($event)"
+    />
 
-    <mat-form-field appearance="outline">
-      <mat-label>Title</mat-label>
-      <input matInput formControlName="title" maxlength="200" />
-      @if (issueForm.controls.title.touched && issueForm.controls.title.invalid) { <mat-error>Title is required and must be at most 200 characters.</mat-error> }
-    </mat-form-field>
+    <div class="issue-dialog__content">
+      @switch (selectedTabId()) {
+        @case ('details') {
+          <div class="issue-dialog__details">
+            <mat-form-field appearance="outline">
+              <mat-label>Site</mat-label>
+              <input
+                matInput
+                [formControl]="siteSearchControl"
+                [matAutocomplete]="siteAutocomplete"
+                autocomplete="off"
+                inputmode="search"
+              />
+              <mat-hint>Search by site name, address, or Number Id.</mat-hint>
+              @if (siteSearchControl.touched && issueForm.controls.siteId.invalid) {
+                <mat-error>Site is required.</mat-error>
+              }
+            </mat-form-field>
+            <mat-autocomplete
+              #siteAutocomplete="matAutocomplete"
+              [displayWith]="displaySite"
+              (optionSelected)="onSiteSelected($event)"
+            >
+              @for (site of siteResults(); track site.id) {
+                <mat-option [value]="site">
+                  #{{ site.numberId }} · {{ site.name }} · {{ site.address }}
+                </mat-option>
+              }
+            </mat-autocomplete>
 
-    <mat-form-field appearance="outline" class="issue-dialog__full-width">
-      <mat-label>Description</mat-label>
-      <textarea matInput formControlName="description" rows="5" maxlength="4000"></textarea>
-      @if (issueForm.controls.description.touched && issueForm.controls.description.invalid) { <mat-error>Description is required and must be at most 4000 characters.</mat-error> }
-    </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Title</mat-label>
+              <input matInput formControlName="title" maxlength="200" />
+              @if (issueForm.controls.title.touched && issueForm.controls.title.invalid) {
+                <mat-error>Title is required and must be at most 200 characters.</mat-error>
+              }
+            </mat-form-field>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Status</mat-label>
-      <mat-select formControlName="status">
-        @for (status of statuses; track status) { <mat-option [value]="status">{{ status }}</mat-option> }
-      </mat-select>
-    </mat-form-field>
+            <mat-form-field appearance="outline" class="issue-dialog__full-width">
+              <mat-label>Description</mat-label>
+              <textarea matInput formControlName="description" rows="5" maxlength="4000"></textarea>
+              @if (issueForm.controls.description.touched && issueForm.controls.description.invalid) {
+                <mat-error>Description is required and must be at most 4000 characters.</mat-error>
+              }
+            </mat-form-field>
 
-    <app-datepicker [control]="issueForm.controls.startDate" label="Start date" [showRequiredError]="false" />
-    <app-datepicker [control]="issueForm.controls.endDate" label="End date" [showRequiredError]="false" />
-    @if (issueForm.touched && issueForm.hasError('dateRange')) { <p class="issue-dialog__validation-error">End date cannot be before the start date.</p> }
+            <mat-form-field appearance="outline">
+              <mat-label>Status</mat-label>
+              <mat-select formControlName="status">
+                @for (status of statuses; track status) {
+                  <mat-option [value]="status">{{ status }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
 
-    <div class="issue-dialog__workers issue-dialog__full-width">
-      <mat-form-field appearance="outline">
-        <mat-label>Assigned workers</mat-label>
-        <input matInput [formControl]="workerSearchControl" [matAutocomplete]="workerAutocomplete" autocomplete="off" inputmode="search" />
-        <mat-hint>Search and select Worker-role users.</mat-hint>
-      </mat-form-field>
-      <mat-autocomplete #workerAutocomplete="matAutocomplete" [displayWith]="displayWorker" (optionSelected)="onWorkerSelected($event)">
-        @for (worker of workerResults(); track worker.id) { <mat-option [value]="worker">{{ worker.displayName }}@if (worker.email) { · {{ worker.email }} }</mat-option> }
-      </mat-autocomplete>
-      @if (selectedWorkers().length > 0) {
-        <mat-chip-set aria-label="Assigned workers">
-          @for (worker of selectedWorkers(); track worker.id) {
-            <mat-chip removable (removed)="removeWorker(worker.id)">{{ worker.displayName }}<button matChipRemove type="button" [attr.aria-label]="'Remove ' + worker.displayName">×</button></mat-chip>
-          }
-        </mat-chip-set>
+            <app-datepicker
+              [control]="issueForm.controls.startDate"
+              label="Start date"
+              [showRequiredError]="false"
+            />
+            <app-datepicker
+              [control]="issueForm.controls.endDate"
+              label="End date"
+              [showRequiredError]="false"
+            />
+            @if (issueForm.touched && issueForm.hasError('dateRange')) {
+              <p class="issue-dialog__validation-error">
+                End date cannot be before the start date.
+              </p>
+            }
+
+            <div class="issue-dialog__workers issue-dialog__full-width">
+              <mat-form-field appearance="outline">
+                <mat-label>Assigned workers</mat-label>
+                <input
+                  matInput
+                  [formControl]="workerSearchControl"
+                  [matAutocomplete]="workerAutocomplete"
+                  autocomplete="off"
+                  inputmode="search"
+                />
+                <mat-hint>Search and select Worker-role users.</mat-hint>
+              </mat-form-field>
+              <mat-autocomplete
+                #workerAutocomplete="matAutocomplete"
+                [displayWith]="displayWorker"
+                (optionSelected)="onWorkerSelected($event)"
+              >
+                @for (worker of workerResults(); track worker.id) {
+                  <mat-option [value]="worker">
+                    {{ worker.displayName }}@if (worker.email) { · {{ worker.email }} }
+                  </mat-option>
+                }
+              </mat-autocomplete>
+              @if (selectedWorkers().length > 0) {
+                <mat-chip-set aria-label="Assigned workers">
+                  @for (worker of selectedWorkers(); track worker.id) {
+                    <mat-chip removable (removed)="removeWorker(worker.id)">
+                      {{ worker.displayName }}
+                      <button
+                        matChipRemove
+                        type="button"
+                        [attr.aria-label]="'Remove ' + worker.displayName"
+                      >
+                        ×
+                      </button>
+                    </mat-chip>
+                  }
+                </mat-chip-set>
+              }
+            </div>
+
+            @if (saveError()) {
+              <p class="issue-dialog__save-error" role="alert">{{ saveError() }}</p>
+            }
+          </div>
+        }
+        @case ('attachments') {
+          <app-issue-attachments-section
+            [issueId]="persistedIssueId()"
+            [disabled]="isSaving()"
+          />
+        }
       }
     </div>
-
-    @if (saveError()) { <p class="issue-dialog__save-error" role="alert">{{ saveError() }}</p> }
   </form>
 
   <app-dialog-action-bar
     dialog-shell-actions
     cancelLabel="Cancel"
-    [submitLabel]="issue ? 'Save' : 'Add Issue'"
+    [submitLabel]="submitLabel()"
     [submitFormId]="formId"
     submitButtonType="submit"
-    [submitDisabled]="issueForm.invalid || isSaving()"
+    [cancelDisabled]="isSaving()"
+    [submitDisabled]="isSaving() || (selectedTabId() === 'details' && issueForm.invalid)"
     (cancel)="closeDialog()"
   />
 </app-dialog-shell>

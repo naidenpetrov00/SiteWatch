@@ -7,6 +7,7 @@ namespace Domain.Entities;
 public sealed class Issue : BaseAuditableEntity, IHasNumberId
 {
     private readonly HashSet<ApplicationUser> _assignedWorkers = [];
+    private readonly HashSet<IssueAttachment> _attachments = [];
 
     private Issue()
     {
@@ -29,6 +30,7 @@ public sealed class Issue : BaseAuditableEntity, IHasNumberId
     public DateOnly? StartDate { get; private set; }
     public DateOnly? EndDate { get; private set; }
     public IReadOnlyCollection<ApplicationUser> AssignedWorkers => _assignedWorkers;
+    public IReadOnlyCollection<IssueAttachment> Attachments => _attachments;
 
     public static Issue Create(
         Site site,

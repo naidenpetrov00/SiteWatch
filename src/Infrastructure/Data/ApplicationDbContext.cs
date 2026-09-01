@@ -20,6 +20,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<SitePayment> SitePayments => Set<SitePayment>();
     public DbSet<Issue> Issues => Set<Issue>();
+    public DbSet<IssueAttachment> IssueAttachments => Set<IssueAttachment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -30,6 +30,7 @@ export class DialogShellComponent {
   readonly title = input<string | null>(null);
   readonly subtitle = input<string | null>(null);
   readonly closeAriaLabel = input<string | null>(null);
+  readonly closeDisabled = input(false);
 
   readonly resolvedEyebrow = computed(
     () => this.eyebrow() ?? this.dialogData?.eyebrow ?? null

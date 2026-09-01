@@ -25,6 +25,9 @@ public static class DependencyInjection
         builder.Services.AddSingleton<
             IInvoiceFileAccessTicketService,
             InvoiceFileAccessTicketService>();
+        builder.Services.AddSingleton<
+            IIssueAttachmentAccessTicketService,
+            IssueAttachmentAccessTicketService>();
         builder.Services.AddAutoMapper(cfg => { }, Assembly.GetExecutingAssembly());
         builder.Services.AddCors(opt =>
         {

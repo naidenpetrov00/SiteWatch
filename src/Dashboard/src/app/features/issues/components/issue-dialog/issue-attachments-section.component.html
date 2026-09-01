@@ -1,0 +1,241 @@
+<section class="issue-attachments" aria-labelledby="issue-attachments-heading">
+  <div class="issue-attachments__heading">
+    <div>
+      <h3 id="issue-attachments-heading">Issue attachments</h3>
+      <p>Add photos, videos, and supporting files. Files are uploaded when the issue is saved.</p>
+    </div>
+    <input
+      #fileInput
+      class="issue-attachments__file-input"
+      type="file"
+      multiple
+      [disabled]="interactionsDisabled()"
+      (change)="onFilesSelected($event)"
+    />
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="interactionsDisabled()"
+      (click)="fileInput.click()"
+    >
+      <mat-icon>attach_file</mat-icon>
+      Choose files
+    </button>
+  </div>
+
+  <div
+    class="issue-attachments__drop-zone"
+    [class.issue-attachments__drop-zone--active]="isDragging()"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave($event)"
+    (drop)="onDrop($event)"
+  >
+    <mat-icon>cloud_upload</mat-icon>
+    <div>
+      <strong>Drop attachments here</strong>
+      <span>Images up to 50 MB, videos up to 500 MB, and other files up to 100 MB.</span>
+    </div>
+  </div>
+
+  @if (attachmentManager.selectionError()) {
+    <p class="issue-attachments__error" role="alert">
+      {{ attachmentManager.selectionError() }}
+    </p>
+  }
+
+  @if (attachmentManager.isLoading()) {
+    <div class="issue-attachments__loading" aria-live="polite">
+      <mat-progress-bar mode="indeterminate" />
+      <span>Loading attachments…</span>
+    </div>
+  } @else if (attachmentManager.loadError()) {
+    <div class="issue-attachments__empty issue-attachments__empty--error" role="alert">
+      <mat-icon>cloud_off</mat-icon>
+      <span>{{ attachmentManager.loadError() }}</span>
+      <button mat-stroked-button type="button" (click)="retryLoad()">Retry</button>
+    </div>
+  }
+
+  @if (attachmentManager.queuedAttachments().length > 0) {
+    <section class="issue-attachments__group" aria-labelledby="queued-attachments-heading">
+      <div class="issue-attachments__group-heading">
+        <h4 id="queued-attachments-heading">Ready to upload</h4>
+        <span>{{ attachmentManager.queuedAttachments().length }} queued</span>
+      </div>
+      <div class="issue-attachments__grid">
+        @for (item of attachmentManager.queuedAttachments(); track item.clientId) {
+          <article class="issue-attachment-card">
+            <div class="issue-attachment-card__preview">
+              @if (item.kind === 'Image' && item.previewUrl) {
+                <img [src]="item.previewUrl" [alt]="'Preview of ' + item.file.name" />
+              } @else if (item.kind === 'Video' && item.previewUrl) {
+                <video [src]="item.previewUrl" controls preload="metadata"></video>
+              } @else {
+                <mat-icon>{{ fileIcon(item.contentType, item.file.name) }}</mat-icon>
+              }
+            </div>
+            <div class="issue-attachment-card__body">
+              <strong [title]="item.file.name">{{ item.file.name }}</strong>
+              <span>
+                {{ item.kind }} · {{ item.contentType }} · {{ formatSize(item.file.size) }}
+              </span>
+              @if (item.status === 'uploading') {
+                <mat-progress-bar
+                  [mode]="item.progress === null ? 'indeterminate' : 'determinate'"
+                  [value]="item.progress ?? 0"
+                />
+                <span aria-live="polite">
+                  Uploading@if (item.progress !== null) { · {{ item.progress }}% }
+                </span>
+              }
+              @if (item.error) {
+                <p class="issue-attachment-card__error" role="alert">{{ item.error }}</p>
+              }
+            </div>
+            <div class="issue-attachment-card__actions">
+              @if (item.kind !== 'File') {
+                <button
+                  mat-button
+                  type="button"
+                  [disabled]="interactionsDisabled()"
+                  (click)="openQueuedAttachment(item)"
+                >
+                  {{ item.kind === 'Video' ? 'Play' : 'View' }}
+                </button>
+              }
+              <button
+                mat-button
+                type="button"
+                [disabled]="interactionsDisabled() || item.status === 'uploading'"
+                (click)="attachmentManager.removeQueuedAttachment(item.clientId)"
+              >
+                Remove
+              </button>
+            </div>
+          </article>
+        }
+      </div>
+    </section>
+  }
+
+  @if (attachmentManager.existingAttachments().length > 0) {
+    <section class="issue-attachments__group" aria-labelledby="uploaded-attachments-heading">
+      <div class="issue-attachments__group-heading">
+        <h4 id="uploaded-attachments-heading">Uploaded</h4>
+        <span>{{ attachmentManager.existingAttachments().length }} saved</span>
+      </div>
+      <div class="issue-attachments__grid">
+        @for (item of attachmentManager.existingAttachments(); track item.attachment.id) {
+          <article
+            class="issue-attachment-card"
+            [class.issue-attachment-card--removed]="item.markedForRemoval"
+          >
+            <div class="issue-attachment-card__preview">
+              @if (item.previewUrl) {
+                <img [src]="item.previewUrl" [alt]="'Preview of ' + item.attachment.fileName" />
+                @if (item.attachment.kind === 'Video') {
+                  <mat-icon class="issue-attachment-card__play-icon">play_circle</mat-icon>
+                }
+              } @else {
+                <mat-icon>
+                  {{ fileIcon(item.attachment.contentType, item.attachment.fileName) }}
+                </mat-icon>
+              }
+            </div>
+            <div class="issue-attachment-card__body">
+              <strong [title]="item.attachment.fileName">{{ item.attachment.fileName }}</strong>
+              <span>
+                {{ item.attachment.kind }} · {{ item.attachment.contentType }} ·
+                {{ formatSize(item.attachment.sizeBytes) }}
+                @if (formatDuration(item.attachment.durationSeconds); as duration) { · {{ duration }} }
+              </span>
+              @if (item.markedForRemoval) {
+                <span class="issue-attachment-card__removal-note">Will be removed on Save.</span>
+              }
+              @if (item.status === 'deleting') {
+                <mat-progress-bar mode="indeterminate" />
+              }
+              @if (item.error) {
+                <p class="issue-attachment-card__error" role="alert">{{ item.error }}</p>
+              }
+            </div>
+            <div class="issue-attachment-card__actions">
+              @if (!item.markedForRemoval) {
+                @if (item.attachment.kind !== 'File') {
+                  <button
+                    mat-button
+                    type="button"
+                    [disabled]="interactionsDisabled()"
+                    (click)="openAttachment(item)"
+                  >
+                    {{ item.attachment.kind === 'Video' ? 'Play' : 'View' }}
+                  </button>
+                }
+                <button
+                  mat-button
+                  type="button"
+                  [disabled]="interactionsDisabled()"
+                  (click)="downloadAttachment(item)"
+                >
+                  Download
+                </button>
+                <button
+                  mat-button
+                  type="button"
+                  [disabled]="interactionsDisabled()"
+                  (click)="attachmentManager.toggleExistingRemoval(item.attachment.id)"
+                >
+                  Remove
+                </button>
+              } @else {
+                <button
+                  mat-button
+                  type="button"
+                  [disabled]="interactionsDisabled()"
+                  (click)="attachmentManager.toggleExistingRemoval(item.attachment.id)"
+                >
+                  Undo
+                </button>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    </section>
+  }
+
+  @if (
+    !attachmentManager.isLoading()
+    && !attachmentManager.loadError()
+    && attachmentManager.queuedAttachments().length === 0
+    && attachmentManager.existingAttachments().length === 0
+  ) {
+    <div class="issue-attachments__empty">
+      <mat-icon>attachment</mat-icon>
+      <strong>No attachments yet</strong>
+      <span>Choose files or drag them into the area above.</span>
+    </div>
+  }
+
+  @if (attachmentManager.saveError()) {
+    <p class="issue-attachments__error" role="alert">{{ attachmentManager.saveError() }}</p>
+  }
+</section>
+
+@if (attachmentManager.viewer(); as viewer) {
+  <div class="issue-attachment-viewer" role="dialog" aria-modal="true" [attr.aria-label]="viewer.name">
+    <div class="issue-attachment-viewer__panel">
+      <header>
+        <strong>{{ viewer.name }}</strong>
+        <button mat-icon-button type="button" aria-label="Close attachment viewer" (click)="attachmentManager.closeViewer()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </header>
+      @if (viewer.kind === 'Image') {
+        <img [src]="viewer.url" [alt]="viewer.name" />
+      } @else {
+        <video [src]="viewer.url" controls autoplay preload="metadata"></video>
+      }
+    </div>
+  </div>
+}
