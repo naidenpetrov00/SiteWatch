@@ -1,13 +1,11 @@
 import { StyleSheet } from "react-native";
 
 const issuesCardStyles = StyleSheet.create({
-  card: {
-    borderWidth: 1,
-    borderRadius: 20,
+  container: {
+    flex: 1,
     gap: 14,
-    marginHorizontal: 16,
-    marginTop: 4,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   header: {
     alignItems: "center",
@@ -40,6 +38,7 @@ const issuesCardStyles = StyleSheet.create({
   },
   list: {
     gap: 10,
+    paddingBottom: 24,
   },
   row: {
     borderRadius: 12,

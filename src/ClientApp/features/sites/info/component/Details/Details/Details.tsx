@@ -11,6 +11,7 @@ import { useGetSiteFileIdsBySiteId } from "@/features/sites/info/files/hooks/use
 import { useGetSiteImageIdsBySiteId } from "@/features/sites/info/images/hooks/useGetSiteImageIdsBySiteId";
 import { useGetSiteInvoices } from "@/features/sites/info/invoices/hooks/useGetSiteInvoices";
 import { useGetSiteVideoIdsBySiteId } from "@/features/sites/info/videos/hooks/useGetSiteVideoIdsBySiteId";
+import { useGetSiteIssues } from "@/features/sites/info/issues/hooks/useGetSiteIssues";
 
 const temporaryCount = (minimum: number, maximum: number) =>
   String(Math.floor(Math.random() * (maximum - minimum + 1)) + minimum);
@@ -26,6 +27,7 @@ const detailCards: DetailsCardItem[] = [
     allowedRoles: ACCESS_POLICIES.siteInvoices,
   },
   { label: "Files", value: "View", helper: "Files", path: "Files" },
+  { label: "Issues", value: "View", helper: "View and manage", path: "Issues" },
   {
     label: "People On Site",
     value: temporaryCount(1, 50),
@@ -53,11 +55,13 @@ const Details = () => {
     siteId,
     enabled: canViewInvoices,
   });
+  const issuesQuery = useGetSiteIssues({ siteId });
   const resourceCounts: Record<string, string> = {
     Images: imageIdsQuery.isSuccess ? String(imageIdsQuery.data.length) : "—",
     Videos: videoIdsQuery.isSuccess ? String(videoIdsQuery.data.length) : "—",
     Invoices: invoicesQuery.isSuccess ? String(invoicesQuery.data.length) : "—",
     Files: fileIdsQuery.isSuccess ? String(fileIdsQuery.data.length) : "—",
+    Issues: issuesQuery.isSuccess ? String(issuesQuery.data.length) : "—",
   };
   const visibleDetailCards = detailCards.filter(
     (card) => !card.allowedRoles || hasAnyRole(card.allowedRoles),
