@@ -2,6 +2,7 @@ import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 
 import { useColorPalette } from "@/hooks/useColorPalette";
 import useGetSearchParams from "@/hooks/useGetSearchParams";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { formatIssueDate, formatIssueDateTime, formatIssueText } from "../formatters";
 import { useGetIssueById } from "../hooks/useGetIssueById";
 import type { SiteIssue } from "../types";
@@ -11,6 +12,7 @@ const workerDisplayName = (worker: SiteIssue["assignedWorkers"][number]) => work
 
 const IssueDetailsContent = () => {
   const colorPalette = useColorPalette();
+  const { bottom } = useSafeAreaInsets();
   const { issueId } = useGetSearchParams<{ issueId?: string }>();
   const issueQuery = useGetIssueById({ issueId });
   const issue = issueQuery.data;
@@ -21,7 +23,7 @@ const IssueDetailsContent = () => {
   ] : [];
 
   return (
-    <ScrollView contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic">
+    <ScrollView contentContainerStyle={[styles.content, { paddingBottom: bottom + 80 }]} contentInsetAdjustmentBehavior="automatic">
       {issueQuery.isLoading ? <View style={[styles.state, { borderColor: `${colorPalette.secondary}55` }]}><ActivityIndicator color={colorPalette.primary} /><Text style={[styles.stateText, { color: colorPalette.secondary }]}>Loading issue details…</Text></View> : issue ? sections.map((section) => <View key={section.title} style={styles.section}><Text style={[styles.sectionTitle, { color: colorPalette.text }]}>{section.title}</Text>{section.items.map((item) => <View key={item.label} style={[styles.detailRow, { borderBottomColor: `${colorPalette.secondary}44` }]}><Text style={[styles.label, { color: colorPalette.secondary }]}>{item.label}</Text><Text selectable style={[styles.value, { color: colorPalette.text }]}>{item.value}</Text></View>)}</View>) : <View style={[styles.state, { borderColor: `${colorPalette.secondary}55` }]}><Text style={[styles.stateText, { color: colorPalette.text }]}>{issueQuery.error instanceof Error ? issueQuery.error.message : "Issue details could not be retrieved."}</Text></View>}
     </ScrollView>
   );

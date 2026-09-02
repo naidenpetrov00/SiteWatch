@@ -16,9 +16,6 @@ const addIssueModalStyles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
-  tabs: { flexDirection: "row", gap: 8 },
-  tab: { alignItems: "center", borderRadius: 999, borderWidth: 1, flex: 1, paddingVertical: 9 },
-  tabText: { fontSize: 14, fontWeight: "700" },
   field: {
     gap: 7,
   },

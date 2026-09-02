@@ -4,6 +4,7 @@ import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from "r
 
 import { useColorPalette } from "@/hooks/useColorPalette";
 import useGetSearchParams from "@/hooks/useGetSearchParams";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useGetIssueAttachments, useIssueAttachmentAccess } from "../hooks/useIssueAttachments";
 import type { IssueAttachment } from "../types";
 import IssueAttachmentViewer, { type AttachmentViewerState } from "./IssueAttachmentViewer";
@@ -13,6 +14,7 @@ const formatSize = (size: number) => size >= 1024 * 1024 ? `${(size / 1024 / 102
 
 const IssueAttachmentsContent = () => {
   const colorPalette = useColorPalette();
+  const { bottom } = useSafeAreaInsets();
   const { issueId } = useGetSearchParams<{ issueId?: string }>();
   const [viewer, setViewer] = useState<AttachmentViewerState>(null);
   const [openError, setOpenError] = useState<string | null>(null);
@@ -31,7 +33,7 @@ const IssueAttachmentsContent = () => {
     }
   };
 
-  return <><ScrollView contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic">
+  return <><ScrollView contentContainerStyle={[styles.content, { paddingBottom: bottom + 80 }]} contentInsetAdjustmentBehavior="automatic">
     {attachmentsQuery.isLoading ? <View style={[styles.state, { borderColor: `${colorPalette.secondary}55` }]}><ActivityIndicator color={colorPalette.primary} /><Text style={[styles.stateText, { color: colorPalette.secondary }]}>Loading attachments…</Text></View> : attachmentsQuery.isError ? <View style={[styles.state, { borderColor: `${colorPalette.secondary}55` }]}><Text style={[styles.stateText, { color: colorPalette.text }]}>{attachmentsQuery.error instanceof Error ? attachmentsQuery.error.message : "Attachments could not be retrieved."}</Text></View> : attachmentsQuery.data?.length ? attachmentsQuery.data.map((attachment) => <View key={attachment.id} style={[styles.attachment, { borderColor: `${colorPalette.secondary}55` }]}><Ionicons color={colorPalette.primary} name={attachment.kind === "Image" ? "image" : attachment.kind === "Video" ? "videocam" : "document"} size={25} /><View style={styles.attachmentInfo}><Text numberOfLines={1} style={[styles.attachmentName, { color: colorPalette.text }]}>{attachment.fileName}</Text><Text style={[styles.attachmentMeta, { color: colorPalette.secondary }]}>{attachment.kind} · {formatSize(attachment.sizeBytes)}{attachment.durationSeconds ? ` · ${attachment.durationSeconds}s` : ""}</Text></View><Pressable accessibilityLabel={`Open ${attachment.fileName}`} accessibilityRole="button" disabled={access.isPending} onPress={() => void openAttachment(attachment)} style={({ pressed }) => [styles.openButton, { backgroundColor: `${colorPalette.primary}18`, opacity: access.isPending ? 0.55 : pressed ? 0.78 : 1 }]}><Text style={[styles.openButtonText, { color: colorPalette.primary }]}>{attachment.kind === "File" ? "Open" : "View"}</Text></Pressable></View>) : <View style={[styles.state, { borderColor: `${colorPalette.secondary}55` }]}><Text style={[styles.stateText, { color: colorPalette.secondary }]}>No attachments yet.</Text></View>}
     {openError ? <Text accessibilityRole="alert" style={styles.errorText}>{openError}</Text> : null}
   </ScrollView><IssueAttachmentViewer onClose={() => setViewer(null)} viewer={viewer} /></>;

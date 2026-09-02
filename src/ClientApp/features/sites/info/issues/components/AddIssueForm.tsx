@@ -5,6 +5,7 @@ import { Image, Pressable, ScrollView, Text, TextInput, View } from "react-nativ
 import { useEffect, useState } from "react";
 
 import { useColorPalette } from "@/hooks/useColorPalette";
+import ConnectedTabs from "@/components/ui/ConnectedTabs";
 import { useCreateIssue } from "../hooks/useCreateIssue";
 import { useUploadIssueAttachment } from "../hooks/useIssueAttachments";
 import type { IssueAttachmentKind, PendingIssueAttachment } from "../types";
@@ -110,9 +111,10 @@ const AddIssueForm = ({ siteId, visible, onClose }: AddIssueFormProps) => {
     <ScrollView contentContainerStyle={addIssueModalStyles.content} contentInsetAdjustmentBehavior="automatic">
       <Text style={[addIssueModalStyles.title, { color: colorPalette.text }]}>{persistedIssueId ? "Finish attachments" : "Add Issue"}</Text>
       <Text style={[addIssueModalStyles.subtitle, { color: colorPalette.secondary }]}>{persistedIssueId ? "Retry failed attachments before leaving this screen." : "Describe a problem for this site. New issues are created with an Open status."}</Text>
-      <View style={addIssueModalStyles.tabs}>
-        {(["details", "attachments"] as const).map((tab) => <Pressable key={tab} accessibilityRole="tab" accessibilityState={{ selected: activeTab === tab }} onPress={() => setActiveTab(tab)} style={({ pressed }) => [addIssueModalStyles.tab, { borderColor: colorPalette.primary, backgroundColor: activeTab === tab ? colorPalette.primary : colorPalette.background, opacity: pressed ? 0.78 : 1 }]}><Text style={[addIssueModalStyles.tabText, { color: activeTab === tab ? colorPalette.contrastText : colorPalette.text }]}>{tab === "details" ? "Details" : `Attachments${attachments.length ? ` (${attachments.length})` : ""}`}</Text></Pressable>)}
-      </View>
+      <ConnectedTabs onValueChange={(value) => setActiveTab(value as "details" | "attachments")} tabs={[
+        { label: "Details", value: "details" },
+        { label: `Attachments${attachments.length ? ` (${attachments.length})` : ""}`, value: "attachments" },
+      ]} value={activeTab}>
       {activeTab === "details" ? <>
         <View style={addIssueModalStyles.field}><Text style={[addIssueModalStyles.label, { color: colorPalette.text }]}>Title</Text><TextInput accessibilityLabel="Issue title" autoFocus={!persistedIssueId} editable={!persistedIssueId} maxLength={200} onChangeText={(value) => { setTitle(value); setError(null); }} placeholder="Describe the issue" placeholderTextColor={colorPalette.secondary} style={[addIssueModalStyles.input, { borderColor: colorPalette.secondary, color: colorPalette.text }]} value={title} /></View>
         <View style={addIssueModalStyles.field}><Text style={[addIssueModalStyles.label, { color: colorPalette.text }]}>Description</Text><TextInput accessibilityLabel="Issue description" editable={!persistedIssueId} maxLength={4000} multiline onChangeText={(value) => { setDescription(value); setError(null); }} placeholder="Add the relevant details" placeholderTextColor={colorPalette.secondary} style={[addIssueModalStyles.input, addIssueModalStyles.descriptionInput, { borderColor: colorPalette.secondary, color: colorPalette.text }]} value={description} /></View>
@@ -121,6 +123,7 @@ const AddIssueForm = ({ siteId, visible, onClose }: AddIssueFormProps) => {
         <Text style={[addIssueModalStyles.attachmentHint, { color: colorPalette.secondary }]}>Images up to 50 MB, videos up to 500 MB, and other files up to 100 MB.</Text>
         {attachments.length ? <View style={addIssueModalStyles.attachmentList}>{attachments.map((attachment) => <View key={attachment.clientId} style={[addIssueModalStyles.attachmentRow, { borderColor: `${colorPalette.secondary}55` }]}>{attachment.kind === "Image" ? <Image source={{ uri: attachment.uri }} style={addIssueModalStyles.attachmentPreview} /> : attachment.kind === "Video" ? <QueuedVideoPreview uri={attachment.uri} /> : <View style={[addIssueModalStyles.attachmentIcon, { backgroundColor: `${colorPalette.primary}18` }]}><Ionicons color={colorPalette.primary} name="document" size={22} /></View>}<View style={addIssueModalStyles.attachmentInfo}><Text numberOfLines={1} style={[addIssueModalStyles.attachmentName, { color: colorPalette.text }]}>{attachment.fileName}</Text><Text style={[addIssueModalStyles.attachmentMetadata, { color: attachment.error ? "#B42318" : colorPalette.secondary }]}>{attachment.error ?? `${attachment.kind} · ${formatSize(attachment.fileSize)}${attachment.status === "uploading" ? " · Uploading…" : ""}`}</Text></View>{!persistedIssueId ? <Pressable accessibilityLabel={`Remove ${attachment.fileName}`} accessibilityRole="button" onPress={() => setAttachments((current) => current.filter((item) => item.clientId !== attachment.clientId))} style={addIssueModalStyles.removeAttachment}><Ionicons color={colorPalette.secondary} name="close" size={20} /></Pressable> : null}</View>)}</View> : <View style={[addIssueModalStyles.emptyAttachments, { borderColor: `${colorPalette.secondary}55` }]}><Text style={{ color: colorPalette.secondary }}>No attachments selected.</Text></View>}
       </View>}
+      </ConnectedTabs>
       {error ? <Text accessibilityRole="alert" style={[addIssueModalStyles.error, { borderColor: "#B42318", color: "#B42318" }]}>{error}</Text> : null}
     </ScrollView>
     <View style={[addIssueModalStyles.footer, { backgroundColor: colorPalette.background }]}>
