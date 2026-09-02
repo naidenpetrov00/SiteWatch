@@ -15,7 +15,8 @@ internal sealed class IssueAttachmentBlobStorage(
     BlobServiceClient blobServiceClient,
     IBlobService imagesBlobService,
     IVideosBlobService videosBlobService,
-    IFilesBlobService filesBlobService)
+    IFilesBlobService filesBlobService,
+    ILogger<IssueAttachmentBlobStorage> logger)
 {
     public Task<StoredIssueAttachment> UploadAsync(
         Stream stream,
@@ -63,9 +64,25 @@ internal sealed class IssueAttachmentBlobStorage(
         }
         catch (RequestFailedException exception) when (exception.Status == 404)
         {
+            logger.LogWarning(
+                "Issue attachment content was not found in storage for attachment {AttachmentId} on issue {IssueId}. Preview {Preview}.",
+                attachment.Id,
+                attachment.IssueId,
+                preview);
             throw new NotFoundException(
                 "Issue attachment content",
                 attachment.Id.ToString());
+        }
+        catch (RequestFailedException exception)
+        {
+            logger.LogError(
+                exception,
+                "Failed to access issue attachment content in storage for attachment {AttachmentId} on issue {IssueId}. Preview {Preview}, storage status {StorageStatus}.",
+                attachment.Id,
+                attachment.IssueId,
+                preview,
+                exception.Status);
+            throw;
         }
     }
 

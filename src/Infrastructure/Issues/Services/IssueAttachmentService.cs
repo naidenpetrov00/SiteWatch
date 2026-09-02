@@ -12,7 +12,8 @@ namespace Infrastructure.Issues.Services;
 internal sealed class IssueAttachmentService(
     ApplicationDbContext dbContext,
     IssueAttachmentBlobStorage blobStorage,
-    IUser user) : IIssueAttachmentService
+    IUser user,
+    ILogger<IssueAttachmentService> logger) : IIssueAttachmentService
 {
     public async Task<IReadOnlyList<IssueAttachmentDto>> GetByIssueIdAsync(
         Guid issueId,
@@ -56,11 +57,25 @@ internal sealed class IssueAttachmentService(
         var kind = IssueAttachmentValidation.GetKind(contentType);
         var fileName = Path.GetFileName(file.FileName.Replace('\\', '/'));
         var userId = GetCurrentUserId();
-        var stored = await blobStorage.UploadAsync(
-            file.Stream,
-            contentType,
-            kind,
-            cancellationToken);
+        StoredIssueAttachment stored;
+        try
+        {
+            stored = await blobStorage.UploadAsync(
+                file.Stream,
+                contentType,
+                kind,
+                cancellationToken);
+        }
+        catch (Exception exception) when (
+            exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+        {
+            logger.LogError(
+                exception,
+                "Failed to store uploaded issue attachment for issue {IssueId}. Attachment kind {AttachmentKind}.",
+                issueId,
+                kind);
+            throw;
+        }
 
         var now = DateTimeOffset.UtcNow;
         var attachment = new IssueAttachment(
@@ -84,11 +99,38 @@ internal sealed class IssueAttachmentService(
             dbContext.IssueAttachments.Add(attachment);
             await dbContext.SaveChangesAsync(cancellationToken);
         }
-        catch
+        catch (Exception exception)
         {
-            await blobStorage.DeleteIfExistsAsync(attachment, CancellationToken.None);
+            if (exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+            {
+                logger.LogError(
+                    exception,
+                    "Failed to persist issue attachment {AttachmentId} for issue {IssueId} after storage upload.",
+                    attachment.Id,
+                    issueId);
+            }
+
+            try
+            {
+                await blobStorage.DeleteIfExistsAsync(attachment, CancellationToken.None);
+            }
+            catch (Exception cleanupException)
+            {
+                logger.LogError(
+                    cleanupException,
+                    "Failed to clean up stored issue attachment {AttachmentId} for issue {IssueId} after persistence failure.",
+                    attachment.Id,
+                    issueId);
+            }
+
             throw;
         }
+
+        logger.LogInformation(
+            "Uploaded issue attachment {AttachmentId} for issue {IssueId}. Attachment kind {AttachmentKind}.",
+            attachment.Id,
+            issueId,
+            kind);
 
         return IssueAttachmentDto.From(attachment);
     }
@@ -101,19 +143,44 @@ internal sealed class IssueAttachmentService(
         var attachment = await GetEntityAsync(issueId, attachmentId, cancellationToken);
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-        dbContext.IssueAttachments.Remove(attachment);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
         try
         {
+            dbContext.IssueAttachments.Remove(attachment);
+            await dbContext.SaveChangesAsync(cancellationToken);
             await blobStorage.DeleteIfExistsAsync(attachment, cancellationToken);
             await transaction.CommitAsync(cancellationToken);
         }
-        catch
+        catch (Exception exception)
         {
-            await transaction.RollbackAsync(CancellationToken.None);
+            if (exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+            {
+                logger.LogError(
+                    exception,
+                    "Failed during deletion of issue attachment {AttachmentId} for issue {IssueId}; database rollback will be attempted.",
+                    attachmentId,
+                    issueId);
+            }
+
+            try
+            {
+                await transaction.RollbackAsync(CancellationToken.None);
+            }
+            catch (Exception rollbackException)
+            {
+                logger.LogError(
+                    rollbackException,
+                    "Failed to roll back deletion of issue attachment {AttachmentId} for issue {IssueId}.",
+                    attachmentId,
+                    issueId);
+            }
+
             throw;
         }
+
+        logger.LogInformation(
+            "Deleted issue attachment {AttachmentId} for issue {IssueId}.",
+            attachmentId,
+            issueId);
     }
 
     public async Task<IssueAttachmentFileResponse> OpenReadAsync(
