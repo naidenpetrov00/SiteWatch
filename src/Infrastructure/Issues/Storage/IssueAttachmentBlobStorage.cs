@@ -8,6 +8,7 @@ using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Domain.Entities;
 using Domain.SeedWork.Enums;
+using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Issues.Storage;
 

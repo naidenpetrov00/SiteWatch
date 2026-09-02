@@ -6,6 +6,7 @@ using Domain.Entities;
 using Infrastructure.Data;
 using Infrastructure.Issues.Storage;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Issues.Services;
 

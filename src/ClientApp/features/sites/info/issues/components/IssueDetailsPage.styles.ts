@@ -2,9 +2,6 @@ import { StyleSheet } from "react-native";
 
 const styles = StyleSheet.create({
   content: { gap: 16, padding: 20 },
-  tabs: { flexDirection: "row", gap: 8 },
-  tab: { alignItems: "center", borderRadius: 999, borderWidth: 1, flex: 1, paddingVertical: 9 },
-  tabText: { fontSize: 14, fontWeight: "700" },
   section: { gap: 8 },
   sectionTitle: { fontSize: 17, fontWeight: "700" },
   detailRow: { borderBottomWidth: 1, gap: 4, paddingVertical: 10 },
@@ -21,8 +18,9 @@ const styles = StyleSheet.create({
   viewer: { backgroundColor: "#000", flex: 1 },
   viewerImage: { flex: 1 },
   viewerVideo: { flex: 1 },
-  viewerHeader: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", padding: 16 },
+  viewerHeader: { alignItems: "center", flexDirection: "row", gap: 16, justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 },
   viewerTitle: { color: "#fff", flex: 1, fontSize: 16, fontWeight: "700" },
+  errorText: { color: "#B42318" },
 });
 
 export default styles;
