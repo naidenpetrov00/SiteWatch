@@ -4,7 +4,7 @@ using MediatR;
 
 namespace Application.Issues.Attachments;
 
-[Authorize(Roles = UserRoles.Administrator)]
+[Authorize(Roles = UserRoles.Administrator + "," + UserRoles.Client + "," + UserRoles.Worker)]
 public sealed record AddIssueAttachmentCommand(
     Guid IssueId,
     UploadedIssueAttachment File) : IRequest<IssueAttachmentDto>;

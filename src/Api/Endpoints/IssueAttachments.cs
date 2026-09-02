@@ -20,7 +20,7 @@ public sealed class IssueAttachments : EndpointGroupBase
     {
         var group = app
             .MapGroupCustom(customGroupName: "issues")
-            .RequireAuthorization(AuthorizationPolicies.Administrator);
+            .RequireAuthorization();
         var contentGroup = app.MapGroupCustom(customGroupName: "issues");
 
         group.MapGet("/{issueId:guid}/attachments", GetAttachments)

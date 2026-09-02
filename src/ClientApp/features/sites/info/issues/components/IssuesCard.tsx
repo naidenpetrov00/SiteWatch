@@ -1,4 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { router } from "expo-router";
 import { memo, useCallback, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, Text, View } from "react-native";
 
@@ -10,7 +11,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useGetSiteIssues } from "../hooks/useGetSiteIssues";
 import type { SiteIssue } from "../types";
 import AddIssueModal from "./AddIssueModal";
-import IssueDetailsModal from "./IssueDetailsModal";
 import issuesCardStyles from "./IssuesCard.styles";
 
 type IssueRowProps = {
@@ -48,7 +48,6 @@ const IssuesCard = () => {
   const colorPalette = useColorPalette();
   const insets = useSafeAreaInsets();
   const { siteId } = useGetSearchParams<{ siteId?: string }>();
-  const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const {
     data: issues = [],
@@ -60,8 +59,8 @@ const IssuesCard = () => {
   } = useGetSiteIssues({ siteId });
 
   const selectIssue = useCallback((issueId: string) => {
-    setSelectedIssueId(issueId);
-  }, []);
+    router.push({ pathname: "/Site/[siteId]/Issues/[issueId]", params: { siteId: siteId!, issueId } });
+  }, [siteId]);
   const renderIssue = useCallback(
     ({ item }: { item: SiteIssue }) => <IssueRow issue={item} onSelect={selectIssue} />,
     [selectIssue],
@@ -121,7 +120,6 @@ const IssuesCard = () => {
         showsVerticalScrollIndicator={false}
       />
       <AddIssueModal siteId={siteId} visible={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
-      <IssueDetailsModal issueId={selectedIssueId} onClose={() => setSelectedIssueId(null)} />
     </View>
   );
 };

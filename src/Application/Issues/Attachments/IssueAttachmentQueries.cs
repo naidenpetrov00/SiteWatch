@@ -5,7 +5,7 @@ using MediatR;
 
 namespace Application.Issues.Attachments;
 
-[Authorize(Roles = UserRoles.Administrator)]
+[Authorize(Roles = UserRoles.Administrator + "," + UserRoles.Client + "," + UserRoles.Worker)]
 public sealed record IssueAttachmentsQuery(Guid IssueId)
     : IRequest<IReadOnlyList<IssueAttachmentDto>>;
 
@@ -19,7 +19,7 @@ public sealed class IssueAttachmentsHandler(IIssueAttachmentService attachmentSe
         cancellationToken);
 }
 
-[Authorize(Roles = UserRoles.Administrator)]
+[Authorize(Roles = UserRoles.Administrator + "," + UserRoles.Client + "," + UserRoles.Worker)]
 public sealed record IssueAttachmentQuery(Guid IssueId, Guid AttachmentId)
     : IRequest<IssueAttachmentDto>;
 
@@ -50,7 +50,9 @@ public sealed class IssueAttachmentContentHandler(
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.UserId)
-            || !await identityService.IsInRoleAsync(request.UserId, UserRoles.Administrator))
+            || !await identityService.IsInRoleAsync(request.UserId, UserRoles.Administrator)
+                && !await identityService.IsInRoleAsync(request.UserId, UserRoles.Client)
+                && !await identityService.IsInRoleAsync(request.UserId, UserRoles.Worker))
         {
             throw new ForbiddenAccessException();
         }
