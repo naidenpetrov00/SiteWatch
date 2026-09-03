@@ -1,6 +1,5 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
-import { useState } from "react";
-import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import { ActivityIndicator, FlatList, Linking, Text, useWindowDimensions, View } from "react-native";
 
 import { useColorPalette } from "@/hooks/useColorPalette";
 import useGetSearchParams from "@/hooks/useGetSearchParams";
@@ -8,20 +7,26 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useGetIssueAttachments, useIssueAttachmentAccess } from "../hooks/useIssueAttachments";
 import type { IssueAttachment } from "../types";
 import IssueAttachmentViewer, { type AttachmentViewerState } from "./IssueAttachmentViewer";
+import IssueAttachmentGalleryItem from "./IssueAttachmentGalleryItem";
+import { ATTACHMENT_GRID_GAP, ATTACHMENT_GRID_HORIZONTAL_PADDING } from "./IssueAttachmentGallery.styles";
 import styles from "./IssueDetailsPage.styles";
 
-const formatSize = (size: number) => size >= 1024 * 1024 ? `${(size / 1024 / 1024).toFixed(1)} MB` : `${Math.ceil(size / 1024)} KB`;
+const MIN_TILE_WIDTH = 150;
 
 const IssueAttachmentsContent = () => {
   const colorPalette = useColorPalette();
   const { bottom } = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const { issueId } = useGetSearchParams<{ issueId?: string }>();
   const [viewer, setViewer] = useState<AttachmentViewerState>(null);
   const [openError, setOpenError] = useState<string | null>(null);
   const attachmentsQuery = useGetIssueAttachments(issueId);
   const access = useIssueAttachmentAccess();
+  const attachments = attachmentsQuery.data ?? [];
+  const numColumns = Math.max(1, Math.floor((width - ATTACHMENT_GRID_HORIZONTAL_PADDING * 2 + ATTACHMENT_GRID_GAP) / (MIN_TILE_WIDTH + ATTACHMENT_GRID_GAP)));
+  const tileWidth = (width - ATTACHMENT_GRID_HORIZONTAL_PADDING * 2 - ATTACHMENT_GRID_GAP * (numColumns - 1)) / numColumns;
 
-  const openAttachment = async (attachment: IssueAttachment) => {
+  const openAttachment = useCallback(async (attachment: IssueAttachment) => {
     if (!issueId) return;
     setOpenError(null);
     try {
@@ -31,12 +36,48 @@ const IssueAttachmentsContent = () => {
     } catch (error) {
       setOpenError(error instanceof Error ? error.message : `Unable to open ${attachment.fileName}.`);
     }
-  };
+  }, [access, issueId]);
 
-  return <><ScrollView contentContainerStyle={[styles.content, { paddingBottom: bottom + 80 }]} contentInsetAdjustmentBehavior="automatic">
-    {attachmentsQuery.isLoading ? <View style={[styles.state, { borderColor: `${colorPalette.secondary}55` }]}><ActivityIndicator color={colorPalette.primary} /><Text style={[styles.stateText, { color: colorPalette.secondary }]}>Loading attachments…</Text></View> : attachmentsQuery.isError ? <View style={[styles.state, { borderColor: `${colorPalette.secondary}55` }]}><Text style={[styles.stateText, { color: colorPalette.text }]}>{attachmentsQuery.error instanceof Error ? attachmentsQuery.error.message : "Attachments could not be retrieved."}</Text></View> : attachmentsQuery.data?.length ? attachmentsQuery.data.map((attachment) => <View key={attachment.id} style={[styles.attachment, { borderColor: `${colorPalette.secondary}55` }]}><Ionicons color={colorPalette.primary} name={attachment.kind === "Image" ? "image" : attachment.kind === "Video" ? "videocam" : "document"} size={25} /><View style={styles.attachmentInfo}><Text numberOfLines={1} style={[styles.attachmentName, { color: colorPalette.text }]}>{attachment.fileName}</Text><Text style={[styles.attachmentMeta, { color: colorPalette.secondary }]}>{attachment.kind} · {formatSize(attachment.sizeBytes)}{attachment.durationSeconds ? ` · ${attachment.durationSeconds}s` : ""}</Text></View><Pressable accessibilityLabel={`Open ${attachment.fileName}`} accessibilityRole="button" disabled={access.isPending} onPress={() => void openAttachment(attachment)} style={({ pressed }) => [styles.openButton, { backgroundColor: `${colorPalette.primary}18`, opacity: access.isPending ? 0.55 : pressed ? 0.78 : 1 }]}><Text style={[styles.openButtonText, { color: colorPalette.primary }]}>{attachment.kind === "File" ? "Open" : "View"}</Text></Pressable></View>) : <View style={[styles.state, { borderColor: `${colorPalette.secondary}55` }]}><Text style={[styles.stateText, { color: colorPalette.secondary }]}>No attachments yet.</Text></View>}
-    {openError ? <Text accessibilityRole="alert" style={styles.errorText}>{openError}</Text> : null}
-  </ScrollView><IssueAttachmentViewer onClose={() => setViewer(null)} viewer={viewer} /></>;
+  const handleOpenAttachment = useCallback((attachmentId: string) => {
+    const attachment = attachments.find(({ id }) => id === attachmentId);
+    if (attachment) void openAttachment(attachment);
+  }, [attachments, openAttachment]);
+
+  const renderAttachment = useCallback(({ item }: { item: IssueAttachment }) => (
+    <View style={{ width: tileWidth }}>
+      <IssueAttachmentGalleryItem
+        attachmentId={item.id}
+        contentType={item.contentType}
+        durationSeconds={item.durationSeconds}
+        fileName={item.fileName}
+        hasPreview={item.hasPreview}
+        isOpening={access.isPending}
+        issueId={issueId}
+        kind={item.kind}
+        onOpen={handleOpenAttachment}
+      />
+    </View>
+  ), [access.isPending, handleOpenAttachment, issueId, tileWidth]);
+
+  const emptyState = useMemo(() => {
+    if (attachmentsQuery.isLoading) return <View style={[styles.state, { borderColor: `${colorPalette.secondary}55` }]}><ActivityIndicator color={colorPalette.primary} /><Text style={[styles.stateText, { color: colorPalette.secondary }]}>Loading attachments…</Text></View>;
+    if (attachmentsQuery.isError) return <View style={[styles.state, { borderColor: `${colorPalette.secondary}55` }]}><Text style={[styles.stateText, { color: colorPalette.text }]}>{attachmentsQuery.error instanceof Error ? attachmentsQuery.error.message : "Attachments could not be retrieved."}</Text></View>;
+    return <View style={[styles.state, { borderColor: `${colorPalette.secondary}55` }]}><Text style={[styles.stateText, { color: colorPalette.secondary }]}>No attachments yet.</Text></View>;
+  }, [attachmentsQuery.error, attachmentsQuery.isError, attachmentsQuery.isLoading, colorPalette]);
+
+  return <><FlatList
+    columnWrapperStyle={numColumns > 1 ? { gap: ATTACHMENT_GRID_GAP } : undefined}
+    contentContainerStyle={[{ gap: ATTACHMENT_GRID_GAP, padding: ATTACHMENT_GRID_HORIZONTAL_PADDING, paddingBottom: bottom + 80 }, attachments.length === 0 ? { flexGrow: 1 } : null]}
+    contentInsetAdjustmentBehavior="automatic"
+    data={attachments}
+    key={numColumns}
+    keyExtractor={(attachment) => attachment.id}
+    ListEmptyComponent={emptyState}
+    ListFooterComponent={openError ? <Text accessibilityRole="alert" style={styles.errorText}>{openError}</Text> : null}
+    numColumns={numColumns}
+    renderItem={renderAttachment}
+    showsVerticalScrollIndicator={false}
+  /><IssueAttachmentViewer onClose={() => setViewer(null)} viewer={viewer} /></>;
 };
 
 export default IssueAttachmentsContent;

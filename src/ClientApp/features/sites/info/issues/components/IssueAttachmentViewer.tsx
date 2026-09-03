@@ -1,6 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { Image } from "expo-image";
 import { VideoView, useVideoPlayer } from "expo-video";
-import { Image, Modal, Pressable, StatusBar, Text, View } from "react-native";
+import { Modal, Pressable, StatusBar, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { IssueAttachmentKind } from "../types";
@@ -21,7 +22,7 @@ const IssueAttachmentViewer = ({ viewer, onClose }: { viewer: AttachmentViewerSt
       <StatusBar hidden />
       <SafeAreaView style={styles.viewer}>
         <View style={styles.viewerHeader}><Text numberOfLines={1} style={styles.viewerTitle}>{viewer.name}</Text><Pressable accessibilityLabel="Close attachment viewer" accessibilityRole="button" hitSlop={8} onPress={onClose}><Ionicons color="#fff" name="close" size={28} /></Pressable></View>
-        {viewer.kind === "Image" ? <Image resizeMode="contain" source={{ uri: viewer.url }} style={styles.viewerImage} /> : <VideoViewer url={viewer.url} />}
+        {viewer.kind === "Image" ? <Image cachePolicy="none" contentFit="contain" source={{ uri: viewer.url }} style={styles.viewerImage} /> : <VideoViewer url={viewer.url} />}
       </SafeAreaView>
     </Modal>
   );

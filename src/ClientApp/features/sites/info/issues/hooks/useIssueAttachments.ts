@@ -72,6 +72,21 @@ export const useGetIssueAttachments = (issueId?: string) => {
   });
 };
 
+export const useGetIssueAttachmentPreview = (
+  issueId?: string,
+  attachmentId?: string,
+  hasPreview = false,
+) => {
+  const { accessToken } = useAuth();
+
+  return useQuery({
+    queryKey: ["issue-attachment-preview", issueId, attachmentId],
+    queryFn: () => getIssueAttachmentAccess(issueId!, attachmentId!, accessToken!, true),
+    ...queryConfig,
+    enabled: Boolean(issueId && attachmentId && accessToken && hasPreview),
+  });
+};
+
 export const useUploadIssueAttachment = () => {
   const { accessToken } = useAuth();
   const queryClient = useQueryClient();
