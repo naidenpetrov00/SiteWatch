@@ -124,6 +124,10 @@ const AddIssueForm = ({ siteId, visible, onClose }: AddIssueFormProps) => {
         setError("Camera access is required to capture an issue attachment. Allow Camera access in Settings and try again.");
         return;
       }
+      if (result.status === "cancelled") {
+        setError(null);
+        return;
+      }
       if (result.status === "selected") addPickedAttachments(result.assets);
     } catch (pickerError) {
       setError(getErrorMessage(pickerError));
