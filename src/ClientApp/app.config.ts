@@ -16,6 +16,8 @@ export default {
             NSPhotoLibraryAddUsageDescription: "Allow saving camera snapshots",
             NSCameraUsageDescription:
                 "Allow access to the camera to add site images and videos",
+            NSMicrophoneUsageDescription:
+                "Allow SiteWatch to use the microphone when recording issue videos",
             NSAppTransportSecurity: {
                 NSAllowsArbitraryLoads: true,
                 NSAllowsArbitraryLoadsInWebContent: true,
@@ -33,7 +35,9 @@ export default {
       [
         "expo-image-picker",
         {
-          cameraPermission: "Allow SiteWatch to use the camera to add site images and videos.",
+          photosPermission: "Allow SiteWatch to access your photos and videos for issue attachments.",
+          cameraPermission: "Allow SiteWatch to use the camera for issue attachments.",
+          microphonePermission: "Allow SiteWatch to use the microphone when recording issue videos.",
         },
       ],
       "expo-video",

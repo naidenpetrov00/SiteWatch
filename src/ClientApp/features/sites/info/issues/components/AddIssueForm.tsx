@@ -1,11 +1,15 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import * as DocumentPicker from "expo-document-picker";
 import { VideoView, useVideoPlayer } from "expo-video";
-import { Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Image, Linking, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useEffect, useState } from "react";
 
 import { useColorPalette } from "@/hooks/useColorPalette";
 import ConnectedTabs from "@/components/ui/ConnectedTabs";
+import {
+  selectUploadAssets,
+  type PickedUploadAsset,
+  type UploadSource,
+} from "@/features/sites/info/uploads/selectUploadAssets";
 import { useCreateIssue } from "../hooks/useCreateIssue";
 import { useUploadIssueAttachment } from "../hooks/useIssueAttachments";
 import type { IssueAttachmentKind, PendingIssueAttachment } from "../types";
@@ -28,18 +32,34 @@ const contentTypeFromName = (fileName: string) => {
   return extension ? types[extension] ?? "application/octet-stream" : "application/octet-stream";
 };
 
-const validateAttachment = (asset: DocumentPicker.DocumentPickerAsset): { kind: IssueAttachmentKind; contentType: string } | string => {
-  const fileName = asset.name.trim();
-  let contentType = (asset.mimeType ?? contentTypeFromName(asset.name)).trim().toLowerCase();
+const fallbackFileName = (asset: PickedUploadAsset, index: number) => {
+  if (asset.fileName?.trim()) return asset.fileName.trim();
+  const prefix = asset.mediaType === "video" ? "video" : "image";
+  const extension = asset.mediaType === "video" ? "mp4" : "jpg";
+  return `${prefix}-attachment-${Date.now()}-${index}.${extension}`;
+};
+
+const fallbackContentType = (asset: PickedUploadAsset, fileName: string) => {
+  if (asset.mimeType) return asset.mimeType;
+  const fromName = contentTypeFromName(fileName);
+  if (fromName !== "application/octet-stream") return fromName;
+  if (asset.mediaType === "video") return "video/mp4";
+  if (asset.mediaType === "image") return "image/jpeg";
+  return fromName;
+};
+
+const validateAttachment = (asset: { fileName: string; contentType: string; fileSize?: number | null }): { kind: IssueAttachmentKind; contentType: string } | string => {
+  const fileName = asset.fileName.trim();
+  let contentType = asset.contentType.trim().toLowerCase();
   if (contentType === "image/jpg") contentType = "image/jpeg";
   if (!fileName || fileName.length > 512) return "The file name is required and must be at most 512 characters.";
   if (contentType.length > 128) return "The file content type must be at most 128 characters.";
-  if (asset.size === 0) return "The file cannot be empty.";
+  if (asset.fileSize === 0) return "The file cannot be empty.";
   const kind: IssueAttachmentKind = IMAGE_TYPES.has(contentType) ? "Image" : VIDEO_TYPES.has(contentType) ? "Video" : "File";
   if (contentType.startsWith("image/") && kind !== "Image") return "Only JPEG, PNG, WebP, GIF, HEIC, or HEIF images are supported.";
   if (contentType.startsWith("video/") && kind !== "Video") return "Only MP4, MOV, or WebM videos are supported.";
   const maximum = kind === "Image" ? 50 * 1024 * 1024 : kind === "Video" ? 500 * 1024 * 1024 : 100 * 1024 * 1024;
-  if (asset.size !== undefined && asset.size > maximum) return `The ${kind.toLowerCase()} cannot exceed ${maximum / 1024 / 1024} MB.`;
+  if (asset.fileSize !== undefined && asset.fileSize !== null && asset.fileSize > maximum) return `The ${kind.toLowerCase()} cannot exceed ${maximum / 1024 / 1024} MB.`;
   return { kind, contentType };
 };
 
@@ -60,25 +80,54 @@ const AddIssueForm = ({ siteId, visible, onClose }: AddIssueFormProps) => {
   const [activeTab, setActiveTab] = useState<"details" | "attachments">("details");
   const [attachments, setAttachments] = useState<PendingIssueAttachment[]>([]);
   const [persistedIssueId, setPersistedIssueId] = useState<string | null>(null);
+  const [activePicker, setActivePicker] = useState<UploadSource | null>(null);
+  const [cameraPermissionDenied, setCameraPermissionDenied] = useState(false);
 
   useEffect(() => {
     if (!visible) return;
-    setTitle(""); setDescription(""); setError(null); setActiveTab("details"); setAttachments([]); setPersistedIssueId(null);
+    setTitle(""); setDescription(""); setError(null); setActiveTab("details"); setAttachments([]); setPersistedIssueId(null); setActivePicker(null); setCameraPermissionDenied(false);
   }, [visible]);
 
-  const chooseAttachments = async () => {
-    if (persistedIssueId) return;
-    const result = await DocumentPicker.getDocumentAsync({ type: "*/*", multiple: true, copyToCacheDirectory: true });
-    if (result.canceled) return;
+  const addPickedAttachments = (assets: PickedUploadAsset[]) => {
     const accepted: PendingIssueAttachment[] = [];
     const errors: string[] = [];
-    for (const asset of result.assets) {
-      const validation = validateAttachment(asset);
-      if (typeof validation === "string") { errors.push(`${asset.name}: ${validation}`); continue; }
-      accepted.push({ clientId: `issue-attachment-${Date.now()}-${accepted.length}`, uri: asset.uri, fileName: asset.name, contentType: validation.contentType, fileSize: asset.size ?? undefined, kind: validation.kind, status: "queued", error: null });
+    for (const [index, asset] of assets.entries()) {
+      const fileName = fallbackFileName(asset, index);
+      const validation = validateAttachment({
+        fileName,
+        contentType: fallbackContentType(asset, fileName),
+        fileSize: asset.fileSize,
+      });
+      if (typeof validation === "string") { errors.push(`${fileName}: ${validation}`); continue; }
+      accepted.push({ clientId: `issue-attachment-${Date.now()}-${index}`, uri: asset.uri, fileName, contentType: validation.contentType, fileSize: asset.fileSize ?? undefined, kind: validation.kind, status: "queued", error: null });
     }
     if (accepted.length) setAttachments((current) => [...current, ...accepted]);
-    if (errors.length) setError(errors.join(" "));
+    setError(errors.length ? errors.join(" ") : null);
+  };
+
+  const chooseAttachments = async (source: UploadSource) => {
+    if (persistedIssueId) return;
+    setActivePicker(source);
+    setCameraPermissionDenied(false);
+    try {
+      const result = await selectUploadAssets({
+        source,
+        mediaKind: "media",
+        documentPickerTypes: "*/*",
+        multiple: source !== "camera",
+        imageQuality: source === "camera" ? 0.9 : 1,
+      });
+      if (result.status === "permission-denied") {
+        setCameraPermissionDenied(true);
+        setError("Camera access is required to capture an issue attachment. Allow Camera access in Settings and try again.");
+        return;
+      }
+      if (result.status === "selected") addPickedAttachments(result.assets);
+    } catch (pickerError) {
+      setError(getErrorMessage(pickerError));
+    } finally {
+      setActivePicker(null);
+    }
   };
 
   const submit = async () => {
@@ -106,6 +155,7 @@ const AddIssueForm = ({ siteId, visible, onClose }: AddIssueFormProps) => {
   };
 
   const isSaving = createIssue.isPending || uploadAttachment.isPending;
+  const isPickerBusy = activePicker !== null;
 
   return <>
     <ScrollView contentContainerStyle={addIssueModalStyles.content} contentInsetAdjustmentBehavior="automatic">
@@ -119,12 +169,16 @@ const AddIssueForm = ({ siteId, visible, onClose }: AddIssueFormProps) => {
         <View style={addIssueModalStyles.field}><Text style={[addIssueModalStyles.label, { color: colorPalette.text }]}>Title</Text><TextInput accessibilityLabel="Issue title" autoFocus={!persistedIssueId} editable={!persistedIssueId} maxLength={200} onChangeText={(value) => { setTitle(value); setError(null); }} placeholder="Describe the issue" placeholderTextColor={colorPalette.secondary} style={[addIssueModalStyles.input, { borderColor: colorPalette.secondary, color: colorPalette.text }]} value={title} /></View>
         <View style={addIssueModalStyles.field}><Text style={[addIssueModalStyles.label, { color: colorPalette.text }]}>Description</Text><TextInput accessibilityLabel="Issue description" editable={!persistedIssueId} maxLength={4000} multiline onChangeText={(value) => { setDescription(value); setError(null); }} placeholder="Add the relevant details" placeholderTextColor={colorPalette.secondary} style={[addIssueModalStyles.input, addIssueModalStyles.descriptionInput, { borderColor: colorPalette.secondary, color: colorPalette.text }]} value={description} /></View>
       </> : <View style={addIssueModalStyles.attachmentActions}>
-        {!persistedIssueId ? <Pressable accessibilityRole="button" onPress={() => void chooseAttachments()} style={({ pressed }) => [addIssueModalStyles.chooseFilesButton, { borderColor: colorPalette.primary, opacity: pressed ? 0.78 : 1 }]}><Text style={[addIssueModalStyles.chooseFilesText, { color: colorPalette.primary }]}>Choose files</Text></Pressable> : null}
+        {!persistedIssueId ? <View style={addIssueModalStyles.attachmentSourceActions}>
+          <Pressable accessibilityRole="button" accessibilityState={{ busy: activePicker === "gallery" }} disabled={isPickerBusy} onPress={() => void chooseAttachments("gallery")} style={({ pressed }) => [addIssueModalStyles.chooseFilesButton, { borderColor: colorPalette.primary, opacity: isPickerBusy ? 0.55 : pressed ? 0.78 : 1 }]}><Text style={[addIssueModalStyles.chooseFilesText, { color: colorPalette.primary }]}>{activePicker === "gallery" ? "Opening gallery…" : "Upload from gallery"}</Text></Pressable>
+          <Pressable accessibilityRole="button" accessibilityState={{ busy: activePicker === "camera" }} disabled={isPickerBusy} onPress={() => void chooseAttachments("camera")} style={({ pressed }) => [addIssueModalStyles.chooseFilesButton, { borderColor: colorPalette.primary, opacity: isPickerBusy ? 0.55 : pressed ? 0.78 : 1 }]}><Text style={[addIssueModalStyles.chooseFilesText, { color: colorPalette.primary }]}>{activePicker === "camera" ? "Opening camera…" : "Use camera"}</Text></Pressable>
+          <Pressable accessibilityRole="button" accessibilityState={{ busy: activePicker === "file" }} disabled={isPickerBusy} onPress={() => void chooseAttachments("file")} style={({ pressed }) => [addIssueModalStyles.chooseFilesButton, { borderColor: colorPalette.primary, opacity: isPickerBusy ? 0.55 : pressed ? 0.78 : 1 }]}><Text style={[addIssueModalStyles.chooseFilesText, { color: colorPalette.primary }]}>{activePicker === "file" ? "Opening files…" : "Choose files"}</Text></Pressable>
+        </View> : null}
         <Text style={[addIssueModalStyles.attachmentHint, { color: colorPalette.secondary }]}>Images up to 50 MB, videos up to 500 MB, and other files up to 100 MB.</Text>
         {attachments.length ? <View style={addIssueModalStyles.attachmentList}>{attachments.map((attachment) => <View key={attachment.clientId} style={[addIssueModalStyles.attachmentRow, { borderColor: `${colorPalette.secondary}55` }]}>{attachment.kind === "Image" ? <Image source={{ uri: attachment.uri }} style={addIssueModalStyles.attachmentPreview} /> : attachment.kind === "Video" ? <QueuedVideoPreview uri={attachment.uri} /> : <View style={[addIssueModalStyles.attachmentIcon, { backgroundColor: `${colorPalette.primary}18` }]}><Ionicons color={colorPalette.primary} name="document" size={22} /></View>}<View style={addIssueModalStyles.attachmentInfo}><Text numberOfLines={1} style={[addIssueModalStyles.attachmentName, { color: colorPalette.text }]}>{attachment.fileName}</Text><Text style={[addIssueModalStyles.attachmentMetadata, { color: attachment.error ? "#B42318" : colorPalette.secondary }]}>{attachment.error ?? `${attachment.kind} · ${formatSize(attachment.fileSize)}${attachment.status === "uploading" ? " · Uploading…" : ""}`}</Text></View>{!persistedIssueId ? <Pressable accessibilityLabel={`Remove ${attachment.fileName}`} accessibilityRole="button" onPress={() => setAttachments((current) => current.filter((item) => item.clientId !== attachment.clientId))} style={addIssueModalStyles.removeAttachment}><Ionicons color={colorPalette.secondary} name="close" size={20} /></Pressable> : null}</View>)}</View> : <View style={[addIssueModalStyles.emptyAttachments, { borderColor: `${colorPalette.secondary}55` }]}><Text style={{ color: colorPalette.secondary }}>No attachments selected.</Text></View>}
       </View>}
       </ConnectedTabs>
-      {error ? <Text accessibilityRole="alert" style={[addIssueModalStyles.error, { borderColor: "#B42318", color: "#B42318" }]}>{error}</Text> : null}
+      {error ? <View style={[addIssueModalStyles.error, { borderColor: "#B42318" }]}><Text accessibilityRole="alert" style={{ color: "#B42318", fontSize: 14 }}>{error}</Text>{cameraPermissionDenied ? <Pressable accessibilityRole="button" onPress={() => void Linking.openSettings()} style={addIssueModalStyles.errorAction}><Text style={[addIssueModalStyles.errorActionText, { color: colorPalette.primary }]}>Open Settings</Text></Pressable> : null}</View> : null}
     </ScrollView>
     <View style={[addIssueModalStyles.footer, { backgroundColor: colorPalette.background }]}>
       <Pressable accessibilityRole="button" disabled={isSaving} onPress={onClose} style={({ pressed }) => [addIssueModalStyles.button, { backgroundColor: colorPalette.secondary, opacity: isSaving ? 0.55 : pressed ? 0.78 : 1 }]}><Text style={[addIssueModalStyles.buttonText, { color: colorPalette.background }]}>Cancel</Text></Pressable>
