@@ -42,6 +42,8 @@ const addIssueModalStyles = StyleSheet.create({
   },
   attachmentActions: { gap: 8 },
   attachmentSourceActions: { gap: 8 },
+  cameraActions: { flexDirection: "row", gap: 8 },
+  cameraActionButton: { alignItems: "center", borderRadius: 10, borderWidth: 1, flex: 1, justifyContent: "center", minHeight: 48 },
   chooseFilesButton: { alignItems: "center", borderRadius: 10, borderWidth: 1, paddingVertical: 12 },
   chooseFilesText: { fontSize: 15, fontWeight: "700" },
   errorAction: { alignSelf: "flex-start", paddingVertical: 2 },

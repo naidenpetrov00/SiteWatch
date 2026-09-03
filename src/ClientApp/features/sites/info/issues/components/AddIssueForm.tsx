@@ -1,6 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { VideoView, useVideoPlayer } from "expo-video";
-import { Image, Linking, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Image, Linking, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useEffect, useState } from "react";
 
 import { useColorPalette } from "@/hooks/useColorPalette";
@@ -16,6 +16,7 @@ import type { IssueAttachmentKind, PendingIssueAttachment } from "../types";
 import addIssueModalStyles from "./AddIssueModal.styles";
 
 type AddIssueFormProps = { siteId: string; visible: boolean; onClose: () => void };
+type ActivePicker = "gallery" | "file" | "photo" | "video";
 
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/heic", "image/heif"]);
 const VIDEO_TYPES = new Set(["video/mp4", "video/quicktime", "video/webm"]);
@@ -80,7 +81,7 @@ const AddIssueForm = ({ siteId, visible, onClose }: AddIssueFormProps) => {
   const [activeTab, setActiveTab] = useState<"details" | "attachments">("details");
   const [attachments, setAttachments] = useState<PendingIssueAttachment[]>([]);
   const [persistedIssueId, setPersistedIssueId] = useState<string | null>(null);
-  const [activePicker, setActivePicker] = useState<UploadSource | null>(null);
+  const [activePicker, setActivePicker] = useState<ActivePicker | null>(null);
   const [cameraPermissionDenied, setCameraPermissionDenied] = useState(false);
 
   useEffect(() => {
@@ -105,14 +106,15 @@ const AddIssueForm = ({ siteId, visible, onClose }: AddIssueFormProps) => {
     setError(errors.length ? errors.join(" ") : null);
   };
 
-  const chooseAttachments = async (source: UploadSource) => {
+  const chooseAttachments = async (source: UploadSource, mediaKind: "image" | "video" | "media" = "media") => {
     if (persistedIssueId) return;
-    setActivePicker(source);
+    const picker = source === "camera" ? (mediaKind === "video" ? "video" : "photo") : source;
+    setActivePicker(picker);
     setCameraPermissionDenied(false);
     try {
       const result = await selectUploadAssets({
         source,
-        mediaKind: "media",
+        mediaKind,
         documentPickerTypes: "*/*",
         multiple: source !== "camera",
         imageQuality: source === "camera" ? 0.9 : 1,
@@ -170,8 +172,11 @@ const AddIssueForm = ({ siteId, visible, onClose }: AddIssueFormProps) => {
         <View style={addIssueModalStyles.field}><Text style={[addIssueModalStyles.label, { color: colorPalette.text }]}>Description</Text><TextInput accessibilityLabel="Issue description" editable={!persistedIssueId} maxLength={4000} multiline onChangeText={(value) => { setDescription(value); setError(null); }} placeholder="Add the relevant details" placeholderTextColor={colorPalette.secondary} style={[addIssueModalStyles.input, addIssueModalStyles.descriptionInput, { borderColor: colorPalette.secondary, color: colorPalette.text }]} value={description} /></View>
       </> : <View style={addIssueModalStyles.attachmentActions}>
         {!persistedIssueId ? <View style={addIssueModalStyles.attachmentSourceActions}>
+          <View style={addIssueModalStyles.cameraActions}>
+            <Pressable accessibilityLabel="Take photo" accessibilityRole="button" accessibilityState={{ busy: activePicker === "photo" }} disabled={isPickerBusy} onPress={() => void chooseAttachments("camera", "image")} style={({ pressed }) => [addIssueModalStyles.cameraActionButton, { borderColor: colorPalette.primary, opacity: isPickerBusy ? 0.55 : pressed ? 0.78 : 1 }]}>{activePicker === "photo" ? <ActivityIndicator color={colorPalette.primary} /> : <Ionicons color={colorPalette.primary} name="camera" size={24} />}</Pressable>
+            <Pressable accessibilityLabel="Record video" accessibilityRole="button" accessibilityState={{ busy: activePicker === "video" }} disabled={isPickerBusy} onPress={() => void chooseAttachments("camera", "video")} style={({ pressed }) => [addIssueModalStyles.cameraActionButton, { borderColor: colorPalette.primary, opacity: isPickerBusy ? 0.55 : pressed ? 0.78 : 1 }]}>{activePicker === "video" ? <ActivityIndicator color={colorPalette.primary} /> : <Ionicons color={colorPalette.primary} name="videocam" size={24} />}</Pressable>
+          </View>
           <Pressable accessibilityRole="button" accessibilityState={{ busy: activePicker === "gallery" }} disabled={isPickerBusy} onPress={() => void chooseAttachments("gallery")} style={({ pressed }) => [addIssueModalStyles.chooseFilesButton, { borderColor: colorPalette.primary, opacity: isPickerBusy ? 0.55 : pressed ? 0.78 : 1 }]}><Text style={[addIssueModalStyles.chooseFilesText, { color: colorPalette.primary }]}>{activePicker === "gallery" ? "Opening gallery…" : "Upload from gallery"}</Text></Pressable>
-          <Pressable accessibilityRole="button" accessibilityState={{ busy: activePicker === "camera" }} disabled={isPickerBusy} onPress={() => void chooseAttachments("camera")} style={({ pressed }) => [addIssueModalStyles.chooseFilesButton, { borderColor: colorPalette.primary, opacity: isPickerBusy ? 0.55 : pressed ? 0.78 : 1 }]}><Text style={[addIssueModalStyles.chooseFilesText, { color: colorPalette.primary }]}>{activePicker === "camera" ? "Opening camera…" : "Use camera"}</Text></Pressable>
           <Pressable accessibilityRole="button" accessibilityState={{ busy: activePicker === "file" }} disabled={isPickerBusy} onPress={() => void chooseAttachments("file")} style={({ pressed }) => [addIssueModalStyles.chooseFilesButton, { borderColor: colorPalette.primary, opacity: isPickerBusy ? 0.55 : pressed ? 0.78 : 1 }]}><Text style={[addIssueModalStyles.chooseFilesText, { color: colorPalette.primary }]}>{activePicker === "file" ? "Opening files…" : "Choose files"}</Text></Pressable>
         </View> : null}
         <Text style={[addIssueModalStyles.attachmentHint, { color: colorPalette.secondary }]}>Images up to 50 MB, videos up to 500 MB, and other files up to 100 MB.</Text>
