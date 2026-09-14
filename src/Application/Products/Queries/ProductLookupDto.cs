@@ -11,8 +11,6 @@ public sealed record ProductLookupDto
     public string Category { get; init; } = string.Empty;
     public string? Brand { get; init; }
     public string? Model { get; init; }
-    public string? ExternalIdentifierType { get; init; }
-    public string? ExternalIdentifier { get; init; }
     public decimal? PackageQuantity { get; init; }
     public string? PackageUnit { get; init; }
 
@@ -25,8 +23,6 @@ public sealed record ProductLookupDto
             Category = product.Category,
             Brand = product.Brand,
             Model = product.Model,
-            ExternalIdentifierType = product.ExternalIdentifierType,
-            ExternalIdentifier = product.ExternalIdentifier,
             PackageQuantity = product.PackageQuantity,
             PackageUnit = product.PackageUnit
         };

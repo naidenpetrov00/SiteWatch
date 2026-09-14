@@ -11,8 +11,6 @@ public sealed record ProductDetailsDto
     public string? Description { get; init; }
     public string? Brand { get; init; }
     public string? Model { get; init; }
-    public string? ExternalIdentifierType { get; init; }
-    public string? ExternalIdentifier { get; init; }
     public decimal? PackageQuantity { get; init; }
     public string? PackageUnit { get; init; }
     public string Category { get; init; } = string.Empty;
@@ -32,8 +30,6 @@ public sealed record ProductDetailsDto
             Description = product.Description,
             Brand = product.Brand,
             Model = product.Model,
-            ExternalIdentifierType = product.ExternalIdentifierType,
-            ExternalIdentifier = product.ExternalIdentifier,
             PackageQuantity = product.PackageQuantity,
             PackageUnit = product.PackageUnit,
             Category = product.Category,

@@ -24,12 +24,6 @@ public sealed partial class DashboardProductsQuery
                     "brand", query => query.Brand, product => product.Brand ?? string.Empty),
                 TableFilterDescriptor<Product, DashboardProductsQuery>.TextContains(
                     "model", query => query.Model, product => product.Model ?? string.Empty),
-                TableFilterDescriptor<Product, DashboardProductsQuery>.TextContains(
-                    "externalIdentifier",
-                    query => query.ExternalIdentifier,
-                    product => (product.ExternalIdentifierType ?? string.Empty)
-                        + " "
-                        + (product.ExternalIdentifier ?? string.Empty)),
                 new TableFilterDescriptor<Product, DashboardProductsQuery>(
                     "packageQuantity",
                     request => BuildDecimalEqualsPredicate(
@@ -58,10 +52,6 @@ public sealed partial class DashboardProductsQuery
                     "brand", product => product.Brand ?? string.Empty, product => product.Id),
                 ["model"] = TableSortDescriptor<Product, DashboardProductsQuery>.Create(
                     "model", product => product.Model ?? string.Empty, product => product.Id),
-                ["externalIdentifier"] = TableSortDescriptor<Product, DashboardProductsQuery>.Create(
-                    "externalIdentifier",
-                    product => product.ExternalIdentifier ?? string.Empty,
-                    product => product.Id),
                 ["packageQuantity"] = TableSortDescriptor<Product, DashboardProductsQuery>.Create(
                     "packageQuantity",
                     product => product.PackageQuantity ?? decimal.MinValue,

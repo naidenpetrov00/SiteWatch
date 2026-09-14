@@ -13,8 +13,6 @@ public abstract class ProductUpsertValidator<TRequest> : AbstractValidator<TRequ
         RuleFor(request => request.Description).MaximumLength(2000);
         RuleFor(request => request.Brand).MaximumLength(100);
         RuleFor(request => request.Model).MaximumLength(100);
-        RuleFor(request => request.ExternalIdentifierType).MaximumLength(50);
-        RuleFor(request => request.ExternalIdentifier).MaximumLength(100);
         RuleFor(request => request.PackageUnit).MaximumLength(50);
         RuleFor(request => request.Category).NotEmpty().MaximumLength(100);
         RuleFor(request => request.Status)
@@ -25,11 +23,6 @@ public abstract class ProductUpsertValidator<TRequest> : AbstractValidator<TRequ
         RuleFor(request => request.PackageQuantity)
             .GreaterThan(0)
             .When(request => request.PackageQuantity.HasValue);
-        RuleFor(request => request)
-            .Must(request => AreSuppliedTogether(
-                request.ExternalIdentifierType,
-                request.ExternalIdentifier))
-            .WithMessage("ExternalIdentifierType and ExternalIdentifier must be supplied together.");
         RuleFor(request => request)
             .Must(request => request.PackageQuantity.HasValue
                 == !string.IsNullOrWhiteSpace(request.PackageUnit))
@@ -57,9 +50,6 @@ public abstract class ProductUpsertValidator<TRequest> : AbstractValidator<TRequ
     private static bool IsSupportedStatus(string? value) =>
         Enum.TryParse<ProductStatus>(value?.Trim(), true, out var status)
         && Enum.IsDefined(status);
-
-    private static bool AreSuppliedTogether(string? first, string? second) =>
-        string.IsNullOrWhiteSpace(first) == string.IsNullOrWhiteSpace(second);
 }
 
 public sealed class CreateProductValidator : ProductUpsertValidator<CreateProductCommand>;

@@ -22,7 +22,12 @@
         <div class="product-dialog__grid">
           <mat-form-field appearance="outline" class="product-dialog__wide-field">
             <mat-label>Title</mat-label>
-            <input matInput formControlName="title" maxlength="200" />
+            <input
+              matInput
+              formControlName="title"
+              maxlength="200"
+              placeholder="e.g. Cordless Combi Drill"
+            />
             @if (productForm.controls.title.touched && productForm.controls.title.invalid) {
               <mat-error>A title is required and cannot exceed 200 characters.</mat-error>
             }
@@ -30,7 +35,12 @@
 
           <mat-form-field appearance="outline">
             <mat-label>Category</mat-label>
-            <input matInput formControlName="category" maxlength="100" />
+            <input
+              matInput
+              formControlName="category"
+              maxlength="100"
+              placeholder="e.g. Power Tools"
+            />
             @if (productForm.controls.category.touched && productForm.controls.category.invalid) {
               <mat-error>A category is required and cannot exceed 100 characters.</mat-error>
             }
@@ -47,27 +57,22 @@
 
           <mat-form-field appearance="outline">
             <mat-label>Brand</mat-label>
-            <input matInput formControlName="brand" maxlength="100" />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Model</mat-label>
-            <input matInput formControlName="model" maxlength="100" />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Identifier Type</mat-label>
             <input
               matInput
-              formControlName="externalIdentifierType"
-              maxlength="50"
-              placeholder="GTIN, EAN, UPC, SKU, MPN"
+              formControlName="brand"
+              maxlength="100"
+              placeholder="e.g. Bosch Professional"
             />
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>External Identifier</mat-label>
-            <input matInput formControlName="externalIdentifier" maxlength="100" />
+            <mat-label>Model</mat-label>
+            <input
+              matInput
+              formControlName="model"
+              maxlength="100"
+              placeholder="e.g. GSB 18V-55"
+            />
           </mat-form-field>
 
           <mat-form-field appearance="outline">
@@ -78,6 +83,7 @@
               formControlName="packageQuantity"
               min="0.0001"
               step="any"
+              placeholder="e.g. 25"
             />
             @if (productForm.controls.packageQuantity.touched && productForm.controls.packageQuantity.invalid) {
               <mat-error>Package quantity must be greater than zero.</mat-error>
@@ -95,11 +101,6 @@
           </mat-form-field>
         </div>
 
-        @if (productForm.touched && productForm.hasError('externalIdentifierPair')) {
-          <p class="product-dialog__error" role="alert">
-            Identifier type and value must be supplied together.
-          </p>
-        }
         @if (productForm.touched && productForm.hasError('packagePair')) {
           <p class="product-dialog__error" role="alert">
             Package quantity and unit must be supplied together.
@@ -110,7 +111,12 @@
       <section class="product-dialog__section" aria-label="Search configuration">
         <mat-form-field appearance="outline" class="product-dialog__full-width">
           <mat-label>Custom Primary Search Phrase</mat-label>
-          <input matInput formControlName="primarySearchPhrase" maxlength="250" />
+          <input
+            matInput
+            formControlName="primarySearchPhrase"
+            maxlength="250"
+            placeholder="e.g. Bosch GSB 18V-55 cordless drill"
+          />
           <mat-hint>Optional. Leave empty to combine title, brand, and model.</mat-hint>
         </mat-form-field>
 
@@ -138,7 +144,12 @@
             <div class="product-dialog__collection-row">
               <mat-form-field appearance="outline">
                 <mat-label>Alternative phrase</mat-label>
-                <input matInput [formControl]="control" maxlength="200" />
+                <input
+                  matInput
+                  [formControl]="control"
+                  maxlength="200"
+                  placeholder="e.g. GSB 18V-55 drill driver"
+                />
                 @if (control.touched && control.invalid) {
                   <mat-error>Enter a phrase of no more than 200 characters.</mat-error>
                 }
@@ -174,7 +185,12 @@
             <div class="product-dialog__collection-row">
               <mat-form-field appearance="outline">
                 <mat-label>Required keyword</mat-label>
-                <input matInput [formControl]="control" maxlength="200" />
+                <input
+                  matInput
+                  [formControl]="control"
+                  maxlength="200"
+                  placeholder="e.g. brushless"
+                />
               </mat-form-field>
               <button
                 mat-button
@@ -207,7 +223,12 @@
             <div class="product-dialog__collection-row">
               <mat-form-field appearance="outline">
                 <mat-label>Excluded keyword</mat-label>
-                <input matInput [formControl]="control" maxlength="200" />
+                <input
+                  matInput
+                  [formControl]="control"
+                  maxlength="200"
+                  placeholder="e.g. used"
+                />
               </mat-form-field>
               <button
                 mat-button

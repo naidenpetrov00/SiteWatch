@@ -59,18 +59,6 @@ const PRODUCT_COLUMNS: readonly DataTableColumn<DashboardProduct>[] = [
     filter: { kind: 'text', placeholder: 'Filter Model' }
   },
   {
-    key: 'externalIdentifier',
-    label: 'External Identifier',
-    sortable: true,
-    filter: { kind: 'text', placeholder: 'Filter Identifier' },
-    displayFormatter: (_, product) =>
-      product.externalIdentifier
-        ? [product.externalIdentifierType, product.externalIdentifier]
-            .filter(Boolean)
-            .join(': ')
-        : '—'
-  },
-  {
     key: 'packageQuantity',
     label: 'Quantity',
     sortable: true,

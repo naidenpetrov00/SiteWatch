@@ -17,8 +17,6 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
     public string? Description { get; private set; }
     public string? Brand { get; private set; }
     public string? Model { get; private set; }
-    public string? ExternalIdentifierType { get; private set; }
-    public string? ExternalIdentifier { get; private set; }
     public decimal? PackageQuantity { get; private set; }
     public string? PackageUnit { get; private set; }
     public string Category { get; private set; } = null!;
@@ -35,8 +33,6 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
         string? description,
         string? brand,
         string? model,
-        string? externalIdentifierType,
-        string? externalIdentifier,
         decimal? packageQuantity,
         string? packageUnit,
         string category,
@@ -49,8 +45,6 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
             description,
             brand,
             model,
-            externalIdentifierType,
-            externalIdentifier,
             packageQuantity,
             packageUnit,
             category,
@@ -64,15 +58,12 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
         string? description,
         string? brand,
         string? model,
-        string? externalIdentifierType,
-        string? externalIdentifier,
         decimal? packageQuantity,
         string? packageUnit,
         string category,
         ProductStatus status,
         ProductSearchConfiguration searchConfiguration)
     {
-        ValidatePair(externalIdentifierType, externalIdentifier, "external identifier");
         ValidatePair(packageQuantity, packageUnit, "package quantity and unit");
 
         if (packageQuantity is <= 0)
@@ -87,8 +78,6 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
         Description = NormalizeOptional(description);
         Brand = NormalizeOptional(brand);
         Model = NormalizeOptional(model);
-        ExternalIdentifierType = NormalizeOptional(externalIdentifierType);
-        ExternalIdentifier = NormalizeOptional(externalIdentifier);
         PackageQuantity = packageQuantity;
         PackageUnit = NormalizeOptional(packageUnit);
         Category = NormalizeRequired(category, nameof(category));
@@ -108,8 +97,6 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
                     Category,
                     Brand,
                     Model,
-                    ExternalIdentifierType,
-                    ExternalIdentifier,
                     EffectivePrimarySearchPhrase
                 }.Where(value => !string.IsNullOrWhiteSpace(value))));
     }

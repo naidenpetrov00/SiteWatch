@@ -97,14 +97,6 @@ export class ProductDialogComponent {
       model: this.formBuilder.nonNullable.control(this.product?.model ?? '', [
         Validators.maxLength(100)
       ]),
-      externalIdentifierType: this.formBuilder.nonNullable.control(
-        this.product?.externalIdentifierType ?? '',
-        [Validators.maxLength(50)]
-      ),
-      externalIdentifier: this.formBuilder.nonNullable.control(
-        this.product?.externalIdentifier ?? '',
-        [Validators.maxLength(100)]
-      ),
       packageQuantity: this.formBuilder.control<number | null>(
         this.product?.packageQuantity ?? null,
         [Validators.min(Number.MIN_VALUE)]
@@ -132,14 +124,7 @@ export class ProductDialogComponent {
       excludedKeywords: this.createSearchCollection(this.product?.excludedKeywords)
     },
     {
-      validators: [
-        suppliedTogetherValidator(
-          'externalIdentifierType',
-          'externalIdentifier',
-          'externalIdentifierPair'
-        ),
-        packagePairValidator()
-      ]
+      validators: [packagePairValidator()]
     }
   );
 
@@ -213,8 +198,6 @@ export class ProductDialogComponent {
       description: this.emptyToNull(value.description),
       brand: this.emptyToNull(value.brand),
       model: this.emptyToNull(value.model),
-      externalIdentifierType: this.emptyToNull(value.externalIdentifierType),
-      externalIdentifier: this.emptyToNull(value.externalIdentifier),
       packageQuantity: value.packageQuantity,
       packageUnit: this.emptyToNull(value.packageUnit),
       category: value.category.trim(),
@@ -260,18 +243,6 @@ export class ProductDialogComponent {
   private emptyToNull(value: string): string | null {
     return value.trim() || null;
   }
-}
-
-function suppliedTogetherValidator(
-  firstControlName: string,
-  secondControlName: string,
-  errorKey: string
-): ValidatorFn {
-  return (control: AbstractControl): ValidationErrors | null => {
-    const first = String(control.get(firstControlName)?.value ?? '').trim();
-    const second = String(control.get(secondControlName)?.value ?? '').trim();
-    return Boolean(first) === Boolean(second) ? null : { [errorKey]: true };
-  };
 }
 
 function packagePairValidator(): ValidatorFn {

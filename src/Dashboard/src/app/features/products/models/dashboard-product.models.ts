@@ -13,8 +13,6 @@ export interface DashboardProduct {
   category: string;
   brand: string | null;
   model: string | null;
-  externalIdentifierType: string | null;
-  externalIdentifier: string | null;
   packageQuantity: number | null;
   packageUnit: string | null;
   status: ProductStatus;
@@ -36,8 +34,6 @@ export interface DashboardProductLookup {
   category: string;
   brand: string | null;
   model: string | null;
-  externalIdentifierType: string | null;
-  externalIdentifier: string | null;
   packageQuantity: number | null;
   packageUnit: string | null;
 }
@@ -53,8 +49,6 @@ export interface CreateDashboardProductRequest {
   description: string | null;
   brand: string | null;
   model: string | null;
-  externalIdentifierType: string | null;
-  externalIdentifier: string | null;
   packageQuantity: number | null;
   packageUnit: string | null;
   category: string;

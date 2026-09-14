@@ -19,7 +19,6 @@ public sealed partial class DashboardProductsQuery
     public string? Category { get; set; }
     public string? Brand { get; set; }
     public string? Model { get; set; }
-    public string? ExternalIdentifier { get; set; }
     public string? PackageQuantity { get; set; }
     public string? PackageUnit { get; set; }
     public string? Status { get; set; }

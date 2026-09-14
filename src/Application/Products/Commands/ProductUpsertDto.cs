@@ -9,8 +9,6 @@ public abstract record ProductUpsertDto
     public string? Description { get; init; }
     public string? Brand { get; init; }
     public string? Model { get; init; }
-    public string? ExternalIdentifierType { get; init; }
-    public string? ExternalIdentifier { get; init; }
     public decimal? PackageQuantity { get; init; }
     public string? PackageUnit { get; init; }
     public string Category { get; init; } = string.Empty;
