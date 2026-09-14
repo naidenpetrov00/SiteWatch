@@ -19,6 +19,7 @@
       type="button"
       class="dialog-shell__close-button"
       [attr.aria-label]="resolvedCloseAriaLabel()"
+      [disabled]="closeDisabled()"
       mat-dialog-close
     >
       <mat-icon>close</mat-icon>

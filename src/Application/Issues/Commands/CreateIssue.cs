@@ -5,7 +5,7 @@ using MediatR;
 
 namespace Application.Issues.Commands;
 
-[Authorize(Roles = UserRoles.Administrator + "," + UserRoles.Client)]
+[Authorize(Roles = UserRoles.Administrator + "," + UserRoles.Client + "," + UserRoles.Worker)]
 /// <summary>Creates an issue for a site.</summary>
 public sealed record CreateIssueCommand : IssueUpsertDto, IRequest<Guid>;
 

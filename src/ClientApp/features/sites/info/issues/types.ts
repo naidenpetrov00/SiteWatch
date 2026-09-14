@@ -30,3 +30,32 @@ export type CreateIssueRequest = {
 export type CreateIssueResponse = {
   id: string;
 };
+
+export type IssueAttachmentKind = "Image" | "Video" | "File";
+
+export type IssueAttachment = {
+  id: string;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  kind: IssueAttachmentKind;
+  hasPreview: boolean;
+  durationSeconds: number | null;
+  created: string;
+};
+
+export type IssueAttachmentAccess = {
+  url: string;
+  expiresAt: string;
+};
+
+export type PendingIssueAttachment = {
+  clientId: string;
+  uri: string;
+  fileName: string;
+  contentType: string;
+  fileSize?: number;
+  kind: IssueAttachmentKind;
+  status: "queued" | "uploading" | "error";
+  error: string | null;
+};

@@ -69,7 +69,7 @@ export class ManageIssuesPage {
   openAddIssueDialog(): void {
     this.dialog.open(IssueDialogComponent, {
       autoFocus: false,
-      width: '56rem',
+      width: '76rem',
       maxWidth: 'calc(100vw - 2rem)'
     });
   }
@@ -79,7 +79,7 @@ export class ManageIssuesPage {
       const details = await this.dashboardIssuesService.getIssueById(issue.id);
       this.dialog.open(IssueDialogComponent, {
         autoFocus: false,
-        width: '56rem',
+        width: '76rem',
         maxWidth: 'calc(100vw - 2rem)',
         data: details
       });

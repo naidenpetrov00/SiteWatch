@@ -47,5 +47,8 @@ export const paths = {
         create: "/issues",
         getById: (issueId: string) => `/issues/${issueId}`,
         getBySiteId: (siteId: string) => `/issues/site/${siteId}`,
+        attachments: (issueId: string) => `/issues/${issueId}/attachments`,
+        attachmentAccess: (issueId: string, attachmentId: string) =>
+            `/issues/${issueId}/attachments/${attachmentId}/access`,
     },
 };

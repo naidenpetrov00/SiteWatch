@@ -14,6 +14,7 @@ public interface IApplicationDbContext
     DbSet<Invoice> Invoices { get; }
     DbSet<SitePayment> SitePayments { get; }
     DbSet<Issue> Issues { get; }
+    DbSet<IssueAttachment> IssueAttachments { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

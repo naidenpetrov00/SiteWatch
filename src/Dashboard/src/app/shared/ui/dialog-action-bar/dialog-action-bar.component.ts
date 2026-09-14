@@ -13,6 +13,7 @@ export class DialogActionBarComponent {
   readonly submitLabel = input('Submit');
   readonly secondaryLabel = input<string | null>(null);
   readonly submitDisabled = input(false);
+  readonly cancelDisabled = input(false);
   readonly secondaryDisabled = input(false);
   readonly showCancel = input(true);
   readonly showSubmit = input(true);

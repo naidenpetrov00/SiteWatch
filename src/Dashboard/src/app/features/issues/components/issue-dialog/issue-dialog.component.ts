@@ -1,5 +1,12 @@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatChipsModule } from '@angular/material/chips';
@@ -12,6 +19,8 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { DatepickerComponent } from '../../../../shared/ui/datepicker/datepicker.component';
 import { DialogActionBarComponent } from '../../../../shared/ui/dialog-action-bar/dialog-action-bar.component';
 import { DialogShellComponent } from '../../../../shared/ui/dialog-shell/dialog-shell.component';
+import { DialogWizardTabsComponent } from '../../../../shared/ui/dialog-wizard-tabs/dialog-wizard-tabs.component';
+import { DialogWizardTabDefinition } from '../../../../shared/ui/dialog-wizard-tabs/dialog-wizard-tabs.types';
 import { DashboardSiteLookup } from '../../../sites/models/dashboard-site-lookup.model';
 import { DashboardSitesService } from '../../../sites/services/dashboard-sites.service';
 import { DashboardUserLookup } from '../../../users/models/dashboard-user-lookup.model';
@@ -24,6 +33,10 @@ import {
   toIssueRequest,
   toLocalDate
 } from '../../utils/issue-dialog.utils';
+import { IssueAttachmentManager } from './issue-attachment-manager.service';
+import { IssueAttachmentObjectUrlRegistry } from './issue-attachment-object-url-registry.service';
+import { IssueAttachmentUploader } from './issue-attachment-uploader.service';
+import { IssueAttachmentsSectionComponent } from './issue-attachments-section.component';
 
 const ISSUE_STATUS_OPTIONS = [
   'Open',
@@ -31,6 +44,21 @@ const ISSUE_STATUS_OPTIONS = [
   'ApprovedWaitingPayment',
   'WorkingOn',
   'Completed'
+] as const;
+
+type IssueDialogTabId = 'details' | 'attachments';
+
+const ISSUE_DIALOG_TABS: readonly DialogWizardTabDefinition[] = [
+  {
+    id: 'details',
+    label: 'Details',
+    description: 'Issue information and assignments'
+  },
+  {
+    id: 'attachments',
+    label: 'Attachments',
+    description: 'Photos, videos, and files'
+  }
 ] as const;
 
 const dateRangeValidator: ValidatorFn = (control): ValidationErrors | null => {
@@ -49,10 +77,17 @@ const dateRangeValidator: ValidatorFn = (control): ValidationErrors | null => {
     MatSelectModule,
     DatepickerComponent,
     DialogActionBarComponent,
-    DialogShellComponent
+    DialogShellComponent,
+    DialogWizardTabsComponent,
+    IssueAttachmentsSectionComponent
   ],
   templateUrl: './issue-dialog.component.html',
   styleUrl: './issue-dialog.component.css',
+  providers: [
+    IssueAttachmentManager,
+    IssueAttachmentObjectUrlRegistry,
+    IssueAttachmentUploader
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class IssueDialogComponent {
@@ -62,12 +97,17 @@ export class IssueDialogComponent {
   private readonly dashboardIssuesService = inject(DashboardIssuesService);
   private readonly dashboardSitesService = inject(DashboardSitesService);
   private readonly dashboardUsersService = inject(DashboardUsersService);
+  readonly attachmentManager = inject(IssueAttachmentManager);
   readonly issue = inject(MAT_DIALOG_DATA, { optional: true }) as DashboardIssue | null;
 
   private siteSearchRevision = 0;
   private workerSearchRevision = 0;
 
   readonly statuses = ISSUE_STATUS_OPTIONS;
+  readonly tabs = ISSUE_DIALOG_TABS;
+  readonly selectedTabId = signal<IssueDialogTabId>('details');
+  readonly persistedIssueId = signal<string | null>(this.issue?.id ?? null);
+  private readonly saveInProgress = signal(false);
   readonly formId = this.issue ? 'edit-issue-dialog-form' : 'add-issue-dialog-form';
   readonly siteResults = signal<readonly DashboardSiteLookup[]>([]);
   readonly workerResults = signal<readonly DashboardUserLookup[]>([]);
@@ -88,16 +128,34 @@ export class IssueDialogComponent {
     endDate: [toLocalDate(this.issue?.endDate ?? null)],
     assignedWorkerIds: [this.issue?.assignedWorkers.map((worker) => worker.id) ?? []]
   }, { validators: dateRangeValidator });
-  readonly isSaving = () =>
-    this.issue
-      ? this.dashboardIssuesService.updateIssueMutation.isPending()
-      : this.dashboardIssuesService.createIssueMutation.isPending();
+  readonly isSaving = computed(() =>
+    this.saveInProgress()
+    || this.attachmentManager.isPersisting()
+    || this.dashboardIssuesService.createIssueMutation.isPending()
+    || this.dashboardIssuesService.updateIssueMutation.isPending()
+  );
+  readonly dialogTitle = computed(() => {
+    if (this.issue) return `Manage Issue #${this.issue.numberId}`;
+    return this.persistedIssueId() ? 'Manage Created Issue' : 'Add Issue';
+  });
+  readonly dialogSubtitle = computed(() =>
+    this.persistedIssueId()
+      ? 'Update the issue details and manage its attachments.'
+      : 'Enter the issue details, site assignment, and optional attachments.'
+  );
+  readonly submitLabel = computed(() =>
+    this.persistedIssueId() ? 'Save' : 'Add Issue'
+  );
   readonly displaySite = (value: string | DashboardSiteLookup | null): string =>
     typeof value === 'string' ? value : value?.name ?? '';
   readonly displayWorker = (value: string | DashboardUserLookup | null): string =>
     typeof value === 'string' ? value : value?.displayName ?? '';
 
   constructor() {
+    if (this.issue) {
+      void this.attachmentManager.load(this.issue.id);
+    }
+
     this.siteSearchControl.valueChanges
       .pipe(debounceTime(250), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe((value) => {
@@ -113,7 +171,14 @@ export class IssueDialogComponent {
   }
 
   closeDialog(): void {
+    if (this.isSaving()) return;
     this.dialogRef.close();
+  }
+
+  setSelectedTab(tabId: string): void {
+    if (tabId === 'details' || tabId === 'attachments') {
+      this.selectedTabId.set(tabId);
+    }
   }
 
   onSiteSelected(event: MatAutocompleteSelectedEvent): void {
@@ -145,20 +210,38 @@ export class IssueDialogComponent {
     if (this.issueForm.invalid) {
       this.issueForm.markAllAsTouched();
       this.siteSearchControl.markAsTouched();
+      this.selectedTabId.set('details');
       return;
     }
 
-    this.saveError.set(null);
+    if (this.isSaving()) return;
+
     const request = toIssueRequest(this.issueForm.getRawValue());
+    this.saveInProgress.set(true);
+    this.dialogRef.disableClose = true;
+    this.saveError.set(null);
     try {
-      if (this.issue) {
-        await this.dashboardIssuesService.updateIssue({ id: this.issue.id, ...request });
+      let issueId = this.persistedIssueId();
+      if (issueId) {
+        await this.dashboardIssuesService.updateIssue({ id: issueId, ...request });
       } else {
-        await this.dashboardIssuesService.createIssue(request);
+        const created = await this.dashboardIssuesService.createIssue(request);
+        issueId = created.id;
+        this.persistedIssueId.set(issueId);
       }
-      this.dialogRef.close(true);
+
+      const attachmentsSaved = await this.attachmentManager.saveChanges(issueId);
+      if (attachmentsSaved) {
+        this.dialogRef.close(true);
+      } else {
+        this.selectedTabId.set('attachments');
+      }
     } catch (error) {
       this.saveError.set(getIssueSaveError(error));
+      this.selectedTabId.set('details');
+    } finally {
+      this.dialogRef.disableClose = false;
+      this.saveInProgress.set(false);
     }
   }
 

@@ -42,9 +42,15 @@ export function toLocalDate(value: string | null): Date | null {
 
 export function getIssueSaveError(error: unknown): string {
   if (error instanceof HttpErrorResponse) {
+    const details = error.error?.details as readonly { message?: string }[] | undefined;
+    const detailMessage = details?.find((detail) => detail.message)?.message;
+    if (detailMessage) return detailMessage;
+
     const errors = error.error?.errors as Record<string, string[]> | undefined;
     const message = errors && Object.values(errors).flat().find(Boolean);
     if (message) return message;
+
+    if (typeof error.error?.detail === 'string') return error.error.detail;
   }
 
   return 'Unable to save the issue. Please review the details and try again.';

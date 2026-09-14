@@ -11,9 +11,7 @@ import {
   Text,
   View,
 } from "react-native";
-import * as DocumentPicker from "expo-document-picker";
 import * as Haptics from "expo-haptics";
-import * as ImagePicker from "expo-image-picker";
 import { BlurView } from "expo-blur";
 import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
 import Animated, { FadeInDown, FadeOutDown } from "react-native-reanimated";
@@ -25,12 +23,16 @@ import { ACCESS_POLICIES, type UserRole } from "@/types/authorization";
 import styles from "./SiteUploadAction.styles";
 import type { UploadAsset } from "./types";
 import withOpacity from "./withOpacity";
+import {
+  selectUploadAssets,
+  type PickedUploadAsset,
+  type PickerMediaKind,
+  type UploadSource,
+} from "./selectUploadAssets";
 
-export type UploadSource = "camera" | "gallery" | "file";
+export type { UploadSource } from "./selectUploadAssets";
 export type UploadSourceOption = { source: UploadSource; label: string };
 export type UploadClassificationOption = { value: string; label: string };
-
-type PickerMediaKind = "image" | "video";
 
 type SiteUploadActionProps = {
   label: string;
@@ -127,12 +129,7 @@ const SiteUploadAction = ({
     );
   }, [label]);
 
-  const toUploadAsset = useCallback((asset: {
-    uri: string;
-    fileName?: string | null;
-    mimeType?: string | null;
-    fileSize?: number | null;
-  }): UploadAsset | null => {
+  const toUploadAsset = useCallback((asset: PickedUploadAsset): UploadAsset | null => {
     const fileName = asset.fileName ?? fallbackFileName();
     const contentType = resolveContentType(asset.mimeType, fileName);
     if (!contentType) {
@@ -169,18 +166,17 @@ const SiteUploadAction = ({
   const handleCamera = useCallback(async () => {
     setActiveSource("camera");
     try {
-      const permission = await ImagePicker.requestCameraPermissionsAsync();
-      if (!permission.granted) {
+      const result = await selectUploadAssets({
+        source: "camera",
+        mediaKind: pickerMediaKind ?? "image",
+        documentPickerTypes,
+        imageQuality: pickerMediaKind === "image" ? 0.9 : undefined,
+      });
+      if (result.status === "permission-denied") {
         showPermissionDenied("Camera");
         return;
       }
-
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: pickerMediaKind === "video" ? ["videos"] : ["images"],
-        allowsEditing: false,
-        quality: pickerMediaKind === "image" ? 0.9 : undefined,
-      });
-      if (!result.canceled) {
+      if (result.status === "selected") {
         const asset = toUploadAsset(result.assets[0]);
         if (asset) uploadAsset(asset);
       }
@@ -189,17 +185,18 @@ const SiteUploadAction = ({
     } finally {
       setActiveSource(null);
     }
-  }, [label, pickerMediaKind, showPermissionDenied, showUploadFailure, toUploadAsset, uploadAsset]);
+  }, [documentPickerTypes, label, pickerMediaKind, showPermissionDenied, showUploadFailure, toUploadAsset, uploadAsset]);
 
   const handleGallery = useCallback(async () => {
     setActiveSource("gallery");
     try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: pickerMediaKind === "video" ? ["videos"] : ["images"],
-        allowsEditing: false,
-        quality: pickerMediaKind === "image" ? 1 : undefined,
+      const result = await selectUploadAssets({
+        source: "gallery",
+        mediaKind: pickerMediaKind ?? "image",
+        documentPickerTypes,
+        imageQuality: pickerMediaKind === "image" ? 1 : undefined,
       });
-      if (!result.canceled) {
+      if (result.status === "selected") {
         const asset = toUploadAsset(result.assets[0]);
         if (asset) uploadAsset(asset);
       }
@@ -208,24 +205,18 @@ const SiteUploadAction = ({
     } finally {
       setActiveSource(null);
     }
-  }, [label, pickerMediaKind, showUploadFailure, toUploadAsset, uploadAsset]);
+  }, [documentPickerTypes, label, pickerMediaKind, showUploadFailure, toUploadAsset, uploadAsset]);
 
   const handleFilePicker = useCallback(async () => {
     setActiveSource("file");
     try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: documentPickerTypes,
-        multiple: false,
-        copyToCacheDirectory: true,
+      const result = await selectUploadAssets({
+        source: "file",
+        documentPickerTypes,
       });
-      if (!result.canceled) {
+      if (result.status === "selected") {
         const selected = result.assets[0];
-        const asset = toUploadAsset({
-          uri: selected.uri,
-          fileName: selected.name,
-          mimeType: selected.mimeType,
-          fileSize: selected.size,
-        });
+        const asset = toUploadAsset(selected);
         if (asset) uploadAsset(asset);
       }
     } catch (error) {

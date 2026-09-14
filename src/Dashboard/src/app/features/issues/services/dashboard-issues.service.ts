@@ -8,6 +8,10 @@ import { DataTableState } from '../../../shared/data-table/data-table.types';
 import { DashboardIssue } from '../models/dashboard-issue.model';
 import { DashboardIssuesResponse } from '../models/dashboard-issues-response.model';
 import { IssueRequest, UpdateIssueRequest } from '../models/issue-request.model';
+import {
+  IssueAttachment,
+  IssueAttachmentAccess
+} from '../models/issue-attachment.model';
 
 interface DashboardIssuesQueryState {
   pageIndex: number;
@@ -79,6 +83,60 @@ export class DashboardIssuesService {
 
   updateIssue(request: UpdateIssueRequest): Promise<void> {
     return this.updateIssueMutation.mutateAsync(request);
+  }
+
+  getIssueAttachments(issueId: string): Promise<readonly IssueAttachment[]> {
+    return firstValueFrom(
+      this.http.get<readonly IssueAttachment[]>(
+        buildApiUrl(`/issues/${issueId}/attachments`)
+      )
+    );
+  }
+
+  uploadIssueAttachment(
+    issueId: string,
+    file: File
+  ) {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+
+    return this.http.post<IssueAttachment>(
+      buildApiUrl(`/issues/${issueId}/attachments`),
+      formData,
+      {
+        observe: 'events',
+        reportProgress: true
+      }
+    );
+  }
+
+  deleteIssueAttachment(issueId: string, attachmentId: string): Promise<void> {
+    return firstValueFrom(
+      this.http.delete<void>(
+        buildApiUrl(`/issues/${issueId}/attachments/${attachmentId}`)
+      )
+    );
+  }
+
+  getIssueAttachmentAccess(
+    issueId: string,
+    attachmentId: string,
+    preview: boolean,
+    download: boolean
+  ): Promise<IssueAttachmentAccess> {
+    const params = new HttpParams()
+      .set('preview', preview)
+      .set('download', download);
+
+    return firstValueFrom(
+      this.http.get<IssueAttachmentAccess>(
+        buildApiUrl(`/issues/${issueId}/attachments/${attachmentId}/access`),
+        { params }
+      )
+    ).then((access) => ({
+      ...access,
+      url: buildApiUrl(access.url)
+    }));
   }
 
   private invalidateDashboardIssues(): Promise<void> {
