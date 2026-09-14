@@ -36,7 +36,7 @@ public sealed class ProductService(ApplicationDbContext dbContext) : IProductSer
             request.Brand,
             request.Model,
             request.PackageQuantity,
-            request.PackageUnit,
+            ParsePackageUnit(request.PackageUnit),
             request.Category,
             ParseStatus(request.Status),
             CreateSearchConfiguration(request));
@@ -51,7 +51,7 @@ public sealed class ProductService(ApplicationDbContext dbContext) : IProductSer
             request.Brand,
             request.Model,
             request.PackageQuantity,
-            request.PackageUnit,
+            ParsePackageUnit(request.PackageUnit),
             request.Category,
             ParseStatus(request.Status),
             CreateSearchConfiguration(request));
@@ -62,6 +62,21 @@ public sealed class ProductService(ApplicationDbContext dbContext) : IProductSer
             request.AlternativeSearchPhrases,
             request.RequiredKeywords,
             request.ExcludedKeywords);
+
+    private static ProductPackageUnit? ParsePackageUnit(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        if (ProductPackageUnitCodes.TryParse(value, out var unit))
+        {
+            return unit;
+        }
+
+        throw new ArgumentException($"Unsupported product package unit '{value}'.", nameof(value));
+    }
 
     private static ProductStatus ParseStatus(string value)
     {

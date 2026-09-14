@@ -92,7 +92,12 @@
 
           <mat-form-field appearance="outline">
             <mat-label>Package Unit</mat-label>
-            <input matInput formControlName="packageUnit" maxlength="50" placeholder="pcs, kg, ml" />
+            <mat-select formControlName="packageUnit">
+              <mat-option [value]="null">Not specified</mat-option>
+              @for (unit of packageUnits; track unit.value) {
+                <mat-option [value]="unit.value">{{ unit.label }}</mat-option>
+              }
+            </mat-select>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="product-dialog__wide-field">

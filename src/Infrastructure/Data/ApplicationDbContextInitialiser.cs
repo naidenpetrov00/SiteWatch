@@ -430,7 +430,7 @@ public class ApplicationDbContextInitialiser(
                 "Bosch Professional",
                 "GSB 18V-55",
                 1,
-                "piece",
+                ProductPackageUnit.Piece,
                 "Power Tools",
                 ProductStatus.Active,
                 ProductSearchConfiguration.Create(
@@ -444,7 +444,7 @@ public class ApplicationDbContextInitialiser(
                 "Knauf",
                 "Rotband",
                 30,
-                "kg",
+                ProductPackageUnit.Kilogram,
                 "Building Materials",
                 ProductStatus.Active,
                 ProductSearchConfiguration.Create(
@@ -458,7 +458,7 @@ public class ApplicationDbContextInitialiser(
                 "WAGO",
                 "221-413",
                 50,
-                "pieces",
+                ProductPackageUnit.Piece,
                 "Electrical Supplies",
                 ProductStatus.Active,
                 ProductSearchConfiguration.Create(
@@ -472,7 +472,7 @@ public class ApplicationDbContextInitialiser(
                 "Ceresit",
                 "CM 11 Plus",
                 25,
-                "kg",
+                ProductPackageUnit.Kilogram,
                 "Building Materials",
                 ProductStatus.Unavailable,
                 ProductSearchConfiguration.Create(
@@ -486,7 +486,7 @@ public class ApplicationDbContextInitialiser(
                 "Philips",
                 "BVP125 LED80-4S/740",
                 1,
-                "piece",
+                ProductPackageUnit.Piece,
                 "Lighting",
                 ProductStatus.Discontinued,
                 ProductSearchConfiguration.Create(

@@ -29,10 +29,9 @@ public sealed partial class DashboardProductsQuery
                     request => BuildDecimalEqualsPredicate(
                         request.PackageQuantity,
                         product => product.PackageQuantity)),
-                TableFilterDescriptor<Product, DashboardProductsQuery>.TextContains(
+                new TableFilterDescriptor<Product, DashboardProductsQuery>(
                     "packageUnit",
-                    query => query.PackageUnit,
-                    product => product.PackageUnit ?? string.Empty),
+                    request => BuildPackageUnitPredicate(request.PackageUnit)),
                 new TableFilterDescriptor<Product, DashboardProductsQuery>(
                     "status",
                     request => BuildStatusPredicate(request.Status))
@@ -57,7 +56,9 @@ public sealed partial class DashboardProductsQuery
                     product => product.PackageQuantity ?? decimal.MinValue,
                     product => product.Id),
                 ["packageUnit"] = TableSortDescriptor<Product, DashboardProductsQuery>.Create(
-                    "packageUnit", product => product.PackageUnit ?? string.Empty, product => product.Id),
+                    "packageUnit",
+                    product => product.PackageUnit ?? ProductPackageUnit.Piece,
+                    product => product.Id),
                 ["status"] = TableSortDescriptor<Product, DashboardProductsQuery>.Create(
                     "status", product => product.Status, product => product.Id)
             },
@@ -72,6 +73,16 @@ public sealed partial class DashboardProductsQuery
         }
 
         return product => product.Status == status;
+    }
+
+    private static Expression<Func<Product, bool>>? BuildPackageUnitPredicate(string? rawValue)
+    {
+        if (!ProductPackageUnitCodes.TryParse(rawValue, out var unit))
+        {
+            return null;
+        }
+
+        return product => product.PackageUnit == unit;
     }
 
     private static Expression<Func<Product, bool>>? BuildDecimalEqualsPredicate(

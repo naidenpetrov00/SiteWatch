@@ -16,6 +16,7 @@ import { ActionButtonComponent } from '../../../shared/ui/action-button/action-b
 import { ProductDialogComponent } from '../components/product-dialog/product-dialog.component';
 import {
   DashboardProduct,
+  PRODUCT_PACKAGE_UNIT_OPTIONS,
   PRODUCT_STATUSES
 } from '../models/dashboard-product.models';
 import { DashboardProductsService } from '../services/dashboard-products.service';
@@ -68,7 +69,13 @@ const PRODUCT_COLUMNS: readonly DataTableColumn<DashboardProduct>[] = [
     key: 'packageUnit',
     label: 'Unit',
     sortable: true,
-    filter: { kind: 'text', placeholder: 'Filter Unit' }
+    filter: {
+      kind: 'select',
+      placeholder: 'Filter Unit',
+      options: PRODUCT_PACKAGE_UNIT_OPTIONS
+    },
+    displayFormatter: (value) =>
+      PRODUCT_PACKAGE_UNIT_OPTIONS.find((unit) => unit.value === value)?.label ?? '—'
   },
   {
     key: 'status',

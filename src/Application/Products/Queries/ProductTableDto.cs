@@ -1,4 +1,5 @@
 using Domain.Entities;
+using Domain.SeedWork.Enums;
 
 namespace Application.Products.Queries;
 
@@ -25,7 +26,7 @@ public sealed record ProductTableDto
             Brand = product.Brand,
             Model = product.Model,
             PackageQuantity = product.PackageQuantity,
-            PackageUnit = product.PackageUnit,
+            PackageUnit = product.PackageUnit?.ToCode(),
             Status = product.Status.ToString()
         };
 }

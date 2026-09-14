@@ -6,6 +6,26 @@ export const PRODUCT_STATUSES = [
 
 export type ProductStatus = (typeof PRODUCT_STATUSES)[number];
 
+export const PRODUCT_PACKAGE_UNIT_OPTIONS = [
+  { value: 'piece', label: 'Piece' },
+  { value: 'pack', label: 'Pack' },
+  { value: 'box', label: 'Box' },
+  { value: 'set', label: 'Set' },
+  { value: 'kg', label: 'Kilogram (kg)' },
+  { value: 'g', label: 'Gram (g)' },
+  { value: 'l', label: 'Liter (l)' },
+  { value: 'ml', label: 'Milliliter (ml)' },
+  { value: 'm', label: 'Meter (m)' },
+  { value: 'cm', label: 'Centimeter (cm)' },
+  { value: 'm2', label: 'Square meter (m²)' },
+  { value: 'm3', label: 'Cubic meter (m³)' },
+  { value: 'roll', label: 'Roll' },
+  { value: 'bag', label: 'Bag' }
+] as const;
+
+export type ProductPackageUnit =
+  (typeof PRODUCT_PACKAGE_UNIT_OPTIONS)[number]['value'];
+
 export interface DashboardProduct {
   id: string;
   numberId: number;
@@ -14,7 +34,7 @@ export interface DashboardProduct {
   brand: string | null;
   model: string | null;
   packageQuantity: number | null;
-  packageUnit: string | null;
+  packageUnit: ProductPackageUnit | null;
   status: ProductStatus;
 }
 
@@ -35,7 +55,7 @@ export interface DashboardProductLookup {
   brand: string | null;
   model: string | null;
   packageQuantity: number | null;
-  packageUnit: string | null;
+  packageUnit: ProductPackageUnit | null;
 }
 
 export interface DashboardProductsResponse {
@@ -50,7 +70,7 @@ export interface CreateDashboardProductRequest {
   brand: string | null;
   model: string | null;
   packageQuantity: number | null;
-  packageUnit: string | null;
+  packageUnit: ProductPackageUnit | null;
   category: string;
   status: ProductStatus;
   primarySearchPhrase: string | null;

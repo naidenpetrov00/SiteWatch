@@ -13,7 +13,10 @@ public abstract class ProductUpsertValidator<TRequest> : AbstractValidator<TRequ
         RuleFor(request => request.Description).MaximumLength(2000);
         RuleFor(request => request.Brand).MaximumLength(100);
         RuleFor(request => request.Model).MaximumLength(100);
-        RuleFor(request => request.PackageUnit).MaximumLength(50);
+        RuleFor(request => request.PackageUnit)
+            .Must(value => string.IsNullOrWhiteSpace(value)
+                || ProductPackageUnitCodes.TryParse(value, out _))
+            .WithMessage("PackageUnit must be a supported product package unit.");
         RuleFor(request => request.Category).NotEmpty().MaximumLength(100);
         RuleFor(request => request.Status)
             .Must(IsSupportedStatus)

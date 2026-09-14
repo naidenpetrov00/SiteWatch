@@ -18,7 +18,7 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
     public string? Brand { get; private set; }
     public string? Model { get; private set; }
     public decimal? PackageQuantity { get; private set; }
-    public string? PackageUnit { get; private set; }
+    public ProductPackageUnit? PackageUnit { get; private set; }
     public string Category { get; private set; } = null!;
     public ProductStatus Status { get; private set; }
     public ProductSearchConfiguration SearchConfiguration { get; private set; } = null!;
@@ -34,7 +34,7 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
         string? brand,
         string? model,
         decimal? packageQuantity,
-        string? packageUnit,
+        ProductPackageUnit? packageUnit,
         string category,
         ProductStatus status,
         ProductSearchConfiguration searchConfiguration)
@@ -59,12 +59,12 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
         string? brand,
         string? model,
         decimal? packageQuantity,
-        string? packageUnit,
+        ProductPackageUnit? packageUnit,
         string category,
         ProductStatus status,
         ProductSearchConfiguration searchConfiguration)
     {
-        ValidatePair(packageQuantity, packageUnit, "package quantity and unit");
+        ValidatePackagePair(packageQuantity, packageUnit);
 
         if (packageQuantity is <= 0)
         {
@@ -79,7 +79,7 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
         Brand = NormalizeOptional(brand);
         Model = NormalizeOptional(model);
         PackageQuantity = packageQuantity;
-        PackageUnit = NormalizeOptional(packageUnit);
+        PackageUnit = packageUnit;
         Category = NormalizeRequired(category, nameof(category));
         Status = status;
         SearchConfiguration = Guard.Against.Null(searchConfiguration);
@@ -101,13 +101,14 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
                 }.Where(value => !string.IsNullOrWhiteSpace(value))));
     }
 
-    private static void ValidatePair<T>(T? first, string? second, string fieldName)
+    private static void ValidatePackagePair(
+        decimal? packageQuantity,
+        ProductPackageUnit? packageUnit)
     {
-        var hasFirst = first is not null;
-        var hasSecond = !string.IsNullOrWhiteSpace(second);
-        if (hasFirst != hasSecond)
+        if (packageQuantity.HasValue != packageUnit.HasValue)
         {
-            throw new ArgumentException($"Both values for {fieldName} must be supplied together.");
+            throw new ArgumentException(
+                "Package quantity and unit must be supplied together.");
         }
     }
 

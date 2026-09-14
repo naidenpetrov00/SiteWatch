@@ -1,4 +1,5 @@
 using Domain.Entities;
+using Domain.SeedWork.Enums;
 using Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -25,7 +26,12 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(product => product.Brand).HasMaxLength(100);
         builder.Property(product => product.Model).HasMaxLength(100);
         builder.Property(product => product.PackageQuantity).HasPrecision(18, 4);
-        builder.Property(product => product.PackageUnit).HasMaxLength(50);
+        var packageUnitConverter = new ValueConverter<ProductPackageUnit, string>(
+            unit => unit.ToCode(),
+            value => ParseStoredPackageUnit(value));
+        builder.Property(product => product.PackageUnit)
+            .HasConversion(packageUnitConverter)
+            .HasMaxLength(50);
         builder.Property(product => product.Category)
             .HasMaxLength(100)
             .IsRequired();
@@ -56,5 +62,28 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.HasIndex(product => product.Title);
         builder.HasIndex(product => product.Category);
         builder.HasIndex(product => product.Status);
+    }
+
+    private static ProductPackageUnit ParseStoredPackageUnit(string value)
+    {
+        if (ProductPackageUnitCodes.TryParse(value, out var unit))
+        {
+            return unit;
+        }
+
+        return value.Trim().ToLowerInvariant() switch
+        {
+            "pc" or "pcs" or "pieces" => ProductPackageUnit.Piece,
+            "kilogram" or "kilograms" => ProductPackageUnit.Kilogram,
+            "gram" or "grams" => ProductPackageUnit.Gram,
+            "liter" or "liters" or "litre" or "litres" => ProductPackageUnit.Liter,
+            "milliliter" or "milliliters" or "millilitre" or "millilitres" =>
+                ProductPackageUnit.Milliliter,
+            "meter" or "meters" or "metre" or "metres" => ProductPackageUnit.Meter,
+            "centimeter" or "centimeters" or "centimetre" or "centimetres" =>
+                ProductPackageUnit.Centimeter,
+            _ => throw new InvalidOperationException(
+                $"Unsupported stored product package unit '{value}'.")
+        };
     }
 }

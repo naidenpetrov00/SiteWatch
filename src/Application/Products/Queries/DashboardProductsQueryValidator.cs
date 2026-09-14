@@ -1,4 +1,5 @@
 using System.Globalization;
+using Domain.SeedWork.Enums;
 using FluentValidation;
 
 namespace Application.Products.Queries;
@@ -23,6 +24,10 @@ public sealed class DashboardProductsQueryValidator : AbstractValidator<Dashboar
                     CultureInfo.InvariantCulture,
                     out _))
             .WithMessage("PackageQuantity must be a valid decimal number.");
+        RuleFor(query => query.PackageUnit)
+            .Must(value => string.IsNullOrWhiteSpace(value)
+                || ProductPackageUnitCodes.TryParse(value, out _))
+            .WithMessage("PackageUnit must be a supported product package unit.");
         RuleFor(query => query.Status)
             .Must(value => string.IsNullOrWhiteSpace(value)
                 || Enum.TryParse<Domain.SeedWork.Enums.ProductStatus>(value, true, out var status)

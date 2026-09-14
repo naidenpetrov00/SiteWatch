@@ -30,7 +30,9 @@ import { DialogWizardTabDefinition } from '../../../../shared/ui/dialog-wizard-t
 import {
   CreateDashboardProductRequest,
   DashboardProductDetails,
+  PRODUCT_PACKAGE_UNIT_OPTIONS,
   PRODUCT_STATUSES,
+  ProductPackageUnit,
   ProductStatus
 } from '../../models/dashboard-product.models';
 import { DashboardProductsService } from '../../services/dashboard-products.service';
@@ -71,6 +73,7 @@ export class ProductDialogComponent {
   });
 
   readonly statuses = PRODUCT_STATUSES;
+  readonly packageUnits = PRODUCT_PACKAGE_UNIT_OPTIONS;
   readonly tabs = PRODUCT_DIALOG_TABS;
   readonly selectedTabId = signal<ProductDialogTabId>('details');
   readonly formId = this.product
@@ -101,9 +104,8 @@ export class ProductDialogComponent {
         this.product?.packageQuantity ?? null,
         [Validators.min(Number.MIN_VALUE)]
       ),
-      packageUnit: this.formBuilder.nonNullable.control(
-        this.product?.packageUnit ?? '',
-        [Validators.maxLength(50)]
+      packageUnit: this.formBuilder.control<ProductPackageUnit | null>(
+        this.product?.packageUnit ?? null
       ),
       category: this.formBuilder.nonNullable.control(this.product?.category ?? '', [
         Validators.required,
@@ -199,7 +201,7 @@ export class ProductDialogComponent {
       brand: this.emptyToNull(value.brand),
       model: this.emptyToNull(value.model),
       packageQuantity: value.packageQuantity,
-      packageUnit: this.emptyToNull(value.packageUnit),
+      packageUnit: value.packageUnit,
       category: value.category.trim(),
       status: value.status,
       primarySearchPhrase: this.emptyToNull(value.primarySearchPhrase),
@@ -248,7 +250,7 @@ export class ProductDialogComponent {
 function packagePairValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const quantity = control.get('packageQuantity')?.value as number | null;
-    const unit = String(control.get('packageUnit')?.value ?? '').trim();
-    return (quantity !== null) === Boolean(unit) ? null : { packagePair: true };
+    const unit = control.get('packageUnit')?.value as ProductPackageUnit | null;
+    return (quantity !== null) === (unit !== null) ? null : { packagePair: true };
   };
 }

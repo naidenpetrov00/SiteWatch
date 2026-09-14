@@ -1,4 +1,5 @@
 using Domain.Entities;
+using Domain.SeedWork.Enums;
 
 namespace Application.Products.Queries;
 
@@ -31,7 +32,7 @@ public sealed record ProductDetailsDto
             Brand = product.Brand,
             Model = product.Model,
             PackageQuantity = product.PackageQuantity,
-            PackageUnit = product.PackageUnit,
+            PackageUnit = product.PackageUnit?.ToCode(),
             Category = product.Category,
             Status = product.Status.ToString(),
             PrimarySearchPhrase = product.SearchConfiguration.PrimarySearchPhrase,
