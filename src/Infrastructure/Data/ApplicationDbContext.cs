@@ -17,6 +17,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<SiteVideo> SiteVideos => Set<SiteVideo>();
     public DbSet<Camera> Cameras => Set<Camera>();
     public DbSet<Person> Persons => Set<Person>();
+    public DbSet<Product> Products => Set<Product>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<SitePayment> SitePayments => Set<SitePayment>();
     public DbSet<Issue> Issues => Set<Issue>();

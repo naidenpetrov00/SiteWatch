@@ -124,6 +124,15 @@
       <a
         cdkMenuItem
         class="dashboard-shell__menu-item"
+        routerLink="/manage-products"
+        routerLinkActive="dashboard-shell__menu-item--active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        Manage Products
+      </a>
+      <a
+        cdkMenuItem
+        class="dashboard-shell__menu-item"
         routerLink="/manage-cameras"
         routerLinkActive="dashboard-shell__menu-item--active"
         [routerLinkActiveOptions]="{ exact: true }"

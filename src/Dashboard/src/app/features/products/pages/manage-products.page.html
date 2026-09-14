@@ -1,0 +1,32 @@
+<main class="manage-products-page">
+  <header class="manage-products-page__header">
+    <div>
+      <p class="manage-products-page__eyebrow">Administration</p>
+      <h1>Manage Products</h1>
+      <p class="manage-products-page__summary">
+        Maintain concrete products and their future retailer-search requirements.
+      </p>
+    </div>
+
+    <app-action-button
+      label="Add Product"
+      variant="primary"
+      (clicked)="openAddProductDialog()"
+    />
+  </header>
+
+  <app-data-table
+    tableEyebrow="Catalog"
+    tableLabel="Manage Products"
+    emptyMessage="No products match the current filters."
+    filterApplyMode="search"
+    [rows]="products()"
+    [filteredRowsTotal]="filteredCount()"
+    [overallRowsTotal]="totalCount()"
+    [columns]="columns"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="pageSizeOptions"
+    (tableStateChange)="onTableStateChange($event)"
+    (cellButtonClicked)="onNumberIdClick($event.row)"
+  />
+</main>

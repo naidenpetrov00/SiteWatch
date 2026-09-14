@@ -1,0 +1,236 @@
+<app-dialog-shell
+  eyebrow="Administration"
+  [title]="dialogTitle"
+  [subtitle]="dialogSubtitle"
+>
+  <form
+    [id]="formId"
+    class="product-dialog__form"
+    [formGroup]="productForm"
+    novalidate
+    (ngSubmit)="submitProduct()"
+  >
+    <app-dialog-wizard-tabs
+      [tabs]="tabs"
+      [selectedTabId]="selectedTabId()"
+      ariaLabel="Product sections"
+      (selectedTabIdChange)="setSelectedTab($event)"
+    />
+
+    @if (selectedTabId() === 'details') {
+      <section class="product-dialog__section" aria-label="Product details">
+        <div class="product-dialog__grid">
+          <mat-form-field appearance="outline" class="product-dialog__wide-field">
+            <mat-label>Title</mat-label>
+            <input matInput formControlName="title" maxlength="200" />
+            @if (productForm.controls.title.touched && productForm.controls.title.invalid) {
+              <mat-error>A title is required and cannot exceed 200 characters.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Category</mat-label>
+            <input matInput formControlName="category" maxlength="100" />
+            @if (productForm.controls.category.touched && productForm.controls.category.invalid) {
+              <mat-error>A category is required and cannot exceed 100 characters.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status">
+              @for (status of statuses; track status) {
+                <mat-option [value]="status">{{ status }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Brand</mat-label>
+            <input matInput formControlName="brand" maxlength="100" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Model</mat-label>
+            <input matInput formControlName="model" maxlength="100" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Identifier Type</mat-label>
+            <input
+              matInput
+              formControlName="externalIdentifierType"
+              maxlength="50"
+              placeholder="GTIN, EAN, UPC, SKU, MPN"
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>External Identifier</mat-label>
+            <input matInput formControlName="externalIdentifier" maxlength="100" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Package Quantity</mat-label>
+            <input
+              matInput
+              type="number"
+              formControlName="packageQuantity"
+              min="0.0001"
+              step="any"
+            />
+            @if (productForm.controls.packageQuantity.touched && productForm.controls.packageQuantity.invalid) {
+              <mat-error>Package quantity must be greater than zero.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Package Unit</mat-label>
+            <input matInput formControlName="packageUnit" maxlength="50" placeholder="pcs, kg, ml" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="product-dialog__wide-field">
+            <mat-label>Description</mat-label>
+            <textarea matInput formControlName="description" maxlength="2000" rows="4"></textarea>
+          </mat-form-field>
+        </div>
+
+        @if (productForm.touched && productForm.hasError('externalIdentifierPair')) {
+          <p class="product-dialog__error" role="alert">
+            Identifier type and value must be supplied together.
+          </p>
+        }
+        @if (productForm.touched && productForm.hasError('packagePair')) {
+          <p class="product-dialog__error" role="alert">
+            Package quantity and unit must be supplied together.
+          </p>
+        }
+      </section>
+    } @else {
+      <section class="product-dialog__section" aria-label="Search configuration">
+        <mat-form-field appearance="outline" class="product-dialog__full-width">
+          <mat-label>Custom Primary Search Phrase</mat-label>
+          <input matInput formControlName="primarySearchPhrase" maxlength="250" />
+          <mat-hint>Optional. Leave empty to combine title, brand, and model.</mat-hint>
+        </mat-form-field>
+
+        <div class="product-dialog__preview" aria-live="polite">
+          <span>Effective primary phrase</span>
+          <output>{{ effectivePrimarySearchPhrase() || 'Enter a product title' }}</output>
+        </div>
+
+        <div class="product-dialog__collection">
+          <div class="product-dialog__collection-header">
+            <div>
+              <h3>Alternative Search Phrases</h3>
+              <p>Additional complete phrases to try during future retailer discovery.</p>
+            </div>
+            <button
+              mat-stroked-button
+              type="button"
+              [disabled]="productForm.controls.alternativeSearchPhrases.length >= 20"
+              (click)="addSearchEntry('alternativeSearchPhrases')"
+            >
+              Add Phrase
+            </button>
+          </div>
+          @for (control of productForm.controls.alternativeSearchPhrases.controls; track control) {
+            <div class="product-dialog__collection-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Alternative phrase</mat-label>
+                <input matInput [formControl]="control" maxlength="200" />
+                @if (control.touched && control.invalid) {
+                  <mat-error>Enter a phrase of no more than 200 characters.</mat-error>
+                }
+              </mat-form-field>
+              <button
+                mat-button
+                type="button"
+                [attr.aria-label]="'Remove alternative phrase ' + ($index + 1)"
+                (click)="removeSearchEntry('alternativeSearchPhrases', $index)"
+              >
+                Remove
+              </button>
+            </div>
+          }
+        </div>
+
+        <div class="product-dialog__collection">
+          <div class="product-dialog__collection-header">
+            <div>
+              <h3>Required Keywords</h3>
+              <p>Terms a future retailer match must contain.</p>
+            </div>
+            <button
+              mat-stroked-button
+              type="button"
+              [disabled]="productForm.controls.requiredKeywords.length >= 20"
+              (click)="addSearchEntry('requiredKeywords')"
+            >
+              Add Keyword
+            </button>
+          </div>
+          @for (control of productForm.controls.requiredKeywords.controls; track control) {
+            <div class="product-dialog__collection-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Required keyword</mat-label>
+                <input matInput [formControl]="control" maxlength="200" />
+              </mat-form-field>
+              <button
+                mat-button
+                type="button"
+                [attr.aria-label]="'Remove required keyword ' + ($index + 1)"
+                (click)="removeSearchEntry('requiredKeywords', $index)"
+              >
+                Remove
+              </button>
+            </div>
+          }
+        </div>
+
+        <div class="product-dialog__collection">
+          <div class="product-dialog__collection-header">
+            <div>
+              <h3>Excluded Keywords</h3>
+              <p>Terms that disqualify a future retailer match.</p>
+            </div>
+            <button
+              mat-stroked-button
+              type="button"
+              [disabled]="productForm.controls.excludedKeywords.length >= 20"
+              (click)="addSearchEntry('excludedKeywords')"
+            >
+              Add Keyword
+            </button>
+          </div>
+          @for (control of productForm.controls.excludedKeywords.controls; track control) {
+            <div class="product-dialog__collection-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Excluded keyword</mat-label>
+                <input matInput [formControl]="control" maxlength="200" />
+              </mat-form-field>
+              <button
+                mat-button
+                type="button"
+                [attr.aria-label]="'Remove excluded keyword ' + ($index + 1)"
+                (click)="removeSearchEntry('excludedKeywords', $index)"
+              >
+                Remove
+              </button>
+            </div>
+          }
+        </div>
+      </section>
+    }
+  </form>
+
+  <app-dialog-action-bar
+    dialog-shell-actions
+    cancelLabel="Cancel"
+    [submitLabel]="submitLabel"
+    [submitFormId]="formId"
+    submitButtonType="submit"
+    [submitDisabled]="productForm.invalid || isSaving()"
+    (cancel)="closeDialog()"
+  />
+</app-dialog-shell>
