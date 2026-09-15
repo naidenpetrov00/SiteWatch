@@ -133,6 +133,15 @@
       <a
         cdkMenuItem
         class="dashboard-shell__menu-item"
+        routerLink="/manage-activities"
+        routerLinkActive="dashboard-shell__menu-item--active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        Manage Activities
+      </a>
+      <a
+        cdkMenuItem
+        class="dashboard-shell__menu-item"
         routerLink="/manage-cameras"
         routerLinkActive="dashboard-shell__menu-item--active"
         [routerLinkActiveOptions]="{ exact: true }"

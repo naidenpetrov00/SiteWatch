@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using Application.ActivityCatalog;
 using Application.Cameras;
 using Ardalis.GuardClauses;
 using Application.SeedWork.Exceptions;
@@ -45,6 +46,19 @@ internal sealed class ExceptionMiddleware(
                 data = ex.Data,
             };
             await context.Response.WriteAsync(JsonSerializer.Serialize(payload));
+        }
+        catch (ActivityCatalogConflictException ex)
+        {
+            logger.LogInformation(ex, "An activity catalog operation was rejected due to a conflict.");
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            context.Response.ContentType = "application/problem+json";
+            await context.Response.WriteAsync(JsonSerializer.Serialize(new
+            {
+                status = StatusCodes.Status409Conflict,
+                title = "Activity catalog conflict",
+                detail = ex.Message,
+                instance = context.Request.Path.Value,
+            }));
         }
         catch (UnauthorizedAccessException)
         {

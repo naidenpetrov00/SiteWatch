@@ -1,0 +1,41 @@
+<app-dialog-shell
+  eyebrow="Activity Catalog"
+  title="Move Item"
+  [subtitle]="'Choose a location and position for ' + node.name + '.'"
+>
+  <form [id]="formId" class="move-catalog-node-dialog__form" [formGroup]="form" (ngSubmit)="submit()">
+    <mat-form-field appearance="outline">
+      <mat-label>Location</mat-label>
+      <mat-select formControlName="targetParentFolderId" (selectionChange)="onParentChange($event)">
+        @for (folder of folderOptions; track folder.id) {
+          <mat-option [value]="folder.id">{{ folder.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Position</mat-label>
+      <mat-select formControlName="precedingSiblingId">
+        <mat-option [value]="null">First</mat-option>
+        @for (sibling of positionOptions(); track sibling.id) {
+          <mat-option [value]="sibling.id">After {{ sibling.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    @if (errorMessage()) {
+      <p class="move-catalog-node-dialog__error" role="alert">{{ errorMessage() }}</p>
+    }
+  </form>
+
+  <app-dialog-action-bar
+    dialog-shell-actions
+    cancelLabel="Cancel"
+    submitLabel="Move"
+    [submitDisabled]="isSaving()"
+    [cancelDisabled]="isSaving()"
+    [submitFormId]="formId"
+    submitButtonType="submit"
+    (cancel)="close()"
+  />
+</app-dialog-shell>
