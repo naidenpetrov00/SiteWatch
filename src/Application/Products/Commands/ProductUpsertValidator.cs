@@ -17,7 +17,9 @@ public abstract class ProductUpsertValidator<TRequest> : AbstractValidator<TRequ
             .Must(value => string.IsNullOrWhiteSpace(value)
                 || ProductPackageUnitCodes.TryParse(value, out _))
             .WithMessage("PackageUnit must be a supported product package unit.");
-        RuleFor(request => request.Category).NotEmpty().MaximumLength(100);
+        RuleFor(request => request.Category)
+            .Must(value => ProductCategoryCodes.TryParse(value, out _))
+            .WithMessage("Category must be a supported product category.");
         RuleFor(request => request.Status)
             .Must(IsSupportedStatus)
             .WithMessage("Status must be Active, Unavailable, or Discontinued.");

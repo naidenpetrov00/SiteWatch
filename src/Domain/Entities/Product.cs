@@ -19,7 +19,7 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
     public string? Model { get; private set; }
     public decimal? PackageQuantity { get; private set; }
     public ProductPackageUnit? PackageUnit { get; private set; }
-    public string Category { get; private set; } = null!;
+    public ProductCategory Category { get; private set; }
     public ProductStatus Status { get; private set; }
     public ProductSearchConfiguration SearchConfiguration { get; private set; } = null!;
     public string SearchIdentity { get; private set; } = null!;
@@ -35,7 +35,7 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
         string? model,
         decimal? packageQuantity,
         ProductPackageUnit? packageUnit,
-        string category,
+        ProductCategory category,
         ProductStatus status,
         ProductSearchConfiguration searchConfiguration)
     {
@@ -60,7 +60,7 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
         string? model,
         decimal? packageQuantity,
         ProductPackageUnit? packageUnit,
-        string category,
+        ProductCategory category,
         ProductStatus status,
         ProductSearchConfiguration searchConfiguration)
     {
@@ -80,7 +80,7 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
         Model = NormalizeOptional(model);
         PackageQuantity = packageQuantity;
         PackageUnit = packageUnit;
-        Category = NormalizeRequired(category, nameof(category));
+        Category = category;
         Status = status;
         SearchConfiguration = Guard.Against.Null(searchConfiguration);
         RefreshSearchIdentity();
@@ -94,7 +94,7 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
                 new[]
                 {
                     Title,
-                    Category,
+                    Category.ToSearchText(),
                     Brand,
                     Model,
                     EffectivePrimarySearchPhrase

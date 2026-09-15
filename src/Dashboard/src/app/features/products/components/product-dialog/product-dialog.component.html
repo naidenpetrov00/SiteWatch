@@ -35,14 +35,14 @@
 
           <mat-form-field appearance="outline">
             <mat-label>Category</mat-label>
-            <input
-              matInput
-              formControlName="category"
-              maxlength="100"
-              placeholder="e.g. Power Tools"
-            />
+            <mat-select formControlName="category">
+              <mat-option [value]="null">Select a category</mat-option>
+              @for (category of categories; track category.value) {
+                <mat-option [value]="category.value">{{ category.label }}</mat-option>
+              }
+            </mat-select>
             @if (productForm.controls.category.touched && productForm.controls.category.invalid) {
-              <mat-error>A category is required and cannot exceed 100 characters.</mat-error>
+              <mat-error>A category is required.</mat-error>
             }
           </mat-form-field>
 

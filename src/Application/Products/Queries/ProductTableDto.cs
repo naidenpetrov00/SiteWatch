@@ -22,7 +22,7 @@ public sealed record ProductTableDto
             Id = product.Id,
             NumberId = product.NumberId,
             Title = product.Title,
-            Category = product.Category,
+            Category = product.Category.ToCode(),
             Brand = product.Brand,
             Model = product.Model,
             PackageQuantity = product.PackageQuantity,

@@ -16,6 +16,7 @@ import { ActionButtonComponent } from '../../../shared/ui/action-button/action-b
 import { ProductDialogComponent } from '../components/product-dialog/product-dialog.component';
 import {
   DashboardProduct,
+  PRODUCT_CATEGORY_OPTIONS,
   PRODUCT_PACKAGE_UNIT_OPTIONS,
   PRODUCT_STATUSES
 } from '../models/dashboard-product.models';
@@ -45,7 +46,13 @@ const PRODUCT_COLUMNS: readonly DataTableColumn<DashboardProduct>[] = [
     key: 'category',
     label: 'Category',
     sortable: true,
-    filter: { kind: 'text', placeholder: 'Filter Category' }
+    filter: {
+      kind: 'select',
+      placeholder: 'Filter Category',
+      options: PRODUCT_CATEGORY_OPTIONS
+    },
+    displayFormatter: (value) =>
+      PRODUCT_CATEGORY_OPTIONS.find((category) => category.value === value)?.label ?? '—'
   },
   {
     key: 'brand',

@@ -18,8 +18,9 @@ public sealed partial class DashboardProductsQuery
                     "id", query => query.Id, product => product.Id),
                 TableFilterDescriptor<Product, DashboardProductsQuery>.TextContains(
                     "title", query => query.Title, product => product.Title),
-                TableFilterDescriptor<Product, DashboardProductsQuery>.TextContains(
-                    "category", query => query.Category, product => product.Category),
+                new TableFilterDescriptor<Product, DashboardProductsQuery>(
+                    "category",
+                    request => BuildCategoryPredicate(request.Category)),
                 TableFilterDescriptor<Product, DashboardProductsQuery>.TextContains(
                     "brand", query => query.Brand, product => product.Brand ?? string.Empty),
                 TableFilterDescriptor<Product, DashboardProductsQuery>.TextContains(
@@ -73,6 +74,16 @@ public sealed partial class DashboardProductsQuery
         }
 
         return product => product.Status == status;
+    }
+
+    private static Expression<Func<Product, bool>>? BuildCategoryPredicate(string? rawValue)
+    {
+        if (!ProductCategoryCodes.TryParse(rawValue, out var category))
+        {
+            return null;
+        }
+
+        return product => product.Category == category;
     }
 
     private static Expression<Func<Product, bool>>? BuildPackageUnitPredicate(string? rawValue)

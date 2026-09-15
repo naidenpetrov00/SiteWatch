@@ -37,7 +37,7 @@ public sealed class ProductService(ApplicationDbContext dbContext) : IProductSer
             request.Model,
             request.PackageQuantity,
             ParsePackageUnit(request.PackageUnit),
-            request.Category,
+            ParseCategory(request.Category),
             ParseStatus(request.Status),
             CreateSearchConfiguration(request));
 
@@ -52,7 +52,7 @@ public sealed class ProductService(ApplicationDbContext dbContext) : IProductSer
             request.Model,
             request.PackageQuantity,
             ParsePackageUnit(request.PackageUnit),
-            request.Category,
+            ParseCategory(request.Category),
             ParseStatus(request.Status),
             CreateSearchConfiguration(request));
 
@@ -88,5 +88,15 @@ public sealed class ProductService(ApplicationDbContext dbContext) : IProductSer
         }
 
         return status;
+    }
+
+    private static ProductCategory ParseCategory(string value)
+    {
+        if (ProductCategoryCodes.TryParse(value, out var category))
+        {
+            return category;
+        }
+
+        throw new ArgumentException($"Unsupported product category '{value}'.", nameof(value));
     }
 }

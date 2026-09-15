@@ -30,8 +30,10 @@ import { DialogWizardTabDefinition } from '../../../../shared/ui/dialog-wizard-t
 import {
   CreateDashboardProductRequest,
   DashboardProductDetails,
+  PRODUCT_CATEGORY_OPTIONS,
   PRODUCT_PACKAGE_UNIT_OPTIONS,
   PRODUCT_STATUSES,
+  ProductCategory,
   ProductPackageUnit,
   ProductStatus
 } from '../../models/dashboard-product.models';
@@ -73,6 +75,7 @@ export class ProductDialogComponent {
   });
 
   readonly statuses = PRODUCT_STATUSES;
+  readonly categories = PRODUCT_CATEGORY_OPTIONS;
   readonly packageUnits = PRODUCT_PACKAGE_UNIT_OPTIONS;
   readonly tabs = PRODUCT_DIALOG_TABS;
   readonly selectedTabId = signal<ProductDialogTabId>('details');
@@ -107,10 +110,10 @@ export class ProductDialogComponent {
       packageUnit: this.formBuilder.control<ProductPackageUnit | null>(
         this.product?.packageUnit ?? null
       ),
-      category: this.formBuilder.nonNullable.control(this.product?.category ?? '', [
-        Validators.required,
-        Validators.maxLength(100)
-      ]),
+      category: this.formBuilder.control<ProductCategory | null>(
+        this.product?.category ?? null,
+        [Validators.required]
+      ),
       status: this.formBuilder.nonNullable.control<ProductStatus>(
         this.product?.status ?? 'Active',
         [Validators.required]
@@ -202,7 +205,7 @@ export class ProductDialogComponent {
       model: this.emptyToNull(value.model),
       packageQuantity: value.packageQuantity,
       packageUnit: value.packageUnit,
-      category: value.category.trim(),
+      category: value.category!,
       status: value.status,
       primarySearchPhrase: this.emptyToNull(value.primarySearchPhrase),
       alternativeSearchPhrases: this.normalizeCollection(

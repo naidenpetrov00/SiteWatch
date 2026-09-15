@@ -431,7 +431,7 @@ public class ApplicationDbContextInitialiser(
                 "GSB 18V-55",
                 1,
                 ProductPackageUnit.Piece,
-                "Power Tools",
+                ProductCategory.ToolsEquipment,
                 ProductStatus.Active,
                 ProductSearchConfiguration.Create(
                     null,
@@ -445,7 +445,7 @@ public class ApplicationDbContextInitialiser(
                 "Rotband",
                 30,
                 ProductPackageUnit.Kilogram,
-                "Building Materials",
+                ProductCategory.BuildingConstruction,
                 ProductStatus.Active,
                 ProductSearchConfiguration.Create(
                     "Knauf Rotband gypsum plaster 30 kg",
@@ -459,7 +459,7 @@ public class ApplicationDbContextInitialiser(
                 "221-413",
                 50,
                 ProductPackageUnit.Piece,
-                "Electrical Supplies",
+                ProductCategory.ElectricalLighting,
                 ProductStatus.Active,
                 ProductSearchConfiguration.Create(
                     null,
@@ -473,7 +473,7 @@ public class ApplicationDbContextInitialiser(
                 "CM 11 Plus",
                 25,
                 ProductPackageUnit.Kilogram,
-                "Building Materials",
+                ProductCategory.BuildingConstruction,
                 ProductStatus.Unavailable,
                 ProductSearchConfiguration.Create(
                     null,
@@ -487,7 +487,7 @@ public class ApplicationDbContextInitialiser(
                 "BVP125 LED80-4S/740",
                 1,
                 ProductPackageUnit.Piece,
-                "Lighting",
+                ProductCategory.ElectricalLighting,
                 ProductStatus.Discontinued,
                 ProductSearchConfiguration.Create(
                     null,

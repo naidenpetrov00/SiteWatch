@@ -33,7 +33,7 @@ public sealed record ProductDetailsDto
             Model = product.Model,
             PackageQuantity = product.PackageQuantity,
             PackageUnit = product.PackageUnit?.ToCode(),
-            Category = product.Category,
+            Category = product.Category.ToCode(),
             Status = product.Status.ToString(),
             PrimarySearchPhrase = product.SearchConfiguration.PrimarySearchPhrase,
             EffectivePrimarySearchPhrase = product.EffectivePrimarySearchPhrase,
