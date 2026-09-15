@@ -1,0 +1,245 @@
+<main class="manage-activities-page">
+  <header class="manage-activities-page__header">
+    <div>
+      <p class="manage-activities-page__eyebrow">Administration</p>
+      <h1>Activity Catalog</h1>
+      <p class="manage-activities-page__summary">
+        Organize activities in an unlimited folder hierarchy.
+      </p>
+    </div>
+
+    <button mat-flat-button color="primary" type="button" [matMenuTriggerFor]="rootAddMenu">
+      <mat-icon>add</mat-icon>
+      Add
+    </button>
+    <mat-menu #rootAddMenu="matMenu">
+      <button mat-menu-item type="button" (click)="openCreateFolder(null)">
+        <mat-icon>create_new_folder</mat-icon>
+        <span>Root folder</span>
+      </button>
+      <button mat-menu-item type="button" (click)="openCreateActivity(null)">
+        <mat-icon>add_task</mat-icon>
+        <span>Root activity</span>
+      </button>
+    </mat-menu>
+  </header>
+
+  @if (pageError()) {
+    <div class="manage-activities-page__error" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ pageError() }}</span>
+      <button mat-icon-button type="button" aria-label="Dismiss error" (click)="pageError.set(null)">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  }
+
+  <nav class="activity-breadcrumbs" aria-label="Selected activity catalog location">
+    @for (breadcrumb of breadcrumbs(); track breadcrumb.id; let last = $last) {
+      <button
+        mat-button
+        type="button"
+        [disabled]="last"
+        (click)="selectBreadcrumb(breadcrumb)"
+      >
+        {{ breadcrumb.label }}
+      </button>
+      @if (!last) {
+        <mat-icon aria-hidden="true">chevron_right</mat-icon>
+      }
+    }
+  </nav>
+
+  <section class="activity-explorer" aria-label="Activity catalog explorer">
+    <div class="activity-explorer__tree-panel">
+      <div class="activity-explorer__toolbar">
+        <div>
+          <p class="activity-explorer__eyebrow">Catalog</p>
+          <h2>Folders and activities</h2>
+        </div>
+        <div class="activity-explorer__toolbar-actions">
+          <button mat-icon-button type="button" aria-label="Expand all folders" (click)="expandAll()">
+            <mat-icon>unfold_more</mat-icon>
+          </button>
+          <button mat-icon-button type="button" aria-label="Collapse all folders" (click)="collapseAll()">
+            <mat-icon>unfold_less</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      @if (isLoading()) {
+        <p class="activity-explorer__state">Loading the activity catalog…</p>
+      } @else if (hasLoadError()) {
+        <p class="activity-explorer__state activity-explorer__state--error" role="alert">
+          The activity catalog could not be loaded.
+        </p>
+      } @else if (treeNodes().length === 0) {
+        <div class="activity-explorer__empty">
+          <mat-icon>account_tree</mat-icon>
+          <p>No folders or activities have been added yet.</p>
+        </div>
+      } @else {
+        <mat-tree
+          #catalogTree
+          class="activity-tree"
+          [dataSource]="treeNodes()"
+          [childrenAccessor]="childrenAccessor"
+          [expansionKey]="expansionKey"
+          [trackBy]="trackBy"
+        >
+          <mat-tree-node
+            *matTreeNodeDef="let node"
+            matTreeNodePadding
+            [cdkTreeNodeTypeaheadLabel]="node.name"
+            [attr.aria-selected]="selectedNodeId() === node.id"
+            (activation)="selectNode(node)"
+          >
+            <div
+              class="activity-tree__row"
+              [class.activity-tree__row--selected]="selectedNodeId() === node.id"
+              [class.activity-tree__row--archived]="node.kind === 'activity' && node.status === 'Archived'"
+              [attr.aria-selected]="selectedNodeId() === node.id"
+              (click)="selectNode(node)"
+            >
+              @if (node.kind === 'folder') {
+                <button
+                  mat-icon-button
+                  matTreeNodeToggle
+                  type="button"
+                  [attr.aria-label]="(catalogTree.isExpanded(node) ? 'Collapse ' : 'Expand ') + node.name"
+                  (click)="$event.stopPropagation()"
+                >
+                  <mat-icon>{{ catalogTree.isExpanded(node) ? 'expand_more' : 'chevron_right' }}</mat-icon>
+                </button>
+                <mat-icon class="activity-tree__kind-icon">
+                  {{ catalogTree.isExpanded(node) ? 'folder_open' : 'folder' }}
+                </mat-icon>
+              } @else {
+                <span class="activity-tree__toggle-spacer" aria-hidden="true"></span>
+                <mat-icon class="activity-tree__kind-icon">assignment</mat-icon>
+              }
+
+              <span class="activity-tree__label">{{ node.name }}</span>
+              @if (node.kind === 'activity') {
+                <span class="activity-tree__number">#{{ node.numberId }}</span>
+                @if (node.status === 'Archived') {
+                  <span class="activity-tree__status">Archived</span>
+                }
+              }
+
+              <button
+                mat-icon-button
+                type="button"
+                [attr.aria-label]="'Actions for ' + node.name"
+                [matMenuTriggerFor]="nodeMenu"
+                (click)="$event.stopPropagation()"
+              >
+                <mat-icon>more_vert</mat-icon>
+              </button>
+
+              <mat-menu #nodeMenu="matMenu">
+                @if (node.kind === 'folder') {
+                  <button mat-menu-item type="button" (click)="openCreateFolder(node.id)">
+                    <mat-icon>create_new_folder</mat-icon><span>Add child folder</span>
+                  </button>
+                  <button mat-menu-item type="button" (click)="openCreateActivity(node.id)">
+                    <mat-icon>add_task</mat-icon><span>Add activity</span>
+                  </button>
+                  <button mat-menu-item type="button" (click)="openRenameFolder(node)">
+                    <mat-icon>edit</mat-icon><span>Rename</span>
+                  </button>
+                } @else {
+                  <button mat-menu-item type="button" (click)="openActivity(node, 'view')">
+                    <mat-icon>visibility</mat-icon><span>View details</span>
+                  </button>
+                  <button mat-menu-item type="button" (click)="openActivity(node, 'edit')">
+                    <mat-icon>edit</mat-icon><span>Edit</span>
+                  </button>
+                }
+
+                <button mat-menu-item type="button" (click)="openMove(node)">
+                  <mat-icon>drive_file_move</mat-icon><span>Move…</span>
+                </button>
+                <button
+                  mat-menu-item
+                  type="button"
+                  [disabled]="!canMoveUp(node)"
+                  (click)="moveQuickly(node, -1)"
+                >
+                  <mat-icon>arrow_upward</mat-icon><span>Move up</span>
+                </button>
+                <button
+                  mat-menu-item
+                  type="button"
+                  [disabled]="!canMoveDown(node)"
+                  (click)="moveQuickly(node, 1)"
+                >
+                  <mat-icon>arrow_downward</mat-icon><span>Move down</span>
+                </button>
+
+                @if (node.kind === 'activity') {
+                  <button mat-menu-item type="button" (click)="toggleArchive(node)">
+                    <mat-icon>{{ node.status === 'Archived' ? 'unarchive' : 'archive' }}</mat-icon>
+                    <span>{{ node.status === 'Archived' ? 'Restore' : 'Archive' }}</span>
+                  </button>
+                }
+                <button
+                  mat-menu-item
+                  type="button"
+                  [disabled]="node.kind === 'folder' && node.children.length > 0"
+                  (click)="deleteNode(node)"
+                >
+                  <mat-icon>delete</mat-icon><span>Delete</span>
+                </button>
+              </mat-menu>
+            </div>
+          </mat-tree-node>
+        </mat-tree>
+      }
+    </div>
+
+    <aside class="activity-explorer__details" aria-live="polite">
+      @if (selectedNode(); as selected) {
+        <p class="activity-explorer__eyebrow">
+          {{ selected.kind === 'folder' ? 'Folder' : 'Activity' }}
+        </p>
+        <div class="activity-explorer__details-title">
+          <mat-icon>{{ selected.kind === 'folder' ? 'folder' : 'assignment' }}</mat-icon>
+          <h2>{{ selected.name }}</h2>
+        </div>
+
+        @if (selected.kind === 'folder') {
+          <p>
+            {{ selectedFolderCount() }} child folders ·
+            {{ selectedActivityCount() }} activities
+          </p>
+          <div class="activity-explorer__detail-actions">
+            <button mat-stroked-button type="button" (click)="openCreateFolder(selected.id)">
+              Add Folder
+            </button>
+            <button mat-stroked-button type="button" (click)="openCreateActivity(selected.id)">
+              Add Activity
+            </button>
+          </div>
+        } @else {
+          <p class="activity-explorer__activity-meta">
+            <span>#{{ selected.numberId }}</span>
+            <span>{{ selected.status }}</span>
+          </p>
+          <div class="activity-explorer__detail-actions">
+            <button mat-stroked-button type="button" (click)="openActivity(selected, 'view')">
+              View Details
+            </button>
+            <button mat-flat-button color="primary" type="button" (click)="openActivity(selected, 'edit')">
+              Edit Activity
+            </button>
+          </div>
+        }
+      } @else {
+        <mat-icon class="activity-explorer__details-placeholder">touch_app</mat-icon>
+        <h2>Select an item</h2>
+        <p>Choose a folder or activity to see its location and available actions.</p>
+      }
+    </aside>
+  </section>
+</main>

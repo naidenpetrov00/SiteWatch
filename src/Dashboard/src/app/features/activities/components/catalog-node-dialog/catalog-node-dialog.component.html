@@ -1,0 +1,47 @@
+<app-dialog-shell eyebrow="Activity Catalog" [title]="title" [subtitle]="subtitle">
+  @if (isViewMode && activity) {
+    <dl class="catalog-node-dialog__details">
+      <div><dt>Name</dt><dd>{{ activity.name }}</dd></div>
+      <div><dt>Status</dt><dd>{{ activity.status }}</dd></div>
+      <div class="catalog-node-dialog__wide">
+        <dt>Description</dt><dd>{{ activity.description || 'No description' }}</dd>
+      </div>
+    </dl>
+  } @else {
+    <form [id]="formId" class="catalog-node-dialog__form" [formGroup]="form" (ngSubmit)="submit()">
+      <mat-form-field appearance="outline">
+        <mat-label>Name</mat-label>
+        <input matInput formControlName="name" maxlength="200" />
+        @if (form.controls.name.touched && form.controls.name.invalid) {
+          <mat-error>A name is required and cannot exceed 200 characters.</mat-error>
+        }
+      </mat-form-field>
+
+      @if (data.kind === 'activity') {
+        <mat-form-field appearance="outline">
+          <mat-label>Description</mat-label>
+          <textarea matInput formControlName="description" maxlength="2000" rows="6"></textarea>
+          @if (form.controls.description.touched && form.controls.description.invalid) {
+            <mat-error>The description cannot exceed 2,000 characters.</mat-error>
+          }
+        </mat-form-field>
+      }
+
+      @if (errorMessage()) {
+        <p class="catalog-node-dialog__error" role="alert">{{ errorMessage() }}</p>
+      }
+    </form>
+  }
+
+  <app-dialog-action-bar
+    dialog-shell-actions
+    [cancelLabel]="isViewMode ? 'Close' : 'Cancel'"
+    [showSubmit]="!isViewMode"
+    [submitLabel]="submitLabel"
+    [submitDisabled]="isSaving()"
+    [cancelDisabled]="isSaving()"
+    [submitFormId]="formId"
+    submitButtonType="submit"
+    (cancel)="close()"
+  />
+</app-dialog-shell>

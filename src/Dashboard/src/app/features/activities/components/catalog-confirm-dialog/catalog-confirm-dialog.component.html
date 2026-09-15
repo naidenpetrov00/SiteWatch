@@ -1,0 +1,10 @@
+<app-dialog-shell eyebrow="Activity Catalog" [title]="data.title" [subtitle]="data.subtitle">
+  <p>{{ data.message }}</p>
+  <app-dialog-action-bar
+    dialog-shell-actions
+    cancelLabel="Cancel"
+    [submitLabel]="data.confirmLabel"
+    (cancel)="cancel()"
+    (submit)="confirm()"
+  />
+</app-dialog-shell>

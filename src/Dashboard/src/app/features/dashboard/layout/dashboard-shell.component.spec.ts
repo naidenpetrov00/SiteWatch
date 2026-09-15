@@ -27,7 +27,8 @@ describe('DashboardShellComponent', () => {
           { path: 'scan-invoice', component: DummyComponent },
           { path: 'manage-sites', component: DummyComponent },
           { path: 'manage-issues', component: DummyComponent },
-          { path: 'manage-users', component: DummyComponent }
+          { path: 'manage-users', component: DummyComponent },
+          { path: 'manage-activities', component: DummyComponent }
         ]),
         { provide: IdentityAuthService, useValue: authService }
       ]
@@ -82,6 +83,7 @@ describe('DashboardShellComponent', () => {
     const openedMenu = document.body.querySelector('.dashboard-shell__menu-panel');
     expect(openedMenu?.textContent).toContain('Manage Users');
     expect(openedMenu?.textContent).toContain('Manage Products');
+    expect(openedMenu?.textContent).toContain('Manage Activities');
 
     trigger.click();
     fixture.detectChanges();

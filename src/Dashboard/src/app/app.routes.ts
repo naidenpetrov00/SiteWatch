@@ -85,6 +85,14 @@ export const routes: Routes = [
           )
       },
       {
+        path: 'manage-activities',
+        title: 'Manage Activities',
+        loadComponent: () =>
+          import('./features/activities/pages/manage-activities.page').then(
+            (m) => m.ManageActivitiesPage
+          )
+      },
+      {
         path: 'manage-cameras',
         title: 'Manage Cameras',
         loadComponent: () =>

@@ -12,6 +12,7 @@ public interface IApplicationDbContext
     DbSet<Camera> Cameras { get; }
     DbSet<Person> Persons { get; }
     DbSet<Product> Products { get; }
+    DbSet<ActivityCatalogNode> ActivityCatalogNodes { get; }
     DbSet<Invoice> Invoices { get; }
     DbSet<SitePayment> SitePayments { get; }
     DbSet<Issue> Issues { get; }

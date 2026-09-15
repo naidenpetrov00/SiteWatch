@@ -1,4 +1,5 @@
 using Api.SeedWork.Exceptions;
+using Application.ActivityCatalog;
 using Application.Cameras;
 using Application.SeedWork.Exceptions;
 using FluentValidation;
@@ -67,5 +68,26 @@ public sealed class ExceptionMiddlewareTests
         Assert.Contains("The camera did not accept the request.", payload);
         Assert.DoesNotContain("Unable to communicate", payload);
         Assert.Contains("/cameras/camera-42/snapshot", payload);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_returns_a_catalog_conflict_problem_with_the_request_path()
+    {
+        var middleware = new ExceptionMiddleware(
+            _ => Task.FromException(new ActivityCatalogConflictException("Only empty activity folders can be deleted.")),
+            NullLogger<ExceptionMiddleware>.Instance);
+        var context = new DefaultHttpContext();
+        context.Request.Path = "/activity-folders/folder-42";
+        context.Response.Body = new MemoryStream();
+
+        await middleware.InvokeAsync(context);
+
+        context.Response.Body.Position = 0;
+        var payload = await new StreamReader(context.Response.Body, Encoding.UTF8).ReadToEndAsync();
+        Assert.Equal(StatusCodes.Status409Conflict, context.Response.StatusCode);
+        Assert.Equal("application/problem+json", context.Response.ContentType);
+        Assert.Contains("Activity catalog conflict", payload);
+        Assert.Contains("Only empty activity folders can be deleted.", payload);
+        Assert.Contains("/activity-folders/folder-42", payload);
     }
 }
