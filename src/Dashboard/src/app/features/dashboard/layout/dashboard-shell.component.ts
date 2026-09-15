@@ -65,6 +65,7 @@ export class DashboardShellComponent {
     return (
       this.router.isActive('/manage-users', this.exactMatchOptions) ||
       this.router.isActive('/manage-persons', this.exactMatchOptions) ||
+      this.router.isActive('/manage-products', this.exactMatchOptions) ||
       this.router.isActive('/manage-cameras', this.exactMatchOptions)
     );
   }

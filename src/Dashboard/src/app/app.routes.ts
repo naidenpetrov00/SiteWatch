@@ -77,6 +77,14 @@ export const routes: Routes = [
           )
       },
       {
+        path: 'manage-products',
+        title: 'Manage Products',
+        loadComponent: () =>
+          import('./features/products/pages/manage-products.page').then(
+            (m) => m.ManageProductsPage
+          )
+      },
+      {
         path: 'manage-cameras',
         title: 'Manage Cameras',
         loadComponent: () =>

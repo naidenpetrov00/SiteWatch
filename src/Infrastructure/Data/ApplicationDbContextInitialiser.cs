@@ -414,6 +414,102 @@ public class ApplicationDbContextInitialiser(
         logger.LogInformation("Seeded {IssueCount} issues.", issues.Count);
     }
 
+    private async Task AddProducts()
+    {
+        if (await dbContext.Products.AnyAsync())
+        {
+            logger.LogInformation("Product seeding skipped: products already exist.");
+            return;
+        }
+
+        var products = new List<Product>
+        {
+            Product.Create(
+                "Cordless Combi Drill",
+                "Brushless 18 V cordless drill/driver for drilling and screwdriving.",
+                "Bosch Professional",
+                "GSB 18V-55",
+                1,
+                ProductPackageUnit.Piece,
+                ProductCategory.ToolsEquipment,
+                ProductStatus.Active,
+                ProductSearchConfiguration.Create(
+                    null,
+                    ["Bosch GSB 18V-55 drill", "GSB 18V-55 cordless drill"],
+                    ["18V", "brushless"],
+                    ["used", "spare parts"])),
+            Product.Create(
+                "Gypsum Plaster",
+                "Premixed gypsum plaster for interior walls and ceilings.",
+                "Knauf",
+                "Rotband",
+                30,
+                ProductPackageUnit.Kilogram,
+                ProductCategory.BuildingConstruction,
+                ProductStatus.Active,
+                ProductSearchConfiguration.Create(
+                    "Knauf Rotband gypsum plaster 30 kg",
+                    ["Rotband plaster 30kg"],
+                    ["Knauf", "30 kg"],
+                    ["5 kg", "10 kg"])),
+            Product.Create(
+                "Lever Connector",
+                "Three-conductor compact splicing connector with operating levers.",
+                "WAGO",
+                "221-413",
+                50,
+                ProductPackageUnit.Piece,
+                ProductCategory.ElectricalLighting,
+                ProductStatus.Active,
+                ProductSearchConfiguration.Create(
+                    null,
+                    ["WAGO 221-413 box 50", "three wire lever connector"],
+                    ["221-413", "50"],
+                    ["221-412", "221-415"])),
+            Product.Create(
+                "Tile Adhesive",
+                "Cement-based adhesive for ceramic tiles in interior and exterior applications.",
+                "Ceresit",
+                "CM 11 Plus",
+                25,
+                ProductPackageUnit.Kilogram,
+                ProductCategory.BuildingConstruction,
+                ProductStatus.Unavailable,
+                ProductSearchConfiguration.Create(
+                    null,
+                    ["Ceresit CM11 Plus 25 kg"],
+                    ["CM 11 Plus", "25 kg"],
+                    ["5 kg"])),
+            Product.Create(
+                "LED Floodlight",
+                "Outdoor LED floodlight for area and facade illumination.",
+                "Philips",
+                "BVP125 LED80-4S/740",
+                1,
+                ProductPackageUnit.Piece,
+                ProductCategory.ElectricalLighting,
+                ProductStatus.Discontinued,
+                ProductSearchConfiguration.Create(
+                    null,
+                    ["Philips BVP125 LED80 floodlight"],
+                    ["BVP125", "740"],
+                    ["replacement driver"])),
+        };
+
+        var now = DateTimeOffset.UtcNow;
+        foreach (var product in products)
+        {
+            product.Created = now;
+            product.CreatedBy = SeededBy;
+            product.LastModified = now;
+            product.LastModifiedBy = SeededBy;
+        }
+
+        await dbContext.Products.AddRangeAsync(products);
+        await dbContext.SaveChangesAsync();
+        logger.LogInformation("Seeded {ProductCount} products.", products.Count);
+    }
+
     private async Task<List<Person>> AddPersons()
     {
         if (await dbContext.Persons.AnyAsync())
@@ -625,6 +721,7 @@ public class ApplicationDbContextInitialiser(
             await EnsureThirdSeedSiteAccessAsync(users);
             await AddCameras();
             await AddIssues();
+            await AddProducts();
             var persons = await AddPersons();
             var invoiceCount = blobInitializer.GetRequiredSeedInvoiceCount();
             await AddInvoices(persons, invoiceCount);

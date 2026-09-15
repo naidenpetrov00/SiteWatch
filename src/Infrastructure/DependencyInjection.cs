@@ -11,6 +11,7 @@ using Infrastructure.Issues.Services;
 using Infrastructure.Issues.Storage;
 using Infrastructure.Identity.Services;
 using Infrastructure.Persons.Services;
+using Infrastructure.Products.Services;
 using Infrastructure.SeedWork.Options;
 using Infrastructure.Sites.Services;
 using Infrastructure.Storage;
@@ -72,6 +73,7 @@ public static class DependencyInjection
         services.AddScoped<ISiteService, SiteService>();
         services.AddScoped<ICameraService, CameraService>();
         services.AddScoped<IPersonService, PersonService>();
+        services.AddScoped<IProductService, ProductService>();
 
         services
             .AddIdentity<ApplicationUser, IdentityRole>(options => { options.User.RequireUniqueEmail = true; })
