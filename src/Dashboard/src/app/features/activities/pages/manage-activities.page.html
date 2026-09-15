@@ -87,8 +87,9 @@
           [expansionKey]="expansionKey"
           [trackBy]="trackBy"
         >
-          <mat-nested-tree-node
+          <mat-tree-node
             *matTreeNodeDef="let node"
+            matTreeNodePadding
             [cdkTreeNodeTypeaheadLabel]="node.name"
             [attr.aria-selected]="selectedNodeId() === node.id"
             (activation)="selectNode(node)"
@@ -192,17 +193,7 @@
                 </button>
               </mat-menu>
             </div>
-
-            @if (node.kind === 'folder') {
-              <div
-                class="activity-tree__children"
-                [class.activity-tree__children--hidden]="!catalogTree.isExpanded(node)"
-                role="group"
-              >
-                <ng-container matTreeNodeOutlet />
-              </div>
-            }
-          </mat-nested-tree-node>
+          </mat-tree-node>
         </mat-tree>
       }
     </div>
