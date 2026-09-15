@@ -81,6 +81,7 @@ describe('DashboardShellComponent', () => {
 
     const openedMenu = document.body.querySelector('.dashboard-shell__menu-panel');
     expect(openedMenu?.textContent).toContain('Manage Users');
+    expect(openedMenu?.textContent).toContain('Manage Products');
 
     trigger.click();
     fixture.detectChanges();
