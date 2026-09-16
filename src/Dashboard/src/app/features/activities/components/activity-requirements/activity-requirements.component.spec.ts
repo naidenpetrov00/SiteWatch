@@ -61,14 +61,14 @@ describe('ActivityRequirementsComponent', () => {
     const fixture = TestBed.createComponent(ActivityRequirementsComponent);
     fixture.componentRef.setInput('selectedActivityId', 'activity-1');
     fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    const text = fixture.nativeElement.textContent;
-    expect(text).toContain('Requirements are read-only');
-    expect(text).toContain('For 10 m²');
-    expect(text).toContain('#12 · Anchor');
-    expect(text).not.toContain('Add Section');
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      const text = fixture.nativeElement.textContent;
+      expect(text).toContain('Requirements are read-only');
+      expect(text).toContain('For 10 m²');
+      expect(text).toContain('#12 · Anchor');
+      expect(text).not.toContain('Add Section');
+    });
   });
 });
 
