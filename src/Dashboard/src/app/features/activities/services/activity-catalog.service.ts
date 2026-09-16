@@ -11,9 +11,13 @@ import { buildApiUrl } from '../../../core/api/api-url';
 import {
   ActivityCatalogNode,
   ActivityDetails,
+  CreateActivityProductRequirementRequest,
   CreateActivityFolderRequest,
   CreateActivityRequest,
+  MoveActivityRequirementRequest,
   MoveCatalogNodeRequest,
+  UpdateActivityProductRequirementRequest,
+  UpsertActivityRequirementSectionRequest,
   UpdateActivityRequest
 } from '../models/activity-catalog.models';
 
@@ -31,7 +35,55 @@ type CatalogMutation =
   | { operation: 'move-activity'; id: string; request: MoveCatalogNodeRequest }
   | { operation: 'archive-activity'; id: string }
   | { operation: 'restore-activity'; id: string }
-  | { operation: 'delete-activity'; id: string };
+  | { operation: 'delete-activity'; id: string }
+  | {
+      operation: 'create-requirement-section';
+      activityId: string;
+      request: UpsertActivityRequirementSectionRequest;
+    }
+  | {
+      operation: 'update-requirement-section';
+      activityId: string;
+      sectionId: string;
+      request: UpsertActivityRequirementSectionRequest;
+    }
+  | {
+      operation: 'move-requirement-section';
+      activityId: string;
+      sectionId: string;
+      request: MoveActivityRequirementRequest;
+    }
+  | {
+      operation: 'delete-requirement-section';
+      activityId: string;
+      sectionId: string;
+    }
+  | {
+      operation: 'create-product-requirement';
+      activityId: string;
+      sectionId: string;
+      request: CreateActivityProductRequirementRequest;
+    }
+  | {
+      operation: 'update-product-requirement';
+      activityId: string;
+      sectionId: string;
+      requirementId: string;
+      request: UpdateActivityProductRequirementRequest;
+    }
+  | {
+      operation: 'move-product-requirement';
+      activityId: string;
+      sectionId: string;
+      requirementId: string;
+      request: MoveActivityRequirementRequest;
+    }
+  | {
+      operation: 'delete-product-requirement';
+      activityId: string;
+      sectionId: string;
+      requirementId: string;
+    };
 
 @Injectable({ providedIn: 'root' })
 export class ActivityCatalogService {
@@ -102,6 +154,110 @@ export class ActivityCatalogService {
     );
   }
 
+  createRequirementSection(
+    activityId: string,
+    request: UpsertActivityRequirementSectionRequest
+  ): Promise<unknown> {
+    return this.mutation.mutateAsync({
+      operation: 'create-requirement-section',
+      activityId,
+      request
+    });
+  }
+
+  updateRequirementSection(
+    activityId: string,
+    sectionId: string,
+    request: UpsertActivityRequirementSectionRequest
+  ): Promise<unknown> {
+    return this.mutation.mutateAsync({
+      operation: 'update-requirement-section',
+      activityId,
+      sectionId,
+      request
+    });
+  }
+
+  moveRequirementSection(
+    activityId: string,
+    sectionId: string,
+    request: MoveActivityRequirementRequest
+  ): Promise<unknown> {
+    return this.mutation.mutateAsync({
+      operation: 'move-requirement-section',
+      activityId,
+      sectionId,
+      request
+    });
+  }
+
+  deleteRequirementSection(
+    activityId: string,
+    sectionId: string
+  ): Promise<unknown> {
+    return this.mutation.mutateAsync({
+      operation: 'delete-requirement-section',
+      activityId,
+      sectionId
+    });
+  }
+
+  createProductRequirement(
+    activityId: string,
+    sectionId: string,
+    request: CreateActivityProductRequirementRequest
+  ): Promise<unknown> {
+    return this.mutation.mutateAsync({
+      operation: 'create-product-requirement',
+      activityId,
+      sectionId,
+      request
+    });
+  }
+
+  updateProductRequirement(
+    activityId: string,
+    sectionId: string,
+    requirementId: string,
+    request: UpdateActivityProductRequirementRequest
+  ): Promise<unknown> {
+    return this.mutation.mutateAsync({
+      operation: 'update-product-requirement',
+      activityId,
+      sectionId,
+      requirementId,
+      request
+    });
+  }
+
+  moveProductRequirement(
+    activityId: string,
+    sectionId: string,
+    requirementId: string,
+    request: MoveActivityRequirementRequest
+  ): Promise<unknown> {
+    return this.mutation.mutateAsync({
+      operation: 'move-product-requirement',
+      activityId,
+      sectionId,
+      requirementId,
+      request
+    });
+  }
+
+  deleteProductRequirement(
+    activityId: string,
+    sectionId: string,
+    requirementId: string
+  ): Promise<unknown> {
+    return this.mutation.mutateAsync({
+      operation: 'delete-product-requirement',
+      activityId,
+      sectionId,
+      requirementId
+    });
+  }
+
   private executeMutation(mutation: CatalogMutation): Promise<unknown> {
     switch (mutation.operation) {
       case 'create-folder':
@@ -155,6 +311,76 @@ export class ActivityCatalogService {
       case 'delete-activity':
         return firstValueFrom(
           this.http.delete<void>(buildApiUrl(`/activities/${mutation.id}`))
+        );
+      case 'create-requirement-section':
+        return firstValueFrom(
+          this.http.post<CreatedResponse>(
+            buildApiUrl(
+              `/activities/${mutation.activityId}/requirement-sections`
+            ),
+            mutation.request
+          )
+        );
+      case 'update-requirement-section':
+        return firstValueFrom(
+          this.http.put<void>(
+            buildApiUrl(
+              `/activities/${mutation.activityId}/requirement-sections/${mutation.sectionId}`
+            ),
+            mutation.request
+          )
+        );
+      case 'move-requirement-section':
+        return firstValueFrom(
+          this.http.patch<void>(
+            buildApiUrl(
+              `/activities/${mutation.activityId}/requirement-sections/${mutation.sectionId}/move`
+            ),
+            mutation.request
+          )
+        );
+      case 'delete-requirement-section':
+        return firstValueFrom(
+          this.http.delete<void>(
+            buildApiUrl(
+              `/activities/${mutation.activityId}/requirement-sections/${mutation.sectionId}`
+            )
+          )
+        );
+      case 'create-product-requirement':
+        return firstValueFrom(
+          this.http.post<CreatedResponse>(
+            buildApiUrl(
+              `/activities/${mutation.activityId}/requirement-sections/${mutation.sectionId}/products`
+            ),
+            mutation.request
+          )
+        );
+      case 'update-product-requirement':
+        return firstValueFrom(
+          this.http.put<void>(
+            buildApiUrl(
+              `/activities/${mutation.activityId}/requirement-sections/${mutation.sectionId}/products/${mutation.requirementId}`
+            ),
+            mutation.request
+          )
+        );
+      case 'move-product-requirement':
+        return firstValueFrom(
+          this.http.patch<void>(
+            buildApiUrl(
+              `/activities/${mutation.activityId}/requirement-sections/${mutation.sectionId}/products/${mutation.requirementId}/move`
+            ),
+            mutation.request
+          )
+        );
+      case 'delete-product-requirement':
+        return firstValueFrom(
+          this.http.delete<void>(
+            buildApiUrl(
+              `/activities/${mutation.activityId}/requirement-sections/${mutation.sectionId}/products/${mutation.requirementId}`
+            )
+          )
         );
     }
 

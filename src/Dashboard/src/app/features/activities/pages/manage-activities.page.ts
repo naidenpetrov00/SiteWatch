@@ -26,6 +26,7 @@ import {
   MoveCatalogNodeDialogComponent,
   MoveCatalogNodeDialogData
 } from '../components/move-catalog-node-dialog/move-catalog-node-dialog.component';
+import { ActivityRequirementsComponent } from '../components/activity-requirements/activity-requirements.component';
 import {
   ActivityCatalogNode,
   ActivityCatalogTreeNode
@@ -45,7 +46,8 @@ interface Breadcrumb {
     MatDialogModule,
     MatIconModule,
     MatMenuModule,
-    MatTreeModule
+    MatTreeModule,
+    ActivityRequirementsComponent
   ],
   templateUrl: './manage-activities.page.html',
   styleUrl: './manage-activities.page.css',

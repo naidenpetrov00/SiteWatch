@@ -1,0 +1,130 @@
+<app-dialog-shell
+  eyebrow="Activity Requirements"
+  [title]="title"
+  [subtitle]="subtitle"
+>
+  <form
+    [id]="formId"
+    class="product-requirement-dialog__form"
+    [formGroup]="form"
+    novalidate
+    (ngSubmit)="submit()"
+  >
+    @if (data.requirement; as requirement) {
+      <div class="product-requirement-dialog__product-summary">
+        <strong>#{{ requirement.productNumberId }} · {{ requirement.productTitle }}</strong>
+        @if (requirement.brand || requirement.model) {
+          <span>{{ requirement.brand }}@if (requirement.brand && requirement.model) { · }{{ requirement.model }}</span>
+        }
+        <span>{{ packageDescription(requirement) }}</span>
+        @if (requirement.productStatus !== 'Active') {
+          <span class="product-requirement-dialog__status">
+            {{ requirement.productStatus }}
+          </span>
+        }
+      </div>
+    } @else {
+      <mat-form-field appearance="outline" class="product-requirement-dialog__wide">
+        <mat-label>Product</mat-label>
+        <input
+          matInput
+          [formControl]="productSearchControl"
+          [matAutocomplete]="productAutocomplete"
+          autocomplete="off"
+          inputmode="search"
+          placeholder="Search by title, brand, model, category, or number"
+        />
+        <mat-hint>Only active products can be newly assigned.</mat-hint>
+        @if (productSearchControl.touched && form.controls.productId.invalid) {
+          <mat-error>Select a product from the search results.</mat-error>
+        }
+      </mat-form-field>
+      <mat-autocomplete
+        #productAutocomplete="matAutocomplete"
+        [displayWith]="displayProduct"
+        (optionSelected)="onProductSelected($event)"
+      >
+        @for (product of searchResults(); track product.id) {
+          <mat-option [value]="product">
+            <span class="product-requirement-dialog__option-title">
+              #{{ product.numberId }} · {{ product.title }}
+            </span>
+            <span class="product-requirement-dialog__option-detail">
+              @if (productIdentity(product)) { {{ productIdentity(product) }} · }
+              {{ packageDescription(product) }}
+            </span>
+          </mat-option>
+        }
+      </mat-autocomplete>
+
+      @if (selectedProduct(); as product) {
+        <div class="product-requirement-dialog__product-summary product-requirement-dialog__wide">
+          <strong>#{{ product.numberId }} · {{ product.title }}</strong>
+          @if (productIdentity(product)) {
+            <span>{{ productIdentity(product) }}</span>
+          }
+          <span>{{ packageDescription(product) }}</span>
+        </div>
+      }
+    }
+
+    <mat-form-field appearance="outline">
+      <mat-label>Product quantity</mat-label>
+      <input
+        matInput
+        type="number"
+        formControlName="quantity"
+        min="0.0001"
+        step="any"
+      />
+      <mat-hint>Number of product packages or items.</mat-hint>
+      @if (form.controls.quantity.touched && form.controls.quantity.invalid) {
+        <mat-error>Enter a positive quantity with at most four decimal places.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Requirement state</mat-label>
+      <mat-select formControlName="isRequired">
+        <mat-option [value]="true">Required</mat-option>
+        <mat-option [value]="false">Optional</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="product-requirement-dialog__wide">
+      <mat-label>Quantity behavior</mat-label>
+      <mat-select formControlName="quantityBehavior">
+        <mat-option value="proportional">Scales with measurement</mat-option>
+        <mat-option value="fixed">Fixed quantity</mat-option>
+      </mat-select>
+      <mat-hint>
+        Proportional quantities scale from the section basis; fixed quantities do not.
+      </mat-hint>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="product-requirement-dialog__wide">
+      <mat-label>Notes</mat-label>
+      <textarea matInput formControlName="notes" maxlength="1000" rows="4"></textarea>
+      @if (form.controls.notes.touched && form.controls.notes.invalid) {
+        <mat-error>Notes cannot exceed 1,000 characters.</mat-error>
+      }
+    </mat-form-field>
+
+    @if (errorMessage()) {
+      <p class="product-requirement-dialog__error" role="alert">
+        {{ errorMessage() }}
+      </p>
+    }
+  </form>
+
+  <app-dialog-action-bar
+    dialog-shell-actions
+    cancelLabel="Cancel"
+    [submitLabel]="submitLabel"
+    [submitFormId]="formId"
+    submitButtonType="submit"
+    [cancelDisabled]="isSaving()"
+    [submitDisabled]="form.invalid || isSaving()"
+    (cancel)="close()"
+  />
+</app-dialog-shell>

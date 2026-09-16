@@ -19,6 +19,10 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<Person> Persons => Set<Person>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ActivityCatalogNode> ActivityCatalogNodes => Set<ActivityCatalogNode>();
+    public DbSet<ActivityRequirementSection> ActivityRequirementSections =>
+        Set<ActivityRequirementSection>();
+    public DbSet<ActivityProductRequirement> ActivityProductRequirements =>
+        Set<ActivityProductRequirement>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<SitePayment> SitePayments => Set<SitePayment>();
     public DbSet<Issue> Issues => Set<Issue>();

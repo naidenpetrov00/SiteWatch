@@ -76,6 +76,7 @@ public static class DependencyInjection
         services.AddScoped<IPersonService, PersonService>();
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<IActivityCatalogService, ActivityCatalogService>();
+        services.AddScoped<IActivityRequirementService, ActivityRequirementService>();
 
         services
             .AddIdentity<ApplicationUser, IdentityRole>(options => { options.User.RequireUniqueEmail = true; })

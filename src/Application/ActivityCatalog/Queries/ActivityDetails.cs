@@ -2,6 +2,7 @@ using Application.SeedWork.Interfaces;
 using Application.SeedWork.Security;
 using Ardalis.GuardClauses;
 using Domain.Entities;
+using Domain.SeedWork.Enums;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,54 @@ public sealed record ActivityDetailsDto(
     string? Description,
     string Status,
     Guid? ParentFolderId,
+    int SortOrder,
+    IReadOnlyList<ActivityRequirementSectionDto> RequirementSections)
+{
+    public ActivityDetailsDto(
+        Guid id,
+        int numberId,
+        string name,
+        string? description,
+        string status,
+        Guid? parentFolderId,
+        int sortOrder)
+        : this(
+            id,
+            numberId,
+            name,
+            description,
+            status,
+            parentFolderId,
+            sortOrder,
+            [])
+    {
+    }
+}
+
+/// <summary>Represents one measurement-based requirement section.</summary>
+public sealed record ActivityRequirementSectionDto(
+    Guid Id,
+    string? Name,
+    decimal BasisQuantity,
+    string MeasurementUnit,
+    int SortOrder,
+    IReadOnlyList<ActivityProductRequirementDto> ProductRequirements);
+
+/// <summary>Represents one Product Catalog item required by a section.</summary>
+public sealed record ActivityProductRequirementDto(
+    Guid Id,
+    Guid ProductId,
+    int ProductNumberId,
+    string ProductTitle,
+    string ProductStatus,
+    string? Brand,
+    string? Model,
+    decimal? PackageQuantity,
+    string? PackageUnit,
+    decimal Quantity,
+    bool IsRequired,
+    string QuantityBehavior,
+    string? Notes,
     int SortOrder);
 
 public sealed class ActivityDetailsQueryValidator : AbstractValidator<ActivityDetailsQuery>
@@ -40,6 +89,9 @@ public sealed class ActivityDetailsHandler(IApplicationDbContext dbContext)
         var activity = await dbContext.ActivityCatalogNodes
             .OfType<Activity>()
             .AsNoTracking()
+            .Include(activity => activity.RequirementSections)
+            .ThenInclude(section => section.ProductRequirements)
+            .ThenInclude(requirement => requirement.Product)
             .SingleOrDefaultAsync(
                 activity => activity.Id == request.ActivityId,
                 cancellationToken);
@@ -53,6 +105,35 @@ public sealed class ActivityDetailsHandler(IApplicationDbContext dbContext)
             activity.Description,
             activity.Status.ToString(),
             activity.ParentFolderId,
-            activity.SortOrder);
+            activity.SortOrder,
+            activity.RequirementSections
+                .OrderBy(section => section.SortOrder)
+                .ThenBy(section => section.Id)
+                .Select(section => new ActivityRequirementSectionDto(
+                    section.Id,
+                    section.Name,
+                    section.BasisQuantity,
+                    section.MeasurementUnit.ToCode(),
+                    section.SortOrder,
+                    section.ProductRequirements
+                        .OrderBy(requirement => requirement.SortOrder)
+                        .ThenBy(requirement => requirement.Id)
+                        .Select(requirement => new ActivityProductRequirementDto(
+                            requirement.Id,
+                            requirement.ProductId,
+                            requirement.Product.NumberId,
+                            requirement.Product.Title,
+                            requirement.Product.Status.ToString(),
+                            requirement.Product.Brand,
+                            requirement.Product.Model,
+                            requirement.Product.PackageQuantity,
+                            requirement.Product.PackageUnit?.ToCode(),
+                            requirement.Quantity,
+                            requirement.IsRequired,
+                            requirement.QuantityBehavior.ToCode(),
+                            requirement.Notes,
+                            requirement.SortOrder))
+                        .ToList()))
+                .ToList());
     }
 }
