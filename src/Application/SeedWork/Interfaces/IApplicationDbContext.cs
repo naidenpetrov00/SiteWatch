@@ -13,6 +13,8 @@ public interface IApplicationDbContext
     DbSet<Person> Persons { get; }
     DbSet<Product> Products { get; }
     DbSet<ActivityCatalogNode> ActivityCatalogNodes { get; }
+    DbSet<ActivityRequirementSection> ActivityRequirementSections { get; }
+    DbSet<ActivityProductRequirement> ActivityProductRequirements { get; }
     DbSet<Invoice> Invoices { get; }
     DbSet<SitePayment> SitePayments { get; }
     DbSet<Issue> Issues { get; }

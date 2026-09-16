@@ -1,4 +1,5 @@
 using Domain.Entities;
+using Domain.SeedWork.Enums;
 using Infrastructure.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -57,6 +58,32 @@ public sealed class ActivityCatalogPersistenceMetadataTests
         Assert.Contains(entity.GetIndexes(), index => index.Properties.Select(property => property.Name)
             .SequenceEqual([nameof(Activity.Status)]));
         Assert.NotNull(dbContext.Model.FindSequence("ActivityNumberIds", "dbo"));
+    }
+
+    [Fact]
+    public void Requirement_mappings_preserve_storage_relationship_and_uniqueness_contracts()
+    {
+        using var dbContext = CreateDbContext();
+        var section = dbContext.Model.FindEntityType(typeof(ActivityRequirementSection))!;
+        var requirement = dbContext.Model.FindEntityType(typeof(ActivityProductRequirement))!;
+
+        Assert.Equal("ActivityRequirementSections", section.GetTableName());
+        Assert.Equal(ActivityRequirementSection.MaxNameLength, section.FindProperty(nameof(ActivityRequirementSection.Name))!.GetMaxLength());
+        Assert.Equal(18, section.FindProperty(nameof(ActivityRequirementSection.BasisQuantity))!.GetPrecision());
+        Assert.Equal(4, section.FindProperty(nameof(ActivityRequirementSection.BasisQuantity))!.GetScale());
+        Assert.Equal("m2", section.FindProperty(nameof(ActivityRequirementSection.MeasurementUnit))!.GetValueConverter()!.ConvertToProvider(ActivityMeasurementUnit.SquareMeter));
+        Assert.Contains(section.GetForeignKeys(), key => key.PrincipalEntityType.ClrType == typeof(Activity) && key.DeleteBehavior == DeleteBehavior.Cascade);
+        Assert.Contains(section.GetIndexes(), index => index.Properties.Select(property => property.Name).SequenceEqual([nameof(ActivityRequirementSection.ActivityId), nameof(ActivityRequirementSection.SortOrder)]));
+
+        Assert.Equal("ActivityProductRequirements", requirement.GetTableName());
+        Assert.Equal(18, requirement.FindProperty(nameof(ActivityProductRequirement.Quantity))!.GetPrecision());
+        Assert.Equal(4, requirement.FindProperty(nameof(ActivityProductRequirement.Quantity))!.GetScale());
+        Assert.Equal(ActivityProductRequirement.MaxNotesLength, requirement.FindProperty(nameof(ActivityProductRequirement.Notes))!.GetMaxLength());
+        Assert.Equal("fixed", requirement.FindProperty(nameof(ActivityProductRequirement.QuantityBehavior))!.GetValueConverter()!.ConvertToProvider(ProductQuantityBehavior.Fixed));
+        Assert.Contains(requirement.GetForeignKeys(), key => key.PrincipalEntityType.ClrType == typeof(ActivityRequirementSection) && key.DeleteBehavior == DeleteBehavior.Cascade);
+        Assert.Contains(requirement.GetForeignKeys(), key => key.PrincipalEntityType.ClrType == typeof(Product) && key.DeleteBehavior == DeleteBehavior.Restrict);
+        Assert.Contains(requirement.GetIndexes(), index => index.IsUnique && index.Properties.Select(property => property.Name).SequenceEqual([nameof(ActivityProductRequirement.SectionId), nameof(ActivityProductRequirement.ProductId)]));
+        Assert.Contains(requirement.GetIndexes(), index => index.Properties.Select(property => property.Name).SequenceEqual([nameof(ActivityProductRequirement.SectionId), nameof(ActivityProductRequirement.SortOrder)]));
     }
 
     private static ApplicationDbContext CreateDbContext()

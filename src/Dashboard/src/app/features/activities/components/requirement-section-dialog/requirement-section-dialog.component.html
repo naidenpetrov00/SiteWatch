@@ -1,0 +1,67 @@
+<app-dialog-shell
+  eyebrow="Activity Requirements"
+  [title]="title"
+  [subtitle]="subtitle"
+>
+  <form
+    [id]="formId"
+    class="requirement-section-dialog__form"
+    [formGroup]="form"
+    novalidate
+    (ngSubmit)="submit()"
+  >
+    <mat-form-field appearance="outline" class="requirement-section-dialog__wide">
+      <mat-label>Section name</mat-label>
+      <input
+        matInput
+        formControlName="name"
+        maxlength="200"
+        placeholder="Optional, e.g. Wall covering"
+      />
+      <mat-hint>Optional descriptive name.</mat-hint>
+      @if (form.controls.name.touched && form.controls.name.invalid) {
+        <mat-error>The name cannot exceed 200 characters.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Basis quantity</mat-label>
+      <input
+        matInput
+        type="number"
+        formControlName="basisQuantity"
+        min="0.0001"
+        step="any"
+      />
+      @if (form.controls.basisQuantity.touched && form.controls.basisQuantity.invalid) {
+        <mat-error>Enter a positive quantity with at most four decimal places.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Measurement unit</mat-label>
+      <mat-select formControlName="measurementUnit">
+        @for (unit of units; track unit.value) {
+          <mat-option [value]="unit.value">{{ unit.label }} ({{ unit.symbol }})</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    @if (errorMessage()) {
+      <p class="requirement-section-dialog__error" role="alert">
+        {{ errorMessage() }}
+      </p>
+    }
+  </form>
+
+  <app-dialog-action-bar
+    dialog-shell-actions
+    cancelLabel="Cancel"
+    [submitLabel]="submitLabel"
+    [submitFormId]="formId"
+    submitButtonType="submit"
+    [cancelDisabled]="isSaving()"
+    [submitDisabled]="form.invalid || isSaving()"
+    (cancel)="close()"
+  />
+</app-dialog-shell>

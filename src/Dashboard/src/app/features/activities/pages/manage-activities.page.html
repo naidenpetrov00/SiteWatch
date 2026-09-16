@@ -227,13 +227,11 @@
             <span>{{ selected.status }}</span>
           </p>
           <div class="activity-explorer__detail-actions">
-            <button mat-stroked-button type="button" (click)="openActivity(selected, 'view')">
-              View Details
-            </button>
             <button mat-flat-button color="primary" type="button" (click)="openActivity(selected, 'edit')">
               Edit Activity
             </button>
           </div>
+          <app-activity-requirements [selectedActivityId]="selected.id" />
         }
       } @else {
         <mat-icon class="activity-explorer__details-placeholder">touch_app</mat-icon>

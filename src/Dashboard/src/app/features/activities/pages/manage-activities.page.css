@@ -66,7 +66,7 @@
 
 .activity-explorer {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr);
+  grid-template-columns: minmax(18rem, 0.85fr) minmax(32rem, 1.65fr);
   min-height: 34rem;
   overflow: hidden;
   border: 1px solid var(--mat-sys-outline-variant);
@@ -163,6 +163,8 @@
 }
 
 .activity-explorer__details {
+  min-width: 0;
+  overflow: auto;
   padding: 1.25rem;
   background: var(--mat-sys-surface-container-low);
 }

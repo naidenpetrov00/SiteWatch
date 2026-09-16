@@ -1,0 +1,210 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.activity-requirements {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.activity-requirements__state,
+.activity-requirements__empty,
+.requirement-section__empty {
+  margin: 0;
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.activity-requirements__state--error {
+  color: var(--mat-sys-error);
+}
+
+.activity-requirements__description {
+  padding: 0.85rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface-container-lowest);
+}
+
+.activity-requirements__description span,
+.activity-requirements__eyebrow,
+.requirement-section__name {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.activity-requirements__description p {
+  margin: 0.35rem 0 0;
+  white-space: pre-wrap;
+}
+
+.activity-requirements__archived,
+.activity-requirements__error {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.75rem;
+}
+
+.activity-requirements__archived {
+  color: var(--mat-sys-on-tertiary-container);
+  background: var(--mat-sys-tertiary-container);
+}
+
+.activity-requirements__archived div {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.activity-requirements__error {
+  color: var(--mat-sys-on-error-container);
+  background: var(--mat-sys-error-container);
+}
+
+.activity-requirements__error span {
+  flex: 1;
+}
+
+.activity-requirements__header,
+.requirement-section__header,
+.requirement-section__products-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.activity-requirements__eyebrow,
+.requirement-section__name {
+  margin: 0 0 0.2rem;
+}
+
+.activity-requirements__header h3,
+.requirement-section__header h4 {
+  margin: 0;
+}
+
+.activity-requirements__sections {
+  display: grid;
+  gap: 1rem;
+}
+
+.requirement-section {
+  overflow: hidden;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.85rem;
+  background: var(--mat-sys-surface-container-lowest);
+}
+
+.requirement-section__header,
+.requirement-section__products-header {
+  padding: 0.85rem 1rem;
+}
+
+.requirement-section__header {
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.requirement-section__actions,
+.product-requirement__actions {
+  display: flex;
+  flex: 0 0 auto;
+}
+
+.requirement-section__products-header {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.85rem;
+}
+
+.requirement-section__products {
+  display: grid;
+}
+
+.product-requirement {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1.3fr) minmax(14rem, 1fr) auto;
+  gap: 0.75rem 1rem;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
+
+.product-requirement__identity,
+.product-requirement__settings {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.product-requirement__identity span,
+.product-requirement__settings {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.82rem;
+}
+
+.product-requirement__settings {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.product-requirement__status {
+  width: fit-content;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: var(--mat-sys-surface-container-high);
+}
+
+.product-requirement__status--inactive {
+  color: var(--mat-sys-on-error-container);
+  background: var(--mat-sys-error-container);
+}
+
+.product-requirement__notes {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 74rem) {
+  .product-requirement {
+    grid-template-columns: 1fr auto;
+  }
+
+  .product-requirement__settings,
+  .product-requirement__notes {
+    grid-column: 1 / -1;
+  }
+
+  .product-requirement__actions {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
+@media (max-width: 40rem) {
+  .activity-requirements__header,
+  .requirement-section__header,
+  .requirement-section__products-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .product-requirement {
+    grid-template-columns: 1fr;
+  }
+
+  .product-requirement__actions {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .product-requirement__settings {
+    grid-template-columns: 1fr;
+  }
+}
