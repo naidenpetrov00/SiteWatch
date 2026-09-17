@@ -1,0 +1,54 @@
+.manage-retailers-page {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.manage-retailers-page__header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.manage-retailers-page__eyebrow {
+  margin: 0 0 0.25rem;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.manage-retailers-page h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  line-height: 1.1;
+}
+
+.manage-retailers-page__summary {
+  margin: 0.5rem 0 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.manage-retailers-page__feedback {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+}
+
+.manage-retailers-page__feedback--success {
+  color: var(--mat-sys-on-tertiary-container);
+  background: var(--mat-sys-tertiary-container);
+}
+
+.manage-retailers-page__feedback--error {
+  color: var(--mat-sys-on-error-container);
+  background: var(--mat-sys-error-container);
+}
+
+@media (max-width: 48rem) {
+  .manage-retailers-page__header {
+    align-items: start;
+    flex-direction: column;
+  }
+}

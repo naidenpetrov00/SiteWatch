@@ -576,6 +576,95 @@ public class ApplicationDbContextInitialiser(
         return persons;
     }
 
+    private async Task AddRetailers(IReadOnlyCollection<Person> persons)
+    {
+        var companyPerson = persons.FirstOrDefault(person =>
+            person.Type == PersonType.Company
+            && string.Equals(
+                person.CompanyName,
+                "SiteWatch Services",
+                StringComparison.OrdinalIgnoreCase));
+        if (companyPerson is null)
+        {
+            logger.LogWarning(
+                "Retailer seeding skipped: company Person 'SiteWatch Services' was not found.");
+            return;
+        }
+
+        var existingIdentities = await dbContext.Retailers
+            .AsNoTracking()
+            .Select(retailer => new
+            {
+                retailer.NormalizedName,
+                retailer.NormalizedWebsiteHost,
+            })
+            .ToListAsync();
+        var existingNames = existingIdentities
+            .Select(identity => identity.NormalizedName)
+            .ToHashSet(StringComparer.Ordinal);
+        var existingHosts = existingIdentities
+            .Select(identity => identity.NormalizedWebsiteHost)
+            .ToHashSet(StringComparer.Ordinal);
+        var definitions = new[]
+        {
+            (
+                DisplayName: "SiteWatch Store",
+                BaseWebsiteUrl: "https://store.sitewatch.example",
+                Notes: "General SiteWatch storefront.",
+                IsActive: true),
+            (
+                DisplayName: "SiteWatch Pro",
+                BaseWebsiteUrl: "https://pro.sitewatch.example",
+                Notes: "Commercial storefront for professional customers.",
+                IsActive: true),
+            (
+                DisplayName: "SiteWatch Outlet",
+                BaseWebsiteUrl: "https://outlet.sitewatch.example",
+                Notes: "Inactive sample storefront retained for administration scenarios.",
+                IsActive: false),
+        };
+
+        var now = DateTimeOffset.UtcNow;
+        var retailers = new List<Retailer>();
+        foreach (var definition in definitions)
+        {
+            var retailer = Retailer.Create(
+                definition.DisplayName,
+                companyPerson,
+                definition.BaseWebsiteUrl,
+                definition.Notes);
+            if (existingNames.Contains(retailer.NormalizedName)
+                || existingHosts.Contains(retailer.NormalizedWebsiteHost))
+            {
+                continue;
+            }
+
+            if (!definition.IsActive)
+            {
+                retailer.Deactivate();
+            }
+
+            retailer.Created = now;
+            retailer.CreatedBy = SeededBy;
+            retailer.LastModified = now;
+            retailer.LastModifiedBy = SeededBy;
+            retailers.Add(retailer);
+            existingNames.Add(retailer.NormalizedName);
+            existingHosts.Add(retailer.NormalizedWebsiteHost);
+        }
+
+        if (retailers.Count == 0)
+        {
+            logger.LogInformation(
+                "Retailer seeding skipped: all seeded retailers already exist or conflict with existing identities.");
+            return;
+        }
+
+        await dbContext.Retailers.AddRangeAsync(retailers);
+        await dbContext.SaveChangesAsync();
+        logger.LogInformation("Seeded {RetailerCount} retailers.", retailers.Count);
+    }
+
     private async Task AddInvoices(List<Person> persons, int invoiceCount)
     {
         if (persons.Count < 3)
@@ -723,6 +812,7 @@ public class ApplicationDbContextInitialiser(
             await AddIssues();
             await AddProducts();
             var persons = await AddPersons();
+            await AddRetailers(persons);
             var invoiceCount = blobInitializer.GetRequiredSeedInvoiceCount();
             await AddInvoices(persons, invoiceCount);
             await AddInvoiceSitePayments(invoiceCount);

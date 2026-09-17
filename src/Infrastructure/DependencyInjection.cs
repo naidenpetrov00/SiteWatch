@@ -13,6 +13,7 @@ using Infrastructure.Issues.Storage;
 using Infrastructure.Identity.Services;
 using Infrastructure.Persons.Services;
 using Infrastructure.Products.Services;
+using Infrastructure.Retailers.Services;
 using Infrastructure.SeedWork.Options;
 using Infrastructure.Sites.Services;
 using Infrastructure.Storage;
@@ -75,6 +76,7 @@ public static class DependencyInjection
         services.AddScoped<ICameraService, CameraService>();
         services.AddScoped<IPersonService, PersonService>();
         services.AddScoped<IProductService, ProductService>();
+        services.AddScoped<IRetailerService, RetailerService>();
         services.AddScoped<IActivityCatalogService, ActivityCatalogService>();
         services.AddScoped<IActivityRequirementService, ActivityRequirementService>();
 

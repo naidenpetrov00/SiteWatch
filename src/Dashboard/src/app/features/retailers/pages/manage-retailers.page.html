@@ -1,0 +1,48 @@
+<main class="manage-retailers-page">
+  <header class="manage-retailers-page__header">
+    <div>
+      <p class="manage-retailers-page__eyebrow">Administration</p>
+      <h1>Manage Retailers</h1>
+      <p class="manage-retailers-page__summary">
+        Connect commercial storefronts and websites to their existing legal companies.
+      </p>
+    </div>
+
+    <app-action-button
+      label="Add Retailer"
+      variant="primary"
+      (clicked)="openAddRetailerDialog()"
+    />
+  </header>
+
+  @if (pageMessage()) {
+    <p class="manage-retailers-page__feedback manage-retailers-page__feedback--success" aria-live="polite">
+      {{ pageMessage() }}
+    </p>
+  }
+
+  @if (pageError()) {
+    <p class="manage-retailers-page__feedback manage-retailers-page__feedback--error" role="alert">
+      {{ pageError() }}
+    </p>
+  } @else if (hasLoadError()) {
+    <p class="manage-retailers-page__feedback manage-retailers-page__feedback--error" role="alert">
+      Retailers could not be loaded.
+    </p>
+  }
+
+  <app-data-table
+    tableEyebrow="Storefronts"
+    tableLabel="Manage Retailers"
+    emptyMessage="No retailers match the current filters."
+    filterApplyMode="search"
+    [rows]="retailers()"
+    [filteredRowsTotal]="filteredCount()"
+    [overallRowsTotal]="totalCount()"
+    [columns]="columns"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="pageSizeOptions"
+    (tableStateChange)="onTableStateChange($event)"
+    (cellButtonClicked)="onCellButtonClick($event)"
+  />
+</main>

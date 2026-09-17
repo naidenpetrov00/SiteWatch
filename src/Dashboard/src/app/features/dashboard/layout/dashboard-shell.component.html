@@ -133,6 +133,15 @@
       <a
         cdkMenuItem
         class="dashboard-shell__menu-item"
+        routerLink="/manage-retailers"
+        routerLinkActive="dashboard-shell__menu-item--active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        Manage Retailers
+      </a>
+      <a
+        cdkMenuItem
+        class="dashboard-shell__menu-item"
         routerLink="/manage-activities"
         routerLinkActive="dashboard-shell__menu-item--active"
         [routerLinkActiveOptions]="{ exact: true }"
