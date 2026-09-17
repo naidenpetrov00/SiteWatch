@@ -1,9 +1,17 @@
 import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { Router } from '@angular/router';
 
 import { ActionButtonComponent } from '../../../shared/ui/action-button/action-button.component';
 import { DataTableComponent } from '../../../shared/data-table/data-table.component';
-import { DataTableColumn, DataTableState } from '../../../shared/data-table/data-table.types';
+import {
+  DataTableColumn,
+  DataTableRowAction,
+  DataTableRowActionEvent,
+  DataTableState
+} from '../../../shared/data-table/data-table.types';
+import { OffersService } from '../../offers/services/offers.service';
+import { getOfferError } from '../../offers/utils/offer-error';
 import { DashboardSite } from '../models/dashboard-site.model';
 import { DashboardSitesService } from '../services/dashboard-sites.service';
 import { EditSiteDialogComponent } from '../components/edit-site-dialog/edit-site-dialog.component';
@@ -70,12 +78,28 @@ const SITE_COLUMNS: readonly DataTableColumn<DashboardSite>[] = [
 export class ManageSitesPage {
   private readonly dashboardSitesService = inject(DashboardSitesService);
   private readonly dialog = inject(MatDialog);
+  private readonly router = inject(Router);
+  private readonly offersService = inject(OffersService);
 
   readonly sites = signal<readonly DashboardSite[]>([]);
   readonly sitesFilteredCount = signal(0);
   readonly sitesTotalCount = signal(0);
   readonly tableState = signal<DataTableState<DashboardSite> | null>(null);
+  readonly pageError = signal<string | null>(null);
   readonly columns = SITE_COLUMNS;
+  readonly rowActions: readonly DataTableRowAction<DashboardSite>[] = [
+    {
+      id: 'create-offer',
+      label: 'Create Offer',
+      ariaLabelAccessor: (site) => `Create an offer for Site ${site.numberId}`,
+      disabledPredicate: () => this.offersService.createOfferMutation.isPending()
+    },
+    {
+      id: 'view-offers',
+      label: 'View Offers',
+      ariaLabelAccessor: (site) => `View offers for Site ${site.numberId}`
+    }
+  ];
   readonly pageSize = 50;
   readonly pageSizeOptions = [50, 100, 500, 1000] as const;
 
@@ -131,6 +155,37 @@ export class ManageSitesPage {
       });
     } catch {
       // Keep the table usable if the detail fetch fails.
+    }
+  }
+
+  async onRowActionClicked(
+    event: DataTableRowActionEvent<DashboardSite>
+  ): Promise<void> {
+    this.pageError.set(null);
+    if (event.action.id === 'view-offers') {
+      await this.router.navigate(['/sites', event.row.id, 'offers']);
+      return;
+    }
+
+    if (
+      event.action.id !== 'create-offer' ||
+      this.offersService.createOfferMutation.isPending()
+    ) {
+      return;
+    }
+
+    try {
+      const created = await this.offersService.createOffer(event.row.id);
+      await this.router.navigate([
+        '/sites',
+        event.row.id,
+        'offers',
+        created.id
+      ]);
+    } catch (error) {
+      this.pageError.set(
+        getOfferError(error, 'The draft offer could not be created.')
+      );
     }
   }
 }

@@ -33,6 +33,18 @@ export interface DataTableColumn<T extends object> {
   align?: 'start' | 'center' | 'end';
 }
 
+export interface DataTableRowAction<T extends object> {
+  id: string;
+  label: string;
+  ariaLabelAccessor?: (row: T) => string;
+  disabledPredicate?: (row: T) => boolean;
+}
+
+export interface DataTableRowActionEvent<T extends object> {
+  row: T;
+  action: DataTableRowAction<T>;
+}
+
 export interface DataTableSortState {
   active: string;
   direction: DataTableSortDirection;

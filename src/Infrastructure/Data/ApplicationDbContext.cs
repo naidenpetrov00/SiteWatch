@@ -28,6 +28,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<SitePayment> SitePayments => Set<SitePayment>();
     public DbSet<Issue> Issues => Set<Issue>();
     public DbSet<IssueAttachment> IssueAttachments => Set<IssueAttachment>();
+    public DbSet<Offer> Offers => Set<Offer>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

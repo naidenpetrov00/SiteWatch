@@ -1,0 +1,148 @@
+<main class="offer-workspace">
+  <nav class="offer-workspace__breadcrumbs" aria-label="Offer navigation">
+    <a routerLink="/manage-sites">Site Catalog</a>
+    <span aria-hidden="true">/</span>
+    <a [routerLink]="['/sites', siteId(), 'offers']">Site Offers</a>
+  </nav>
+
+  @if (isLoading()) {
+    <p class="offer-workspace__feedback" aria-live="polite">Loading offer…</p>
+  } @else if (hasLoadError()) {
+    <p class="offer-workspace__feedback offer-workspace__feedback--error" role="alert">
+      The offer could not be loaded for this site.
+    </p>
+  } @else if (offer(); as currentOffer) {
+    <header class="offer-workspace__header">
+      <div>
+        <p class="offer-workspace__eyebrow">Offer Workspace</p>
+        <h1>Offer #{{ currentOffer.numberId }}</h1>
+        <p class="offer-workspace__summary">
+          Site #{{ currentOffer.siteNumberId }} · {{ currentOffer.siteName }}
+        </p>
+      </div>
+
+      <span
+        class="offer-workspace__status"
+        [class.offer-workspace__status--archived]="currentOffer.status === 'Archived'"
+      >
+        {{ currentOffer.status }}
+      </span>
+    </header>
+
+    @if (pageMessage()) {
+      <p class="offer-workspace__feedback offer-workspace__feedback--success" aria-live="polite">
+        {{ pageMessage() }}
+      </p>
+    }
+    @if (pageError()) {
+      <p class="offer-workspace__feedback offer-workspace__feedback--error" role="alert">
+        {{ pageError() }}
+      </p>
+    }
+
+    <div class="offer-workspace__layout">
+      <section class="offer-workspace__panel" aria-labelledby="offer-metadata-heading">
+        <div class="offer-workspace__section-heading">
+          <div>
+            <p class="offer-workspace__eyebrow">Stage 1</p>
+            <h2 id="offer-metadata-heading">Offer Details</h2>
+          </div>
+          @if (!isDraft()) {
+            <p class="offer-workspace__readonly-note">This offer is read-only.</p>
+          }
+        </div>
+
+        <form [formGroup]="metadataForm" (ngSubmit)="saveMetadata()">
+          <mat-form-field appearance="outline">
+            <mat-label>Internal Title</mat-label>
+            <input matInput formControlName="title" maxlength="200" />
+            <mat-hint align="end">
+              {{ metadataForm.controls.title.value?.length ?? 0 }}/200
+            </mat-hint>
+            @if (metadataForm.controls.title.hasError('maxlength')) {
+              <mat-error>Internal title must be at most 200 characters.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Internal Notes</mat-label>
+            <textarea
+              matInput
+              formControlName="notes"
+              rows="10"
+              maxlength="2000"
+            ></textarea>
+            <mat-hint align="end">
+              {{ metadataForm.controls.notes.value?.length ?? 0 }}/2000
+            </mat-hint>
+            @if (metadataForm.controls.notes.hasError('maxlength')) {
+              <mat-error>Internal notes must be at most 2,000 characters.</mat-error>
+            }
+          </mat-form-field>
+
+          @if (isDraft()) {
+            <div class="offer-workspace__form-actions">
+              <button
+                mat-flat-button
+                color="primary"
+                type="submit"
+                [disabled]="metadataForm.invalid || isSaving() || isArchiving()"
+              >
+                {{ isSaving() ? 'Saving…' : 'Save Details' }}
+              </button>
+              <button
+                mat-stroked-button
+                type="button"
+                [disabled]="isSaving() || isArchiving()"
+                (click)="confirmArchive()"
+              >
+                {{ isArchiving() ? 'Archiving…' : 'Archive Offer' }}
+              </button>
+            </div>
+          } @else if (currentOffer.status !== 'Archived') {
+            <div class="offer-workspace__form-actions">
+              <button
+                mat-stroked-button
+                type="button"
+                [disabled]="isArchiving()"
+                (click)="confirmArchive()"
+              >
+                {{ isArchiving() ? 'Archiving…' : 'Archive Offer' }}
+              </button>
+            </div>
+          }
+        </form>
+      </section>
+
+      <aside class="offer-workspace__panel offer-workspace__summary-panel" aria-label="Offer identity">
+        <h2>Offer Identity</h2>
+        <dl>
+          <div>
+            <dt>Offer</dt>
+            <dd>#{{ currentOffer.numberId }}</dd>
+          </div>
+          <div>
+            <dt>Site</dt>
+            <dd>#{{ currentOffer.siteNumberId }} · {{ currentOffer.siteName }}</dd>
+          </div>
+          <div>
+            <dt>Site Address</dt>
+            <dd>{{ currentOffer.siteAddress }}</dd>
+          </div>
+          <div>
+            <dt>Status</dt>
+            <dd>{{ currentOffer.status }}</dd>
+          </div>
+          <div>
+            <dt>Created</dt>
+            <dd>{{ formatDateTime(currentOffer.created) }}</dd>
+          </div>
+          <div>
+            <dt>Last Modified</dt>
+            <dd>{{ formatDateTime(currentOffer.lastModified) }}</dd>
+          </div>
+        </dl>
+      </aside>
+    </div>
+  }
+</main>

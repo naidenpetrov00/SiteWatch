@@ -20,6 +20,7 @@ public interface IApplicationDbContext
     DbSet<SitePayment> SitePayments { get; }
     DbSet<Issue> Issues { get; }
     DbSet<IssueAttachment> IssueAttachments { get; }
+    DbSet<Offer> Offers { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

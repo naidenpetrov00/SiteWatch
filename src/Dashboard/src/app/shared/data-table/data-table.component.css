@@ -75,6 +75,13 @@
   padding-inline: 0.875rem;
 }
 
+.data-table__row-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
 .data-table__row--error > td {
   background-color: #fee2e2 !important;
 }

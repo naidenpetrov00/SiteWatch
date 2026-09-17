@@ -17,6 +17,10 @@
     </div>
   </header>
 
+  @if (pageError()) {
+    <p class="manage-sites-page__feedback" role="alert">{{ pageError() }}</p>
+  }
+
   <app-data-table
     tableEyebrow="Sites"
     tableLabel="Manage Sites"
@@ -26,9 +30,11 @@
     [filteredRowsTotal]="sitesFilteredCount()"
     [overallRowsTotal]="sitesTotalCount()"
     [columns]="columns"
+    [rowActions]="rowActions"
     [pageSize]="pageSize"
     [pageSizeOptions]="pageSizeOptions"
     (tableStateChange)="onTableStateChange($event)"
     (cellButtonClicked)="onCellButtonClicked($event)"
+    (rowActionClicked)="onRowActionClicked($event)"
   />
 </main>

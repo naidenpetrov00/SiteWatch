@@ -14,6 +14,7 @@ using Infrastructure.Identity.Services;
 using Infrastructure.Persons.Services;
 using Infrastructure.Products.Services;
 using Infrastructure.Retailers.Services;
+using Infrastructure.Offers.Services;
 using Infrastructure.SeedWork.Options;
 using Infrastructure.Sites.Services;
 using Infrastructure.Storage;
@@ -79,6 +80,7 @@ public static class DependencyInjection
         services.AddScoped<IRetailerService, RetailerService>();
         services.AddScoped<IActivityCatalogService, ActivityCatalogService>();
         services.AddScoped<IActivityRequirementService, ActivityRequirementService>();
+        services.AddScoped<IOfferService, OfferService>();
 
         services
             .AddIdentity<ApplicationUser, IdentityRole>(options => { options.User.RequireUniqueEmail = true; })

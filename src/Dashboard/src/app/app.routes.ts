@@ -53,6 +53,22 @@ export const routes: Routes = [
           )
       },
       {
+        path: 'sites/:siteId/offers/:offerId',
+        title: 'Offer Workspace',
+        loadComponent: () =>
+          import('./features/offers/pages/offer-workspace.page').then(
+            (m) => m.OfferWorkspacePage
+          )
+      },
+      {
+        path: 'sites/:siteId/offers',
+        title: 'Site Offers',
+        loadComponent: () =>
+          import('./features/offers/pages/site-offers.page').then(
+            (m) => m.SiteOffersPage
+          )
+      },
+      {
         path: 'manage-issues',
         title: 'Manage Issues',
         loadComponent: () =>

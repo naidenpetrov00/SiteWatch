@@ -3,6 +3,7 @@ using Application.ActivityCatalog;
 using Application.Cameras;
 using Application.Persons;
 using Application.Retailers;
+using Application.Offers;
 using Ardalis.GuardClauses;
 using Application.SeedWork.Exceptions;
 using FluentValidation;
@@ -84,6 +85,19 @@ internal sealed class ExceptionMiddleware(
             {
                 status = StatusCodes.Status409Conflict,
                 title = "Person conflict",
+                detail = ex.Message,
+                instance = context.Request.Path.Value,
+            }));
+        }
+        catch (OfferConflictException ex)
+        {
+            logger.LogInformation(ex, "An offer operation was rejected due to its lifecycle state.");
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            context.Response.ContentType = "application/problem+json";
+            await context.Response.WriteAsync(JsonSerializer.Serialize(new
+            {
+                status = StatusCodes.Status409Conflict,
+                title = "Offer conflict",
                 detail = ex.Message,
                 instance = context.Request.Path.Value,
             }));

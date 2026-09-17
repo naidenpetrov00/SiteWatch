@@ -1,0 +1,42 @@
+<main class="site-offers-page">
+  <header class="site-offers-page__header">
+    <div>
+      <p class="site-offers-page__eyebrow">Sites Management</p>
+      <h1>
+        @if (site(); as currentSite) {
+          Offers for Site #{{ currentSite.numberId }} · {{ currentSite.name }}
+        } @else {
+          Site Offers
+        }
+      </h1>
+      <p class="site-offers-page__summary">
+        Find and reopen draft, finalized, or archived offers for this site.
+      </p>
+    </div>
+
+    <a mat-stroked-button routerLink="/manage-sites">Back to Site Catalog</a>
+  </header>
+
+  @if (isLoading()) {
+    <p class="site-offers-page__feedback" aria-live="polite">Loading site offers…</p>
+  } @else if (hasLoadError()) {
+    <p class="site-offers-page__feedback site-offers-page__feedback--error" role="alert">
+      The site or its offers could not be loaded.
+    </p>
+  } @else {
+    <app-data-table
+      tableEyebrow="Offers"
+      tableLabel="Site Offers"
+      emptyMessage="This site does not have any offers yet."
+      filterApplyMode="search"
+      [rows]="offers()"
+      [filteredRowsTotal]="filteredCount()"
+      [overallRowsTotal]="totalCount()"
+      [columns]="columns"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="pageSizeOptions"
+      (tableStateChange)="onTableStateChange($event)"
+      (cellButtonClicked)="openOffer($event.row)"
+    />
+  }
+</main>
