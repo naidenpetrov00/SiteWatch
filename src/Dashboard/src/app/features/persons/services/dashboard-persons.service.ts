@@ -11,6 +11,7 @@ import { buildApiUrl } from '../../../core/api/api-url';
 import { DataTableState } from '../../../shared/data-table/data-table.types';
 import { DashboardPerson } from '../models/dashboard-person.model';
 import { DashboardPersonLookup } from '../models/dashboard-person-lookup.model';
+import { DashboardCompanyPersonLookup } from '../models/dashboard-company-person-lookup.model';
 import { DashboardPersonsResponse } from '../models/dashboard-persons-response.model';
 import {
   CreateDashboardPersonRequest
@@ -115,6 +116,23 @@ export class DashboardPersonsService {
       this.http.get<readonly DashboardPersonLookup[]>(buildApiUrl('/dashboard/persons/search'), {
         params: new HttpParams().set('searchTerm', normalizedSearchTerm)
       })
+    );
+  }
+
+  searchCompanies(
+    searchTerm: string
+  ): Promise<readonly DashboardCompanyPersonLookup[]> {
+    const normalizedSearchTerm = searchTerm.trim();
+
+    if (normalizedSearchTerm.length === 0) {
+      return Promise.resolve([]);
+    }
+
+    return firstValueFrom(
+      this.http.get<readonly DashboardCompanyPersonLookup[]>(
+        buildApiUrl('/dashboard/persons/companies/search'),
+        { params: new HttpParams().set('searchTerm', normalizedSearchTerm) }
+      )
     );
   }
 

@@ -26,6 +26,9 @@ public class Persons : EndpointGroupBase
         group.MapPut("/{personId:guid}", UpdatePerson);
         group.MapDelete("/{personId:guid}", DeletePerson);
         dashboardGroup.MapGet("/persons/search", SearchDashboardPersons);
+        dashboardGroup.MapGet("/persons/companies/search", SearchCompanyPersons)
+            .WithName("SearchCompanyPersons")
+            .WithSummary("Search existing company Persons for legal-entity selection");
         dashboardGroup.MapGet("/persons", GetDashboardPersons);
     }
 
@@ -69,6 +72,15 @@ public class Persons : EndpointGroupBase
     )
     {
         var persons = await mediator.Send(query);
+        return TypedResults.Ok(persons);
+    }
+
+    private static async Task<Ok<List<CompanyPersonLookupDto>>> SearchCompanyPersons(
+        IMediator mediator,
+        [AsParameters] CompanyPersonSearchQuery query,
+        CancellationToken cancellationToken)
+    {
+        var persons = await mediator.Send(query, cancellationToken);
         return TypedResults.Ok(persons);
     }
 }

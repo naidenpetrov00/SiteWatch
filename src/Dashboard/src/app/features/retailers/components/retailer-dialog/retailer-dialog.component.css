@@ -1,0 +1,38 @@
+.retailer-dialog__form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  padding-top: 0.5rem;
+}
+
+.retailer-dialog__full-width,
+.retailer-dialog__status,
+.retailer-dialog__error {
+  grid-column: 1 / -1;
+}
+
+.retailer-dialog__company-title,
+.retailer-dialog__company-subtitle {
+  display: block;
+}
+
+.retailer-dialog__company-subtitle {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.78rem;
+}
+
+.retailer-dialog__status {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.retailer-dialog__error {
+  margin: 0;
+  color: var(--mat-sys-error);
+}
+
+@media (max-width: 42rem) {
+  .retailer-dialog__form {
+    grid-template-columns: 1fr;
+  }
+}

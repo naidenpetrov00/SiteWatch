@@ -20,10 +20,13 @@ export interface DataTableColumn<T extends object> {
   key: keyof T & string;
   label: string;
   sortable?: boolean;
-  cellType?: 'text' | 'button';
+  cellType?: 'text' | 'button' | 'external-link';
   filter?: DataTableFilterConfig<T>;
   valueAccessor?: (row: T) => unknown;
   displayFormatter?: (value: unknown, row: T) => string;
+  linkHrefAccessor?: (row: T) => string | null;
+  ariaLabelAccessor?: (row: T) => string;
+  buttonDisabledPredicate?: (row: T) => boolean;
   exportable?: boolean;
   exportLabel?: string;
   width?: string;

@@ -110,10 +110,23 @@
                 mat-stroked-button
                 type="button"
                 class="data-table__cell-button"
+                [attr.aria-label]="getCellAriaLabel(row, column)"
+                [disabled]="isCellButtonDisabled(row, column)"
                 (click)="onCellButtonClick(row, column)"
               >
                 {{ renderCell(row, column) }}
               </button>
+            } @else if (column.cellType === 'external-link') {
+              <a
+                mat-stroked-button
+                class="data-table__cell-button"
+                [href]="getLinkHref(row, column)"
+                [attr.aria-label]="getCellAriaLabel(row, column)"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {{ renderCell(row, column) }}
+              </a>
             } @else {
               {{ renderCell(row, column) }}
             }

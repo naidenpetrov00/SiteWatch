@@ -225,6 +225,18 @@ export class DataTableComponent<T extends object> {
     });
   }
 
+  getCellAriaLabel(row: T, column: DataTableColumn<T>): string | null {
+    return column.ariaLabelAccessor?.(row) ?? null;
+  }
+
+  getLinkHref(row: T, column: DataTableColumn<T>): string | null {
+    return column.linkHrefAccessor?.(row) ?? null;
+  }
+
+  isCellButtonDisabled(row: T, column: DataTableColumn<T>): boolean {
+    return column.buttonDisabledPredicate?.(row) ?? false;
+  }
+
   renderCell(row: T, column: DataTableColumn<T>): string {
     const value = getColumnValue(row, column);
     const formattedValue = column.displayFormatter?.(value, row);

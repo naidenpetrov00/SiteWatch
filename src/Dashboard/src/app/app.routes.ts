@@ -85,6 +85,14 @@ export const routes: Routes = [
           )
       },
       {
+        path: 'manage-retailers',
+        title: 'Manage Retailers',
+        loadComponent: () =>
+          import('./features/retailers/pages/manage-retailers.page').then(
+            (m) => m.ManageRetailersPage
+          )
+      },
+      {
         path: 'manage-activities',
         title: 'Manage Activities',
         loadComponent: () =>

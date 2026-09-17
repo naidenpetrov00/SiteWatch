@@ -1,0 +1,107 @@
+<app-dialog-shell
+  eyebrow="Administration"
+  [title]="dialogTitle"
+  [subtitle]="dialogSubtitle"
+>
+  <form
+    [id]="formId"
+    class="retailer-dialog__form"
+    [formGroup]="retailerForm"
+    novalidate
+    (ngSubmit)="submitRetailer()"
+  >
+    <mat-form-field appearance="outline" class="retailer-dialog__full-width">
+      <mat-label>Display Name</mat-label>
+      <input
+        matInput
+        formControlName="displayName"
+        maxlength="200"
+        placeholder="e.g. Praktiker"
+        autocomplete="organization"
+      />
+      @if (retailerForm.controls.displayName.touched && retailerForm.controls.displayName.invalid) {
+        <mat-error>Enter a meaningful display name of no more than 200 characters.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="retailer-dialog__full-width">
+      <mat-label>Legal Company Person</mat-label>
+      <input
+        matInput
+        [formControl]="companySearchControl"
+        [matAutocomplete]="companyAutocomplete"
+        autocomplete="off"
+        inputmode="search"
+      />
+      <mat-hint>Search existing companies by name, EIK, or VAT number.</mat-hint>
+      @if (companySearchControl.touched && retailerForm.controls.companyPersonId.invalid) {
+        <mat-error>Select an existing company Person from the results.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-autocomplete
+      #companyAutocomplete="matAutocomplete"
+      [displayWith]="displayCompany"
+      (optionSelected)="onCompanySelected($event)"
+    >
+      @for (company of companySearchResults(); track company.id) {
+        <mat-option [value]="company">
+          <span class="retailer-dialog__company-title">{{ company.displayName }}</span>
+          <span class="retailer-dialog__company-subtitle">
+            {{ formatCompanySubtitle(company) }}
+          </span>
+        </mat-option>
+      }
+    </mat-autocomplete>
+
+    <mat-form-field appearance="outline" class="retailer-dialog__full-width">
+      <mat-label>Base Website URL</mat-label>
+      <input
+        matInput
+        formControlName="baseWebsiteUrl"
+        maxlength="2048"
+        placeholder="https://www.example.com"
+        inputmode="url"
+        autocomplete="url"
+      />
+      <mat-hint>Enter the HTTP or HTTPS origin without a path, query, or fragment.</mat-hint>
+      @if (retailerForm.controls.baseWebsiteUrl.touched && retailerForm.controls.baseWebsiteUrl.invalid) {
+        <mat-error>Enter a valid HTTP or HTTPS website origin.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="retailer-dialog__full-width">
+      <mat-label>Notes</mat-label>
+      <textarea
+        matInput
+        formControlName="notes"
+        maxlength="2000"
+        rows="5"
+        placeholder="Optional storefront notes"
+      ></textarea>
+      <mat-hint align="end">{{ retailerForm.controls.notes.value.length }}/2000</mat-hint>
+    </mat-form-field>
+
+    @if (retailer; as currentRetailer) {
+      <p class="retailer-dialog__status">
+        Current status: <strong>{{ currentRetailer.isActive ? 'Active' : 'Inactive' }}</strong>.
+        Change status from the Retailers table.
+      </p>
+    }
+
+    @if (saveError()) {
+      <p class="retailer-dialog__error" role="alert">{{ saveError() }}</p>
+    }
+  </form>
+
+  <app-dialog-action-bar
+    dialog-shell-actions
+    cancelLabel="Cancel"
+    [submitLabel]="submitLabel"
+    [submitFormId]="formId"
+    submitButtonType="submit"
+    [submitDisabled]="retailerForm.invalid || companySearchControl.invalid || isSaving()"
+    [cancelDisabled]="isSaving()"
+    (cancel)="closeDialog()"
+  />
+</app-dialog-shell>

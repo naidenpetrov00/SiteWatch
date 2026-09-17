@@ -1,3 +1,5 @@
+using System.Data.Common;
+using Application.Persons;
 using Application.Persons.Commands;
 using Application.SeedWork.Interfaces;
 using Ardalis.GuardClauses;
@@ -76,9 +78,33 @@ public sealed class PersonService(ApplicationDbContext dbContext) : IPersonServi
 
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)
     {
-        var deletedRows = await dbContext.Persons
-            .Where(x => x.Id == id)
-            .ExecuteDeleteAsync(cancellationToken);
+        if (await dbContext.Retailers.AnyAsync(
+                retailer => retailer.CompanyPersonId == id,
+                cancellationToken))
+        {
+            throw new PersonConflictException(
+                "This company Person is referenced by one or more retailers and cannot be deleted.");
+        }
+
+        int deletedRows;
+        try
+        {
+            deletedRows = await dbContext.Persons
+                .Where(x => x.Id == id)
+                .ExecuteDeleteAsync(cancellationToken);
+        }
+        catch (DbUpdateException exception)
+        {
+            throw new PersonConflictException(
+                "This Person is referenced by retained business data and cannot be deleted.",
+                exception);
+        }
+        catch (DbException exception)
+        {
+            throw new PersonConflictException(
+                "This Person is referenced by retained business data and cannot be deleted.",
+                exception);
+        }
 
         if (deletedRows == 0)
         {

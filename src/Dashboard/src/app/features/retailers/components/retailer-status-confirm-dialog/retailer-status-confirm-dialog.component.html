@@ -1,0 +1,19 @@
+<app-dialog-shell
+  eyebrow="Retailer Status"
+  [title]="data.activate ? 'Activate Retailer' : 'Deactivate Retailer'"
+  [subtitle]="data.activate
+    ? 'The retailer will become available to future listing and offer workflows.'
+    : 'The retailer remains available for historical references and administration.'"
+>
+  <p>
+    {{ data.activate ? 'Activate' : 'Deactivate' }} {{ data.displayName }}?
+  </p>
+
+  <app-dialog-action-bar
+    dialog-shell-actions
+    cancelLabel="Cancel"
+    [submitLabel]="data.activate ? 'Activate' : 'Deactivate'"
+    (cancel)="cancel()"
+    (submit)="confirm()"
+  />
+</app-dialog-shell>

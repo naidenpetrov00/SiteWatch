@@ -18,6 +18,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<Camera> Cameras => Set<Camera>();
     public DbSet<Person> Persons => Set<Person>();
     public DbSet<Product> Products => Set<Product>();
+    public DbSet<Retailer> Retailers => Set<Retailer>();
     public DbSet<ActivityCatalogNode> ActivityCatalogNodes => Set<ActivityCatalogNode>();
     public DbSet<ActivityRequirementSection> ActivityRequirementSections =>
         Set<ActivityRequirementSection>();

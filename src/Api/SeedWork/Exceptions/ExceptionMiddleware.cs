@@ -1,6 +1,8 @@
 ﻿using System.Text.Json;
 using Application.ActivityCatalog;
 using Application.Cameras;
+using Application.Persons;
+using Application.Retailers;
 using Ardalis.GuardClauses;
 using Application.SeedWork.Exceptions;
 using FluentValidation;
@@ -56,6 +58,32 @@ internal sealed class ExceptionMiddleware(
             {
                 status = StatusCodes.Status409Conflict,
                 title = "Activity catalog conflict",
+                detail = ex.Message,
+                instance = context.Request.Path.Value,
+            }));
+        }
+        catch (RetailerConflictException ex)
+        {
+            logger.LogInformation(ex, "A retailer operation was rejected due to a conflict.");
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            context.Response.ContentType = "application/problem+json";
+            await context.Response.WriteAsync(JsonSerializer.Serialize(new
+            {
+                status = StatusCodes.Status409Conflict,
+                title = "Retailer conflict",
+                detail = ex.Message,
+                instance = context.Request.Path.Value,
+            }));
+        }
+        catch (PersonConflictException ex)
+        {
+            logger.LogInformation(ex, "A Person operation was rejected due to retained references.");
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            context.Response.ContentType = "application/problem+json";
+            await context.Response.WriteAsync(JsonSerializer.Serialize(new
+            {
+                status = StatusCodes.Status409Conflict,
+                title = "Person conflict",
                 detail = ex.Message,
                 instance = context.Request.Path.Value,
             }));
