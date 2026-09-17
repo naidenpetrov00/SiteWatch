@@ -8,7 +8,7 @@ using NSubstitute;
 
 namespace Infrastructure.Tests.ActivityCatalog;
 
-public sealed class ActivityCatalogPersistenceMetadataTests
+public sealed class ActivityCatalogPersistenceMetadataTests 
 {
     [Fact]
     public void Catalog_node_mapping_preserves_hierarchy_discriminator_and_sibling_constraints()

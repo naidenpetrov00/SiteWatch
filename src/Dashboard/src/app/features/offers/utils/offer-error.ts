@@ -15,13 +15,14 @@ export function getOfferError(
     }
 
     if ('details' in payload && Array.isArray(payload.details)) {
-      const messages = payload.details
-        .map((detail) =>
+      const details: unknown[] = payload.details;
+      const messages = details
+        .map((detail: unknown): string =>
           detail && typeof detail === 'object' && 'message' in detail
             ? String(detail.message)
             : ''
         )
-        .filter((message) => message.length > 0);
+        .filter((message: string) => message.length > 0);
       if (messages.length > 0) {
         return messages.join(' ');
       }
