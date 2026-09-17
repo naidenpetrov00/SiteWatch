@@ -1,6 +1,8 @@
 using Api.SeedWork.Exceptions;
 using Application.ActivityCatalog;
 using Application.Cameras;
+using Application.Persons;
+using Application.Retailers;
 using Application.SeedWork.Exceptions;
 using FluentValidation;
 using FluentValidation.Results;
@@ -89,5 +91,34 @@ public sealed class ExceptionMiddlewareTests
         Assert.Contains("Activity catalog conflict", payload);
         Assert.Contains("Only empty activity folders can be deleted.", payload);
         Assert.Contains("/activity-folders/folder-42", payload);
+    }
+
+    [Theory]
+    [InlineData("retailer", "Retailer conflict", "A retailer already represents this website host.")]
+    [InlineData("person", "Person conflict", "This company Person is referenced by one or more retailers and cannot be deleted.")]
+    public async Task InvokeAsync_returns_a_problem_for_retailer_and_person_conflicts(
+        string conflictType,
+        string title,
+        string detail)
+    {
+        Exception exception = conflictType == "retailer"
+            ? new RetailerConflictException(detail)
+            : new PersonConflictException(detail);
+        var middleware = new ExceptionMiddleware(
+            _ => Task.FromException(exception),
+            NullLogger<ExceptionMiddleware>.Instance);
+        var context = new DefaultHttpContext();
+        context.Request.Path = "/retailers/retailer-42";
+        context.Response.Body = new MemoryStream();
+
+        await middleware.InvokeAsync(context);
+
+        context.Response.Body.Position = 0;
+        var payload = await new StreamReader(context.Response.Body, Encoding.UTF8).ReadToEndAsync();
+        Assert.Equal(StatusCodes.Status409Conflict, context.Response.StatusCode);
+        Assert.Equal("application/problem+json", context.Response.ContentType);
+        Assert.Contains(title, payload);
+        Assert.Contains(detail, payload);
+        Assert.Contains("/retailers/retailer-42", payload);
     }
 }

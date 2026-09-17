@@ -39,4 +39,27 @@ describe('DataTableComponent', () => {
 
     expect(fixture.nativeElement.querySelectorAll('.data-table__row--error')).toHaveLength(1);
   });
+
+  it('renders secure accessible external links and disables configured action buttons', async () => {
+    await TestBed.configureTestingModule({ imports: [DataTableComponent] }).compileComponents();
+    const fixture = TestBed.createComponent(DataTableComponent<{ name: string; url: string }>);
+    fixture.componentRef.setInput('columns', [
+      { key: 'name', label: 'Name', cellType: 'button', ariaLabelAccessor: (row) => `Edit ${row.name}`, buttonDisabledPredicate: () => true },
+      { key: 'url', label: 'Website', cellType: 'external-link', linkHrefAccessor: (row) => row.url, ariaLabelAccessor: () => 'Open website' }
+    ]);
+    fixture.componentRef.setInput('rows', [{ name: 'Example', url: 'https://example.com' }]);
+    fixture.componentRef.setInput('filteredRowsTotal', 1);
+    fixture.componentRef.setInput('overallRowsTotal', 1);
+
+    await fixture.whenStable();
+
+    const button = fixture.nativeElement.querySelector('button.data-table__cell-button') as HTMLButtonElement;
+    const link = fixture.nativeElement.querySelector('a.data-table__cell-button') as HTMLAnchorElement;
+    expect(button.disabled).toBe(true);
+    expect(button.getAttribute('aria-label')).toBe('Edit Example');
+    expect(link.href).toBe('https://example.com/');
+    expect(link.getAttribute('aria-label')).toBe('Open website');
+    expect(link.target).toBe('_blank');
+    expect(link.rel).toBe('noopener noreferrer');
+  });
 });
