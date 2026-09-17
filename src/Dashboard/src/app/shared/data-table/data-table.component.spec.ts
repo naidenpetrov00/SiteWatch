@@ -44,8 +44,8 @@ describe('DataTableComponent', () => {
     await TestBed.configureTestingModule({ imports: [DataTableComponent] }).compileComponents();
     const fixture = TestBed.createComponent(DataTableComponent<{ name: string; url: string }>);
     fixture.componentRef.setInput('columns', [
-      { key: 'name', label: 'Name', cellType: 'button', ariaLabelAccessor: (row) => `Edit ${row.name}`, buttonDisabledPredicate: () => true },
-      { key: 'url', label: 'Website', cellType: 'external-link', linkHrefAccessor: (row) => row.url, ariaLabelAccessor: () => 'Open website' }
+      { key: 'name', label: 'Name', cellType: 'button', ariaLabelAccessor: (row: { name: string; url: string }) => `Edit ${row.name}`, buttonDisabledPredicate: () => true },
+      { key: 'url', label: 'Website', cellType: 'external-link', linkHrefAccessor: (row: { name: string; url: string }) => row.url, ariaLabelAccessor: () => 'Open website' }
     ]);
     fixture.componentRef.setInput('rows', [{ name: 'Example', url: 'https://example.com' }]);
     fixture.componentRef.setInput('filteredRowsTotal', 1);

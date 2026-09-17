@@ -20,10 +20,9 @@ describe('ManageRetailersPage', () => {
     await TestBed.configureTestingModule({
       imports: [ManageRetailersPage],
       providers: [
-        { provide: DashboardRetailersService, useValue: retailers },
-        { provide: MatDialog, useValue: dialog }
+        { provide: DashboardRetailersService, useValue: retailers }
       ]
-    }).compileComponents();
+    }).overrideProvider(MatDialog, { useValue: dialog }).compileComponents();
     vi.clearAllMocks();
   });
 
