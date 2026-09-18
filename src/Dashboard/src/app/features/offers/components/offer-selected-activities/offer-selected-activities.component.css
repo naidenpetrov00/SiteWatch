@@ -1,0 +1,132 @@
+:host {
+  display: block;
+}
+
+.offer-selected {
+  display: grid;
+  gap: 1rem;
+}
+
+.offer-selected__heading,
+.offer-selected__activity > header,
+.offer-selected__section,
+.offer-selected__actions {
+  display: flex;
+  align-items: center;
+}
+
+.offer-selected__heading,
+.offer-selected__activity > header {
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.offer-selected__eyebrow {
+  margin: 0 0 0.25rem;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.offer-selected h2,
+.offer-selected h3,
+.offer-selected__activity p {
+  margin: 0;
+}
+
+.offer-selected__readonly,
+.offer-selected__activity p,
+.offer-selected__section-copy span,
+.offer-selected__no-sections {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.offer-selected__list,
+.offer-selected__sections {
+  display: grid;
+  gap: 1rem;
+}
+
+.offer-selected__activity {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 1rem;
+  background: var(--mat-sys-surface-container-lowest);
+}
+
+.offer-selected__number {
+  display: block;
+  margin-bottom: 0.2rem;
+  color: var(--mat-sys-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.offer-selected__section {
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface-container-low);
+}
+
+.offer-selected__section-copy {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.offer-selected__section mat-form-field {
+  width: min(100%, 19rem);
+}
+
+.offer-selected__actions {
+  justify-content: flex-end;
+}
+
+.offer-selected__empty {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  padding: 3rem 1rem;
+  border: 1px dashed var(--mat-sys-outline-variant);
+  border-radius: 1rem;
+  color: var(--mat-sys-on-surface-variant);
+  text-align: center;
+}
+
+.offer-selected__empty p,
+.offer-selected__feedback {
+  margin: 0;
+}
+
+.offer-selected__feedback {
+  padding: 0.8rem 1rem;
+  border-radius: 0.75rem;
+}
+
+.offer-selected__feedback--success {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.offer-selected__feedback--error {
+  color: var(--mat-sys-error);
+  background: var(--mat-sys-error-container);
+}
+
+@media (max-width: 40rem) {
+  .offer-selected__heading,
+  .offer-selected__activity > header,
+  .offer-selected__section {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .offer-selected__section mat-form-field {
+    width: 100%;
+  }
+}

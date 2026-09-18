@@ -19,6 +19,9 @@ import {
   OfferArchiveConfirmDialogComponent,
   OfferArchiveConfirmDialogData
 } from '../components/offer-archive-confirm-dialog/offer-archive-confirm-dialog.component';
+import { OfferActivityBrowserComponent } from '../components/offer-activity-browser/offer-activity-browser.component';
+import { OfferProductRequirementsComponent } from '../components/offer-product-requirements/offer-product-requirements.component';
+import { OfferSelectedActivitiesComponent } from '../components/offer-selected-activities/offer-selected-activities.component';
 import { OffersService } from '../services/offers.service';
 import { getOfferError } from '../utils/offer-error';
 
@@ -29,6 +32,9 @@ import { getOfferError } from '../utils/offer-error';
     MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
+    OfferActivityBrowserComponent,
+    OfferProductRequirementsComponent,
+    OfferSelectedActivitiesComponent,
     ReactiveFormsModule,
     RouterLink
   ],
@@ -40,6 +46,7 @@ export class OfferWorkspacePage {
   private readonly offersService = inject(OffersService);
   private readonly dialog = inject(MatDialog);
   private readonly formBuilder = inject(FormBuilder);
+  private configuredOfferId: string | null = null;
 
   readonly siteId = input.required<string>();
   readonly offerId = input.required<string>();
@@ -62,13 +69,20 @@ export class OfferWorkspacePage {
         return;
       }
 
-      this.metadataForm.reset(
-        {
-          title: offer.title ?? '',
-          notes: offer.notes ?? ''
-        },
-        { emitEvent: false }
-      );
+      if (
+        this.configuredOfferId !== offer.id ||
+        !this.metadataForm.dirty ||
+        offer.status !== 'Draft'
+      ) {
+        this.metadataForm.reset(
+          {
+            title: offer.title ?? '',
+            notes: offer.notes ?? ''
+          },
+          { emitEvent: false }
+        );
+      }
+      this.configuredOfferId = offer.id;
       if (offer.status === 'Draft') {
         this.metadataForm.enable({ emitEvent: false });
       } else {
@@ -96,6 +110,7 @@ export class OfferWorkspacePage {
         title: normalizeOptional(value.title),
         notes: normalizeOptional(value.notes)
       });
+      this.metadataForm.markAsPristine();
       this.pageMessage.set('Offer metadata saved.');
     } catch (error) {
       this.pageError.set(getOfferError(error));
@@ -130,6 +145,11 @@ export class OfferWorkspacePage {
     } catch (error) {
       this.pageError.set(getOfferError(error));
     }
+  }
+
+  onActivityAdded(): void {
+    this.pageError.set(null);
+    this.pageMessage.set('Activity added and product requirements recalculated.');
   }
 
   isLoading(): boolean {

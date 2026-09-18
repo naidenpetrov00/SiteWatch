@@ -21,6 +21,10 @@ public interface IApplicationDbContext
     DbSet<Issue> Issues { get; }
     DbSet<IssueAttachment> IssueAttachments { get; }
     DbSet<Offer> Offers { get; }
+    DbSet<OfferActivity> OfferActivities { get; }
+    DbSet<OfferActivitySection> OfferActivitySections { get; }
+    DbSet<OfferProductContribution> OfferProductContributions { get; }
+    DbSet<OfferProductLine> OfferProductLines { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

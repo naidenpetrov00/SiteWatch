@@ -144,5 +144,36 @@
         </dl>
       </aside>
     </div>
+
+    <section class="offer-workspace__stage-two" aria-labelledby="offer-stage-two-heading">
+      <div class="offer-workspace__stage-heading">
+        <div>
+          <p class="offer-workspace__eyebrow">Stage 2</p>
+          <h2 id="offer-stage-two-heading">Activities and Product Requirements</h2>
+        </div>
+        @if (!isDraft()) {
+          <p class="offer-workspace__readonly-note">
+            This calculation snapshot is read-only.
+          </p>
+        }
+      </div>
+
+      @if (isDraft()) {
+        <app-offer-activity-browser
+          [siteId]="siteId()"
+          [offerId]="offerId()"
+          (activityAdded)="onActivityAdded()"
+        />
+      }
+
+      <app-offer-selected-activities
+        [siteId]="siteId()"
+        [offerId]="offerId()"
+        [activities]="currentOffer.activities"
+        [editable]="isDraft()"
+      />
+
+      <app-offer-product-requirements [products]="currentOffer.products" />
+    </section>
   }
 </main>

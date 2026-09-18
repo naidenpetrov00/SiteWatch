@@ -29,6 +29,11 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<Issue> Issues => Set<Issue>();
     public DbSet<IssueAttachment> IssueAttachments => Set<IssueAttachment>();
     public DbSet<Offer> Offers => Set<Offer>();
+    public DbSet<OfferActivity> OfferActivities => Set<OfferActivity>();
+    public DbSet<OfferActivitySection> OfferActivitySections => Set<OfferActivitySection>();
+    public DbSet<OfferProductContribution> OfferProductContributions =>
+        Set<OfferProductContribution>();
+    public DbSet<OfferProductLine> OfferProductLines => Set<OfferProductLine>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

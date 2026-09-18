@@ -11,10 +11,15 @@ import { buildApiUrl } from '../../../core/api/api-url';
 import { DataTableState } from '../../../shared/data-table/data-table.types';
 import {
   CreateOfferResponse,
+  AddOfferActivityRequest,
+  OfferActivityCandidate,
+  OfferActivityCatalogNode,
   OfferDetails,
   OfferSiteIdentity,
   OfferSummary,
   SiteOffersResponse,
+  RemoveOfferActivityRequest,
+  UpdateOfferActivityMeasurementsRequest,
   UpdateOfferMetadataRequest
 } from '../models/offer.models';
 
@@ -29,6 +34,14 @@ interface SiteOffersQueryState {
 interface OfferRouteIdentity {
   siteId: string;
   offerId: string;
+}
+
+interface OfferCatalogRouteIdentity extends OfferRouteIdentity {
+  searchTerm: string;
+}
+
+interface OfferActivityCreatedResponse {
+  id: string;
 }
 
 const DEFAULT_QUERY_STATE: SiteOffersQueryState = {
@@ -47,6 +60,11 @@ export class OffersService {
   private readonly detailRoute = signal<OfferRouteIdentity>({
     siteId: '',
     offerId: ''
+  });
+  private readonly catalogRoute = signal<OfferCatalogRouteIdentity>({
+    siteId: '',
+    offerId: '',
+    searchTerm: ''
   });
   private readonly queryState = signal<SiteOffersQueryState>(DEFAULT_QUERY_STATE);
 
@@ -104,6 +122,38 @@ export class OffersService {
     };
   });
 
+  readonly activityCatalogQuery = injectQuery<
+    readonly OfferActivityCatalogNode[]
+  >(() => {
+    const route = this.catalogRoute();
+    return {
+      queryKey: [
+        'offers',
+        'site',
+        route.siteId,
+        'detail',
+        route.offerId,
+        'activity-catalog',
+        route.searchTerm
+      ] as const,
+      queryFn: () => {
+        let params = new HttpParams();
+        if (route.searchTerm) {
+          params = params.set('searchTerm', route.searchTerm);
+        }
+        return firstValueFrom(
+          this.http.get<readonly OfferActivityCatalogNode[]>(
+            buildApiUrl(
+              `/sites/${route.siteId}/offers/${route.offerId}/activity-catalog`
+            ),
+            { params }
+          )
+        );
+      },
+      enabled: route.siteId.length > 0 && route.offerId.length > 0
+    };
+  });
+
   readonly createOfferMutation = injectMutation<
     CreateOfferResponse,
     Error,
@@ -150,6 +200,60 @@ export class OffersService {
     })
   );
 
+  readonly addActivityMutation = injectMutation<
+    OfferActivityCreatedResponse,
+    Error,
+    AddOfferActivityRequest
+  >(() => ({
+    mutationKey: ['offers', 'activity', 'add'],
+    mutationFn: ({ siteId, offerId, activityId, sectionMeasurements }) =>
+      firstValueFrom(
+        this.http.post<OfferActivityCreatedResponse>(
+          buildApiUrl(`/sites/${siteId}/offers/${offerId}/activities`),
+          { activityId, sectionMeasurements }
+        )
+      ),
+    onSuccess: async (_, request) =>
+      this.invalidateOfferWorkspace(request.siteId, request.offerId)
+  }));
+
+  readonly removeActivityMutation = injectMutation<
+    void,
+    Error,
+    RemoveOfferActivityRequest
+  >(() => ({
+    mutationKey: ['offers', 'activity', 'remove'],
+    mutationFn: ({ siteId, offerId, offerActivityId }) =>
+      firstValueFrom(
+        this.http.delete<void>(
+          buildApiUrl(
+            `/sites/${siteId}/offers/${offerId}/activities/${offerActivityId}`
+          )
+        )
+      ),
+    onSuccess: async (_, request) =>
+      this.invalidateOfferWorkspace(request.siteId, request.offerId)
+  }));
+
+  readonly updateMeasurementsMutation = injectMutation<
+    void,
+    Error,
+    UpdateOfferActivityMeasurementsRequest
+  >(() => ({
+    mutationKey: ['offers', 'activity', 'measurements'],
+    mutationFn: ({ siteId, offerId, offerActivityId, sectionMeasurements }) =>
+      firstValueFrom(
+        this.http.put<void>(
+          buildApiUrl(
+            `/sites/${siteId}/offers/${offerId}/activities/${offerActivityId}/section-measurements`
+          ),
+          { sectionMeasurements }
+        )
+      ),
+    onSuccess: async (_, request) =>
+      this.invalidateOfferWorkspace(request.siteId, request.offerId)
+  }));
+
   configureList(siteId: string): void {
     if (this.listSiteId() !== siteId) {
       this.listSiteId.set(siteId);
@@ -161,6 +265,26 @@ export class OffersService {
     const current = this.detailRoute();
     if (current.siteId !== siteId || current.offerId !== offerId) {
       this.detailRoute.set({ siteId, offerId });
+    }
+  }
+
+  configureActivityCatalog(
+    siteId: string,
+    offerId: string,
+    searchTerm: string
+  ): void {
+    const normalizedSearchTerm = searchTerm.trim();
+    const current = this.catalogRoute();
+    if (
+      current.siteId !== siteId ||
+      current.offerId !== offerId ||
+      current.searchTerm !== normalizedSearchTerm
+    ) {
+      this.catalogRoute.set({
+        siteId,
+        offerId,
+        searchTerm: normalizedSearchTerm
+      });
     }
   }
 
@@ -189,10 +313,54 @@ export class OffersService {
     return this.archiveOfferMutation.mutateAsync({ siteId, offerId });
   }
 
+  getActivityCandidate(
+    siteId: string,
+    offerId: string,
+    activityId: string
+  ): Promise<OfferActivityCandidate> {
+    return firstValueFrom(
+      this.http.get<OfferActivityCandidate>(
+        buildApiUrl(
+          `/sites/${siteId}/offers/${offerId}/activity-catalog/${activityId}`
+        )
+      )
+    );
+  }
+
+  addActivity(
+    request: AddOfferActivityRequest
+  ): Promise<OfferActivityCreatedResponse> {
+    return this.addActivityMutation.mutateAsync(request);
+  }
+
+  removeActivity(request: RemoveOfferActivityRequest): Promise<void> {
+    return this.removeActivityMutation.mutateAsync(request);
+  }
+
+  updateActivityMeasurements(
+    request: UpdateOfferActivityMeasurementsRequest
+  ): Promise<void> {
+    return this.updateMeasurementsMutation.mutateAsync(request);
+  }
+
   private async invalidateSiteOffers(siteId: string): Promise<void> {
     await this.queryClient.invalidateQueries({
       queryKey: ['offers', 'site', siteId]
     });
+  }
+
+  private async invalidateOfferWorkspace(
+    siteId: string,
+    offerId: string
+  ): Promise<void> {
+    await Promise.all([
+      this.queryClient.invalidateQueries({
+        queryKey: ['offers', 'site', siteId, 'detail', offerId]
+      }),
+      this.queryClient.invalidateQueries({
+        queryKey: ['offers', 'site', siteId, 'list']
+      })
+    ]);
   }
 
   private buildQueryParams(state: SiteOffersQueryState): HttpParams {

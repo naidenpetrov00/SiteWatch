@@ -15,11 +15,18 @@
 }
 
 .offer-workspace__header,
-.offer-workspace__section-heading {
+.offer-workspace__section-heading,
+.offer-workspace__stage-heading {
   display: flex;
   align-items: start;
   justify-content: space-between;
   gap: 1rem;
+}
+
+.offer-workspace__stage-two {
+  display: grid;
+  gap: 1.5rem;
+  padding-top: 0.5rem;
 }
 
 .offer-workspace__eyebrow {
@@ -144,7 +151,8 @@
 
 @media (max-width: 40rem) {
   .offer-workspace__header,
-  .offer-workspace__section-heading {
+  .offer-workspace__section-heading,
+  .offer-workspace__stage-heading {
     flex-direction: column;
   }
 }

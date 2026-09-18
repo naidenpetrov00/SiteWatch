@@ -14,9 +14,28 @@ public interface IOfferService
         Guid siteId,
         Guid offerId,
         CancellationToken cancellationToken);
+    Task<Guid> AddActivityAsync(
+        AddOfferActivityCommand request,
+        CancellationToken cancellationToken);
+    Task RemoveActivityAsync(
+        Guid siteId,
+        Guid offerId,
+        Guid offerActivityId,
+        CancellationToken cancellationToken);
+    Task UpdateActivityMeasurementsAsync(
+        UpdateOfferActivityMeasurementsCommand request,
+        CancellationToken cancellationToken);
     Task<OfferDetailsDto> GetByIdAsync(
         Guid siteId,
         Guid offerId,
+        CancellationToken cancellationToken);
+    Task<IReadOnlyList<OfferActivityCatalogNodeDto>> GetActivityCatalogAsync(
+        OfferActivityCatalogQuery request,
+        CancellationToken cancellationToken);
+    Task<OfferActivityCandidateDto> GetActivityCandidateAsync(
+        Guid siteId,
+        Guid offerId,
+        Guid activityId,
         CancellationToken cancellationToken);
     Task<PagedResult<OfferSummaryDto>> GetBySiteAsync(
         SiteOffersQuery request,

@@ -1,0 +1,114 @@
+<section class="offer-activity-browser" aria-labelledby="offer-activity-browser-heading">
+  <div class="offer-activity-browser__heading">
+    <div>
+      <p class="offer-activity-browser__eyebrow">Activity Catalog</p>
+      <h2 id="offer-activity-browser-heading">Add Activities</h2>
+    </div>
+    <div class="offer-activity-browser__tree-actions">
+      <button mat-icon-button type="button" aria-label="Expand all folders" (click)="expandAll()">
+        <mat-icon>unfold_more</mat-icon>
+      </button>
+      <button mat-icon-button type="button" aria-label="Collapse all folders" (click)="collapseAll()">
+        <mat-icon>unfold_less</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <mat-form-field appearance="outline" class="offer-activity-browser__search">
+    <mat-label>Search activities</mat-label>
+    <mat-icon matPrefix>search</mat-icon>
+    <input
+      matInput
+      type="search"
+      inputmode="search"
+      autocomplete="off"
+      maxlength="200"
+      [formControl]="searchControl"
+      placeholder="Search by activity name or number"
+    />
+    @if (searchControl.value) {
+      <button mat-icon-button matSuffix type="button" aria-label="Clear activity search" (click)="clearSearch()">
+        <mat-icon>close</mat-icon>
+      </button>
+    }
+    @if (searchControl.hasError('maxlength')) {
+      <mat-error>Search must be at most 200 characters.</mat-error>
+    }
+  </mat-form-field>
+
+  @if (errorMessage()) {
+    <p class="offer-activity-browser__error" role="alert">{{ errorMessage() }}</p>
+  }
+
+  <div class="offer-activity-browser__tree-region">
+    @if (isLoading()) {
+      <p class="offer-activity-browser__state" aria-live="polite">Loading activities…</p>
+    } @else if (hasLoadError()) {
+      <p class="offer-activity-browser__state offer-activity-browser__error" role="alert">
+        The Activity Catalog could not be loaded.
+      </p>
+    } @else if (treeNodes().length === 0) {
+      <div class="offer-activity-browser__state">
+        <mat-icon>search_off</mat-icon>
+        <p>{{ appliedSearch() ? 'No activities match this search.' : 'The Activity Catalog is empty.' }}</p>
+      </div>
+    } @else {
+      <mat-tree
+        #offerCatalogTree
+        class="offer-activity-tree"
+        [dataSource]="treeNodes()"
+        [childrenAccessor]="childrenAccessor"
+        [expansionKey]="expansionKey"
+        [trackBy]="trackBy"
+      >
+        <mat-tree-node
+          *matTreeNodeDef="let node"
+          matTreeNodePadding
+          [cdkTreeNodeTypeaheadLabel]="node.name"
+        >
+          <div
+            class="offer-activity-tree__row"
+            [class.offer-activity-tree__row--selected]="node.isSelected"
+            [class.offer-activity-tree__row--archived]="node.status === 'Archived'"
+          >
+            @if (node.kind === 'folder') {
+              <button
+                mat-icon-button
+                matTreeNodeToggle
+                type="button"
+                [attr.aria-label]="(offerCatalogTree.isExpanded(node) ? 'Collapse ' : 'Expand ') + node.name"
+              >
+                <mat-icon>{{ offerCatalogTree.isExpanded(node) ? 'expand_more' : 'chevron_right' }}</mat-icon>
+              </button>
+              <mat-icon class="offer-activity-tree__kind">
+                {{ offerCatalogTree.isExpanded(node) ? 'folder_open' : 'folder' }}
+              </mat-icon>
+            } @else {
+              <span class="offer-activity-tree__spacer" aria-hidden="true"></span>
+              <mat-icon class="offer-activity-tree__kind">assignment</mat-icon>
+            }
+
+            <span class="offer-activity-tree__label">{{ node.name }}</span>
+            @if (node.kind === 'activity') {
+              <span class="offer-activity-tree__number">#{{ node.numberId }}</span>
+              @if (node.isSelected) {
+                <span class="offer-activity-tree__badge">Added</span>
+              } @else if (node.status === 'Archived') {
+                <span class="offer-activity-tree__badge">Archived</span>
+              }
+              <button
+                mat-stroked-button
+                type="button"
+                [disabled]="!canAdd(node)"
+                [attr.aria-label]="'Add ' + node.name + ' to the Offer'"
+                (click)="openAddDialog(node)"
+              >
+                {{ loadingActivityId() === node.id ? 'Loading…' : 'Add' }}
+              </button>
+            }
+          </div>
+        </mat-tree-node>
+      </mat-tree>
+    }
+  </div>
+</section>
