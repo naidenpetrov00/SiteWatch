@@ -1,8 +1,10 @@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  Injector,
   ViewChild,
   computed,
   effect,
@@ -51,11 +53,21 @@ export class OfferActivityBrowserComponent {
   private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
   private readonly formBuilder = inject(FormBuilder);
+  private readonly injector = inject(Injector);
+  private catalogTree?: MatTree<OfferActivityCatalogTreeNode, string>;
+  private previousSearchTerm = '';
+  private normalExpandedFolderIds = new Set<string>();
+  private restoreNormalExpansion = false;
+  private scheduledSearchExpansion: string | null = null;
+  private normalExpansionRestoreScheduled = false;
 
-  @ViewChild('offerCatalogTree') private catalogTree?: MatTree<
-    OfferActivityCatalogTreeNode,
-    string
-  >;
+  @ViewChild('offerCatalogTree')
+  set offerCatalogTree(
+    tree: MatTree<OfferActivityCatalogTreeNode, string> | undefined
+  ) {
+    this.catalogTree = tree;
+    this.applyPendingExpansion();
+  }
 
   readonly siteId = input.required<string>();
   readonly offerId = input.required<string>();
@@ -91,6 +103,26 @@ export class OfferActivityBrowserComponent {
         this.appliedSearch()
       )
     );
+    effect(() => {
+      const searchTerm = this.appliedSearch();
+      const treeNodes = this.treeNodes();
+
+      if (searchTerm) {
+        if (!this.previousSearchTerm) {
+          this.normalExpandedFolderIds = this.getExpandedFolderIds();
+        }
+        this.previousSearchTerm = searchTerm;
+        this.restoreNormalExpansion = false;
+        this.scheduleSearchResultExpansion(searchTerm, treeNodes);
+        return;
+      }
+
+      if (this.previousSearchTerm) {
+        this.previousSearchTerm = '';
+        this.restoreNormalExpansion = true;
+      }
+      this.scheduleNormalExpansionRestore(treeNodes);
+    });
   }
 
   isLoading(): boolean {
@@ -193,5 +225,113 @@ export class OfferActivityBrowserComponent {
     };
     sortNodes(roots, new Set());
     return roots;
+  }
+
+  private applyPendingExpansion(): void {
+    const treeNodes = this.treeNodes();
+    const searchTerm = this.appliedSearch();
+    if (searchTerm) {
+      this.scheduleSearchResultExpansion(searchTerm, treeNodes);
+    } else {
+      this.scheduleNormalExpansionRestore(treeNodes);
+    }
+  }
+
+  private scheduleSearchResultExpansion(
+    searchTerm: string,
+    treeNodes: readonly OfferActivityCatalogTreeNode[]
+  ): void {
+    const tree = this.catalogTree;
+    if (
+      !tree ||
+      treeNodes.length === 0 ||
+      this.scheduledSearchExpansion === searchTerm
+    ) {
+      return;
+    }
+
+    this.scheduledSearchExpansion = searchTerm;
+    afterNextRender(
+      {
+        write: () => {
+          if (this.scheduledSearchExpansion === searchTerm) {
+            this.scheduledSearchExpansion = null;
+          }
+          if (
+            this.appliedSearch() === searchTerm &&
+            this.catalogTree === tree &&
+            !this.isLoading()
+          ) {
+            tree.expandAll();
+          }
+        }
+      },
+      { injector: this.injector }
+    );
+  }
+
+  private scheduleNormalExpansionRestore(
+    treeNodes: readonly OfferActivityCatalogTreeNode[]
+  ): void {
+    const tree = this.catalogTree;
+    if (
+      !this.restoreNormalExpansion ||
+      !tree ||
+      treeNodes.length === 0 ||
+      this.normalExpansionRestoreScheduled
+    ) {
+      return;
+    }
+
+    this.normalExpansionRestoreScheduled = true;
+    afterNextRender(
+      {
+        write: () => {
+          this.normalExpansionRestoreScheduled = false;
+          if (
+            !this.appliedSearch() &&
+            this.catalogTree === tree &&
+            !this.isLoading()
+          ) {
+            tree.collapseAll();
+            this.expandFolders(treeNodes, tree, this.normalExpandedFolderIds);
+            this.restoreNormalExpansion = false;
+          }
+        }
+      },
+      { injector: this.injector }
+    );
+  }
+
+  private getExpandedFolderIds(): Set<string> {
+    const tree = this.catalogTree;
+    if (!tree) {
+      return new Set();
+    }
+
+    const folderIds = new Set<string>();
+    const visit = (nodes: readonly OfferActivityCatalogTreeNode[]): void => {
+      for (const node of nodes) {
+        if (node.kind === 'folder' && tree.isExpanded(node)) {
+          folderIds.add(node.id);
+        }
+        visit(node.children);
+      }
+    };
+    visit(this.treeNodes());
+    return folderIds;
+  }
+
+  private expandFolders(
+    nodes: readonly OfferActivityCatalogTreeNode[],
+    tree: MatTree<OfferActivityCatalogTreeNode, string>,
+    folderIds: ReadonlySet<string>
+  ): void {
+    for (const node of nodes) {
+      if (node.kind === 'folder' && folderIds.has(node.id)) {
+        tree.expand(node);
+      }
+      this.expandFolders(node.children, tree, folderIds);
+    }
   }
 }

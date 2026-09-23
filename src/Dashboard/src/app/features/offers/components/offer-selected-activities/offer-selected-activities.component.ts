@@ -5,7 +5,8 @@ import {
   effect,
   inject,
   input,
-  signal
+  signal,
+  untracked
 } from '@angular/core';
 import {
   FormArray,
@@ -86,6 +87,8 @@ export class OfferSelectedActivitiesComponent {
   readonly offersService = inject(OffersService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly dialog = inject(MatDialog);
+  private configuredOfferIdentity: string | null = null;
+  private sectionIdsByActivity = new Map<string, readonly string[]>();
 
   readonly siteId = input.required<string>();
   readonly offerId = input.required<string>();
@@ -105,27 +108,19 @@ export class OfferSelectedActivitiesComponent {
 
   constructor() {
     effect(() => {
+      const offerIdentity = `${this.siteId()}/${this.offerId()}`;
       const editable = this.editable();
-      const forms = new Map<string, ActivityMeasurementsForm>();
-      for (const activity of this.activities()) {
-        const controls = activity.sections.map((section) =>
-          this.formBuilder.nonNullable.control(
-            { value: section.requestedMeasurement, disabled: !editable },
-            [
-              Validators.required,
-              Validators.min(Number.MIN_VALUE),
-              fourDecimalPlaces()
-            ]
-          )
-        );
-        forms.set(
-          activity.id,
-          this.formBuilder.group({
-            measurements: this.formBuilder.array(controls)
-          })
-        );
+      if (this.configuredOfferIdentity !== offerIdentity) {
+        this.forms.set(new Map());
+        this.sectionIdsByActivity = new Map();
+        this.configuredOfferIdentity = offerIdentity;
       }
-      this.forms.set(forms);
+
+      this.reconcileForms(
+        this.activities(),
+        editable,
+        untracked(() => this.forms())
+      );
     });
   }
 
@@ -156,6 +151,20 @@ export class OfferSelectedActivitiesComponent {
             form.controls.measurements.controls[index].getRawValue()
         }))
       });
+      form.reset(
+        {
+          measurements: form.controls.measurements.controls.map((control) =>
+            control.getRawValue()
+          )
+        },
+        { emitEvent: false }
+      );
+      this.setFormEditable(form, this.editable());
+      this.reconcileForms(
+        this.activities(),
+        this.editable(),
+        untracked(() => this.forms())
+      );
       this.feedbackMessage.set(`Measurements saved for ${activity.name}.`);
     } catch (error) {
       this.errorMessage.set(getOfferError(error));
@@ -196,5 +205,124 @@ export class OfferSelectedActivitiesComponent {
   private clearFeedback(): void {
     this.feedbackMessage.set(null);
     this.errorMessage.set(null);
+  }
+
+  private reconcileForms(
+    activities: readonly OfferActivity[],
+    editable: boolean,
+    existingForms: ReadonlyMap<string, ActivityMeasurementsForm>
+  ): void {
+    const forms = new Map<string, ActivityMeasurementsForm>();
+    const sectionIdsByActivity = new Map<string, readonly string[]>();
+
+    for (const activity of activities) {
+      const existingForm = existingForms.get(activity.id);
+      const previousSectionIds = this.sectionIdsByActivity.get(activity.id) ?? [];
+      const form = existingForm
+        ? this.reconcileActivityForm(
+            existingForm,
+            previousSectionIds,
+            activity,
+            editable
+          )
+        : this.createActivityForm(activity, editable);
+
+      forms.set(activity.id, form);
+      sectionIdsByActivity.set(
+        activity.id,
+        activity.sections.map((section) => section.id)
+      );
+    }
+
+    this.sectionIdsByActivity = sectionIdsByActivity;
+    this.forms.set(forms);
+  }
+
+  private reconcileActivityForm(
+    form: ActivityMeasurementsForm,
+    previousSectionIds: readonly string[],
+    activity: OfferActivity,
+    editable: boolean
+  ): ActivityMeasurementsForm {
+    const controlsBySectionId = new Map<string, FormControl<number>>(
+      previousSectionIds.map(
+        (sectionId, index) =>
+          [
+            sectionId,
+            form.controls.measurements.controls[index]
+          ] as const
+      )
+    );
+    const controls = activity.sections.map((section) => {
+      const control = controlsBySectionId.get(section.id);
+      if (!control) {
+        return this.createMeasurementControl(section.requestedMeasurement, editable);
+      }
+
+      if (!control.dirty) {
+        control.reset(
+          { value: section.requestedMeasurement, disabled: !editable },
+          { emitEvent: false }
+        );
+      } else if (editable) {
+        control.enable({ emitEvent: false });
+      } else {
+        control.disable({ emitEvent: false });
+      }
+      return control;
+    });
+
+    if (!this.hasSameSectionOrder(previousSectionIds, activity)) {
+      form.setControl('measurements', this.formBuilder.array(controls));
+    }
+    this.setFormEditable(form, editable);
+    return form;
+  }
+
+  private createActivityForm(
+    activity: OfferActivity,
+    editable: boolean
+  ): ActivityMeasurementsForm {
+    return this.formBuilder.group({
+      measurements: this.formBuilder.array(
+        activity.sections.map((section) =>
+          this.createMeasurementControl(section.requestedMeasurement, editable)
+        )
+      )
+    });
+  }
+
+  private createMeasurementControl(
+    value: number,
+    editable: boolean
+  ): FormControl<number> {
+    return this.formBuilder.nonNullable.control(
+      { value, disabled: !editable },
+      [
+        Validators.required,
+        Validators.min(Number.MIN_VALUE),
+        fourDecimalPlaces()
+      ]
+    );
+  }
+
+  private hasSameSectionOrder(
+    previousSectionIds: readonly string[],
+    activity: OfferActivity
+  ): boolean {
+    return (
+      previousSectionIds.length === activity.sections.length &&
+      previousSectionIds.every(
+        (sectionId, index) => sectionId === activity.sections[index].id
+      )
+    );
+  }
+
+  private setFormEditable(form: ActivityMeasurementsForm, editable: boolean): void {
+    if (editable) {
+      form.enable({ emitEvent: false });
+    } else {
+      form.disable({ emitEvent: false });
+    }
   }
 }
