@@ -13,6 +13,8 @@ public interface IApplicationDbContext
     DbSet<Person> Persons { get; }
     DbSet<Product> Products { get; }
     DbSet<Retailer> Retailers { get; }
+    DbSet<RetailerListing> RetailerListings { get; }
+    DbSet<RetailerPriceObservation> RetailerPriceObservations { get; }
     DbSet<ActivityCatalogNode> ActivityCatalogNodes { get; }
     DbSet<ActivityRequirementSection> ActivityRequirementSections { get; }
     DbSet<ActivityProductRequirement> ActivityProductRequirements { get; }
@@ -25,6 +27,8 @@ public interface IApplicationDbContext
     DbSet<OfferActivitySection> OfferActivitySections { get; }
     DbSet<OfferProductContribution> OfferProductContributions { get; }
     DbSet<OfferProductLine> OfferProductLines { get; }
+    DbSet<OfferRetailerComparison> OfferRetailerComparisons { get; }
+    DbSet<OfferProductPriceSelection> OfferProductPriceSelections { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

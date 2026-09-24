@@ -10,15 +10,22 @@ import { firstValueFrom } from 'rxjs';
 import { buildApiUrl } from '../../../core/api/api-url';
 import { DataTableState } from '../../../shared/data-table/data-table.types';
 import {
-  CreateOfferResponse,
   AddOfferActivityRequest,
+  AddOfferPricingRetailerRequest,
+  CreateOfferResponse,
   OfferActivityCandidate,
   OfferActivityCatalogNode,
   OfferDetails,
+  OfferPricingMatrix,
+  OfferPricingProductRow,
+  OfferRetailerPriceCell,
   OfferSiteIdentity,
   OfferSummary,
-  SiteOffersResponse,
+  RecordManualOfferPriceRequest,
   RemoveOfferActivityRequest,
+  RetailerPriceHistory,
+  SelectOfferProductPriceRequest,
+  SiteOffersResponse,
   UpdateOfferActivityMeasurementsRequest,
   UpdateOfferMetadataRequest
 } from '../models/offer.models';
@@ -116,6 +123,20 @@ export class OffersService {
         firstValueFrom(
           this.http.get<OfferDetails>(
             buildApiUrl(`/sites/${route.siteId}/offers/${route.offerId}`)
+          )
+        ),
+      enabled: route.siteId.length > 0 && route.offerId.length > 0
+    };
+  });
+
+  readonly pricingMatrixQuery = injectQuery<OfferPricingMatrix>(() => {
+    const route = this.detailRoute();
+    return {
+      queryKey: this.pricingQueryKey(route.siteId, route.offerId),
+      queryFn: () =>
+        firstValueFrom(
+          this.http.get<OfferPricingMatrix>(
+            buildApiUrl(`/sites/${route.siteId}/offers/${route.offerId}/pricing`)
           )
         ),
       enabled: route.siteId.length > 0 && route.offerId.length > 0
@@ -254,6 +275,129 @@ export class OffersService {
       this.invalidateOfferWorkspace(request.siteId, request.offerId)
   }));
 
+  readonly addPricingRetailerMutation = injectMutation<
+    OfferPricingMatrix,
+    Error,
+    AddOfferPricingRetailerRequest
+  >(() => ({
+    mutationKey: ['offers', 'pricing', 'retailer', 'add'],
+    mutationFn: ({ siteId, offerId, retailerId }) =>
+      firstValueFrom(
+        this.http.post<OfferPricingMatrix>(
+          buildApiUrl(`/sites/${siteId}/offers/${offerId}/pricing/retailers`),
+          { retailerId }
+        )
+      ),
+    onSuccess: async (matrix, request) => {
+      this.queryClient.setQueryData(
+        this.pricingQueryKey(request.siteId, request.offerId),
+        matrix
+      );
+      await this.invalidateOfferPricingMutation(request.siteId, request.offerId);
+    }
+  }));
+
+  readonly removePricingRetailerMutation = injectMutation<
+    void,
+    Error,
+    AddOfferPricingRetailerRequest
+  >(() => ({
+    mutationKey: ['offers', 'pricing', 'retailer', 'remove'],
+    mutationFn: ({ siteId, offerId, retailerId }) =>
+      firstValueFrom(
+        this.http.delete<void>(
+          buildApiUrl(
+            `/sites/${siteId}/offers/${offerId}/pricing/retailers/${retailerId}`
+          )
+        )
+      ),
+    onSuccess: async (_, request) =>
+      this.invalidateOfferPricingMutation(request.siteId, request.offerId)
+  }));
+
+  readonly recordManualPriceMutation = injectMutation<
+    OfferRetailerPriceCell,
+    Error,
+    RecordManualOfferPriceRequest
+  >(() => ({
+    mutationKey: ['offers', 'pricing', 'price', 'manual'],
+    mutationFn: ({
+      siteId,
+      offerId,
+      offerProductLineId,
+      retailerId,
+      amount,
+      basis,
+      productUrl,
+      retailerProductCode
+    }) =>
+      firstValueFrom(
+        this.http.put<OfferRetailerPriceCell>(
+          buildApiUrl(
+            `/sites/${siteId}/offers/${offerId}/pricing/products/${offerProductLineId}/retailers/${retailerId}/current-price`
+          ),
+          { amount, basis, productUrl, retailerProductCode }
+        )
+      ),
+    onSuccess: async (cell, request) => {
+      this.patchPricingCell(request.siteId, request.offerId, cell);
+      await Promise.all([
+        this.queryClient.invalidateQueries({
+          queryKey: this.pricingQueryKey(request.siteId, request.offerId),
+          exact: true
+        }),
+        this.queryClient.invalidateQueries({
+          queryKey: this.priceHistoryQueryKey(request.productId, request.retailerId)
+        })
+      ]);
+    }
+  }));
+
+  readonly selectProductPriceMutation = injectMutation<
+    OfferPricingProductRow,
+    Error,
+    SelectOfferProductPriceRequest
+  >(() => ({
+    mutationKey: ['offers', 'pricing', 'selection', 'set'],
+    mutationFn: ({
+      siteId,
+      offerId,
+      offerProductLineId,
+      retailerId,
+      observationId
+    }) =>
+      firstValueFrom(
+        this.http.put<OfferPricingProductRow>(
+          buildApiUrl(
+            `/sites/${siteId}/offers/${offerId}/pricing/products/${offerProductLineId}/selection`
+          ),
+          { retailerId, observationId }
+        )
+      ),
+    onSuccess: async (row, request) => {
+      this.patchPricingRow(request.siteId, request.offerId, row);
+      await this.invalidateOfferPricingMutation(request.siteId, request.offerId);
+    }
+  }));
+
+  readonly clearProductPriceMutation = injectMutation<
+    void,
+    Error,
+    Omit<SelectOfferProductPriceRequest, 'retailerId' | 'observationId'>
+  >(() => ({
+    mutationKey: ['offers', 'pricing', 'selection', 'clear'],
+    mutationFn: ({ siteId, offerId, offerProductLineId }) =>
+      firstValueFrom(
+        this.http.delete<void>(
+          buildApiUrl(
+            `/sites/${siteId}/offers/${offerId}/pricing/products/${offerProductLineId}/selection`
+          )
+        )
+      ),
+    onSuccess: async (_, request) =>
+      this.invalidateOfferPricingMutation(request.siteId, request.offerId)
+  }));
+
   configureList(siteId: string): void {
     if (this.listSiteId() !== siteId) {
       this.listSiteId.set(siteId);
@@ -343,6 +487,62 @@ export class OffersService {
     return this.updateMeasurementsMutation.mutateAsync(request);
   }
 
+  addPricingRetailer(
+    request: AddOfferPricingRetailerRequest
+  ): Promise<OfferPricingMatrix> {
+    return this.addPricingRetailerMutation.mutateAsync(request);
+  }
+
+  removePricingRetailer(request: AddOfferPricingRetailerRequest): Promise<void> {
+    return this.removePricingRetailerMutation.mutateAsync(request);
+  }
+
+  recordManualPrice(
+    request: RecordManualOfferPriceRequest
+  ): Promise<OfferRetailerPriceCell> {
+    return this.recordManualPriceMutation.mutateAsync(request);
+  }
+
+  selectProductPrice(
+    request: SelectOfferProductPriceRequest
+  ): Promise<OfferPricingProductRow> {
+    return this.selectProductPriceMutation.mutateAsync(request);
+  }
+
+  clearProductPrice(
+    request: Omit<SelectOfferProductPriceRequest, 'retailerId' | 'observationId'>
+  ): Promise<void> {
+    return this.clearProductPriceMutation.mutateAsync(request);
+  }
+
+  getRetailerPriceHistory(
+    productId: string,
+    retailerId: string,
+    pageIndex: number,
+    pageSize = 25
+  ): Promise<RetailerPriceHistory> {
+    return this.queryClient.fetchQuery({
+      queryKey: [
+        ...this.priceHistoryQueryKey(productId, retailerId),
+        pageIndex,
+        pageSize
+      ] as const,
+      queryFn: () =>
+        firstValueFrom(
+          this.http.get<RetailerPriceHistory>(
+            buildApiUrl(
+              `/products/${productId}/retailers/${retailerId}/price-history`
+            ),
+            {
+              params: new HttpParams()
+                .set('pageIndex', pageIndex)
+                .set('pageSize', pageSize)
+            }
+          )
+        )
+    });
+  }
+
   private async invalidateSiteOffers(siteId: string): Promise<void> {
     await this.queryClient.invalidateQueries({
       queryKey: ['offers', 'site', siteId]
@@ -359,8 +559,86 @@ export class OffersService {
       }),
       this.queryClient.invalidateQueries({
         queryKey: ['offers', 'site', siteId, 'list']
+      }),
+      this.queryClient.invalidateQueries({
+        queryKey: this.pricingQueryKey(siteId, offerId),
+        exact: true
       })
     ]);
+  }
+
+  private async invalidateOfferPricingMutation(
+    siteId: string,
+    offerId: string
+  ): Promise<void> {
+    await Promise.all([
+      this.queryClient.invalidateQueries({
+        queryKey: this.pricingQueryKey(siteId, offerId),
+        exact: true
+      }),
+      this.queryClient.invalidateQueries({
+        queryKey: ['offers', 'site', siteId, 'detail', offerId],
+        exact: true
+      }),
+      this.queryClient.invalidateQueries({
+        queryKey: ['offers', 'site', siteId, 'list']
+      })
+    ]);
+  }
+
+  private patchPricingCell(
+    siteId: string,
+    offerId: string,
+    cell: OfferRetailerPriceCell
+  ): void {
+    this.queryClient.setQueryData<OfferPricingMatrix>(
+      this.pricingQueryKey(siteId, offerId),
+      (matrix) =>
+        matrix
+          ? {
+              ...matrix,
+              products: matrix.products.map((row) =>
+                row.offerProductLineId === cell.offerProductLineId
+                  ? {
+                      ...row,
+                      retailerPrices: row.retailerPrices.map((current) =>
+                        current.retailerId === cell.retailerId ? cell : current
+                      )
+                    }
+                  : row
+              )
+            }
+          : matrix
+    );
+  }
+
+  private patchPricingRow(
+    siteId: string,
+    offerId: string,
+    row: OfferPricingProductRow
+  ): void {
+    this.queryClient.setQueryData<OfferPricingMatrix>(
+      this.pricingQueryKey(siteId, offerId),
+      (matrix) =>
+        matrix
+          ? {
+              ...matrix,
+              products: matrix.products.map((current) =>
+                current.offerProductLineId === row.offerProductLineId
+                  ? row
+                  : current
+              )
+            }
+          : matrix
+    );
+  }
+
+  private pricingQueryKey(siteId: string, offerId: string) {
+    return ['offers', 'site', siteId, 'pricing', offerId] as const;
+  }
+
+  private priceHistoryQueryKey(productId: string, retailerId: string) {
+    return ['retailer-pricing', productId, retailerId, 'history'] as const;
   }
 
   private buildQueryParams(state: SiteOffersQueryState): HttpParams {

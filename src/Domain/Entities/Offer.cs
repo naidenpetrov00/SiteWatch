@@ -15,6 +15,7 @@ public sealed class Offer : BaseAuditableEntity, IHasNumberId, IAgregateRoot
 
     private readonly List<OfferActivity> _activities = [];
     private readonly List<OfferProductLine> _productLines = [];
+    private readonly List<OfferRetailerComparison> _retailerComparisons = [];
 
     public int NumberId { get; private set; }
     public Guid SiteId { get; private set; }
@@ -24,6 +25,8 @@ public sealed class Offer : BaseAuditableEntity, IHasNumberId, IAgregateRoot
     public OfferStatus Status { get; private set; }
     public IReadOnlyCollection<OfferActivity> Activities => _activities;
     public IReadOnlyCollection<OfferProductLine> ProductLines => _productLines;
+    public IReadOnlyCollection<OfferRetailerComparison> RetailerComparisons =>
+        _retailerComparisons;
 
     public static Offer Create(Site site)
     {
@@ -132,6 +135,79 @@ public sealed class Offer : BaseAuditableEntity, IHasNumberId, IAgregateRoot
         {
             throw new InvalidOperationException("The product line does not belong to this offer.");
         }
+    }
+
+    public OfferRetailerComparison AddRetailer(Retailer retailer)
+    {
+        EnsureDraft();
+        ArgumentNullException.ThrowIfNull(retailer);
+        if (_retailerComparisons.Any(item => item.RetailerId == retailer.Id))
+        {
+            throw new InvalidOperationException("The retailer is already compared by this offer.");
+        }
+
+        var comparison = OfferRetailerComparison.Create(this, retailer);
+        _retailerComparisons.Add(comparison);
+        return comparison;
+    }
+
+    public void RemoveRetailer(OfferRetailerComparison comparison)
+    {
+        EnsureDraft();
+        ArgumentNullException.ThrowIfNull(comparison);
+        if (_productLines.Any(line => line.PriceSelection?.RetailerId == comparison.RetailerId))
+        {
+            throw new InvalidOperationException(
+                "Clear selected prices for this retailer before removing it.");
+        }
+
+        if (!_retailerComparisons.Remove(comparison))
+        {
+            throw new InvalidOperationException("The retailer is not compared by this offer.");
+        }
+    }
+
+    public void SelectProductPrice(
+        OfferProductLine productLine,
+        OfferRetailerComparison comparison,
+        RetailerListing listing,
+        RetailerPriceObservation observation,
+        DateTimeOffset selectedAt,
+        string selectedBy)
+    {
+        EnsureDraft();
+        ArgumentNullException.ThrowIfNull(productLine);
+        ArgumentNullException.ThrowIfNull(comparison);
+        ArgumentNullException.ThrowIfNull(listing);
+        ArgumentNullException.ThrowIfNull(observation);
+        if (!_productLines.Contains(productLine)
+            || !_retailerComparisons.Contains(comparison)
+            || listing.ProductId != productLine.ProductId
+            || listing.RetailerId != comparison.RetailerId
+            || observation.RetailerListingId != listing.Id)
+        {
+            throw new InvalidOperationException(
+                "The selected price does not belong to this offer product and retailer.");
+        }
+
+        productLine.SelectPrice(
+            comparison,
+            listing,
+            observation,
+            selectedAt,
+            selectedBy);
+    }
+
+    public void ClearProductPrice(OfferProductLine productLine)
+    {
+        EnsureDraft();
+        ArgumentNullException.ThrowIfNull(productLine);
+        if (!_productLines.Contains(productLine))
+        {
+            throw new InvalidOperationException("The product line does not belong to this offer.");
+        }
+
+        productLine.ClearPriceSelection();
     }
 
     public void EnsureDraft()

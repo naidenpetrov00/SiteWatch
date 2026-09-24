@@ -1,6 +1,7 @@
 using Api.SeedWork;
 using Application.Offers.Commands;
 using Application.Offers.Queries;
+using Application.Offers.Pricing;
 using Application.SeedWork.Models;
 using Application.SeedWork.Security;
 using MediatR;
@@ -83,6 +84,52 @@ public sealed class Offers : EndpointGroupBase
             .WithSummary("Archive an offer without deleting it")
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound);
+        group.MapGet("/{offerId:guid}/pricing", GetPricingMatrix)
+            .WithName("GetOfferPricingMatrix")
+            .WithSummary("Get the Product-by-Retailer pricing matrix for an Offer")
+            .Produces<OfferPricingMatrixDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
+        group.MapPost("/{offerId:guid}/pricing/retailers", AddPricingRetailer)
+            .WithName("AddOfferPricingRetailer")
+            .WithSummary("Add an active Retailer to a draft Offer comparison matrix")
+            .Produces<OfferPricingMatrixDto>(StatusCodes.Status201Created)
+            .ProducesValidationProblem()
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict);
+        group.MapDelete(
+                "/{offerId:guid}/pricing/retailers/{retailerId:guid}",
+                RemovePricingRetailer)
+            .WithName("RemoveOfferPricingRetailer")
+            .WithSummary("Remove an unused Retailer from a draft Offer comparison matrix")
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict);
+        group.MapPut(
+                "/{offerId:guid}/pricing/products/{offerProductLineId:guid}/retailers/{retailerId:guid}/current-price",
+                RecordManualPrice)
+            .WithName("RecordManualOfferRetailerPrice")
+            .WithSummary("Record the current manual EUR price for an Offer matrix cell")
+            .Produces<OfferRetailerPriceCellDto>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict);
+        group.MapPut(
+                "/{offerId:guid}/pricing/products/{offerProductLineId:guid}/selection",
+                SelectProductPrice)
+            .WithName("SelectOfferProductPrice")
+            .WithSummary("Snapshot the latest selected Retailer price for an Offer Product")
+            .Produces<OfferPricingProductRowDto>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict);
+        group.MapDelete(
+                "/{offerId:guid}/pricing/products/{offerProductLineId:guid}/selection",
+                ClearProductPrice)
+            .WithName("ClearOfferProductPrice")
+            .WithSummary("Clear the selected price snapshot for a draft Offer Product")
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict);
     }
 
     private static async Task<Created<OfferCreatedResponse>> CreateOffer(
@@ -205,6 +252,86 @@ public sealed class Offers : EndpointGroupBase
     {
         await mediator.Send(
             new ArchiveOfferCommand(siteId, offerId),
+            cancellationToken);
+        return TypedResults.NoContent();
+    }
+
+    private static async Task<Ok<OfferPricingMatrixDto>> GetPricingMatrix(
+        IMediator mediator,
+        Guid siteId,
+        Guid offerId,
+        CancellationToken cancellationToken) =>
+        TypedResults.Ok(await mediator.Send(
+            new OfferPricingMatrixQuery(siteId, offerId),
+            cancellationToken));
+
+    private static async Task<Created<OfferPricingMatrixDto>> AddPricingRetailer(
+        IMediator mediator,
+        Guid siteId,
+        Guid offerId,
+        AddOfferRetailerCommand command,
+        CancellationToken cancellationToken)
+    {
+        command.SiteId = siteId;
+        command.OfferId = offerId;
+        var matrix = await mediator.Send(command, cancellationToken);
+        return TypedResults.Created(
+            $"/sites/{siteId}/offers/{offerId}/pricing/retailers/{command.RetailerId}",
+            matrix);
+    }
+
+    private static async Task<NoContent> RemovePricingRetailer(
+        IMediator mediator,
+        Guid siteId,
+        Guid offerId,
+        Guid retailerId,
+        CancellationToken cancellationToken)
+    {
+        await mediator.Send(
+            new RemoveOfferRetailerCommand(siteId, offerId, retailerId),
+            cancellationToken);
+        return TypedResults.NoContent();
+    }
+
+    private static async Task<Ok<OfferRetailerPriceCellDto>> RecordManualPrice(
+        IMediator mediator,
+        Guid siteId,
+        Guid offerId,
+        Guid offerProductLineId,
+        Guid retailerId,
+        RecordManualRetailerPriceCommand command,
+        CancellationToken cancellationToken)
+    {
+        command.SiteId = siteId;
+        command.OfferId = offerId;
+        command.OfferProductLineId = offerProductLineId;
+        command.RetailerId = retailerId;
+        return TypedResults.Ok(await mediator.Send(command, cancellationToken));
+    }
+
+    private static async Task<Ok<OfferPricingProductRowDto>> SelectProductPrice(
+        IMediator mediator,
+        Guid siteId,
+        Guid offerId,
+        Guid offerProductLineId,
+        SelectOfferProductPriceCommand command,
+        CancellationToken cancellationToken)
+    {
+        command.SiteId = siteId;
+        command.OfferId = offerId;
+        command.OfferProductLineId = offerProductLineId;
+        return TypedResults.Ok(await mediator.Send(command, cancellationToken));
+    }
+
+    private static async Task<NoContent> ClearProductPrice(
+        IMediator mediator,
+        Guid siteId,
+        Guid offerId,
+        Guid offerProductLineId,
+        CancellationToken cancellationToken)
+    {
+        await mediator.Send(
+            new ClearOfferProductPriceCommand(siteId, offerId, offerProductLineId),
             cancellationToken);
         return TypedResults.NoContent();
     }

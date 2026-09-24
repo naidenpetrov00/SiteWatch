@@ -149,7 +149,7 @@
       <div class="offer-workspace__stage-heading">
         <div>
           <p class="offer-workspace__eyebrow">Stage 2</p>
-          <h2 id="offer-stage-two-heading">Activities and Product Requirements</h2>
+          <h2 id="offer-stage-two-heading">Activities &amp; Measurements</h2>
         </div>
         @if (!isDraft()) {
           <p class="offer-workspace__readonly-note">
@@ -172,8 +172,13 @@
         [activities]="currentOffer.activities"
         [editable]="isDraft()"
       />
+    </section>
 
-      <app-offer-product-requirements [products]="currentOffer.products" />
+    <section class="offer-workspace__stage-three" aria-label="Products and retailer pricing">
+      <app-offer-pricing-matrix
+        [siteId]="siteId()"
+        [offerId]="offerId()"
+      />
     </section>
   }
 </main>

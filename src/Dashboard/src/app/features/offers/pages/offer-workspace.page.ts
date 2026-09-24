@@ -20,7 +20,7 @@ import {
   OfferArchiveConfirmDialogData
 } from '../components/offer-archive-confirm-dialog/offer-archive-confirm-dialog.component';
 import { OfferActivityBrowserComponent } from '../components/offer-activity-browser/offer-activity-browser.component';
-import { OfferProductRequirementsComponent } from '../components/offer-product-requirements/offer-product-requirements.component';
+import { OfferPricingMatrixComponent } from '../components/offer-pricing-matrix/offer-pricing-matrix.component';
 import { OfferSelectedActivitiesComponent } from '../components/offer-selected-activities/offer-selected-activities.component';
 import { OffersService } from '../services/offers.service';
 import { getOfferError } from '../utils/offer-error';
@@ -33,7 +33,7 @@ import { getOfferError } from '../utils/offer-error';
     MatFormFieldModule,
     MatInputModule,
     OfferActivityBrowserComponent,
-    OfferProductRequirementsComponent,
+    OfferPricingMatrixComponent,
     OfferSelectedActivitiesComponent,
     ReactiveFormsModule,
     RouterLink
