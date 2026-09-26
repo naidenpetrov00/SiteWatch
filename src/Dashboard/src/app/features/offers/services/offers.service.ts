@@ -9,6 +9,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { buildApiUrl } from '../../../core/api/api-url';
 import { DataTableState } from '../../../shared/data-table/data-table.types';
+import { RetailerListingsService } from '../../retailer-listings/services/retailer-listings.service';
 import {
   AddOfferActivityRequest,
   AddOfferPricingRetailerRequest,
@@ -23,7 +24,6 @@ import {
   OfferSummary,
   RecordManualOfferPriceRequest,
   RemoveOfferActivityRequest,
-  RetailerPriceHistory,
   SelectOfferProductPriceRequest,
   SiteOffersResponse,
   UpdateOfferActivityMeasurementsRequest,
@@ -63,6 +63,7 @@ const DEFAULT_QUERY_STATE: SiteOffersQueryState = {
 export class OffersService {
   private readonly http = inject(HttpClient);
   private readonly queryClient = inject(QueryClient);
+  private readonly retailerListingsService = inject(RetailerListingsService);
   private readonly listSiteId = signal('');
   private readonly detailRoute = signal<OfferRouteIdentity>({
     siteId: '',
@@ -341,15 +342,10 @@ export class OffersService {
       ),
     onSuccess: async (cell, request) => {
       this.patchPricingCell(request.siteId, request.offerId, cell);
-      await Promise.all([
-        this.queryClient.invalidateQueries({
-          queryKey: this.pricingQueryKey(request.siteId, request.offerId),
-          exact: true
-        }),
-        this.queryClient.invalidateQueries({
-          queryKey: this.priceHistoryQueryKey(request.productId, request.retailerId)
-        })
-      ]);
+      await this.retailerListingsService.invalidatePair(
+        request.productId,
+        request.retailerId
+      );
     }
   }));
 
@@ -515,34 +511,6 @@ export class OffersService {
     return this.clearProductPriceMutation.mutateAsync(request);
   }
 
-  getRetailerPriceHistory(
-    productId: string,
-    retailerId: string,
-    pageIndex: number,
-    pageSize = 25
-  ): Promise<RetailerPriceHistory> {
-    return this.queryClient.fetchQuery({
-      queryKey: [
-        ...this.priceHistoryQueryKey(productId, retailerId),
-        pageIndex,
-        pageSize
-      ] as const,
-      queryFn: () =>
-        firstValueFrom(
-          this.http.get<RetailerPriceHistory>(
-            buildApiUrl(
-              `/products/${productId}/retailers/${retailerId}/price-history`
-            ),
-            {
-              params: new HttpParams()
-                .set('pageIndex', pageIndex)
-                .set('pageSize', pageSize)
-            }
-          )
-        )
-    });
-  }
-
   private async invalidateSiteOffers(siteId: string): Promise<void> {
     await this.queryClient.invalidateQueries({
       queryKey: ['offers', 'site', siteId]
@@ -635,10 +603,6 @@ export class OffersService {
 
   private pricingQueryKey(siteId: string, offerId: string) {
     return ['offers', 'site', siteId, 'pricing', offerId] as const;
-  }
-
-  private priceHistoryQueryKey(productId: string, retailerId: string) {
-    return ['retailer-pricing', productId, retailerId, 'history'] as const;
   }
 
   private buildQueryParams(state: SiteOffersQueryState): HttpParams {

@@ -93,11 +93,27 @@ export const routes: Routes = [
           )
       },
       {
+        path: 'manage-products/:productId',
+        title: 'Product Retailer Listings',
+        loadComponent: () =>
+          import('./features/products/pages/product-detail.page').then(
+            (m) => m.ProductDetailPage
+          )
+      },
+      {
         path: 'manage-products',
         title: 'Manage Products',
         loadComponent: () =>
           import('./features/products/pages/manage-products.page').then(
             (m) => m.ManageProductsPage
+          )
+      },
+      {
+        path: 'manage-retailers/:retailerId',
+        title: 'Retailer Product Listings',
+        loadComponent: () =>
+          import('./features/retailers/pages/retailer-detail.page').then(
+            (m) => m.RetailerDetailPage
           )
       },
       {

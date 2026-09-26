@@ -1,0 +1,35 @@
+<section class="listing-table" aria-label="Retailer listings">
+  <div class="listing-table__toolbar">
+    <mat-checkbox
+      [checked]="includeInactive()"
+      (change)="includeInactive.set($event.checked)"
+    >
+      Include inactive listings
+    </mat-checkbox>
+    @if (listingsQuery.isFetching()) {
+      <span aria-live="polite">Refreshing listings…</span>
+    }
+  </div>
+
+  @if (listingsQuery.isError()) {
+    <p class="listing-table__error" role="alert">
+      Retailer listings could not be loaded.
+    </p>
+  }
+
+  <app-data-table
+    tableEyebrow="Pricing catalog"
+    [tableLabel]="perspective() === 'product' ? 'Retailer listings' : 'Product listings'"
+    emptyMessage="No retailer listings match the current filters."
+    filterApplyMode="search"
+    [rows]="listingsQuery.data()?.items ?? []"
+    [filteredRowsTotal]="listingsQuery.data()?.filteredCount ?? 0"
+    [overallRowsTotal]="listingsQuery.data()?.totalCount ?? 0"
+    [columns]="columns()"
+    [rowActions]="rowActions"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="pageSizeOptions"
+    (tableStateChange)="onTableStateChange($event)"
+    (rowActionClicked)="onRowAction($event)"
+  />
+</section>

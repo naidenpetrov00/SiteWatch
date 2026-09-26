@@ -1,5 +1,6 @@
 using Api.SeedWork;
 using Api.SeedWork.Extensions;
+using Application.RetailerListings;
 using Application.Retailers.Commands;
 using Application.Retailers.Queries;
 using Application.SeedWork.Models;
@@ -36,6 +37,12 @@ public sealed class Retailers : EndpointGroupBase
         group.MapPatch("/{retailerId:guid}/deactivate", DeactivateRetailer)
             .WithName("DeactivateRetailer")
             .WithSummary("Deactivate a retailer storefront");
+        group.MapGet("/{retailerId:guid}/product-listings", GetProductListings)
+            .WithName("GetRetailerProductListings")
+            .WithSummary("Get paged Product listings for a Retailer")
+            .Produces<PagedResult<RetailerListingDto>>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .Produces(StatusCodes.Status404NotFound);
         dashboardGroup.MapGet("/retailers", GetDashboardRetailers)
             .WithName("GetDashboardRetailers")
             .WithSummary("Get a filtered and paged retailer catalog");
@@ -95,6 +102,12 @@ public sealed class Retailers : EndpointGroupBase
             cancellationToken);
         return TypedResults.NoContent();
     }
+
+    private static async Task<Ok<PagedResult<RetailerListingDto>>> GetProductListings(
+        IMediator mediator,
+        [AsParameters] RetailerProductListingsQuery query,
+        CancellationToken cancellationToken) =>
+        TypedResults.Ok(await mediator.Send(query, cancellationToken));
 
     private static async Task<Ok<PagedResult<RetailerTableDto>>> GetDashboardRetailers(
         IMediator mediator,

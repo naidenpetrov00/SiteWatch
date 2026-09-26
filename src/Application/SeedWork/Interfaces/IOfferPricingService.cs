@@ -27,11 +27,5 @@ public interface IOfferPricingService
         Guid offerId,
         Guid offerProductLineId,
         CancellationToken cancellationToken);
-    Task<RetailerPriceHistoryDto> GetHistoryAsync(
-        Guid productId,
-        Guid retailerId,
-        int pageIndex,
-        int pageSize,
-        CancellationToken cancellationToken);
 }
 

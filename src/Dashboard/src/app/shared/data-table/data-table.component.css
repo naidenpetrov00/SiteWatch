@@ -86,6 +86,24 @@
   background-color: #fee2e2 !important;
 }
 
+.data-table__scroll-hint {
+  margin: 0;
+  color: rgba(15, 23, 42, 0.68);
+  font-size: 0.875rem;
+}
+
+.data-table__internal-link {
+  color: var(--mat-sys-primary);
+  font-weight: 650;
+  text-underline-offset: 0.2em;
+}
+
+.data-table__internal-link:focus-visible,
+.data-table__table-shell:focus-visible {
+  outline: 3px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+}
+
 .data-table__table-shell {
   overflow: auto;
   border-radius: 1rem;
@@ -109,6 +127,7 @@
 .data-table__table {
   min-width: 72rem;
   width: 100%;
+  font-variant-numeric: tabular-nums;
 }
 
 .data-table__empty-row td {

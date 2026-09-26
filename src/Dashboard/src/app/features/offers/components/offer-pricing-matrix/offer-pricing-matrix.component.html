@@ -221,7 +221,21 @@
                     [class.offer-pricing__cell--cheapest]="cell.isCheapest"
                     [class.offer-pricing__cell--selected]="isSelected(row, retailer.retailerId)"
                   >
-                    @if (isEditing(displayRow, retailer.retailerId)) {
+                    @if (
+                      editable() &&
+                      (!retailer.isActive || cell.retailerListingIsActive === false)
+                    ) {
+                      <div class="offer-pricing__inactive-listing">
+                        <strong>
+                          {{ !retailer.isActive ? 'Retailer inactive' : 'Listing inactive' }}
+                        </strong>
+                        <span>Prices remain visible, but cannot be recorded or selected.</span>
+                        <a [routerLink]="['/manage-products', row.productId]">
+                          Manage in Product Catalog
+                        </a>
+                      </div>
+                    }
+                    @if (isEditing(displayRow, retailer.retailerId) && canEditCell(cell)) {
                       <form
                         class="offer-pricing__edit-form"
                         [formGroup]="formFor(row, cell)"
@@ -306,7 +320,7 @@
                           <span class="offer-pricing__selected-label">Selected retailer</span>
                         }
                         <div class="offer-pricing__cell-actions">
-                          @if (editable()) {
+                          @if (canEditCell(cell)) {
                             <button
                               mat-stroked-button
                               type="button"
@@ -331,7 +345,7 @@
                       } @else {
                         <span class="offer-pricing__no-price">No price</span>
                         <div class="offer-pricing__cell-actions">
-                          @if (editable()) {
+                          @if (canEditCell(cell)) {
                             <button mat-stroked-button type="button" (click)="startEdit(displayRow, cell)">
                               {{ isEditingElsewhere(displayRow, retailer.retailerId) ? 'Continue editing here' : 'Add price' }}
                             </button>

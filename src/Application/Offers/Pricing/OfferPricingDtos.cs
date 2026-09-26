@@ -1,3 +1,5 @@
+using Application.RetailerListings;
+
 namespace Application.Offers.Pricing;
 
 /// <summary>Represents the complete retailer comparison matrix for an Offer.</summary>
@@ -64,24 +66,14 @@ public sealed record OfferRetailerPriceCellDto(
     Guid ProductId,
     Guid RetailerId,
     Guid? RetailerListingId,
+    bool? RetailerListingIsActive,
     string? ProductUrl,
     string? RetailerProductCode,
-    OfferPriceObservationDto? LatestObservation,
+    RetailerPriceObservationDto? LatestObservation,
     decimal? ComparableRequiredTotal,
     decimal? ComparableOptionalTotal,
     bool IsCheapest);
 
-/// <summary>Represents one immutable retailer price observation.</summary>
-public sealed record OfferPriceObservationDto(
-    Guid Id,
-    decimal Amount,
-    string CurrencyCode,
-    string Basis,
-    DateTimeOffset ObservedAt,
-    DateTimeOffset RecordedAt,
-    string Source,
-    string? SourceReference,
-    string RecordedBy);
 
 /// <summary>Represents an Offer-owned snapshot of an explicitly selected price.</summary>
 public sealed record OfferSelectedPriceDto(
@@ -102,15 +94,3 @@ public sealed record OfferSelectedPriceDto(
     DateTimeOffset SelectedAt,
     string SelectedBy,
     bool HasNewerObservation);
-
-/// <summary>Represents paged price history and listing metadata.</summary>
-public sealed record RetailerPriceHistoryDto(
-    Guid ProductId,
-    Guid RetailerId,
-    Guid? RetailerListingId,
-    string? ProductUrl,
-    string? RetailerProductCode,
-    IReadOnlyList<OfferPriceObservationDto> Items,
-    int PageIndex,
-    int PageSize,
-    int TotalCount);

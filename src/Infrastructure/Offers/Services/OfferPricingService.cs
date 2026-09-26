@@ -1,16 +1,21 @@
 using System.Data;
 using Application.Offers;
 using Application.Offers.Pricing;
+using Application.RetailerListings;
 using Application.SeedWork.Interfaces;
 using Ardalis.GuardClauses;
 using Domain.Entities;
 using Domain.SeedWork.Enums;
 using Infrastructure.Data;
+using Infrastructure.RetailerListings.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Offers.Services;
 
-public sealed class OfferPricingService(ApplicationDbContext dbContext, IUser user)
+public sealed class OfferPricingService(
+    ApplicationDbContext dbContext,
+    IUser user,
+    RetailerListingWriter listingWriter)
     : IOfferPricingService
 {
     public async Task<OfferPricingMatrixDto> GetMatrixAsync(
@@ -32,6 +37,7 @@ public sealed class OfferPricingService(ApplicationDbContext dbContext, IUser us
                     listing.Id,
                     listing.ProductId,
                     listing.RetailerId,
+                    listing.IsActive,
                     listing.ProductUrl,
                     listing.RetailerProductCode,
                     listing.PriceObservations
@@ -162,75 +168,19 @@ public sealed class OfferPricingService(ApplicationDbContext dbContext, IUser us
                     throw new OfferConflictException(exception.Message, exception);
                 }
 
-                var listing = await dbContext.RetailerListings
-                    .SingleOrDefaultAsync(
-                        item => item.ProductId == line.ProductId
-                            && item.RetailerId == request.RetailerId,
+                try
+                {
+                    await listingWriter.UpsertOfferPriceAsync(
+                        line.ProductId,
+                        comparison.RetailerId,
+                        request.ProductUrl,
+                        request.RetailerProductCode,
+                        new RetailerListingPriceInput(request.Amount, basis),
                         cancellationToken);
-                var now = DateTimeOffset.UtcNow;
-                var userId = GetUserId();
-                if (listing is null)
-                {
-                    var product = await dbContext.Products.SingleOrDefaultAsync(
-                        item => item.Id == line.ProductId,
-                        cancellationToken)
-                        ?? throw new NotFoundException(
-                            nameof(Product),
-                            line.ProductId.ToString());
-                    try
-                    {
-                        listing = RetailerListing.Create(
-                            product,
-                            comparison.Retailer,
-                            request.ProductUrl,
-                            request.RetailerProductCode);
-                    }
-                    catch (ArgumentException exception)
-                    {
-                        throw new OfferConflictException(exception.Message, exception);
-                    }
-                    listing.Created = now;
-                    listing.CreatedBy = userId;
-                    listing.LastModified = now;
-                    listing.LastModifiedBy = userId;
-                    dbContext.RetailerListings.Add(listing);
                 }
-                else
+                catch (RetailerListingConflictException exception)
                 {
-                    try
-                    {
-                        listing.UpdateMetadata(
-                            request.ProductUrl,
-                            request.RetailerProductCode);
-                    }
-                    catch (ArgumentException exception)
-                    {
-                        throw new OfferConflictException(exception.Message, exception);
-                    }
-
-                    listing.LastModified = now;
-                    listing.LastModifiedBy = userId;
-                }
-
-                var latest = await dbContext.RetailerPriceObservations
-                    .Where(observation => observation.RetailerListingId == listing.Id)
-                    .OrderByDescending(observation => observation.ObservedAt)
-                    .ThenByDescending(observation => observation.RecordedAt)
-                    .ThenByDescending(observation => observation.Id)
-                    .FirstOrDefaultAsync(cancellationToken);
-                if (latest is null
-                    || latest.Amount != request.Amount
-                    || latest.Basis != basis)
-                {
-                    var observation = listing.RecordPrice(
-                        request.Amount,
-                        basis,
-                        now,
-                        now,
-                        PriceObservationSource.Manual,
-                        null,
-                        userId);
-                    dbContext.RetailerPriceObservations.Add(observation);
+                    throw new OfferConflictException(exception.Message, exception);
                 }
             },
             "The price could not be saved because its listing changed.",
@@ -265,6 +215,12 @@ public sealed class OfferPricingService(ApplicationDbContext dbContext, IUser us
                     ?? throw new NotFoundException(
                         nameof(RetailerListing),
                         request.RetailerId.ToString());
+                if (!listing.IsActive || !comparison.Retailer.IsActive)
+                {
+                    throw new OfferConflictException(
+                        "Reactivate the retailer and its listing before selecting this price.");
+                }
+
                 var latest = await dbContext.RetailerPriceObservations
                     .Where(observation => observation.RetailerListingId == listing.Id)
                     .OrderByDescending(observation => observation.ObservedAt)
@@ -335,84 +291,6 @@ public sealed class OfferPricingService(ApplicationDbContext dbContext, IUser us
             },
             "The selected price could not be cleared because the Offer changed.",
             cancellationToken);
-
-    public async Task<RetailerPriceHistoryDto> GetHistoryAsync(
-        Guid productId,
-        Guid retailerId,
-        int pageIndex,
-        int pageSize,
-        CancellationToken cancellationToken)
-    {
-        var productExists = await dbContext.Products.AsNoTracking().AnyAsync(
-            product => product.Id == productId,
-            cancellationToken);
-        if (!productExists)
-        {
-            throw new NotFoundException(nameof(Product), productId.ToString());
-        }
-
-        var retailerExists = await dbContext.Retailers.AsNoTracking().AnyAsync(
-            retailer => retailer.Id == retailerId,
-            cancellationToken);
-        if (!retailerExists)
-        {
-            throw new NotFoundException(nameof(Retailer), retailerId.ToString());
-        }
-
-        var listing = await dbContext.RetailerListings
-            .AsNoTracking()
-            .SingleOrDefaultAsync(
-                item => item.ProductId == productId && item.RetailerId == retailerId,
-                cancellationToken);
-        if (listing is null)
-        {
-            return new RetailerPriceHistoryDto(
-                productId,
-                retailerId,
-                null,
-                null,
-                null,
-                [],
-                pageIndex,
-                pageSize,
-                0);
-        }
-
-        var query = dbContext.RetailerPriceObservations
-            .AsNoTracking()
-            .Where(observation => observation.RetailerListingId == listing.Id);
-        var totalCount = await query.CountAsync(cancellationToken);
-        var observationEntities = await query
-            .OrderByDescending(observation => observation.ObservedAt)
-            .ThenByDescending(observation => observation.RecordedAt)
-            .ThenByDescending(observation => observation.Id)
-            .Skip(pageIndex * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
-        var observations = observationEntities
-            .Select(observation => new OfferPriceObservationDto(
-                observation.Id,
-                observation.Amount,
-                observation.CurrencyCode,
-                observation.Basis.ToCode(),
-                observation.ObservedAt,
-                observation.RecordedAt,
-                observation.Source.ToCode(),
-                observation.SourceReference,
-                observation.RecordedBy))
-            .ToList();
-
-        return new RetailerPriceHistoryDto(
-            productId,
-            retailerId,
-            listing.Id,
-            listing.ProductUrl,
-            listing.RetailerProductCode,
-            observations,
-            pageIndex,
-            pageSize,
-            totalCount);
-    }
 
     private async Task<Offer> LoadMatrixOfferAsync(
         Guid siteId,
@@ -503,7 +381,14 @@ public sealed class OfferPricingService(ApplicationDbContext dbContext, IUser us
         var comparisonQuantity = line.RequiredQuantity > 0m
             ? line.RequiredQuantity
             : line.OptionalQuantity;
+        var activeRetailerIds = retailers
+            .Where(retailer => retailer.IsActive)
+            .Select(retailer => retailer.RetailerId)
+            .ToHashSet();
         var comparableTotals = cells
+            .Where(cell =>
+                cell.RetailerListingIsActive == true &&
+                activeRetailerIds.Contains(cell.RetailerId))
             .Select(cell => line.RequiredQuantity > 0m
                 ? cell.ComparableRequiredTotal
                 : cell.ComparableOptionalTotal)
@@ -515,9 +400,11 @@ public sealed class OfferPricingService(ApplicationDbContext dbContext, IUser us
             var cheapest = comparableTotals.Min();
             cells = cells.Select(cell => cell with
             {
-                IsCheapest = (line.RequiredQuantity > 0m
-                        ? cell.ComparableRequiredTotal
-                        : cell.ComparableOptionalTotal) == cheapest
+                IsCheapest = cell.RetailerListingIsActive == true
+                    && activeRetailerIds.Contains(cell.RetailerId)
+                    && (line.RequiredQuantity > 0m
+                            ? cell.ComparableRequiredTotal
+                            : cell.ComparableOptionalTotal) == cheapest
             }).ToList();
         }
 
@@ -615,6 +502,7 @@ public sealed class OfferPricingService(ApplicationDbContext dbContext, IUser us
             line.ProductId,
             retailerId,
             listing?.Id,
+            listing?.IsActive,
             listing?.ProductUrl,
             listing?.RetailerProductCode,
             latest is null ? null : ToDto(latest),
@@ -627,7 +515,7 @@ public sealed class OfferPricingService(ApplicationDbContext dbContext, IUser us
             false);
     }
 
-    private static OfferPriceObservationDto ToDto(ObservationProjection observation) =>
+    private static RetailerPriceObservationDto ToDto(ObservationProjection observation) =>
         new(
             observation.Id,
             observation.Amount,
@@ -710,6 +598,7 @@ public sealed class OfferPricingService(ApplicationDbContext dbContext, IUser us
         Guid Id,
         Guid ProductId,
         Guid RetailerId,
+        bool IsActive,
         string? ProductUrl,
         string? RetailerProductCode,
         ObservationProjection? Latest);

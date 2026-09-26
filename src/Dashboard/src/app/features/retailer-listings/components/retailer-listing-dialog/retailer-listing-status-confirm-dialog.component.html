@@ -1,0 +1,16 @@
+<h2 mat-dialog-title>
+  {{ data.activate ? 'Reactivate listing' : 'Deactivate listing' }}
+</h2>
+<mat-dialog-content>
+  @if (data.activate) {
+    <p>Reactivate {{ data.label }} so new price observations can be recorded and selected in Draft Offers?</p>
+  } @else {
+    <p>Deactivate {{ data.label }}? Its metadata, price history, and existing Offer snapshots will be retained.</p>
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button type="button" [mat-dialog-close]="false">Cancel</button>
+  <button mat-flat-button type="button" [mat-dialog-close]="true">
+    {{ data.activate ? 'Reactivate' : 'Deactivate' }}
+  </button>
+</mat-dialog-actions>

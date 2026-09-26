@@ -14,6 +14,7 @@ using Infrastructure.Identity.Services;
 using Infrastructure.Persons.Services;
 using Infrastructure.Products.Services;
 using Infrastructure.Retailers.Services;
+using Infrastructure.RetailerListings.Services;
 using Infrastructure.Offers.Services;
 using Infrastructure.SeedWork.Options;
 using Infrastructure.Sites.Services;
@@ -78,6 +79,8 @@ public static class DependencyInjection
         services.AddScoped<IPersonService, PersonService>();
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<IRetailerService, RetailerService>();
+        services.AddScoped<RetailerListingWriter>();
+        services.AddScoped<IRetailerListingService, RetailerListingService>();
         services.AddScoped<IActivityCatalogService, ActivityCatalogService>();
         services.AddScoped<IActivityRequirementService, ActivityRequirementService>();
         services.AddScoped<IOfferService, OfferService>();

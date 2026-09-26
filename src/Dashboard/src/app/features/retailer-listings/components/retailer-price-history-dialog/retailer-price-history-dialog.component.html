@@ -1,0 +1,12 @@
+<h2 mat-dialog-title>{{ data.retailerName }} price history</h2>
+<mat-dialog-content>
+  <app-retailer-price-history
+    [productId]="data.productId"
+    [productLabel]="data.productLabel"
+    [retailerId]="data.retailerId"
+    [retailerName]="data.retailerName"
+  />
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button type="button" mat-dialog-close>Close</button>
+</mat-dialog-actions>

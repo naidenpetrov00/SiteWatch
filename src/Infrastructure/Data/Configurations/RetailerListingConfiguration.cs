@@ -14,6 +14,9 @@ public sealed class RetailerListingConfiguration
             .HasMaxLength(RetailerListing.MaxProductUrlLength);
         builder.Property(listing => listing.RetailerProductCode)
             .HasMaxLength(RetailerListing.MaxRetailerProductCodeLength);
+        builder.Property(listing => listing.IsActive)
+            .HasDefaultValue(true)
+            .IsRequired();
 
         builder.HasOne(listing => listing.Product)
             .WithMany()
@@ -26,7 +29,8 @@ public sealed class RetailerListingConfiguration
 
         builder.HasIndex(listing => new { listing.ProductId, listing.RetailerId })
             .IsUnique();
-        builder.HasIndex(listing => listing.RetailerId);
+        builder.HasIndex(listing => new { listing.ProductId, listing.IsActive });
+        builder.HasIndex(listing => new { listing.RetailerId, listing.IsActive });
     }
 }
 

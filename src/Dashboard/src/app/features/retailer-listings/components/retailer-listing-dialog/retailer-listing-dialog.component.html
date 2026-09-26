@@ -1,0 +1,200 @@
+<h2 mat-dialog-title>{{ title() }}</h2>
+<mat-dialog-content>
+  <form
+    id="retailer-listing-form"
+    class="listing-dialog__form"
+    [formGroup]="form"
+    novalidate
+    (ngSubmit)="save()"
+  >
+    <section class="listing-dialog__identity" aria-label="Listing identity">
+      <div>
+        <span>Product</span>
+        <strong>{{ productLabel() || 'Select a Product' }}</strong>
+      </div>
+      <div>
+        <span>Retailer</span>
+        <strong>{{ retailerLabel() || 'Select a Retailer' }}</strong>
+      </div>
+      @if (listing(); as current) {
+        <span
+          class="listing-dialog__status"
+          [class.listing-dialog__status--inactive]="!current.isActive"
+        >
+          {{ current.isActive ? 'Active listing' : 'Inactive listing' }}
+        </span>
+      }
+    </section>
+
+    @if (!isEditing()) {
+      <mat-form-field appearance="outline" class="listing-dialog__wide">
+        <mat-label>
+          {{ data.fixedProduct ? 'Retailer' : 'Product' }}
+        </mat-label>
+        <input
+          matInput
+          [formControl]="counterpartControl"
+          [matAutocomplete]="counterpartAutocomplete"
+          autocomplete="off"
+          inputmode="search"
+          [placeholder]="data.fixedProduct ? 'Search active retailers' : 'Search active products'"
+        />
+        <mat-hint>Type to search the active catalog.</mat-hint>
+        @if (counterpartControl.touched && counterpartControl.invalid) {
+          <mat-error>Select a catalog record.</mat-error>
+        }
+      </mat-form-field>
+      <mat-autocomplete
+        #counterpartAutocomplete="matAutocomplete"
+        [displayWith]="displayCounterpart"
+        (optionSelected)="onCounterpartSelected($event)"
+      >
+        @for (retailer of retailerResults(); track retailer.id) {
+          <mat-option [value]="retailer">
+            <strong>{{ retailer.displayName }}</strong>
+            <span> · {{ retailer.websiteHost }}</span>
+          </mat-option>
+        }
+        @for (product of productResults(); track product.id) {
+          <mat-option [value]="product">
+            <strong>#{{ product.numberId }} · {{ product.title }}</strong>
+            @if (product.brand || product.model) {
+              <span> · {{ product.brand }} {{ product.model }}</span>
+            }
+          </mat-option>
+        }
+      </mat-autocomplete>
+    }
+
+    <div class="listing-dialog__grid">
+      <mat-form-field appearance="outline" class="listing-dialog__wide">
+        <mat-label>Retailer product URL</mat-label>
+        <input
+          matInput
+          type="url"
+          formControlName="productUrl"
+          maxlength="2048"
+          autocomplete="url"
+          placeholder="https://retailer.example/product"
+        />
+        @if (form.controls.productUrl.touched && form.controls.productUrl.invalid) {
+          <mat-error>Enter an absolute HTTP or HTTPS URL without credentials or a fragment.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Retailer product code</mat-label>
+        <input matInput formControlName="retailerProductCode" maxlength="100" />
+      </mat-form-field>
+    </div>
+
+    <fieldset class="listing-dialog__price">
+      <legend>Optional new manual price</legend>
+      @if (listing()?.latestObservation; as latest) {
+        <p class="listing-dialog__current-price">
+          Current: <strong>{{ formatCurrency(latest.amount) }}</strong>
+          per {{ latest.basis }} ·
+          <time [attr.datetime]="latest.observedAt">
+            {{ formatDateTime(latest.observedAt) }}
+          </time>
+        </p>
+      }
+      @if (!priceEntryEnabled()) {
+        <p>
+          Activate the Product, Retailer, and listing before recording a new price.
+        </p>
+      } @else {
+        <p>Leave both fields blank to update metadata without creating price history.</p>
+      }
+      <div class="listing-dialog__grid">
+        <mat-form-field appearance="outline">
+          <mat-label>EUR amount</mat-label>
+          <span matTextPrefix>€&nbsp;</span>
+          <input
+            matInput
+            type="number"
+            min="0.01"
+            step="0.01"
+            formControlName="amount"
+          />
+          @if (form.controls.amount.touched && form.controls.amount.invalid) {
+            <mat-error>Enter a positive amount with at most two decimals.</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Price basis</mat-label>
+          <mat-select formControlName="basis">
+            <mat-option [value]="null">No new price</mat-option>
+            @for (basis of allowedBases(); track basis) {
+              <mat-option [value]="basis">
+                {{ basis === 'item' ? 'Individual item' : 'Package' }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+      @if (form.touched && form.hasError('pricePair')) {
+        <p class="listing-dialog__error" role="alert">
+          Amount and price basis must be supplied together.
+        </p>
+      }
+    </fieldset>
+
+    @if (saveError()) {
+      <p class="listing-dialog__error" role="alert">{{ saveError() }}</p>
+    }
+  </form>
+
+  @if (listing(); as current) {
+    <details
+      class="listing-dialog__history"
+      (toggle)="historyExpanded.set($any($event.target).open)"
+    >
+      <summary>Inspect price history</summary>
+      @if (historyExpanded()) {
+        <app-retailer-price-history
+          [productId]="current.productId"
+          [productLabel]="productLabel()"
+          [retailerId]="current.retailerId"
+          [retailerName]="retailerLabel()"
+          [refreshToken]="current.lastModified"
+        />
+      }
+    </details>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  @if (listing(); as current) {
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="
+        statusPending() ||
+        saving() ||
+        (!current.isActive &&
+          (!current.retailerIsActive || current.productStatus !== 'Active'))
+      "
+      (click)="changeStatus()"
+    >
+      {{ statusPending() ? 'Updating…' : current.isActive ? 'Deactivate' : 'Reactivate' }}
+    </button>
+  }
+  <span class="listing-dialog__action-spacer"></span>
+  <button
+    mat-button
+    type="button"
+    [disabled]="saving() || statusPending()"
+    (click)="close()"
+  >
+    Cancel
+  </button>
+  <button
+    mat-flat-button
+    type="submit"
+    form="retailer-listing-form"
+    [disabled]="!canSave()"
+  >
+    {{ saving() ? 'Saving…' : isEditing() ? 'Save listing' : 'Add listing' }}
+  </button>
+</mat-dialog-actions>

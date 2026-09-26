@@ -9,6 +9,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { buildApiUrl } from '../../../core/api/api-url';
 import { DataTableState } from '../../../shared/data-table/data-table.types';
+import { RetailerListingsService } from '../../retailer-listings/services/retailer-listings.service';
 import {
   CreateDashboardRetailerRequest,
   DashboardRetailer,
@@ -47,6 +48,7 @@ const DEFAULT_QUERY_STATE: DashboardRetailersQueryState = {
 export class DashboardRetailersService {
   private readonly http = inject(HttpClient);
   private readonly queryClient = inject(QueryClient);
+  private readonly retailerListingsService = inject(RetailerListingsService);
   private readonly queryState = signal<DashboardRetailersQueryState>(
     DEFAULT_QUERY_STATE
   );
@@ -89,7 +91,16 @@ export class DashboardRetailersService {
     mutationKey: ['retailers', 'update'],
     mutationFn: async ({ id, ...request }) =>
       firstValueFrom(this.http.put<void>(buildApiUrl(`/retailers/${id}`), request)),
-    onSuccess: async () => this.invalidateRetailerLists()
+    onSuccess: async (_, request) => {
+      await Promise.all([
+        this.invalidateRetailerLists(),
+        this.queryClient.invalidateQueries({
+          queryKey: ['retailers', 'detail', request.id],
+          exact: true
+        }),
+        this.retailerListingsService.invalidateRetailerLifecycle(request.id)
+      ]);
+    }
   }));
 
   readonly setRetailerStatusMutation = injectMutation<
@@ -105,7 +116,16 @@ export class DashboardRetailersService {
           {}
         )
       ),
-    onSuccess: async () => this.invalidateRetailerLists()
+    onSuccess: async (_, request) => {
+      await Promise.all([
+        this.invalidateRetailerLists(),
+        this.queryClient.invalidateQueries({
+          queryKey: ['retailers', 'detail', request.id],
+          exact: true
+        }),
+        this.retailerListingsService.invalidateRetailerLifecycle(request.id)
+      ]);
+    }
   }));
 
   setTableState(state: DataTableState<DashboardRetailer>): void {

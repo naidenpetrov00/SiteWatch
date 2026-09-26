@@ -19,10 +19,7 @@ import {
   RetailerStatusConfirmDialogComponent,
   RetailerStatusConfirmDialogData
 } from '../components/retailer-status-confirm-dialog/retailer-status-confirm-dialog.component';
-import {
-  DashboardRetailer,
-  DashboardRetailerDetails
-} from '../models/dashboard-retailer.models';
+import { DashboardRetailer } from '../models/dashboard-retailer.models';
 import { DashboardRetailersService } from '../services/dashboard-retailers.service';
 import { getRetailerError } from '../utils/retailer-error';
 
@@ -50,8 +47,9 @@ export class ManageRetailersPage {
       key: 'displayName',
       label: 'Retailer Name',
       sortable: true,
-      cellType: 'button',
+      cellType: 'internal-link',
       filter: { kind: 'text', placeholder: 'Filter Retailer Name' },
+      linkRouteAccessor: (retailer) => ['/manage-retailers', retailer.id],
       ariaLabelAccessor: (retailer) => `View or edit ${retailer.displayName}`
     },
     {
@@ -141,38 +139,8 @@ export class ManageRetailersPage {
     row: DashboardRetailer;
     column: DataTableColumn<DashboardRetailer>;
   }): Promise<void> {
-    if (event.column.key === 'displayName') {
-      await this.openEditRetailerDialog(event.row);
-      return;
-    }
-
     if (event.column.key === 'isActive') {
       await this.confirmStatusChange(event.row);
-    }
-  }
-
-  private async openEditRetailerDialog(retailer: DashboardRetailer): Promise<void> {
-    this.clearFeedback();
-    try {
-      const details = await this.retailersService.getRetailerById(retailer.id);
-      const dialogRef = this.dialog.open<
-        RetailerDialogComponent,
-        DashboardRetailerDetails,
-        boolean
-      >(RetailerDialogComponent, {
-        autoFocus: false,
-        ariaLabel: `Edit ${details.displayName}`,
-        width: '44rem',
-        maxWidth: 'calc(100vw - 2rem)',
-        data: details
-      });
-      if (await firstValueFrom(dialogRef.afterClosed())) {
-        this.pageMessage.set('Retailer updated successfully.');
-      }
-    } catch (error) {
-      this.pageError.set(
-        getRetailerError(error, 'The retailer details could not be loaded.')
-      );
     }
   }
 

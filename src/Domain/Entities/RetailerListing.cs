@@ -19,6 +19,7 @@ public sealed class RetailerListing : BaseAuditableEntity, IAgregateRoot
     public Guid RetailerId { get; private set; }
     public Retailer Retailer { get; private set; } = null!;
     public string? ProductUrl { get; private set; }
+    public bool IsActive { get; private set; }
     public string? RetailerProductCode { get; private set; }
     public IReadOnlyCollection<RetailerPriceObservation> PriceObservations =>
         _priceObservations;
@@ -38,7 +39,8 @@ public sealed class RetailerListing : BaseAuditableEntity, IAgregateRoot
             Product = product,
             ProductId = product.Id,
             Retailer = retailer,
-            RetailerId = retailer.Id
+            RetailerId = retailer.Id,
+            IsActive = true
         };
         listing.UpdateMetadata(productUrl, retailerProductCode);
         return listing;
@@ -62,6 +64,12 @@ public sealed class RetailerListing : BaseAuditableEntity, IAgregateRoot
         string? sourceReference,
         string recordedBy)
     {
+        if (!IsActive)
+        {
+            throw new InvalidOperationException(
+                "Prices cannot be recorded for an inactive retailer listing.");
+        }
+
         var observation = RetailerPriceObservation.Create(
             this,
             amount,
@@ -74,6 +82,10 @@ public sealed class RetailerListing : BaseAuditableEntity, IAgregateRoot
         _priceObservations.Add(observation);
         return observation;
     }
+
+    public void Activate() => IsActive = true;
+
+    public void Deactivate() => IsActive = false;
 
     private static string? NormalizeProductUrl(string? value)
     {

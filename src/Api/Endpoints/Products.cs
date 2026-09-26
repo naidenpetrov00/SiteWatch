@@ -2,7 +2,7 @@ using Api.SeedWork;
 using Api.SeedWork.Extensions;
 using Application.Products.Commands;
 using Application.Products.Queries;
-using Application.Offers.Pricing;
+using Application.RetailerListings;
 using Application.SeedWork.Models;
 using Application.SeedWork.Security;
 using MediatR;
@@ -37,6 +37,12 @@ public sealed class Products : EndpointGroupBase
             .WithName("GetRetailerPriceHistory")
             .WithSummary("Get newest-first price history for a Product and Retailer")
             .Produces<RetailerPriceHistoryDto>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .Produces(StatusCodes.Status404NotFound);
+        group.MapGet("/{productId:guid}/retailer-listings", GetRetailerListings)
+            .WithName("GetProductRetailerListings")
+            .WithSummary("Get paged Retailer listings for a Product")
+            .Produces<PagedResult<RetailerListingDto>>(StatusCodes.Status200OK)
             .ProducesValidationProblem()
             .Produces(StatusCodes.Status404NotFound);
         dashboardGroup.MapGet("/products", GetDashboardProducts)
@@ -77,6 +83,12 @@ public sealed class Products : EndpointGroupBase
         await mediator.Send(command, cancellationToken);
         return TypedResults.NoContent();
     }
+
+    private static async Task<Ok<PagedResult<RetailerListingDto>>> GetRetailerListings(
+        IMediator mediator,
+        [AsParameters] ProductRetailerListingsQuery query,
+        CancellationToken cancellationToken) =>
+        TypedResults.Ok(await mediator.Send(query, cancellationToken));
 
     private static async Task<Ok<PagedResult<ProductTableDto>>> GetDashboardProducts(
         IMediator mediator,

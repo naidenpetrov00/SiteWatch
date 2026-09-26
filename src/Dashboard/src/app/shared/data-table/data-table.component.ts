@@ -7,6 +7,7 @@ import {
   output,
   signal
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -14,6 +15,7 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 import {
   DataTableColumn,
@@ -43,6 +45,8 @@ import { ActionButtonComponent } from '../ui/action-button/action-button.compone
     MatSelectModule,
     MatSortModule,
     MatTableModule,
+    MatTooltipModule,
+    RouterLink,
     ActionButtonComponent
   ],
   templateUrl: './data-table.component.html',
@@ -258,6 +262,17 @@ export class DataTableComponent<T extends object> {
 
   getLinkHref(row: T, column: DataTableColumn<T>): string | null {
     return column.linkHrefAccessor?.(row) ?? null;
+  }
+
+  getLinkRoute(
+    row: T,
+    column: DataTableColumn<T>
+  ): string | readonly (string | number)[] {
+    return column.linkRouteAccessor?.(row) ?? '/';
+  }
+
+  getTooltip(row: T, column: DataTableColumn<T>): string | null {
+    return column.tooltipAccessor?.(row) ?? null;
   }
 
   isCellButtonDisabled(row: T, column: DataTableColumn<T>): boolean {

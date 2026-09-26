@@ -1,0 +1,68 @@
+<main class="catalog-detail">
+  <a class="catalog-detail__back" routerLink="/manage-retailers">← Back to Retailers</a>
+
+  @if (retailerQuery.isPending()) {
+    <p aria-live="polite">Loading Retailer…</p>
+  } @else if (retailerQuery.isError()) {
+    <p class="catalog-detail__error" role="alert">The Retailer could not be loaded.</p>
+  } @else if (retailerQuery.data(); as retailer) {
+    <header class="catalog-detail__header">
+      <div>
+        <p class="catalog-detail__eyebrow">Retailer</p>
+        <h1>{{ retailer.displayName }}</h1>
+        <p>{{ retailer.companyPerson.displayName }}</p>
+      </div>
+      <div class="catalog-detail__actions">
+        <button mat-stroked-button type="button" (click)="editRetailer()">
+          Edit Retailer
+        </button>
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="statusPending()"
+          (click)="changeRetailerStatus()"
+        >
+          {{ retailer.isActive ? 'Deactivate Retailer' : 'Activate Retailer' }}
+        </button>
+        <app-action-button
+          label="Add Listing"
+          variant="primary"
+          [disabled]="!retailer.isActive"
+          (clicked)="openAddListing()"
+        />
+      </div>
+    </header>
+
+    @if (pageError()) {
+      <p class="catalog-detail__error" role="alert">{{ pageError() }}</p>
+    }
+
+    <dl class="catalog-detail__facts">
+      <div><dt>Status</dt><dd>{{ retailer.isActive ? 'Active' : 'Inactive' }}</dd></div>
+      <div><dt>Legal company</dt><dd>{{ retailer.companyPerson.displayName }}</dd></div>
+      <div>
+        <dt>Website</dt>
+        <dd>
+          <a [href]="retailer.baseWebsiteUrl" target="_blank" rel="noopener noreferrer">
+            {{ retailer.websiteHost }}
+          </a>
+        </dd>
+      </div>
+      @if (retailer.notes) {
+        <div><dt>Notes</dt><dd>{{ retailer.notes }}</dd></div>
+      }
+    </dl>
+
+    @if (!retailer.isActive) {
+      <p class="catalog-detail__notice">
+        Activate this Retailer before creating or reactivating Product listings.
+      </p>
+    }
+
+    <app-retailer-listings-table
+      perspective="retailer"
+      [ownerId]="retailer.id"
+      [fixedRetailer]="retailer"
+    />
+  }
+</main>

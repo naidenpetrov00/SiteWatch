@@ -1,6 +1,8 @@
-<h2 mat-dialog-title>{{ data.retailerName }} price history</h2>
-<mat-dialog-content>
-  <p class="price-history__product">{{ data.productLabel }}</p>
+<section
+  class="price-history"
+  [attr.aria-label]="retailerName() + ' price history for ' + productLabel()"
+>
+  <p class="price-history__product">{{ productLabel() }}</p>
 
   @if (loading()) {
     <div class="price-history__loading" aria-live="polite">
@@ -10,23 +12,19 @@
   } @else if (error()) {
     <p class="price-history__error" role="alert">{{ error() }}</p>
   } @else if (history(); as currentHistory) {
-    @if (currentHistory.productUrl || currentHistory.retailerProductCode) {
-      <dl class="price-history__listing">
-        @if (currentHistory.retailerProductCode) {
-          <div><dt>Retailer code</dt><dd>{{ currentHistory.retailerProductCode }}</dd></div>
-        }
-        @if (currentHistory.productUrl) {
-          <div>
-            <dt>Product URL</dt>
-            <dd>
-              <a [href]="currentHistory.productUrl" target="_blank" rel="noopener noreferrer">
-                Open retailer product
-              </a>
-            </dd>
-          </div>
-        }
-      </dl>
-    }
+    <div class="price-history__status">
+      @if (currentHistory.retailerListingIsActive === false) {
+        <strong>Listing inactive</strong>
+      }
+      @if (currentHistory.retailerProductCode) {
+        <span>Retailer code: {{ currentHistory.retailerProductCode }}</span>
+      }
+      @if (currentHistory.productUrl) {
+        <a [href]="currentHistory.productUrl" target="_blank" rel="noopener noreferrer">
+          Open retailer product
+        </a>
+      }
+    </div>
 
     @if (currentHistory.items.length === 0) {
       <p class="price-history__empty">No price observations have been recorded.</p>
@@ -34,13 +32,27 @@
       <ol class="price-history__list">
         @for (observation of currentHistory.items; track observation.id) {
           <li>
-            <div>
+            <div class="price-history__price">
               <strong>{{ formatCurrency(observation.amount) }}</strong>
               <span>per {{ observation.basis }}</span>
             </div>
             <dl>
-              <div><dt>Observed</dt><dd>{{ formatDateTime(observation.observedAt) }}</dd></div>
-              <div><dt>Recorded</dt><dd>{{ formatDateTime(observation.recordedAt) }}</dd></div>
+              <div>
+                <dt>Observed</dt>
+                <dd>
+                  <time [attr.datetime]="observation.observedAt">
+                    {{ formatDateTime(observation.observedAt) }}
+                  </time>
+                </dd>
+              </div>
+              <div>
+                <dt>Recorded</dt>
+                <dd>
+                  <time [attr.datetime]="observation.recordedAt">
+                    {{ formatDateTime(observation.recordedAt) }}
+                  </time>
+                </dd>
+              </div>
               <div><dt>Source</dt><dd>{{ observation.source }}</dd></div>
               <div><dt>Recorded by</dt><dd>{{ observation.recordedBy }}</dd></div>
               @if (observation.sourceReference) {
@@ -60,7 +72,4 @@
       (page)="onPage($event)"
     />
   }
-</mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button type="button" mat-dialog-close>Close</button>
-</mat-dialog-actions>
+</section>

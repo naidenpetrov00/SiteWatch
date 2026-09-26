@@ -10,6 +10,7 @@ import {
   signal,
   untracked
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import {
   AbstractControl,
   FormBuilder,
@@ -37,6 +38,8 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { DashboardRetailerLookup } from '../../../retailers/models/dashboard-retailer.models';
 import { DashboardRetailersService } from '../../../retailers/services/dashboard-retailers.service';
+import { RetailerPriceHistoryDialogComponent } from '../../../retailer-listings/components/retailer-price-history-dialog/retailer-price-history-dialog.component';
+import { RetailerPriceHistoryDialogData } from '../../../retailer-listings/models/retailer-listing.models';
 import {
   OfferPriceBasis,
   OfferPricingRequirement,
@@ -50,10 +53,6 @@ import {
   measurementUnitLabel,
   packageUnitLabel
 } from '../../utils/offer-quantity';
-import {
-  OfferPriceHistoryDialogComponent,
-  OfferPriceHistoryDialogData
-} from '../offer-price-history-dialog/offer-price-history-dialog.component';
 
 type PriceCellForm = FormGroup<{
   amount: FormControl<number | null>;
@@ -101,7 +100,8 @@ type PricingDisplayRow =
     MatProgressSpinnerModule,
     MatSelectModule,
     MatTableModule,
-    MatTooltipModule
+    MatTooltipModule,
+    RouterLink
   ],
   templateUrl: './offer-pricing-matrix.component.html',
   styleUrl: './offer-pricing-matrix.component.css',
@@ -225,7 +225,7 @@ export class OfferPricingMatrixComponent {
     displayRow: PricingProductDisplayRow,
     cell: OfferRetailerPriceCell
   ): void {
-    if (!this.editable()) return;
+    if (!this.canEditCell(cell)) return;
     const row = displayRow.product;
     const key = this.cellKey(row.offerProductLineId, cell.retailerId);
     this.clearCellError(key);
@@ -257,7 +257,7 @@ export class OfferPricingMatrixComponent {
   ): Promise<void> {
     const row = displayRow.product;
     const form = this.formFor(row, cell);
-    if (!this.editable() || form.invalid || this.isMutating()) {
+    if (!this.canEditCell(cell) || form.invalid || this.isMutating()) {
       form.markAllAsTouched();
       return;
     }
@@ -301,7 +301,11 @@ export class OfferPricingMatrixComponent {
     row: OfferPricingProductRow,
     cell: OfferRetailerPriceCell
   ): Promise<void> {
-    if (!this.editable() || !cell.latestObservation || this.isMutating()) return;
+    if (
+      !this.canEditCell(cell) ||
+      !cell.latestObservation ||
+      this.isMutating()
+    ) return;
     this.clearFeedback();
     try {
       await this.offersService.selectProductPrice({
@@ -334,10 +338,11 @@ export class OfferPricingMatrixComponent {
 
   openHistory(row: OfferPricingProductRow, cell: OfferRetailerPriceCell): void {
     this.dialog.open<
-      OfferPriceHistoryDialogComponent,
-      OfferPriceHistoryDialogData
-    >(OfferPriceHistoryDialogComponent, {
+      RetailerPriceHistoryDialogComponent,
+      RetailerPriceHistoryDialogData
+    >(RetailerPriceHistoryDialogComponent, {
       autoFocus: false,
+      restoreFocus: true,
       ariaLabel: `${this.retailerName(cell.retailerId)} price history for ${row.title}`,
       width: '42rem',
       maxWidth: 'calc(100vw - 2rem)',
@@ -383,6 +388,16 @@ export class OfferPricingMatrixComponent {
 
   isSelected(row: OfferPricingProductRow, retailerId: string): boolean {
     return row.selectedPrice?.retailerId === retailerId;
+  }
+
+  canEditCell(cell: OfferRetailerPriceCell): boolean {
+    return (
+      this.editable() &&
+      cell.retailerListingIsActive !== false &&
+      this.matrix()?.retailers.find(
+        (retailer) => retailer.retailerId === cell.retailerId
+      )?.isActive !== false
+    );
   }
 
   canRemoveRetailer(retailerId: string): boolean {
@@ -435,7 +450,10 @@ export class OfferPricingMatrixComponent {
       0,
       Math.round((todayDay.getTime() - observedDay.getTime()) / 86_400_000)
     );
-    return days === 0 ? 'today' : `${days} day${days === 1 ? '' : 's'} ago`;
+    return new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' }).format(
+      -days,
+      'day'
+    );
   }
 
   exactDate(value: string): string {
@@ -454,9 +472,10 @@ export class OfferPricingMatrixComponent {
     for (const row of rows) {
       for (const cell of row.retailerPrices) {
         const key = this.cellKey(row.offerProductLineId, cell.retailerId);
-        const form = existing.get(key) ?? this.createForm(row, cell, editable);
-        if (!form.dirty) this.resetForm(form, row, cell, editable);
-        else if (editable) form.enable({ emitEvent: false });
+        const cellEditable = editable && this.canEditCell(cell);
+        const form = existing.get(key) ?? this.createForm(row, cell, cellEditable);
+        if (!form.dirty) this.resetForm(form, row, cell, cellEditable);
+        else if (cellEditable) form.enable({ emitEvent: false });
         else form.disable({ emitEvent: false });
         next.set(key, form);
       }

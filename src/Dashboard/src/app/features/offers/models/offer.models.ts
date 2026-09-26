@@ -1,3 +1,9 @@
+import {
+  RetailerPriceBasis,
+  RetailerPriceObservation,
+  RetailerPriceSource
+} from '../../retailer-listings/models/retailer-listing.models';
+
 export type OfferStatus = 'Draft' | 'Finalized' | 'Archived';
 
 export interface OfferSummary {
@@ -163,20 +169,9 @@ export const OFFER_STATUS_OPTIONS = [
   { label: 'Archived', value: 'Archived' }
 ] as const;
 
-export type OfferPriceBasis = 'item' | 'package';
-export type OfferPriceSource = 'manual' | 'automated';
-
-export interface OfferPriceObservation {
-  id: string;
-  amount: number;
-  currencyCode: 'EUR';
-  basis: OfferPriceBasis;
-  observedAt: string;
-  recordedAt: string;
-  source: OfferPriceSource;
-  sourceReference: string | null;
-  recordedBy: string;
-}
+export type OfferPriceBasis = RetailerPriceBasis;
+export type OfferPriceSource = RetailerPriceSource;
+export type OfferPriceObservation = RetailerPriceObservation;
 
 export interface OfferSelectedPrice {
   retailerId: string;
@@ -210,6 +205,7 @@ export interface OfferRetailerPriceCell {
   productId: string;
   retailerId: string;
   retailerListingId: string | null;
+  retailerListingIsActive: boolean | null;
   productUrl: string | null;
   retailerProductCode: string | null;
   latestObservation: OfferPriceObservation | null;
@@ -267,18 +263,6 @@ export interface OfferPricingMatrix {
   optionalTotal: number | null;
   retailers: readonly OfferPricingRetailer[];
   products: readonly OfferPricingProductRow[];
-}
-
-export interface RetailerPriceHistory {
-  productId: string;
-  retailerId: string;
-  retailerListingId: string | null;
-  productUrl: string | null;
-  retailerProductCode: string | null;
-  items: readonly OfferPriceObservation[];
-  pageIndex: number;
-  pageSize: number;
-  totalCount: number;
 }
 
 export interface AddOfferPricingRetailerRequest {
