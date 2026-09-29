@@ -38,6 +38,8 @@ public sealed record OfferDetailsDto(
     string? CreatedBy,
     DateTimeOffset LastModified,
     string? LastModifiedBy,
+    DateTimeOffset? FinalizedAt,
+    string? FinalizedBy,
     IReadOnlyList<OfferActivityDto> Activities,
     IReadOnlyList<OfferProductLineDto> Products)
 {
@@ -55,6 +57,8 @@ public sealed record OfferDetailsDto(
         offer.CreatedBy,
         offer.LastModified,
         offer.LastModifiedBy,
+        offer.FinalizedAt,
+        offer.FinalizedBy,
         offer.Activities
             .OrderBy(activity => activity.SortOrder)
             .ThenBy(activity => activity.Id)

@@ -1,6 +1,7 @@
 using System.Data;
 using Application.Offers;
 using Application.Offers.Commands;
+using Application.Offers.Finalization;
 using Application.Offers.Queries;
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models;
@@ -12,6 +13,7 @@ using FluentValidation;
 using FluentValidation.Results;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.SqlClient;
 
 namespace Infrastructure.Offers.Services;
 
@@ -36,23 +38,22 @@ public sealed class OfferService(ApplicationDbContext dbContext, IUser user) : I
         return offer.Id;
     }
 
-    public async Task UpdateMetadataAsync(
+    public Task UpdateMetadataAsync(
         UpdateOfferMetadataCommand request,
-        CancellationToken cancellationToken)
-    {
-        var offer = await GetTrackedOfferAsync(
-            request.SiteId,
-            request.OfferId,
+        CancellationToken cancellationToken) =>
+        ExecuteMutationAsync(
+            async () =>
+            {
+                var offer = await GetTrackedOfferAsync(
+                    request.SiteId,
+                    request.OfferId,
+                    cancellationToken);
+                EnsureDraft(offer);
+                offer.UpdateMetadata(request.Title, request.Notes);
+                SetAuditValues(offer, isNew: false);
+            },
+            "The metadata could not be updated because the Offer changed.",
             cancellationToken);
-        if (offer.Status != OfferStatus.Draft)
-        {
-            throw new OfferConflictException("Only draft offers can be edited.");
-        }
-
-        offer.UpdateMetadata(request.Title, request.Notes);
-        SetAuditValues(offer, isNew: false);
-        await dbContext.SaveChangesAsync(cancellationToken);
-    }
 
     public Task<Guid> AddActivityAsync(
         AddOfferActivityCommand request,
@@ -229,20 +230,62 @@ public sealed class OfferService(ApplicationDbContext dbContext, IUser user) : I
             "The measurements could not be updated because the Offer changed.",
             cancellationToken);
 
-    public async Task ArchiveAsync(
+    public Task ArchiveAsync(
+        Guid siteId,
+        Guid offerId,
+        CancellationToken cancellationToken) =>
+        ExecuteMutationAsync(
+            async () =>
+            {
+                var offer = await GetTrackedOfferAsync(siteId, offerId, cancellationToken);
+                if (offer.Archive())
+                {
+                    SetAuditValues(offer, isNew: false);
+                }
+            },
+            "The Offer could not be archived because it changed.",
+            cancellationToken);
+
+    public async Task<OfferFinalizationReadinessDto> GetReadinessAsync(
         Guid siteId,
         Guid offerId,
         CancellationToken cancellationToken)
     {
-        var offer = await GetTrackedOfferAsync(siteId, offerId, cancellationToken);
-        if (!offer.Archive())
-        {
-            return;
-        }
-
-        SetAuditValues(offer, isNew: false);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        var offer = await LoadFinalizationOfferAsync(
+            siteId,
+            offerId,
+            tracked: false,
+            cancellationToken: cancellationToken);
+        return await EvaluateReadinessAsync(offer, cancellationToken);
     }
+
+    public Task FinalizeAsync(
+        Guid siteId,
+        Guid offerId,
+        CancellationToken cancellationToken) =>
+        ExecuteMutationAsync(
+            async () =>
+            {
+                var offer = await LoadFinalizationOfferAsync(
+                    siteId,
+                    offerId,
+                    tracked: true,
+                    cancellationToken: cancellationToken);
+                var readiness = await EvaluateReadinessAsync(offer, cancellationToken);
+                if (!readiness.CanFinalize)
+                {
+                    throw new OfferConflictException(
+                        string.Join(" ", readiness.BlockingReasons));
+                }
+
+                var now = DateTimeOffset.UtcNow;
+                var userId = user.Id ?? throw new UnauthorizedAccessException();
+                offer.Finalize(now, userId);
+                offer.LastModified = now;
+                offer.LastModifiedBy = userId;
+            },
+            "The Offer could not be finalized because it changed.",
+            cancellationToken);
 
     public async Task<OfferDetailsDto> GetByIdAsync(
         Guid siteId,
@@ -406,6 +449,66 @@ public sealed class OfferService(ApplicationDbContext dbContext, IUser user) : I
             result.TotalCount);
     }
 
+    private async Task<Offer> LoadFinalizationOfferAsync(
+        Guid siteId,
+        Guid offerId,
+        bool tracked,
+        CancellationToken cancellationToken)
+    {
+        var query = dbContext.Offers
+            .Include(offer => offer.Activities)
+            .Include(offer => offer.ProductLines)
+            .ThenInclude(line => line.PriceSelection)
+            .AsSplitQuery();
+        var offer = await (tracked
+                ? query
+                : query.AsNoTrackingWithIdentityResolution())
+            .SingleOrDefaultAsync(
+                item => item.Id == offerId && item.SiteId == siteId,
+                cancellationToken);
+        return offer ?? throw new NotFoundException(nameof(Offer), offerId.ToString());
+    }
+
+    private async Task<OfferFinalizationReadinessDto> EvaluateReadinessAsync(
+        Offer offer,
+        CancellationToken cancellationToken)
+    {
+        var selections = offer.ProductLines
+            .Where(line => line.PriceSelection is not null)
+            .Select(line => new
+            {
+                LineId = line.Id,
+                ListingId = line.PriceSelection!.RetailerListingId,
+                ObservationId = line.PriceSelection!.RetailerPriceObservationId
+            })
+            .ToList();
+        var listingIds = selections.Select(item => item.ListingId).Distinct().ToList();
+        var latest = await dbContext.RetailerListings
+            .AsNoTracking()
+            .Where(listing => listingIds.Contains(listing.Id))
+            .Select(listing => new
+            {
+                ListingId = listing.Id,
+                LatestObservationId = listing.PriceObservations
+                    .OrderByDescending(observation => observation.ObservedAt)
+                    .ThenByDescending(observation => observation.RecordedAt)
+                    .ThenByDescending(observation => observation.Id)
+                    .Select(observation => observation.Id)
+                    .FirstOrDefault()
+            })
+            .ToListAsync(cancellationToken);
+        var latestByListingId = latest.ToDictionary(
+            item => item.ListingId,
+            item => item.LatestObservationId);
+        var linesWithNewerObservations = selections
+            .Where(item => latestByListingId.TryGetValue(item.ListingId, out var latestId)
+                && latestId != Guid.Empty
+                && latestId != item.ObservationId)
+            .Select(item => item.LineId)
+            .ToHashSet();
+        return OfferFinalizationReadiness.Evaluate(offer, linesWithNewerObservations);
+    }
+
     private async Task<Offer> GetTrackedOfferAsync(
         Guid siteId,
         Guid offerId,
@@ -552,7 +655,10 @@ public sealed class OfferService(ApplicationDbContext dbContext, IUser user) : I
         }
         catch (DbUpdateException exception)
         {
-            await transaction.RollbackAsync(CancellationToken.None);
+            throw new OfferConflictException(conflictMessage, exception);
+        }
+        catch (SqlException exception) when (exception.Number is 1205 or 1222)
+        {
             throw new OfferConflictException(conflictMessage, exception);
         }
         catch

@@ -9,6 +9,7 @@ using Domain.SeedWork.Enums;
 using Infrastructure.Data;
 using Infrastructure.RetailerListings.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.SqlClient;
 
 namespace Infrastructure.Offers.Services;
 
@@ -356,14 +357,20 @@ public sealed class OfferPricingService(
             row.RequiredQuantity <= 0m || row.SelectedRequiredTotal.HasValue);
         var optionalComplete = rows.All(row =>
             row.OptionalQuantity <= 0m || row.SelectedOptionalTotal.HasValue);
+        var requiredTotal = requiredComplete
+            ? SumTotals(rows.Select(row => row.SelectedRequiredTotal))
+            : null;
+        var optionalTotal = optionalComplete
+            ? SumTotals(rows.Select(row => row.SelectedOptionalTotal))
+            : null;
         return new OfferPricingMatrixDto(
             offer.Id,
             offer.Status.ToString(),
             RetailerPriceObservation.EuroCurrencyCode,
-            requiredComplete,
-            optionalComplete,
-            requiredComplete ? rows.Sum(row => row.SelectedRequiredTotal ?? 0m) : null,
-            optionalComplete ? rows.Sum(row => row.SelectedOptionalTotal ?? 0m) : null,
+            requiredComplete && requiredTotal.HasValue,
+            optionalComplete && optionalTotal.HasValue,
+            requiredTotal,
+            optionalTotal,
             retailers,
             rows);
     }
@@ -537,7 +544,28 @@ public sealed class OfferPricingService(
         {
             return line.CalculatePriceTotal(quantity, amount, basis);
         }
-        catch (InvalidOperationException)
+        catch (Exception exception) when (
+            exception is InvalidOperationException
+                or ArgumentOutOfRangeException
+                or OverflowException)
+        {
+            return null;
+        }
+    }
+
+    private static decimal? SumTotals(IEnumerable<decimal?> totals)
+    {
+        try
+        {
+            var sum = 0m;
+            foreach (var total in totals)
+            {
+                sum += total ?? 0m;
+            }
+
+            return sum;
+        }
+        catch (OverflowException)
         {
             return null;
         }
@@ -584,7 +612,10 @@ public sealed class OfferPricingService(
         }
         catch (DbUpdateException exception)
         {
-            await transaction.RollbackAsync(CancellationToken.None);
+            throw new OfferConflictException(persistenceConflictMessage, exception);
+        }
+        catch (SqlException exception) when (exception.Number is 1205 or 1222)
+        {
             throw new OfferConflictException(persistenceConflictMessage, exception);
         }
         catch

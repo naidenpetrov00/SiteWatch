@@ -1,5 +1,6 @@
 using Api.SeedWork;
 using Application.Offers.Commands;
+using Application.Offers.Finalization;
 using Application.Offers.Queries;
 using Application.Offers.Pricing;
 using Application.SeedWork.Models;
@@ -79,11 +80,25 @@ public sealed class Offers : EndpointGroupBase
             .ProducesValidationProblem()
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status409Conflict);
+        group.MapGet("/{offerId:guid}/readiness", GetFinalizationReadiness)
+            .WithName("GetOfferFinalizationReadiness")
+            .WithSummary("Check whether an Offer is ready to be finalized")
+            .Produces<OfferFinalizationReadinessDto>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .Produces(StatusCodes.Status404NotFound);
+        group.MapPatch("/{offerId:guid}/finalize", FinalizeOffer)
+            .WithName("FinalizeSiteOffer")
+            .WithSummary("Permanently finalize a ready draft Offer")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict);
         group.MapPatch("/{offerId:guid}/archive", ArchiveOffer)
             .WithName("ArchiveSiteOffer")
             .WithSummary("Archive an offer without deleting it")
             .Produces(StatusCodes.Status204NoContent)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict);
         group.MapGet("/{offerId:guid}/pricing", GetPricingMatrix)
             .WithName("GetOfferPricingMatrix")
             .WithSummary("Get the Product-by-Retailer pricing matrix for an Offer")
@@ -241,6 +256,28 @@ public sealed class Offers : EndpointGroupBase
         command.SiteId = siteId;
         command.OfferId = offerId;
         await mediator.Send(command, cancellationToken);
+        return TypedResults.NoContent();
+    }
+
+    private static async Task<Ok<OfferFinalizationReadinessDto>>
+        GetFinalizationReadiness(
+            IMediator mediator,
+            Guid siteId,
+            Guid offerId,
+            CancellationToken cancellationToken) =>
+        TypedResults.Ok(await mediator.Send(
+            new OfferFinalizationReadinessQuery(siteId, offerId),
+            cancellationToken));
+
+    private static async Task<NoContent> FinalizeOffer(
+        IMediator mediator,
+        Guid siteId,
+        Guid offerId,
+        CancellationToken cancellationToken)
+    {
+        await mediator.Send(
+            new FinalizeOfferCommand(siteId, offerId),
+            cancellationToken);
         return TypedResults.NoContent();
     }
 

@@ -17,6 +17,7 @@ import {
   OfferActivityCandidate,
   OfferActivityCatalogNode,
   OfferDetails,
+  OfferFinalizationReadiness,
   OfferPricingMatrix,
   OfferPricingProductRow,
   OfferRetailerPriceCell,
@@ -130,6 +131,20 @@ export class OffersService {
     };
   });
 
+  readonly finalizationReadinessQuery = injectQuery<OfferFinalizationReadiness>(() => {
+    const route = this.detailRoute();
+    return {
+      queryKey: this.readinessQueryKey(route.siteId, route.offerId),
+      queryFn: () =>
+        firstValueFrom(
+          this.http.get<OfferFinalizationReadiness>(
+            buildApiUrl(`/sites/${route.siteId}/offers/${route.offerId}/readiness`)
+          )
+        ),
+      enabled: route.siteId.length > 0 && route.offerId.length > 0
+    };
+  });
+
   readonly pricingMatrixQuery = injectQuery<OfferPricingMatrix>(() => {
     const route = this.detailRoute();
     return {
@@ -207,6 +222,21 @@ export class OffersService {
       ),
     onSuccess: async (_, request) => this.invalidateSiteOffers(request.siteId)
   }));
+
+  readonly finalizeOfferMutation = injectMutation<void, Error, OfferRouteIdentity>(
+    () => ({
+      mutationKey: ['offers', 'finalize'],
+      mutationFn: ({ siteId, offerId }) =>
+        firstValueFrom(
+          this.http.patch<void>(
+            buildApiUrl(`/sites/${siteId}/offers/${offerId}/finalize`),
+            null
+          )
+        ),
+      onSuccess: async (_, request) =>
+        this.invalidateOfferWorkspace(request.siteId, request.offerId)
+    })
+  );
 
   readonly archiveOfferMutation = injectMutation<void, Error, OfferRouteIdentity>(
     () => ({
@@ -346,6 +376,7 @@ export class OffersService {
         request.productId,
         request.retailerId
       );
+      await this.invalidateOfferPricingMutation(request.siteId, request.offerId);
     }
   }));
 
@@ -449,6 +480,14 @@ export class OffersService {
     return this.updateOfferMutation.mutateAsync(request);
   }
 
+  finalizeOffer(siteId: string, offerId: string): Promise<void> {
+    return this.finalizeOfferMutation.mutateAsync({ siteId, offerId });
+  }
+
+  refreshOfferWorkspace(siteId: string, offerId: string): Promise<void> {
+    return this.invalidateOfferWorkspace(siteId, offerId);
+  }
+
   archiveOffer(siteId: string, offerId: string): Promise<void> {
     return this.archiveOfferMutation.mutateAsync({ siteId, offerId });
   }
@@ -531,6 +570,10 @@ export class OffersService {
       this.queryClient.invalidateQueries({
         queryKey: this.pricingQueryKey(siteId, offerId),
         exact: true
+      }),
+      this.queryClient.invalidateQueries({
+        queryKey: this.readinessQueryKey(siteId, offerId),
+        exact: true
       })
     ]);
   }
@@ -550,6 +593,10 @@ export class OffersService {
       }),
       this.queryClient.invalidateQueries({
         queryKey: ['offers', 'site', siteId, 'list']
+      }),
+      this.queryClient.invalidateQueries({
+        queryKey: this.readinessQueryKey(siteId, offerId),
+        exact: true
       })
     ]);
   }
@@ -599,6 +646,10 @@ export class OffersService {
             }
           : matrix
     );
+  }
+
+  private readinessQueryKey(siteId: string, offerId: string) {
+    return ['offers', 'site', siteId, 'readiness', offerId] as const;
   }
 
   private pricingQueryKey(siteId: string, offerId: string) {

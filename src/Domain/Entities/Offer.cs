@@ -23,6 +23,9 @@ public sealed class Offer : BaseAuditableEntity, IHasNumberId, IAgregateRoot
     public string? Title { get; private set; }
     public string? Notes { get; private set; }
     public OfferStatus Status { get; private set; }
+    public DateTimeOffset? FinalizedAt { get; private set; }
+    public string? FinalizedBy { get; private set; }
+    public byte[] RowVersion { get; private set; } = [];
     public IReadOnlyCollection<OfferActivity> Activities => _activities;
     public IReadOnlyCollection<OfferProductLine> ProductLines => _productLines;
     public IReadOnlyCollection<OfferRetailerComparison> RetailerComparisons =>
@@ -57,6 +60,20 @@ public sealed class Offer : BaseAuditableEntity, IHasNumberId, IAgregateRoot
 
         Status = OfferStatus.Archived;
         return true;
+    }
+
+    public void Finalize(DateTimeOffset finalizedAt, string finalizedBy)
+    {
+        EnsureDraft();
+        ArgumentException.ThrowIfNullOrWhiteSpace(finalizedBy);
+        if (finalizedAt.Offset != TimeSpan.Zero)
+        {
+            throw new ArgumentException("Finalization time must be UTC.", nameof(finalizedAt));
+        }
+
+        Status = OfferStatus.Finalized;
+        FinalizedAt = finalizedAt;
+        FinalizedBy = finalizedBy;
     }
 
     public void AddActivity(OfferActivity activity)

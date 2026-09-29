@@ -23,6 +23,8 @@ export interface OfferDetails extends OfferSummary {
   notes: string | null;
   createdBy: string | null;
   lastModifiedBy: string | null;
+  finalizedAt: string | null;
+  finalizedBy: string | null;
   activities: readonly OfferActivity[];
   products: readonly OfferProductLine[];
 }
@@ -263,6 +265,33 @@ export interface OfferPricingMatrix {
   optionalTotal: number | null;
   retailers: readonly OfferPricingRetailer[];
   products: readonly OfferPricingProductRow[];
+}
+
+export interface OfferReadinessProduct {
+  offerProductLineId: string;
+  productNumberId: number;
+  title: string;
+}
+
+export interface OfferFinalizationReadiness {
+  offerId: string;
+  status: OfferStatus;
+  currencyCode: 'EUR';
+  selectedActivityCount: number;
+  requiredProductCount: number;
+  requiredProductsWithSelectedPrices: number;
+  requiredProductsMissingSelectedPrices: readonly OfferReadinessProduct[];
+  requiredProductsWithInvalidTotals: readonly OfferReadinessProduct[];
+  optionalProductsMissingSelectedPrices: readonly OfferReadinessProduct[];
+  optionalProductsWithInvalidTotals: readonly OfferReadinessProduct[];
+  selectedRequiredTotal: number | null;
+  selectedOptionalTotal: number | null;
+  requiredPricingComplete: boolean;
+  optionalPricingComplete: boolean;
+  selectedPricesWithNewerObservations: readonly OfferReadinessProduct[];
+  canFinalize: boolean;
+  blockingReasons: readonly string[];
+  warnings: readonly string[];
 }
 
 export interface AddOfferPricingRetailerRequest {

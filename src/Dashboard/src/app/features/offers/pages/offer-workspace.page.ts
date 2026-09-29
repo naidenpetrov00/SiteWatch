@@ -5,7 +5,8 @@ import {
   effect,
   inject,
   input,
-  signal
+  signal,
+  viewChild
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -20,6 +21,10 @@ import {
   OfferArchiveConfirmDialogData
 } from '../components/offer-archive-confirm-dialog/offer-archive-confirm-dialog.component';
 import { OfferActivityBrowserComponent } from '../components/offer-activity-browser/offer-activity-browser.component';
+import {
+  OfferFinalizeConfirmDialogComponent,
+  OfferFinalizeConfirmDialogData
+} from '../components/offer-finalize-confirm-dialog/offer-finalize-confirm-dialog.component';
 import { OfferPricingMatrixComponent } from '../components/offer-pricing-matrix/offer-pricing-matrix.component';
 import { OfferSelectedActivitiesComponent } from '../components/offer-selected-activities/offer-selected-activities.component';
 import { OffersService } from '../services/offers.service';
@@ -52,6 +57,8 @@ export class OfferWorkspacePage {
   readonly offerId = input.required<string>();
   readonly offer = computed(() => this.offersService.offerDetailsQuery.data());
   readonly isDraft = computed(() => this.offer()?.status === 'Draft');
+  readonly pricingMatrix = viewChild(OfferPricingMatrixComponent);
+  readonly selectedActivities = viewChild(OfferSelectedActivitiesComponent);
   readonly pageMessage = signal<string | null>(null);
   readonly pageError = signal<string | null>(null);
   readonly metadataForm = this.formBuilder.group({
@@ -117,6 +124,46 @@ export class OfferWorkspacePage {
     }
   }
 
+  async confirmFinalize(): Promise<void> {
+    const offer = this.offer();
+    if (!offer || offer.status !== 'Draft' || this.isFinalizing()) {
+      return;
+    }
+
+    if (this.metadataForm.dirty || this.pricingMatrix()?.hasUnsavedEdits() ||
+        this.selectedActivities()?.hasUnsavedEdits()) {
+      this.pageError.set('Save or cancel unsaved Offer edits before finalizing.');
+      return;
+    }
+    if (this.isSaving() || this.isArchiving() ||
+        this.pricingMatrix()?.isMutating() ||
+        this.selectedActivities()?.isMutating() ||
+        this.offersService.addActivityMutation.isPending()) {
+      this.pageError.set('Wait for the current Offer change to finish before finalizing.');
+      return;
+    }
+
+    this.clearFeedback();
+    const dialogRef = this.dialog.open<
+      OfferFinalizeConfirmDialogComponent,
+      OfferFinalizeConfirmDialogData,
+      boolean
+    >(OfferFinalizeConfirmDialogComponent, {
+      autoFocus: false,
+      ariaLabel: `Finalize Offer ${offer.numberId}`,
+      width: '38rem',
+      maxWidth: 'calc(100vw - 2rem)',
+      data: {
+        siteId: this.siteId(),
+        offerId: this.offerId(),
+        offerNumber: offer.numberId
+      }
+    });
+    if (await firstValueFrom(dialogRef.afterClosed())) {
+      this.pageMessage.set('Offer finalized.');
+    }
+  }
+
   async confirmArchive(): Promise<void> {
     const offer = this.offer();
     if (!offer || offer.status === 'Archived') {
@@ -166,6 +213,10 @@ export class OfferWorkspacePage {
 
   isArchiving(): boolean {
     return this.offersService.archiveOfferMutation.isPending();
+  }
+
+  isFinalizing(): boolean {
+    return this.offersService.finalizeOfferMutation.isPending();
   }
 
   formatDateTime(value: string): string {

@@ -1,0 +1,73 @@
+<app-dialog-shell
+  eyebrow="Offer Lifecycle"
+  title="Finalize Offer"
+  subtitle="Finalization permanently freezes the current Offer and cannot be undone."
+>
+  <p>Review Offer #{{ data.offerNumber }} before finalizing.</p>
+
+  @if (loading()) {
+    <p aria-live="polite">Checking current Offer readiness…</p>
+  } @else if (offersService.finalizationReadinessQuery.isError()) {
+    <p class="offer-finalize__error" role="alert">
+      Readiness could not be loaded. Close this dialog and try again.
+    </p>
+  } @else if (readiness(); as current) {
+    <dl class="offer-finalize__summary">
+      <div><dt>Selected activities</dt><dd>{{ current.selectedActivityCount }}</dd></div>
+      <div><dt>Products with required quantities</dt><dd>{{ current.requiredProductCount }}</dd></div>
+      <div><dt>Required products with selected prices</dt><dd>{{ current.requiredProductsWithSelectedPrices }}</dd></div>
+      <div><dt>Required products missing prices</dt><dd>{{ current.requiredProductsMissingSelectedPrices.length }}</dd></div>
+      <div><dt>Optional products missing prices</dt><dd>{{ current.optionalProductsMissingSelectedPrices.length }}</dd></div>
+      <div>
+        <dt>{{ current.requiredPricingComplete ? 'Selected required total' : 'Selected required subtotal' }}</dt>
+        <dd>{{ formatCurrency(current.selectedRequiredTotal) }}</dd>
+      </div>
+      <div>
+        <dt>{{ current.optionalPricingComplete ? 'Selected optional total' : 'Selected optional subtotal' }}</dt>
+        <dd>{{ formatCurrency(current.selectedOptionalTotal) }}</dd>
+      </div>
+      <div><dt>Selected prices with newer observations</dt><dd>{{ current.selectedPricesWithNewerObservations.length }}</dd></div>
+    </dl>
+
+    @if (current.blockingReasons.length > 0) {
+      <section class="offer-finalize__issues offer-finalize__issues--blocking" aria-label="Blocking problems">
+        <h3>Blocking problems</h3>
+        <ul>
+          @for (reason of current.blockingReasons; track reason) {
+            <li>{{ reason }}</li>
+          }
+        </ul>
+      </section>
+    }
+
+    @if (current.warnings.length > 0) {
+      <section class="offer-finalize__issues offer-finalize__issues--warning" aria-label="Non-blocking warnings">
+        <h3>Warnings</h3>
+        <ul>
+          @for (warning of current.warnings; track warning) {
+            <li>{{ warning }}</li>
+          }
+        </ul>
+        <p>These warnings do not change the selected prices.</p>
+      </section>
+    }
+
+    @if (current.canFinalize) {
+      <p class="offer-finalize__ready">The current selected price snapshots will be kept.</p>
+    }
+  }
+
+  @if (error()) {
+    <p class="offer-finalize__error" role="alert">{{ error() }}</p>
+  }
+
+  <app-dialog-action-bar
+    dialog-shell-actions
+    cancelLabel="Cancel"
+    [cancelDisabled]="submitting()"
+    [submitLabel]="submitting() ? 'Finalizing…' : 'Finalize Offer'"
+    [submitDisabled]="!canSubmit()"
+    (cancel)="cancel()"
+    (submit)="confirm()"
+  />
+</app-dialog-shell>

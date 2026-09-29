@@ -124,6 +124,10 @@ export class OfferSelectedActivitiesComponent {
     });
   }
 
+  hasUnsavedEdits(): boolean {
+    return [...this.forms().values()].some((form) => form.dirty);
+  }
+
   formFor(activityId: string): ActivityMeasurementsForm {
     const form = this.forms().get(activityId);
     if (!form) {
@@ -259,7 +263,7 @@ export class OfferSelectedActivitiesComponent {
         return this.createMeasurementControl(section.requestedMeasurement, editable);
       }
 
-      if (!control.dirty) {
+      if (!editable || !control.dirty) {
         control.reset(
           { value: section.requestedMeasurement, disabled: !editable },
           { emitEvent: false }

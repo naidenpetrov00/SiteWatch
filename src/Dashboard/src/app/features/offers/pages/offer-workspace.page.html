@@ -91,9 +91,18 @@
                 {{ isSaving() ? 'Saving…' : 'Save Details' }}
               </button>
               <button
+                mat-flat-button
+                color="primary"
+                type="button"
+                [disabled]="isSaving() || isArchiving() || isFinalizing()"
+                (click)="confirmFinalize()"
+              >
+                Finalize Offer
+              </button>
+              <button
                 mat-stroked-button
                 type="button"
-                [disabled]="isSaving() || isArchiving()"
+                [disabled]="isSaving() || isArchiving() || isFinalizing()"
                 (click)="confirmArchive()"
               >
                 {{ isArchiving() ? 'Archiving…' : 'Archive Offer' }}
@@ -141,6 +150,16 @@
             <dt>Last Modified</dt>
             <dd>{{ formatDateTime(currentOffer.lastModified) }}</dd>
           </div>
+          @if (currentOffer.finalizedAt) {
+            <div>
+              <dt>Finalized</dt>
+              <dd>{{ formatDateTime(currentOffer.finalizedAt) }}</dd>
+            </div>
+            <div>
+              <dt>Finalized By</dt>
+              <dd>{{ currentOffer.finalizedBy }}</dd>
+            </div>
+          }
         </dl>
       </aside>
     </div>

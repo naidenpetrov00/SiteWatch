@@ -1,4 +1,5 @@
 using Application.Offers.Commands;
+using Application.Offers.Finalization;
 using Application.Offers.Queries;
 using Application.SeedWork.Models;
 
@@ -11,6 +12,14 @@ public interface IOfferService
         UpdateOfferMetadataCommand request,
         CancellationToken cancellationToken);
     Task ArchiveAsync(
+        Guid siteId,
+        Guid offerId,
+        CancellationToken cancellationToken);
+    Task FinalizeAsync(
+        Guid siteId,
+        Guid offerId,
+        CancellationToken cancellationToken);
+    Task<OfferFinalizationReadinessDto> GetReadinessAsync(
         Guid siteId,
         Guid offerId,
         CancellationToken cancellationToken);

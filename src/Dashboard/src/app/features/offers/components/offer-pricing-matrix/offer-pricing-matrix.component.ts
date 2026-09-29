@@ -355,6 +355,11 @@ export class OfferPricingMatrixComponent {
     });
   }
 
+  hasUnsavedEdits(): boolean {
+    return this.editingLocations().size > 0 ||
+      [...this.forms().values()].some((form) => form.dirty);
+  }
+
   formFor(row: OfferPricingProductRow, cell: OfferRetailerPriceCell): PriceCellForm {
     const form = this.forms().get(this.cellKey(row.offerProductLineId, cell.retailerId));
     if (!form) throw new Error('Missing Offer pricing cell form.');
@@ -474,7 +479,7 @@ export class OfferPricingMatrixComponent {
         const key = this.cellKey(row.offerProductLineId, cell.retailerId);
         const cellEditable = editable && this.canEditCell(cell);
         const form = existing.get(key) ?? this.createForm(row, cell, cellEditable);
-        if (!form.dirty) this.resetForm(form, row, cell, cellEditable);
+        if (!editable || !form.dirty) this.resetForm(form, row, cell, cellEditable);
         else if (cellEditable) form.enable({ emitEvent: false });
         else form.disable({ emitEvent: false });
         next.set(key, form);

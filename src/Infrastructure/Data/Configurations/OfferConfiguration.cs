@@ -23,6 +23,11 @@ public sealed class OfferConfiguration : IEntityTypeConfiguration<Offer>
             .HasMaxLength(32)
             .IsRequired();
 
+        builder.Property(offer => offer.FinalizedBy)
+            .HasMaxLength(450);
+        builder.Property(offer => offer.RowVersion)
+            .IsRowVersion();
+
         builder.HasIndex(offer => offer.NumberId).IsUnique();
         builder.HasIndex(offer => offer.SiteId);
         builder.HasIndex(offer => new { offer.SiteId, offer.Status, offer.NumberId });
