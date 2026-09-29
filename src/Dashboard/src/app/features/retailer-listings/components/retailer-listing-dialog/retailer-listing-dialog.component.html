@@ -143,11 +143,15 @@
     @if (saveError()) {
       <p class="listing-dialog__error" role="alert">{{ saveError() }}</p>
     }
+    @if (saveSuccess()) {
+      <p class="listing-dialog__success" role="status">{{ saveSuccess() }}</p>
+    }
   </form>
 
   @if (listing(); as current) {
     <details
       class="listing-dialog__history"
+      [open]="historyExpanded()"
       (toggle)="historyExpanded.set($any($event.target).open)"
     >
       <summary>Inspect price history</summary>
@@ -157,7 +161,7 @@
           [productLabel]="productLabel()"
           [retailerId]="current.retailerId"
           [retailerName]="retailerLabel()"
-          [refreshToken]="current.lastModified"
+          [refreshToken]="historyRefreshRevision()"
         />
       }
     </details>

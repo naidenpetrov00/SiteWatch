@@ -79,6 +79,11 @@
   color: var(--mat-sys-error);
 }
 
+.listing-dialog__success {
+  margin: 0;
+  color: #166534;
+}
+
 .listing-dialog__history {
   margin-top: 1rem;
   border-top: 1px solid rgba(15, 23, 42, 0.14);

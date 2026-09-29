@@ -74,8 +74,10 @@ public sealed class RetailerListingService(
         Guid listingId,
         CancellationToken cancellationToken)
     {
-        var projection = await Project(dbContext.RetailerListings.AsNoTracking())
-            .SingleOrDefaultAsync(item => item.Id == listingId, cancellationToken);
+        var projection = await Project(dbContext.RetailerListings
+                .AsNoTracking()
+                .Where(listing => listing.Id == listingId))
+            .SingleOrDefaultAsync(cancellationToken);
         return projection is null
             ? throw new NotFoundException(nameof(RetailerListing), listingId.ToString())
             : ToDto(projection);

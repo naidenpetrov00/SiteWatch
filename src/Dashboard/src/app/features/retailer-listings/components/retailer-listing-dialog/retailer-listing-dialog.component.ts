@@ -92,6 +92,8 @@ export class RetailerListingDialogComponent {
   readonly productResults = signal<readonly DashboardProductLookup[]>([]);
   readonly retailerResults = signal<readonly DashboardRetailerLookup[]>([]);
   readonly saveError = signal<string | null>(null);
+  readonly saveSuccess = signal<string | null>(null);
+  readonly historyRefreshRevision = signal(0);
   readonly statusPending = signal(false);
   readonly saving = signal(false);
   readonly historyExpanded = signal(false);
@@ -258,13 +260,15 @@ export class RetailerListingDialogComponent {
     }
 
     this.saveError.set(null);
+    this.saveSuccess.set(null);
     this.saving.set(true);
     const value = this.form.getRawValue();
     const current = this.listing();
     const amount = this.priceEntryEnabled() ? value.amount : null;
     const basis = amount === null ? null : value.basis;
+    let saved: RetailerListing;
     try {
-      const saved = current
+      saved = current
         ? await this.listingsService.update({
             listingId: current.id,
             productUrl: normalizeOptional(value.productUrl),
@@ -280,11 +284,23 @@ export class RetailerListingDialogComponent {
             amount,
             basis
           });
-      this.dialogRef.close(saved);
     } catch (error) {
       this.saveError.set(getRetailerListingError(error));
+      return;
     } finally {
       this.saving.set(false);
+    }
+
+    if (current && amount !== null) {
+      this.listing.set(saved);
+      this.form.controls.amount.reset(null);
+      this.form.controls.basis.reset(null);
+      this.form.markAsPristine();
+      this.historyRefreshRevision.update((revision) => revision + 1);
+      this.historyExpanded.set(true);
+      this.saveSuccess.set('Manual price saved. Inspect price history below for the new observation.');
+    } else {
+      this.dialogRef.close(saved);
     }
   }
 
