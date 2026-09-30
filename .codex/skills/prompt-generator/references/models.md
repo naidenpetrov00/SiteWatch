@@ -1,78 +1,65 @@
-# GPT-6 Astra and GPT-5.6 model catalog
+# GPT-5.6 model and Codex execution guide
 
-Use this checked-in catalog for model recommendations. Do not query runtime model metadata.
+Use this catalog for task recommendations. It intentionally covers GPT-5.6 only; do not recommend or add GPT-6 models unless this reference is explicitly expanded.
 
-## Shared configuration
+## GPT-5.6 models
 
-- GPT-5.6 API reasoning efforts: `none`, `low`, `medium`, `high`, `xhigh`, `max`; default: `medium`.
-- GPT-6 Astra API reasoning efforts: `low`, `medium`, `high`, `xhigh`, `max`. It does not support `none` or `minimal`. Set the effort explicitly; the cited Astra model page does not specify an omitted-value default.
-- Codex also offers `ultra` where available. It uses subagents for parallel work and is not an API `reasoning.effort` value. Model and effort availability depend on the plan, client, and rollout. See [Codex models and reasoning](https://learn.chatgpt.com/docs/models).
-- Context window: 1,050,000 tokens.
-- Maximum output: 128,000 tokens.
-- Knowledge cutoff: April 30, 2026 for Astra; February 16, 2026 for Sol, Terra, and Luna.
-- Inputs: text and images. Output: text.
+All GPT-5.6 models accept text and image input and produce text. They have a 1,050,000-token context window, a 128,000-token maximum output, and a February 16, 2026 knowledge cutoff. In the API, `gpt-5.6` is an alias for `gpt-5.6-sol`.
 
-## Models
+| Model | Model ID | Use for | Tradeoff |
+| --- | --- | --- | --- |
+| Sol | `gpt-5.6-sol` | Difficult architecture, ambiguous cross-system work, complex debugging, security-sensitive work, and quality-first reviews | Strongest and most expensive GPT-5.6 tier |
+| Terra | `gpt-5.6-terra` | Typical repository implementation, review, refactoring, and multi-file work using established patterns | Balanced capability, latency, and cost |
+| Luna | `gpt-5.6-luna` | Clear, localized, repeatable, high-volume, or mechanical work | Fastest and lowest-cost tier; less suitable for ambiguity |
 
-### GPT-6 Astra
+Model availability in Codex depends on the plan, client, workspace configuration, and rollout. The API model IDs and capabilities do not by themselves guarantee Codex availability.
 
-- Model ID: `gpt-6-astra`.
-- Description: OpenAI's most capable model for difficult workflows spanning reasoning, coding, computer use, research, and document creation.
-- Recommend for: the hardest tasks spanning multiple systems and tools, sustained implementation, difficult investigations, and work requiring strong judgment throughout.
-- Tradeoff: highest capability and per-token price in this catalog; fewer output tokens can offset the higher rate on some tasks, so token price alone does not establish total task cost.
-- API price per 1M text tokens: $10 input, $1 cached input, $50 output; cache writes: $12.50.
-- API tool calling requires Responses, even though Chat Completions is supported.
-- Sources: [Astra model details](https://developers.openai.com/api/docs/models/gpt-6-astra), [Astra model guidance](https://developers.openai.com/api/docs/guides/latest-model).
+## Reasoning
 
-### GPT-5.6 Sol
+GPT-5.6 supports these API reasoning efforts: `none`, `low`, `medium`, `high`, `xhigh`, and `max`. `medium` is the default when omitted, in both reasoning modes.
 
-- Model ID: `gpt-5.6-sol`.
-- Description: most capable GPT-5.6 model for complex professional work. The API alias `gpt-5.6` routes to Sol.
-- Recommend for: architectural changes, difficult debugging, security-sensitive work, ambiguous cross-system tasks, and other quality-first work where failure is costly.
-- Tradeoff: highest capability and cost within GPT-5.6, with lower per-token pricing than Astra.
-- API price per 1M text tokens: $4 input, $0.40 cached input, $20 output. This promotional pricing is available at least through November 21, 2026.
-- Source: [Sol model details](https://developers.openai.com/api/docs/models/gpt-5.6-sol).
+| Effort | Recommend for |
+| --- | --- |
+| `none` | Latency-critical classification, retrieval, or purely mechanical work with no multi-step reasoning or chained tool use |
+| `low` | Well-scoped work where speed matters, including light planning, search, or tool use |
+| `medium` | Default balanced choice for implementation, research, and work that needs planning or judgment |
+| `high` | Difficult debugging, deep planning, complex agentic work, or high-value tasks |
+| `xhigh` | Long-running, deeply investigative, security-review, or complex coding tasks when evaluation shows a benefit |
+| `max` | The hardest quality-first tasks; compare with `xhigh` before making it the default |
 
-### GPT-5.6 Terra
+Start at the lowest effort likely to meet the task's quality bar; increase it only when complexity, risk, or evaluation evidence justifies the extra latency and token use.
 
-- Model ID: `gpt-5.6-terra`.
-- Description: balanced model for everyday work, combining strong intelligence with lower cost.
-- Recommend for: most repository implementation, review, refactoring, and multi-file work that follows established patterns.
-- Tradeoff: default balance of quality, speed, and cost.
-- API price per 1M text tokens: $2 input, $0.20 cached input, $12 output.
-- Source: [Terra model details](https://developers.openai.com/api/docs/models/gpt-5.6-terra).
+## Reasoning mode and continuity
 
-### GPT-5.6 Luna
+- The Responses API has independent `reasoning.mode` and `reasoning.effort` controls. Use `standard` by default.
+- Use `reasoning.mode: "pro"` for difficult, high-value tasks where a reliability gain is worth higher latency and token usage. Keep the chosen model and effort; do not switch to a separate “Pro” model ID.
+- GPT-5.6 defaults `reasoning.context` to `all_turns`, allowing available prior reasoning to inform later turns. Use it when the goal, assumptions, and priorities remain stable; choose `current_turn` when earlier reasoning no longer applies.
+- For multi-turn tool workflows, prefer the Responses API and continue with `previous_response_id` so available reasoning can be reused. Reasoning can be reused within the GPT-5.6 family, not across model families.
 
-- Model ID: `gpt-5.6-luna`.
-- Description: fast, most affordable GPT-5.6 model, optimized for cost-sensitive, high-volume workloads.
-- Recommend for: simple localized edits, mechanical transformations, classification, extraction, and repetitive low-risk work with clear instructions.
-- Tradeoff: lowest token cost in this catalog; best suited to clear, repeatable tasks with limited ambiguity.
-- API price per 1M text tokens: $0.20 input, $0.02 cached input, $1.20 output.
-- Source: [Luna model details](https://developers.openai.com/api/docs/models/gpt-5.6-luna).
+## Codex execution modes
 
-## Pricing scope
+These are Codex workflow controls, not API reasoning parameters.
 
-- Prices above are Standard API USD rates per 1M text tokens for requests with up to 272,000 input tokens; they are not Codex subscription or credit prices.
-- Above 272,000 input tokens, the model pages specify 2x input and 1.5x output pricing for the entire request. Astra explicitly applies the 2x multiplier to cache rates too.
-- Cache writes are billed at 1.25x the uncached input rate.
-- Astra Batch and Flex cost 50% of Standard rates; Fast mode costs 2x the applicable rates. Tool charges are separate. See the model pages above for pricing conditions.
+- **Default Mode:** Use for small, self-contained work that can be safely completed in one focused pass.
+- **Plan Mode:** Ask Codex to propose the implementation path before making changes. Use for underspecified, risky, or multi-system work where the boundaries and approach need review.
+- **Goal Mode:** Set a durable outcome for work expected to span multiple iterations or turns. A goal preserves what must be true at completion while Codex works through implementation, verification, review feedback, and cleanup.
+- Do not recommend Plan Mode and Goal Mode together. Use Plan Mode first for a risky change; after the plan is accepted, create a Goal only if sustained follow-through is needed.
+- **Ultra, where available:** This is a Codex execution option rather than an API `reasoning.effort`. It uses subagents for independent workstreams. Recommend it only when the task divides cleanly into meaningful parallel parts; most tasks do not need it.
 
-## Selection defaults
+## Selection defaults for generated prompts
 
-These are this skill's task-selection heuristics, informed by [official model selection guidance](https://learn.chatgpt.com/docs/models#choosing-astra-sol-terra-and-luna), rather than API defaults.
-
-- Low difficulty: Luna with `low`; use `none` only for purely mechanical API work where supported.
-- Medium difficulty: Terra with `medium`.
-- High difficulty: Sol with `high`.
-- Hardest sustained work across multiple steps and tools: Astra with `high`; consider `xhigh` when deeper analysis is justified.
-- Escalate to `xhigh` or `max` only when task risk or ambiguity justifies more reasoning.
-- Recommend Codex `ultra` only when the task divides into useful parallel workstreams and the expected gain justifies the added compute.
+- Small, clear, low-risk task: Luna with `low`, Default Mode.
+- Typical repository task: Terra with `medium`, Default Mode; use Plan Mode when it has meaningful dependencies or tradeoffs.
+- High-risk or ambiguous task: Sol with `high`, Plan Mode.
+- Long-running, multi-iteration objective: Sol with `high`, Goal Mode.
+- Escalate to `xhigh`, `max`, `pro`, or Ultra only when the task specifically warrants the cost and latency.
 
 ## Sources
 
-Verified September 14, 2026 from official OpenAI documentation. Direct model-page citations appear with each entry above.
+Verified September 30, 2026 from official OpenAI documentation.
 
-- [OpenAI model catalog](https://developers.openai.com/api/docs/models)
-- [Current model guidance (GPT-6 Astra)](https://developers.openai.com/api/docs/guides/latest-model)
-- [Codex models, selection, and reasoning efforts](https://learn.chatgpt.com/docs/models)
+- [GPT-5.6 model guidance](https://developers.openai.com/api/docs/guides/latest-model?model=gpt-5)
+- [Reasoning models and modes](https://developers.openai.com/api/docs/guides/reasoning)
+- [GPT-5.6 Sol model details](https://developers.openai.com/api/docs/models/gpt-5.6-sol)
+- [Codex models and reasoning](https://learn.chatgpt.com/docs/models)
+- [Using Plan and Goal in Codex](https://learn.chatgpt.com/blog/mastering-codex-remote-for-engineering)
