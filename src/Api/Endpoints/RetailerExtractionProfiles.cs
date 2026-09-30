@@ -34,7 +34,7 @@ public sealed class RetailerExtractionProfiles : EndpointGroupBase
             .Produces(StatusCodes.Status409Conflict);
         group.MapPost("/drafts", CreateDraft)
             .WithName("CreateRetailerExtractionDraft")
-            .WithSummary("Create a blank draft or clone a published version")
+            .WithSummary("Create the first draft or clone a published version")
             .Produces<RetailerExtractionProfileDetailsDto>(StatusCodes.Status201Created)
             .ProducesValidationProblem()
             .Produces(StatusCodes.Status404NotFound)

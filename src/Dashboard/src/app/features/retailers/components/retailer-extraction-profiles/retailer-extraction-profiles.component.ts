@@ -148,7 +148,7 @@ export class RetailerExtractionProfilesComponent {
     if (this.currentDraft() || this.operationPending()) return;
     const sourceId = source?.status === 'published'
       ? source.id
-      : this.activeProfile()?.summary.id ?? null;
+      : this.activeProfile()?.summary.id;
     await this.runMutation(
       () => this.service.createDraft(this.retailerId(), sourceId),
       (profile) => {

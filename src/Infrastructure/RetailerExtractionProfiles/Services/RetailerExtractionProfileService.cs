@@ -85,12 +85,21 @@ public sealed class RetailerExtractionProfileService(
                     .Select(profile => (int?)profile.Version)
                     .MaxAsync(cancellationToken) ?? 0) + 1;
 
+                var sourceProfileId = sourcePublishedProfileId;
+                if (!sourceProfileId.HasValue)
+                {
+                    sourceProfileId = await dbContext.RetailerExtractionProfiles
+                        .Where(profile => profile.RetailerId == retailerId && profile.IsActive)
+                        .Select(profile => (Guid?)profile.Id)
+                        .SingleOrDefaultAsync(cancellationToken);
+                }
+
                 RetailerExtractionProfile draft;
-                if (sourcePublishedProfileId.HasValue)
+                if (sourceProfileId.HasValue)
                 {
                     var source = await LoadProfileAsync(
                         retailerId,
-                        sourcePublishedProfileId.Value,
+                        sourceProfileId.Value,
                         tracking: true,
                         cancellationToken);
                     if (source.Status != RetailerExtractionProfileStatus.Published)

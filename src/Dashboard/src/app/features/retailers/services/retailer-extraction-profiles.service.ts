@@ -73,13 +73,13 @@ export class RetailerExtractionProfilesService {
 
   async createDraft(
     retailerId: string,
-    sourcePublishedProfileId: string | null
+    sourcePublishedProfileId?: string
   ): Promise<RetailerExtractionProfileDetails> {
     const profile = await this.profileMutation.mutateAsync(
       () => firstValueFrom(
         this.http.post<RetailerExtractionProfileDetails>(
           `${this.baseUrl(retailerId)}/drafts`,
-          { sourcePublishedProfileId }
+          sourcePublishedProfileId ? { sourcePublishedProfileId } : {}
         )
       )
     );

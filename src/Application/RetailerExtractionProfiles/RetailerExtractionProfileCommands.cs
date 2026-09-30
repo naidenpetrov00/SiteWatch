@@ -4,7 +4,10 @@ using MediatR;
 
 namespace Application.RetailerExtractionProfiles;
 
-/// <summary>Creates the single editable draft for a retailer.</summary>
+/// <summary>
+/// Creates the single editable draft for a retailer by cloning a supplied or active published
+/// profile; only the first profile is initialized as a blank draft.
+/// </summary>
 [Authorize(Roles = UserRoles.Administrator)]
 public sealed record CreateRetailerExtractionDraftCommand
     : IRequest<RetailerExtractionProfileDetailsDto>
