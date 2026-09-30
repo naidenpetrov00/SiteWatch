@@ -19,6 +19,7 @@ import {
   RetailerListingDialogData
 } from '../../retailer-listings/models/retailer-listing.models';
 import { RetailerDialogComponent } from '../components/retailer-dialog/retailer-dialog.component';
+import { RetailerExtractionProfilesComponent } from '../components/retailer-extraction-profiles/retailer-extraction-profiles.component';
 import {
   RetailerStatusConfirmDialogComponent,
   RetailerStatusConfirmDialogData
@@ -32,6 +33,7 @@ import { getRetailerError } from '../utils/retailer-error';
     RouterLink,
     MatButtonModule,
     ActionButtonComponent,
+    RetailerExtractionProfilesComponent,
     RetailerListingsTableComponent
   ],
   templateUrl: './retailer-detail.page.html',

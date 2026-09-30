@@ -22,6 +22,12 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<RetailerListing> RetailerListings => Set<RetailerListing>();
     public DbSet<RetailerPriceObservation> RetailerPriceObservations =>
         Set<RetailerPriceObservation>();
+    public DbSet<RetailerExtractionProfile> RetailerExtractionProfiles =>
+        Set<RetailerExtractionProfile>();
+    public DbSet<RetailerExtractionAllowedHost> RetailerExtractionAllowedHosts =>
+        Set<RetailerExtractionAllowedHost>();
+    public DbSet<RetailerExtractionRule> RetailerExtractionRules =>
+        Set<RetailerExtractionRule>();
     public DbSet<ActivityCatalogNode> ActivityCatalogNodes => Set<ActivityCatalogNode>();
     public DbSet<ActivityRequirementSection> ActivityRequirementSections =>
         Set<ActivityRequirementSection>();

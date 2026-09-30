@@ -10,7 +10,12 @@ public sealed class RetailerPriceObservationConfiguration
 {
     public void Configure(EntityTypeBuilder<RetailerPriceObservation> builder)
     {
-        builder.ToTable("RetailerPriceObservations");
+        builder.ToTable(
+            "RetailerPriceObservations",
+            table => table.HasCheckConstraint(
+                "CK_RetailerPriceObservations_ExtractionProvenance",
+                "([Source] = N'manual' AND [ExtractionProfileId] IS NULL AND [MatchedExtractionRuleId] IS NULL) OR "
+                + "([Source] = N'automated' AND [ExtractionProfileId] IS NOT NULL AND [MatchedExtractionRuleId] IS NOT NULL)"));
         builder.Property(observation => observation.Amount)
             .HasPrecision(18, 2)
             .IsRequired();
@@ -38,6 +43,19 @@ public sealed class RetailerPriceObservationConfiguration
         builder.HasOne(observation => observation.RetailerListing)
             .WithMany(listing => listing.PriceObservations)
             .HasForeignKey(observation => observation.RetailerListingId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(observation => observation.ExtractionProfile)
+            .WithMany()
+            .HasForeignKey(observation => observation.ExtractionProfileId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(observation => observation.MatchedExtractionRule)
+            .WithMany()
+            .HasForeignKey(observation => new
+            {
+                observation.ExtractionProfileId,
+                observation.MatchedExtractionRuleId
+            })
+            .HasPrincipalKey(rule => new { rule.ExtractionProfileId, rule.Id })
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(observation => new
             {

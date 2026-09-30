@@ -15,6 +15,9 @@ public interface IApplicationDbContext
     DbSet<Retailer> Retailers { get; }
     DbSet<RetailerListing> RetailerListings { get; }
     DbSet<RetailerPriceObservation> RetailerPriceObservations { get; }
+    DbSet<RetailerExtractionProfile> RetailerExtractionProfiles { get; }
+    DbSet<RetailerExtractionAllowedHost> RetailerExtractionAllowedHosts { get; }
+    DbSet<RetailerExtractionRule> RetailerExtractionRules { get; }
     DbSet<ActivityCatalogNode> ActivityCatalogNodes { get; }
     DbSet<ActivityRequirementSection> ActivityRequirementSections { get; }
     DbSet<ActivityProductRequirement> ActivityProductRequirements { get; }

@@ -22,6 +22,10 @@ public sealed class RetailerPriceObservation : BaseEntity
     public PriceObservationSource Source { get; private set; }
     public string? SourceReference { get; private set; }
     public string RecordedBy { get; private set; } = string.Empty;
+    public Guid? ExtractionProfileId { get; private set; }
+    public RetailerExtractionProfile? ExtractionProfile { get; private set; }
+    public Guid? MatchedExtractionRuleId { get; private set; }
+    public RetailerExtractionRule? MatchedExtractionRule { get; private set; }
 
     internal static RetailerPriceObservation Create(
         RetailerListing listing,
@@ -31,7 +35,9 @@ public sealed class RetailerPriceObservation : BaseEntity
         DateTimeOffset recordedAt,
         PriceObservationSource source,
         string? sourceReference,
-        string recordedBy)
+        string recordedBy,
+        RetailerExtractionProfile? extractionProfile = null,
+        RetailerExtractionRule? matchedRule = null)
     {
         ArgumentNullException.ThrowIfNull(listing);
         ArgumentException.ThrowIfNullOrWhiteSpace(recordedBy);
@@ -50,6 +56,28 @@ public sealed class RetailerPriceObservation : BaseEntity
         if (!Enum.IsDefined(source))
         {
             throw new ArgumentOutOfRangeException(nameof(source));
+        }
+
+        if ((extractionProfile is null) != (matchedRule is null))
+        {
+            throw new ArgumentException(
+                "Extraction profile and matched rule provenance must be supplied together.");
+        }
+        if (source == PriceObservationSource.Manual && extractionProfile is not null)
+        {
+            throw new ArgumentException("Manual observations cannot contain extraction provenance.");
+        }
+        if (source == PriceObservationSource.Automated && extractionProfile is null)
+        {
+            throw new ArgumentException("Automated observations require extraction provenance.");
+        }
+        if (extractionProfile is not null
+            && (extractionProfile.Status != RetailerExtractionProfileStatus.Published
+                || extractionProfile.RetailerId != listing.RetailerId
+                || matchedRule!.ExtractionProfileId != extractionProfile.Id))
+        {
+            throw new ArgumentException(
+                "The matched extraction rule must belong to a published profile for the listing retailer.");
         }
 
         var normalizedSourceReference = string.IsNullOrWhiteSpace(sourceReference)
@@ -72,7 +100,11 @@ public sealed class RetailerPriceObservation : BaseEntity
             RecordedAt = recordedAt,
             Source = source,
             SourceReference = normalizedSourceReference,
-            RecordedBy = recordedBy.Trim()
+            RecordedBy = recordedBy.Trim(),
+            ExtractionProfile = extractionProfile,
+            ExtractionProfileId = extractionProfile?.Id,
+            MatchedExtractionRule = matchedRule,
+            MatchedExtractionRuleId = matchedRule?.Id
         };
     }
 }

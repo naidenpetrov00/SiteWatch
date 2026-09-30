@@ -4,6 +4,7 @@ using Application.Cameras;
 using Application.Persons;
 using Application.RetailerListings;
 using Application.Retailers;
+using Application.RetailerExtractionProfiles;
 using Application.Offers;
 using Ardalis.GuardClauses;
 using Application.SeedWork.Exceptions;
@@ -86,6 +87,21 @@ internal sealed class ExceptionMiddleware(
             {
                 status = StatusCodes.Status409Conflict,
                 title = "Retailer conflict",
+                detail = ex.Message,
+                instance = context.Request.Path.Value,
+            }));
+        }
+        catch (RetailerExtractionProfileConflictException ex)
+        {
+            logger.LogInformation(
+                ex,
+                "A retailer extraction-profile operation was rejected due to a conflict.");
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            context.Response.ContentType = "application/problem+json";
+            await context.Response.WriteAsync(JsonSerializer.Serialize(new
+            {
+                status = StatusCodes.Status409Conflict,
+                title = "Retailer extraction profile conflict",
                 detail = ex.Message,
                 instance = context.Request.Path.Value,
             }));
