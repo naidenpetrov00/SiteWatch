@@ -173,10 +173,20 @@ public sealed class RetailerExtractionProfileService(
         Guid profileId,
         RetailerExtractionRuleRequest request,
         CancellationToken cancellationToken) =>
-        ExecuteProfileMutationAsync(
-            retailerId,
-            profileId,
-            profile => profile.AddRule(ToConfiguration(request)),
+        ExecuteMutationAsync(
+            async () =>
+            {
+                var profile = await LoadProfileAsync(
+                    retailerId,
+                    profileId,
+                    tracking: true,
+                    cancellationToken);
+                TryLifecycle(profile.EnsureCanDelete);
+                var rule = TryLifecycle(() => profile.AddRule(ToConfiguration(request)));
+                dbContext.RetailerExtractionRules.Add(rule);
+                SetModifiedAudit(profile);
+                return profile;
+            },
             "The extraction rule could not be added.",
             cancellationToken);
 
