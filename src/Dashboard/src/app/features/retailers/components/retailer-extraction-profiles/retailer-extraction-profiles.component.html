@@ -130,7 +130,7 @@
               <button
                 mat-flat-button
                 type="button"
-                [disabled]="operationPending()"
+                [disabled]="operationPending() || !profile.summary.isCurrentConfigurationValidated"
                 (click)="publish()"
               >Publish Draft</button>
             </div>
@@ -249,6 +249,159 @@
             }
           </div>
         </section>
+
+        @if (profile.summary.status === 'draft') {
+          <section class="extraction__test" aria-labelledby="extraction-test-heading">
+            <div class="extraction__section-heading">
+              <div>
+                <h4 id="extraction-test-heading">Test Draft</h4>
+                <p>Test the current saved configuration against server-rendered HTML before publishing.</p>
+              </div>
+              <span
+                class="extraction__badge"
+                [class.extraction__badge--valid]="profile.summary.isCurrentConfigurationValidated"
+              >
+                {{ profile.summary.isCurrentConfigurationValidated ? 'Validated' : 'Not validated' }}
+              </span>
+            </div>
+
+            @if (profile.summary.isCurrentConfigurationValidated) {
+              <p class="extraction__notice">
+                Current revision {{ profile.summary.configurationRevision }} passed on
+                {{ formatDate(profile.summary.lastSuccessfulTestAt) }}.
+              </p>
+            } @else {
+              <p class="extraction__notice">
+                A successful extraction test against revision
+                {{ profile.summary.configurationRevision }} is required before publishing.
+              </p>
+            }
+
+            <form class="extraction__test-form" (submit)="runTest(); $event.preventDefault()">
+              <fieldset class="extraction__source-modes">
+                <legend>Test source</legend>
+                <label>
+                  <input
+                    type="radio"
+                    value="retailerListing"
+                    [formField]="testForm.sourceType"
+                    (change)="setTestSource('retailerListing')"
+                  />
+                  Existing listing
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    value="manualUrl"
+                    [formField]="testForm.sourceType"
+                    (change)="setTestSource('manualUrl')"
+                  />
+                  Manual URL
+                </label>
+              </fieldset>
+
+              @if (testModel().sourceType === 'retailerListing') {
+                <label class="extraction__test-control">
+                  <span>Search this retailer’s listings</span>
+                  <input
+                    type="search"
+                    placeholder="Product number or title"
+                    [formField]="testForm.listingSearch"
+                  />
+                </label>
+                @if (testForm.listingSearch().touched() && testForm.listingSearch().errors().length) {
+                  <p class="extraction__field-error">{{ testForm.listingSearch().errors()[0].message }}</p>
+                }
+                <label class="extraction__test-control">
+                  <span>Retailer listing</span>
+                  <select [formField]="testForm.retailerListingId">
+                    <option value="">Select a listing</option>
+                    @for (listing of listingsQuery.data()?.items ?? []; track listing.id) {
+                      <option [value]="listing.id">
+                        #{{ listing.productNumberId }} · {{ listing.productTitle }} ·
+                        {{ listing.productUrl ? 'URL saved' : 'No URL' }}
+                      </option>
+                    }
+                  </select>
+                </label>
+                @if (listingsQuery.isPending()) {
+                  <p aria-live="polite">Loading retailer listings…</p>
+                } @else if (listingsQuery.isError()) {
+                  <p class="extraction__feedback extraction__feedback--error" role="alert">
+                    Retailer listings could not be loaded.
+                  </p>
+                }
+                @if (testForm.retailerListingId().touched() && testForm.retailerListingId().errors().length) {
+                  <p class="extraction__field-error">{{ testForm.retailerListingId().errors()[0].message }}</p>
+                }
+              } @else {
+                <label class="extraction__test-control">
+                  <span>Absolute HTTPS product URL</span>
+                  <input
+                    type="url"
+                    placeholder="https://shop.example.com/product"
+                    [formField]="testForm.manualUrl"
+                  />
+                </label>
+                @if (testForm.manualUrl().touched() && testForm.manualUrl().errors().length) {
+                  <p class="extraction__field-error">{{ testForm.manualUrl().errors()[0].message }}</p>
+                }
+              }
+
+              @if (hasUnsavedHostChanges()) {
+                <p class="extraction__notice">
+                  Save or discard the host changes and commit the pending hostname before testing.
+                </p>
+              }
+              <button
+                mat-flat-button
+                type="submit"
+                [disabled]="testPending() || operationPending() || testForm().invalid() || testForm().pending() || hasUnsavedHostChanges()"
+              >{{ testPending() ? 'Testing…' : 'Run Test' }}</button>
+            </form>
+
+            @if (testError()) {
+              <p class="extraction__feedback extraction__feedback--error" role="alert">
+                {{ testError() }}
+              </p>
+            }
+
+            @if (testResult(); as result) {
+              <article class="extraction__test-result" aria-live="polite">
+                <div>
+                  <strong>{{ result.success ? 'Extraction succeeded' : 'No rule matched' }}</strong>
+                  <small>Tested {{ formatDate(result.testedAt) }}</small>
+                  <small class="extraction__tested-url">{{ result.testedUrl }}</small>
+                </div>
+
+                @if (result.extraction; as extraction) {
+                  <dl class="extraction__result-grid">
+                    <div><dt>EUR amount</dt><dd>€{{ formatAmount(extraction.amount) }}</dd></div>
+                    <div><dt>Price basis</dt><dd>{{ extraction.priceBasis }}</dd></div>
+                    <div><dt>Matched rule</dt><dd>{{ extraction.ruleName }}</dd></div>
+                    <div><dt>Priority</dt><dd>{{ extraction.rulePriority }}</dd></div>
+                    <div class="extraction__result-wide"><dt>Raw value</dt><dd>{{ extraction.rawValue }}</dd></div>
+                  </dl>
+                }
+
+                <h5>Ordered rule diagnostics</h5>
+                <ol class="extraction__diagnostics">
+                  @for (diagnostic of result.diagnostics; track diagnostic.ruleId) {
+                    <li>
+                      <div>
+                        <strong>{{ diagnostic.priority }}. {{ diagnostic.ruleName }}</strong>
+                        <span class="extraction__badge">{{ diagnosticLabel(diagnostic.outcome) }}</span>
+                      </div>
+                      <p>{{ diagnostic.explanation }}</p>
+                    </li>
+                  } @empty {
+                    <li>No enabled rules were available to attempt.</li>
+                  }
+                </ol>
+              </article>
+            }
+          </section>
+        }
       </article>
     } @else {
       <p class="extraction__empty">Create a draft to configure price extraction.</p>

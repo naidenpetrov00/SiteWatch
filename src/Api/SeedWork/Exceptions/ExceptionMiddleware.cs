@@ -106,6 +106,39 @@ internal sealed class ExceptionMiddleware(
                 instance = context.Request.Path.Value,
             }));
         }
+        catch (RetailerExtractionTestException ex)
+        {
+            var (status, title, category) = ex.Kind switch
+            {
+                RetailerExtractionTestFailureKind.Security => (
+                    StatusCodes.Status422UnprocessableEntity,
+                    "Extraction URL rejected",
+                    "security"),
+                RetailerExtractionTestFailureKind.Network => (
+                    StatusCodes.Status502BadGateway,
+                    "Remote page unavailable",
+                    "network"),
+                RetailerExtractionTestFailureKind.Content => (
+                    StatusCodes.Status502BadGateway,
+                    "Remote content rejected",
+                    "content"),
+                RetailerExtractionTestFailureKind.Timeout => (
+                    StatusCodes.Status504GatewayTimeout,
+                    "Extraction test timed out",
+                    "timeout"),
+                _ => throw new ArgumentOutOfRangeException()
+            };
+            context.Response.StatusCode = status;
+            context.Response.ContentType = "application/problem+json";
+            await context.Response.WriteAsync(JsonSerializer.Serialize(new
+            {
+                status,
+                title,
+                detail = ex.Message,
+                category,
+                instance = context.Request.Path.Value,
+            }));
+        }
         catch (PersonConflictException ex)
         {
             logger.LogInformation(ex, "A Person operation was rejected due to retained references.");

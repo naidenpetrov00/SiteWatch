@@ -83,6 +83,7 @@ public static class DependencyInjection
         services.AddScoped<RetailerListingWriter>();
         services.AddScoped<IRetailerListingService, RetailerListingService>();
         services.AddScoped<IRetailerExtractionProfileService, RetailerExtractionProfileService>();
+        services.AddScoped<IRetailerExtractionTestRunner, RetailerExtractionTestRunner>();
         services.AddScoped<IActivityCatalogService, ActivityCatalogService>();
         services.AddScoped<IActivityRequirementService, ActivityRequirementService>();
         services.AddScoped<IOfferService, OfferService>();

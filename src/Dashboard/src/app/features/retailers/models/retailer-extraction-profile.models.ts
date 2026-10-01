@@ -19,6 +19,11 @@ export interface RetailerExtractionProfileSummary {
   lastModified: string;
   publishedAt: string | null;
   publishedBy: string | null;
+  configurationRevision: number;
+  validatedConfigurationRevision: number | null;
+  isCurrentConfigurationValidated: boolean;
+  lastSuccessfulTestAt: string | null;
+  lastSuccessfulTestRuleId: string | null;
   ruleCount: number;
   enabledRuleCount: number;
 }
@@ -70,4 +75,42 @@ export interface SaveRetailerExtractionRuleRequest {
   priceBasis: RetailerExtractionPriceBasis;
   minimumValue: number | null;
   maximumValue: number | null;
+}
+
+export type RetailerExtractionTestSourceType = 'retailerListing' | 'manualUrl';
+
+export interface TestRetailerExtractionProfileRequest {
+  sourceType: RetailerExtractionTestSourceType;
+  retailerListingId: string | null;
+  manualUrl: string | null;
+}
+
+export interface RetailerExtractionRuleDiagnostic {
+  ruleId: string;
+  ruleName: string;
+  ruleType: RetailerExtractionRuleType;
+  priority: number;
+  outcome: string;
+  explanation: string;
+}
+
+export interface RetailerExtractionSuccess {
+  amount: number;
+  currencyCode: 'EUR';
+  priceBasis: RetailerExtractionPriceBasis;
+  profileId: string;
+  ruleId: string;
+  ruleName: string;
+  rulePriority: number;
+  rawValue: string;
+}
+
+export interface RetailerExtractionTestResult {
+  testedAt: string;
+  testedUrl: string;
+  profileId: string;
+  success: boolean;
+  isCurrentConfigurationValidated: boolean;
+  extraction: RetailerExtractionSuccess | null;
+  diagnostics: readonly RetailerExtractionRuleDiagnostic[];
 }

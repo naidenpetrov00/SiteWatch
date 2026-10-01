@@ -11,6 +11,11 @@ public sealed record RetailerExtractionProfileSummaryDto(
     DateTimeOffset LastModified,
     DateTimeOffset? PublishedAt,
     string? PublishedBy,
+    long ConfigurationRevision,
+    long? ValidatedConfigurationRevision,
+    bool IsCurrentConfigurationValidated,
+    DateTimeOffset? LastSuccessfulTestAt,
+    Guid? LastSuccessfulTestRuleId,
     int RuleCount,
     int EnabledRuleCount);
 
@@ -64,3 +69,41 @@ public abstract record RetailerExtractionRuleRequest
     public decimal? MinimumValue { get; init; }
     public decimal? MaximumValue { get; init; }
 }
+
+/// <summary>Requests a draft test using one retailer listing or one manual URL.</summary>
+public sealed record TestRetailerExtractionProfileRequest
+{
+    public string SourceType { get; init; } = string.Empty;
+    public Guid? RetailerListingId { get; init; }
+    public string? ManualUrl { get; init; }
+}
+
+/// <summary>Describes one enabled extraction rule attempted during a draft test.</summary>
+public sealed record RetailerExtractionRuleDiagnosticDto(
+    Guid RuleId,
+    string RuleName,
+    string RuleType,
+    int Priority,
+    string Outcome,
+    string Explanation);
+
+/// <summary>Describes the first successful extraction in a draft test.</summary>
+public sealed record RetailerExtractionSuccessDto(
+    decimal Amount,
+    string CurrencyCode,
+    string PriceBasis,
+    Guid ProfileId,
+    Guid RuleId,
+    string RuleName,
+    int RulePriority,
+    string RawValue);
+
+/// <summary>Represents a completed synchronous draft extraction test.</summary>
+public sealed record RetailerExtractionTestResultDto(
+    DateTimeOffset TestedAt,
+    string TestedUrl,
+    Guid ProfileId,
+    bool Success,
+    bool IsCurrentConfigurationValidated,
+    RetailerExtractionSuccessDto? Extraction,
+    IReadOnlyList<RetailerExtractionRuleDiagnosticDto> Diagnostics);

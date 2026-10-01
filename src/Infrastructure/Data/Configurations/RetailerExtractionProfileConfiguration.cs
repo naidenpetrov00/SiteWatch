@@ -23,6 +23,18 @@ public sealed class RetailerExtractionProfileConfiguration
                 table.HasCheckConstraint(
                     "CK_RetailerExtractionProfiles_Version",
                     "[Version] > 0");
+                table.HasCheckConstraint(
+                    "CK_RetailerExtractionProfiles_ConfigurationRevision",
+                    "[ConfigurationRevision] > 0 AND "
+                    + "([ValidatedConfigurationRevision] IS NULL OR "
+                    + "([ValidatedConfigurationRevision] > 0 AND "
+                    + "[ValidatedConfigurationRevision] <= [ConfigurationRevision]))");
+                table.HasCheckConstraint(
+                    "CK_RetailerExtractionProfiles_TestValidationMetadata",
+                    "([ValidatedConfigurationRevision] IS NULL AND [LastSuccessfulTestAt] IS NULL "
+                    + "AND [LastSuccessfulTestRuleId] IS NULL) OR "
+                    + "([ValidatedConfigurationRevision] IS NOT NULL AND [LastSuccessfulTestAt] IS NOT NULL "
+                    + "AND [LastSuccessfulTestRuleId] IS NOT NULL)");
             });
 
         builder.Property(profile => profile.Version).IsRequired();
@@ -32,6 +44,10 @@ public sealed class RetailerExtractionProfileConfiguration
             .IsRequired();
         builder.Property(profile => profile.IsActive).IsRequired();
         builder.Property(profile => profile.PublishedBy).HasMaxLength(450);
+        builder.Property(profile => profile.ConfigurationRevision)
+            .IsRequired()
+            .HasDefaultValue(1L)
+            .IsConcurrencyToken();
 
         builder.HasIndex(profile => new { profile.RetailerId, profile.Version })
             .IsUnique();
@@ -43,11 +59,17 @@ public sealed class RetailerExtractionProfileConfiguration
             .IsUnique()
             .HasDatabaseName("IX_RetailerExtractionProfiles_OneActivePerRetailer")
             .HasFilter("[IsActive] = 1");
+        builder.HasIndex(profile => new { profile.Id, profile.LastSuccessfulTestRuleId });
 
         builder.HasOne(profile => profile.Retailer)
             .WithMany(retailer => retailer.ExtractionProfiles)
             .HasForeignKey(profile => profile.RetailerId)
             .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(profile => profile.LastSuccessfulTestRule)
+            .WithMany()
+            .HasForeignKey(profile => new { profile.Id, profile.LastSuccessfulTestRuleId })
+            .HasPrincipalKey(rule => new { rule.ExtractionProfileId, rule.Id })
+            .OnDelete(DeleteBehavior.NoAction);
 
         builder.Navigation(profile => profile.AllowedHosts)
             .UsePropertyAccessMode(PropertyAccessMode.Field);

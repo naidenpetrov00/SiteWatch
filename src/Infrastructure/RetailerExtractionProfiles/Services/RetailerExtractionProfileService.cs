@@ -11,7 +11,8 @@ namespace Infrastructure.RetailerExtractionProfiles.Services;
 
 public sealed class RetailerExtractionProfileService(
     ApplicationDbContext dbContext,
-    IUser user) : IRetailerExtractionProfileService
+    IUser user,
+    IRetailerExtractionTestRunner testRunner) : IRetailerExtractionProfileService
 {
     public async Task<IReadOnlyList<RetailerExtractionProfileSummaryDto>> GetVersionsAsync(
         Guid retailerId,
@@ -322,6 +323,145 @@ public sealed class RetailerExtractionProfileService(
             "The published profile could not be activated because its lifecycle state changed.",
             cancellationToken);
 
+    public async Task<RetailerExtractionTestResultDto> TestAsync(
+        Guid retailerId,
+        Guid profileId,
+        TestRetailerExtractionProfileRequest request,
+        CancellationToken cancellationToken)
+    {
+        var snapshot = await dbContext.RetailerExtractionProfiles
+            .AsNoTracking()
+            .Include(profile => profile.AllowedHosts)
+            .Include(profile => profile.Rules)
+            .SingleOrDefaultAsync(
+                profile => profile.Id == profileId && profile.RetailerId == retailerId,
+                cancellationToken);
+        if (snapshot is null)
+        {
+            throw new NotFoundException(nameof(RetailerExtractionProfile), profileId.ToString());
+        }
+        if (snapshot.Status != RetailerExtractionProfileStatus.Draft)
+        {
+            throw new RetailerExtractionProfileConflictException(
+                "Only a draft extraction profile can be tested.");
+        }
+
+        string productUrl;
+        if (request.SourceType == "retailerListing")
+        {
+            var listingId = request.RetailerListingId!.Value;
+            var listing = await dbContext.RetailerListings
+                .AsNoTracking()
+                .Where(item => item.Id == listingId
+                    && item.RetailerId == retailerId)
+                .Select(item => new { item.ProductUrl })
+                .SingleOrDefaultAsync(cancellationToken);
+            if (listing is null)
+            {
+                throw new NotFoundException(
+                    nameof(RetailerListing),
+                    listingId.ToString());
+            }
+            if (string.IsNullOrWhiteSpace(listing.ProductUrl))
+            {
+                throw new RetailerExtractionProfileConflictException(
+                    "The selected retailer listing does not have a product URL.");
+            }
+
+            productUrl = listing.ProductUrl;
+        }
+        else
+        {
+            productUrl = request.ManualUrl?.Trim() ?? string.Empty;
+        }
+
+        var expectedRevision = snapshot.ConfigurationRevision;
+        var runnerResult = await testRunner.RunAsync(
+            productUrl,
+            snapshot.AllowedHosts
+                .Select(host => host.NormalizedHost)
+                .ToHashSet(StringComparer.Ordinal),
+            snapshot.Rules
+                .Where(rule => rule.IsEnabled)
+                .OrderBy(rule => rule.Priority)
+                .ToList(),
+            cancellationToken);
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable,
+            cancellationToken);
+        try
+        {
+            var current = await dbContext.RetailerExtractionProfiles
+                .Include(profile => profile.Rules)
+                .SingleOrDefaultAsync(
+                    profile => profile.Id == profileId && profile.RetailerId == retailerId,
+                    cancellationToken);
+            if (current is null)
+            {
+                throw new NotFoundException(
+                    nameof(RetailerExtractionProfile),
+                    profileId.ToString());
+            }
+            if (current.Status != RetailerExtractionProfileStatus.Draft
+                || current.ConfigurationRevision != expectedRevision)
+            {
+                throw new RetailerExtractionProfileConflictException(
+                    "The extraction profile changed while the test was running.");
+            }
+
+            RetailerExtractionSuccessDto? extraction = null;
+            if (runnerResult.Match is not null)
+            {
+                var matchedRule = current.Rules.SingleOrDefault(
+                    rule => rule.Id == runnerResult.Match.RuleId && rule.IsEnabled);
+                if (matchedRule is null)
+                {
+                    throw new RetailerExtractionProfileConflictException(
+                        "The extraction profile changed while the test was running.");
+                }
+
+                TryLifecycle(() => current.RecordSuccessfulTest(
+                    expectedRevision,
+                    runnerResult.TestedAt,
+                    matchedRule));
+                SetModifiedAudit(current);
+                await dbContext.SaveChangesAsync(cancellationToken);
+                extraction = new RetailerExtractionSuccessDto(
+                    runnerResult.Match.Amount,
+                    RetailerExtractionRule.EuroCurrencyCode,
+                    matchedRule.PriceBasis.ToCode(),
+                    current.Id,
+                    matchedRule.Id,
+                    matchedRule.Name,
+                    matchedRule.Priority,
+                    runnerResult.Match.RawValue);
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+            return new RetailerExtractionTestResultDto(
+                runnerResult.TestedAt,
+                runnerResult.TestedUrl,
+                current.Id,
+                extraction is not null,
+                current.IsCurrentConfigurationValidated,
+                extraction,
+                runnerResult.Diagnostics);
+        }
+        catch (DbUpdateException exception)
+        {
+            await transaction.RollbackAsync(CancellationToken.None);
+            throw new RetailerExtractionProfileConflictException(
+                "The extraction profile changed while the test was running.",
+                exception);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(CancellationToken.None);
+            throw;
+        }
+    }
+
     private Task<RetailerExtractionProfileDetailsDto> ExecuteProfileMutationAsync(
         Guid retailerId,
         Guid profileId,
@@ -604,6 +744,11 @@ public sealed class RetailerExtractionProfileService(
             profile.LastModified,
             profile.PublishedAt,
             profile.PublishedBy,
+            profile.ConfigurationRevision,
+            profile.ValidatedConfigurationRevision,
+            profile.IsCurrentConfigurationValidated,
+            profile.LastSuccessfulTestAt,
+            profile.LastSuccessfulTestRuleId,
             profile.Rules.Count,
             profile.Rules.Count(rule => rule.IsEnabled));
 

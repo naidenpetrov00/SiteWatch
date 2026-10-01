@@ -85,7 +85,10 @@
 .extraction__version-list,
 .extraction__rules,
 .extraction__editor,
-.extraction__hosts {
+.extraction__hosts,
+.extraction__test,
+.extraction__test-form,
+.extraction__test-result {
   display: grid;
   gap: 1rem;
 }
@@ -120,6 +123,11 @@
   background: var(--mat-sys-secondary-container);
   color: var(--mat-sys-on-secondary-container);
   font-size: 0.75rem;
+}
+
+.extraction__badge--valid {
+  color: var(--mat-sys-on-primary-container);
+  background: var(--mat-sys-primary-container);
 }
 
 .extraction__version-actions,
@@ -166,6 +174,124 @@
   font-weight: 700;
 }
 
+.extraction__test {
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
+
+.extraction__source-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.75rem;
+}
+
+.extraction__source-modes legend {
+  padding: 0 0.35rem;
+  font-weight: 700;
+}
+
+.extraction__source-modes label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.extraction__test-control {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.extraction__test-control input,
+.extraction__test-control select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--mat-sys-outline);
+  border-radius: 0.4rem;
+  color: var(--mat-sys-on-surface);
+  background: var(--mat-sys-surface);
+  font: inherit;
+}
+
+.extraction__field-error {
+  margin: 0;
+  color: var(--mat-sys-error);
+}
+
+.extraction__test-result {
+  padding: 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface);
+}
+
+.extraction__test-result > div:first-child {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.extraction__test-result small,
+.extraction__diagnostics p,
+.extraction__result-grid dt {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.extraction__tested-url {
+  overflow-wrap: anywhere;
+}
+
+.extraction__result-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.extraction__result-grid div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.extraction__result-grid dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.extraction__result-wide {
+  grid-column: 1 / -1;
+}
+
+.extraction__diagnostics {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.extraction__diagnostics li {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--mat-sys-surface-container-low);
+}
+
+.extraction__diagnostics li > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.extraction__diagnostics p {
+  margin: 0.35rem 0 0;
+}
+
 @media (max-width: 52rem) {
   .extraction__header,
   .extraction__editor-header,
@@ -177,5 +303,13 @@
 
   .extraction__status-grid {
     grid-template-columns: 1fr;
+  }
+
+  .extraction__result-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .extraction__result-wide {
+    grid-column: auto;
   }
 }

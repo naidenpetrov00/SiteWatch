@@ -11,6 +11,8 @@ import {
   RetailerExtractionCurrentProfiles,
   RetailerExtractionProfileDetails,
   RetailerExtractionProfileSummary,
+  RetailerExtractionTestResult,
+  TestRetailerExtractionProfileRequest,
   SaveRetailerExtractionRuleRequest
 } from '../models/retailer-extraction-profile.models';
 
@@ -211,6 +213,21 @@ export class RetailerExtractionProfilesService {
       ),
       true
     );
+  }
+
+  async test(
+    retailerId: string,
+    profileId: string,
+    request: TestRetailerExtractionProfileRequest
+  ): Promise<RetailerExtractionTestResult> {
+    const result = await firstValueFrom(
+      this.http.post<RetailerExtractionTestResult>(
+        `${this.baseUrl(retailerId)}/${profileId}/test`,
+        request
+      )
+    );
+    await this.invalidateProfile(retailerId, profileId);
+    return result;
   }
 
   async activate(

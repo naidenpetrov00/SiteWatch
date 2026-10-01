@@ -62,4 +62,9 @@ public interface IRetailerExtractionProfileService
         Guid retailerId,
         Guid profileId,
         CancellationToken cancellationToken);
+    Task<RetailerExtractionTestResultDto> TestAsync(
+        Guid retailerId,
+        Guid profileId,
+        TestRetailerExtractionProfileRequest request,
+        CancellationToken cancellationToken);
 }

@@ -91,6 +91,16 @@ public sealed class RetailerExtractionProfiles : EndpointGroupBase
             .ProducesValidationProblem()
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status409Conflict);
+        group.MapPost("/{profileId:guid}/test", Test)
+            .WithName("TestRetailerExtractionProfile")
+            .WithSummary("Test the saved draft extraction profile against one product URL")
+            .Produces<RetailerExtractionTestResultDto>()
+            .ProducesValidationProblem()
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict)
+            .Produces(StatusCodes.Status422UnprocessableEntity)
+            .Produces(StatusCodes.Status502BadGateway)
+            .Produces(StatusCodes.Status504GatewayTimeout);
         group.MapPatch("/{profileId:guid}/publish", Publish)
             .WithName("PublishRetailerExtractionProfile")
             .WithSummary("Publish and activate a complete draft")
@@ -260,6 +270,18 @@ public sealed class RetailerExtractionProfiles : EndpointGroupBase
         TypedResults.Ok(await mediator.Send(
             new PublishRetailerExtractionProfileCommand(retailerId, profileId),
             cancellationToken));
+
+    private static async Task<Ok<RetailerExtractionTestResultDto>> Test(
+        IMediator mediator,
+        Guid retailerId,
+        Guid profileId,
+        TestRetailerExtractionProfileCommand command,
+        CancellationToken cancellationToken)
+    {
+        command.RetailerId = retailerId;
+        command.ProfileId = profileId;
+        return TypedResults.Ok(await mediator.Send(command, cancellationToken));
+    }
 
     private static async Task<Ok<RetailerExtractionProfileDetailsDto>> Activate(
         IMediator mediator,

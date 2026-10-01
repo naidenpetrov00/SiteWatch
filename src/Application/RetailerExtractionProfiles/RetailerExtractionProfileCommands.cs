@@ -85,6 +85,18 @@ public sealed record PublishRetailerExtractionProfileCommand(Guid RetailerId, Gu
 public sealed record ActivateRetailerExtractionProfileCommand(Guid RetailerId, Guid ProfileId)
     : IRequest<RetailerExtractionProfileDetailsDto>;
 
+/// <summary>Runs the saved draft configuration against one permitted product URL.</summary>
+[Authorize(Roles = UserRoles.Administrator)]
+public sealed record TestRetailerExtractionProfileCommand
+    : IRequest<RetailerExtractionTestResultDto>
+{
+    public Guid RetailerId { get; set; }
+    public Guid ProfileId { get; set; }
+    public string SourceType { get; init; } = string.Empty;
+    public Guid? RetailerListingId { get; init; }
+    public string? ManualUrl { get; init; }
+}
+
 public sealed class CreateRetailerExtractionDraftHandler(IRetailerExtractionProfileService service)
     : IRequestHandler<CreateRetailerExtractionDraftCommand, RetailerExtractionProfileDetailsDto>
 {
@@ -213,4 +225,23 @@ public sealed class ActivateRetailerExtractionProfileHandler(
         ActivateRetailerExtractionProfileCommand request,
         CancellationToken cancellationToken) =>
         service.ActivateAsync(request.RetailerId, request.ProfileId, cancellationToken);
+}
+
+public sealed class TestRetailerExtractionProfileHandler(
+    IRetailerExtractionProfileService service)
+    : IRequestHandler<TestRetailerExtractionProfileCommand, RetailerExtractionTestResultDto>
+{
+    public Task<RetailerExtractionTestResultDto> Handle(
+        TestRetailerExtractionProfileCommand request,
+        CancellationToken cancellationToken) =>
+        service.TestAsync(
+            request.RetailerId,
+            request.ProfileId,
+            new TestRetailerExtractionProfileRequest
+            {
+                SourceType = request.SourceType,
+                RetailerListingId = request.RetailerListingId,
+                ManualUrl = request.ManualUrl
+            },
+            cancellationToken);
 }

@@ -154,6 +154,34 @@ public sealed class ActivateRetailerExtractionProfileValidator
     }
 }
 
+public sealed class TestRetailerExtractionProfileValidator
+    : AbstractValidator<TestRetailerExtractionProfileCommand>
+{
+    public TestRetailerExtractionProfileValidator()
+    {
+        RuleFor(request => request.RetailerId).NotEmpty();
+        RuleFor(request => request.ProfileId).NotEmpty();
+        RuleFor(request => request.SourceType)
+            .Must(value => value is "retailerListing" or "manualUrl")
+            .WithMessage("SourceType must be retailerListing or manualUrl.");
+        RuleFor(request => request.RetailerListingId)
+            .NotNull()
+            .NotEqual(Guid.Empty)
+            .When(request => request.SourceType == "retailerListing");
+        RuleFor(request => request.ManualUrl)
+            .Null()
+            .When(request => request.SourceType == "retailerListing");
+        RuleFor(request => request.ManualUrl)
+            .Cascade(CascadeMode.Stop)
+            .NotEmpty()
+            .MaximumLength(RetailerListing.MaxProductUrlLength)
+            .When(request => request.SourceType == "manualUrl");
+        RuleFor(request => request.RetailerListingId)
+            .Null()
+            .When(request => request.SourceType == "manualUrl");
+    }
+}
+
 public abstract class RetailerExtractionRuleRequestValidator<TRequest>
     : AbstractValidator<TRequest>
     where TRequest : RetailerExtractionRuleRequest

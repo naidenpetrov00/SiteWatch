@@ -7,7 +7,17 @@ import {
   input,
   signal
 } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import {
+  FormField,
+  debounce,
+  form,
+  maxLength,
+  required,
+  submit,
+  validate
+} from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import {
   MatChipInputEvent,
@@ -29,6 +39,8 @@ import {
   RetailerExtractionProfileDetails,
   RetailerExtractionProfileSummary,
   RetailerExtractionRule,
+  RetailerExtractionTestResult,
+  RetailerExtractionTestSourceType,
   SaveRetailerExtractionRuleRequest
 } from '../../models/retailer-extraction-profile.models';
 import {
@@ -36,11 +48,16 @@ import {
   retailerExtractionProfileKeys
 } from '../../services/retailer-extraction-profiles.service';
 import { getRetailerError } from '../../utils/retailer-error';
+import {
+  RetailerListingsService,
+  retailerListingKeys
+} from '../../../retailer-listings/services/retailer-listings.service';
 
 @Component({
   selector: 'app-retailer-extraction-profiles',
   imports: [
     ReactiveFormsModule,
+    FormField,
     MatButtonModule,
     MatChipsModule,
     MatFormFieldModule,
@@ -54,19 +71,61 @@ export class RetailerExtractionProfilesComponent {
   private readonly service = inject(RetailerExtractionProfilesService);
   private readonly dialog = inject(MatDialog);
   private readonly formBuilder = inject(FormBuilder);
+  private readonly listingsService = inject(RetailerListingsService);
   private loadedProfileId: string | null = null;
+  private loadedTestConfigurationKey: string | null = null;
 
   readonly retailerId = input.required<string>();
   readonly selectedProfileId = signal<string | null>(null);
   readonly operationPending = signal(false);
   readonly feedback = signal<string | null>(null);
   readonly error = signal<string | null>(null);
+  readonly testPending = signal(false);
+  readonly testResult = signal<RetailerExtractionTestResult | null>(null);
+  readonly testError = signal<string | null>(null);
   readonly hostsForm = this.formBuilder.group({
     allowedHosts: this.formBuilder.nonNullable.control<string[]>([]),
     hostInput: this.formBuilder.nonNullable.control('')
   });
   readonly hostInput = this.hostsForm.controls.hostInput;
   readonly hostSeparatorKeyCodes = [ENTER, COMMA] as const;
+  readonly testModel = signal<{
+    sourceType: RetailerExtractionTestSourceType;
+    retailerListingId: string;
+    manualUrl: string;
+    listingSearch: string;
+  }>({
+    sourceType: 'retailerListing',
+    retailerListingId: '',
+    manualUrl: '',
+    listingSearch: ''
+  });
+  readonly testForm = form(this.testModel, (path) => {
+    debounce(path.listingSearch, 300);
+    maxLength(path.listingSearch, 200, { message: 'Search is limited to 200 characters.' });
+    maxLength(path.manualUrl, 2048, { message: 'The URL is limited to 2048 characters.' });
+    required(path.retailerListingId, {
+      when: ({ valueOf }) => valueOf(path.sourceType) === 'retailerListing',
+      message: 'Select a retailer listing.'
+    });
+    required(path.manualUrl, {
+      when: ({ valueOf }) => valueOf(path.sourceType) === 'manualUrl',
+      message: 'Enter a product URL.'
+    });
+    validate(path.manualUrl, ({ value, valueOf }) => {
+      if (valueOf(path.sourceType) !== 'manualUrl' || value().length === 0) {
+        return undefined;
+      }
+      try {
+        const url = new URL(value());
+        return url.protocol === 'https:'
+          ? undefined
+          : { kind: 'https', message: 'Enter an absolute HTTPS URL.' };
+      } catch {
+        return { kind: 'url', message: 'Enter a valid absolute HTTPS URL.' };
+      }
+    });
+  });
 
   readonly versionsQuery = injectQuery(() => {
     const retailerId = this.retailerId();
@@ -91,6 +150,26 @@ export class RetailerExtractionProfilesComponent {
       queryKey: retailerExtractionProfileKeys.detail(retailerId, profileId ?? ''),
       queryFn: () => this.service.getById(retailerId, profileId!),
       enabled: retailerId.length > 0 && profileId !== null
+    };
+  });
+  readonly listingsQuery = injectQuery(() => {
+    const retailerId = this.retailerId();
+    const model = this.testModel();
+    const state = {
+      pageIndex: 0,
+      pageSize: 25,
+      sortActive: 'product',
+      sortDirection: 'asc',
+      searchTerm: model.listingSearch,
+      includeInactive: true,
+      isActive: null
+    };
+    return {
+      queryKey: retailerListingKeys.retailer(retailerId, state),
+      queryFn: () => this.listingsService.getForRetailer(retailerId, state),
+      enabled: retailerId.length > 0 &&
+        this.detailQuery.data()?.summary.status === 'draft' &&
+        model.sourceType === 'retailerListing'
     };
   });
 
@@ -133,6 +212,15 @@ export class RetailerExtractionProfilesComponent {
       profile.summary.status === 'draft'
         ? this.hostsForm.enable({ emitEvent: false })
         : this.hostsForm.disable({ emitEvent: false });
+
+      const testConfigurationKey =
+        `${profile.summary.id}:${profile.summary.configurationRevision}`;
+      if (this.loadedTestConfigurationKey !== testConfigurationKey) {
+        this.testResult.set(null);
+        this.testError.set(null);
+        this.testForm().reset();
+      }
+      this.loadedTestConfigurationKey = testConfigurationKey;
     });
   }
 
@@ -349,6 +437,10 @@ export class RetailerExtractionProfilesComponent {
       this.error.set('Save or discard the unsaved host changes before publishing.');
       return;
     }
+    if (!profile.summary.isCurrentConfigurationValidated) {
+      this.error.set('Run a successful test against the current saved configuration before publishing.');
+      return;
+    }
     if (!(await this.confirm({
       eyebrow: 'Publish Extraction Profile',
       title: `Publish Version ${profile.summary.version}`,
@@ -389,6 +481,83 @@ export class RetailerExtractionProfilesComponent {
 
   ruleTypeLabel(rule: RetailerExtractionRule): string {
     return rule.ruleType === 'jsonLd' ? 'JSON-LD' : 'CSS selector';
+  }
+
+  setTestSource(sourceType: RetailerExtractionTestSourceType): void {
+    this.testModel.update((model) => ({
+      ...model,
+      sourceType,
+      retailerListingId: sourceType === 'retailerListing'
+        ? model.retailerListingId
+        : '',
+      manualUrl: sourceType === 'manualUrl' ? model.manualUrl : ''
+    }));
+    this.testResult.set(null);
+    this.testError.set(null);
+  }
+
+  runTest(): void {
+    const profile = this.selectedProfile();
+    if (!profile || profile.summary.status !== 'draft' || this.testPending()) return;
+    if (this.hasUnsavedHostChanges()) {
+      this.testError.set(
+        'Save or discard host changes, including the pending hostname, before testing.'
+      );
+      return;
+    }
+
+    submit(this.testForm, async () => {
+      this.testPending.set(true);
+      this.testResult.set(null);
+      this.testError.set(null);
+      const model = this.testModel();
+      try {
+        const result = await this.service.test(
+          this.retailerId(),
+          profile.summary.id,
+          {
+            sourceType: model.sourceType,
+            retailerListingId: model.sourceType === 'retailerListing'
+              ? model.retailerListingId
+              : null,
+            manualUrl: model.sourceType === 'manualUrl'
+              ? model.manualUrl.trim()
+              : null
+          }
+        );
+        this.testResult.set(result);
+        if (!result.success) {
+          this.testError.set(
+            result.isCurrentConfigurationValidated
+              ? 'No rule matched this page. An earlier successful test still validates the unchanged draft.'
+              : 'No enabled extraction rule produced a valid EUR price.'
+          );
+        }
+      } catch (error) {
+        const message = getExtractionTestError(error);
+        this.testError.set(
+          profile.summary.isCurrentConfigurationValidated
+            ? `${message} The earlier successful test still validates this unchanged revision.`
+            : message
+        );
+      } finally {
+        this.testPending.set(false);
+      }
+    });
+  }
+
+  hasUnsavedHostChanges(): boolean {
+    return this.hostsForm.dirty || this.hostInput.value.trim().length > 0;
+  }
+
+  diagnosticLabel(outcome: string): string {
+    return outcome
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, (value) => value.toUpperCase());
+  }
+
+  formatAmount(amount: number): string {
+    return amount.toFixed(2);
   }
 
   private async runMutation(
@@ -453,4 +622,29 @@ function isPlausibleHost(value: string): boolean {
       !label.startsWith('-') &&
       !label.endsWith('-')
     );
+}
+
+function getExtractionTestError(error: unknown): string {
+  if (!(error instanceof HttpErrorResponse)) {
+    return 'The extraction test could not be completed.';
+  }
+  const detail = error.error?.detail;
+  if (typeof detail === 'string' && detail.trim()) return detail;
+  const validationDetail = Array.isArray(error.error?.details)
+    ? error.error.details.find((item: { message?: unknown }) =>
+        typeof item?.message === 'string' && item.message.trim().length > 0
+      )
+    : null;
+  if (typeof validationDetail?.message === 'string') return validationDetail.message;
+  const category = error.error?.category;
+  if (category === 'security') {
+    return 'The URL or one of its redirects was rejected for security reasons.';
+  }
+  if (category === 'network') return 'The remote page could not be reached successfully.';
+  if (category === 'content') return 'The remote response was not suitable bounded HTML.';
+  if (category === 'timeout') return 'The extraction test exceeded its time limit.';
+  if (error.status === 400) return 'Choose exactly one valid test source.';
+  if (error.status === 404) return 'The selected profile or retailer listing was not found.';
+  if (error.status === 409) return 'The draft cannot be tested because its saved state changed or is not eligible.';
+  return 'The extraction test could not be completed.';
 }

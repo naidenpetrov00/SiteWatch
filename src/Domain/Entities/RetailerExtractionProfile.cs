@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using Domain.SeedWork;
 using Domain.SeedWork.Enums;
 using Domain.ValueObjects;
@@ -20,6 +21,11 @@ public sealed class RetailerExtractionProfile : BaseAuditableEntity, IAgregateRo
     public bool IsActive { get; private set; }
     public DateTimeOffset? PublishedAt { get; private set; }
     public string? PublishedBy { get; private set; }
+    public long ConfigurationRevision { get; private set; }
+    public long? ValidatedConfigurationRevision { get; private set; }
+    public DateTimeOffset? LastSuccessfulTestAt { get; private set; }
+    public Guid? LastSuccessfulTestRuleId { get; private set; }
+    public RetailerExtractionRule? LastSuccessfulTestRule { get; private set; }
     public IReadOnlyCollection<RetailerExtractionAllowedHost> AllowedHosts => _allowedHosts;
     public IReadOnlyCollection<RetailerExtractionRule> Rules => _rules;
 
@@ -90,6 +96,7 @@ public sealed class RetailerExtractionProfile : BaseAuditableEntity, IAgregateRo
         _allowedHosts.Clear();
         _allowedHosts.AddRange(normalized.Select(host =>
             RetailerExtractionAllowedHost.Create(this, host)));
+        MarkConfigurationChanged();
     }
 
     public RetailerExtractionRule AddRule(RetailerExtractionRuleConfiguration configuration)
@@ -97,6 +104,7 @@ public sealed class RetailerExtractionProfile : BaseAuditableEntity, IAgregateRo
         EnsureDraft();
         var rule = RetailerExtractionRule.Create(this, _rules.Count + 1, configuration);
         _rules.Add(rule);
+        MarkConfigurationChanged();
         return rule;
     }
 
@@ -104,12 +112,14 @@ public sealed class RetailerExtractionProfile : BaseAuditableEntity, IAgregateRo
     {
         EnsureDraft();
         FindRule(ruleId).Update(configuration);
+        MarkConfigurationChanged();
     }
 
     public void SetRuleEnabled(Guid ruleId, bool isEnabled)
     {
         EnsureDraft();
         FindRule(ruleId).SetEnabled(isEnabled);
+        MarkConfigurationChanged();
     }
 
     public void RemoveRule(Guid ruleId)
@@ -117,6 +127,7 @@ public sealed class RetailerExtractionProfile : BaseAuditableEntity, IAgregateRo
         EnsureDraft();
         _rules.Remove(FindRule(ruleId));
         NormalizePriorities();
+        MarkConfigurationChanged();
     }
 
     public void ReorderRules(IReadOnlyList<Guid> orderedRuleIds)
@@ -134,6 +145,36 @@ public sealed class RetailerExtractionProfile : BaseAuditableEntity, IAgregateRo
         {
             FindRule(orderedRuleIds[index]).SetPriority(index + 1);
         }
+
+        MarkConfigurationChanged();
+    }
+
+    public void RecordSuccessfulTest(
+        long testedConfigurationRevision,
+        DateTimeOffset testedAt,
+        RetailerExtractionRule matchedRule)
+    {
+        EnsureDraft();
+        ArgumentNullException.ThrowIfNull(matchedRule);
+        if (testedConfigurationRevision != ConfigurationRevision)
+        {
+            throw new InvalidOperationException(
+                "The extraction profile changed while the test was running.");
+        }
+        if (testedAt.Offset != TimeSpan.Zero)
+        {
+            throw new ArgumentException("The test time must be UTC.", nameof(testedAt));
+        }
+        if (matchedRule.ExtractionProfileId != Id || !matchedRule.IsEnabled)
+        {
+            throw new InvalidOperationException(
+                "The successful rule must be enabled and belong to this profile.");
+        }
+
+        ValidatedConfigurationRevision = ConfigurationRevision;
+        LastSuccessfulTestAt = testedAt;
+        LastSuccessfulTestRule = matchedRule;
+        LastSuccessfulTestRuleId = matchedRule.Id;
     }
 
     public void Publish(DateTimeOffset publishedAt, string publishedBy)
@@ -151,6 +192,11 @@ public sealed class RetailerExtractionProfile : BaseAuditableEntity, IAgregateRo
         if (_rules.All(rule => !rule.IsEnabled))
         {
             throw new InvalidOperationException("A profile requires at least one enabled rule before publishing.");
+        }
+        if (!IsCurrentConfigurationValidated)
+        {
+            throw new InvalidOperationException(
+                "The current saved profile configuration must pass an extraction test before publishing.");
         }
 
         Status = RetailerExtractionProfileStatus.Published;
@@ -173,6 +219,13 @@ public sealed class RetailerExtractionProfile : BaseAuditableEntity, IAgregateRo
 
     public void EnsureCanDelete() => EnsureDraft();
 
+    [NotMapped]
+    public bool IsCurrentConfigurationValidated =>
+        ConfigurationRevision > 0
+        && ValidatedConfigurationRevision == ConfigurationRevision
+        && LastSuccessfulTestAt.HasValue
+        && LastSuccessfulTestRuleId.HasValue;
+
     private RetailerExtractionRule FindRule(Guid ruleId) =>
         _rules.SingleOrDefault(rule => rule.Id == ruleId)
         ?? throw new KeyNotFoundException("The extraction rule does not belong to this profile.");
@@ -184,6 +237,15 @@ public sealed class RetailerExtractionProfile : BaseAuditableEntity, IAgregateRo
         {
             ordered[index].SetPriority(index + 1);
         }
+    }
+
+    private void MarkConfigurationChanged()
+    {
+        ConfigurationRevision = checked(ConfigurationRevision + 1);
+        ValidatedConfigurationRevision = null;
+        LastSuccessfulTestAt = null;
+        LastSuccessfulTestRuleId = null;
+        LastSuccessfulTestRule = null;
     }
 
     private void EnsureDraft()
