@@ -527,7 +527,7 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
                 ? element.GetAttribute(rule.CssAttributeName!)
                 : element.TextContent;
             if (string.IsNullOrWhiteSpace(raw)) continue;
-            return EvaluateAmount(raw, ResolveCssCurrency(element, raw), rule, invariantNumber: false);
+            return EvaluateAmount(raw, ResolveCssCurrency(element), rule, invariantNumber: false);
         }
 
         return elements.Length == 0
@@ -545,13 +545,21 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
         RetailerExtractionRule rule,
         bool invariantNumber)
     {
-        currency ??= DetectCurrency(raw, allowNumericOnly: false);
-        if (currency is not null && !currency.Equals("EUR", StringComparison.OrdinalIgnoreCase))
+        if (HasExplicitNonEuroCurrency(raw, isCurrencyMetadata: false)
+            || (currency is not null
+                && HasExplicitNonEuroCurrency(currency, isCurrencyMetadata: true)))
         {
             return RuleAttempt.Fail(
                 "currencyMismatch", "The selected price is explicitly associated with a non-EUR currency.");
         }
-        if (!TryParseAmount(raw, rule, invariantNumber, out var amount))
+
+        var parseResult = TryParseAmount(raw, rule, invariantNumber, out var amount);
+        if (parseResult == AmountParseResult.Ambiguous)
+        {
+            return RuleAttempt.Fail(
+                "amountAmbiguous", "The selected value contains multiple distinct plausible price amounts.");
+        }
+        if (parseResult == AmountParseResult.Failed)
         {
             return RuleAttempt.Fail(
                 "amountParsingFailed", "The selected value does not match the configured number separators.");
@@ -569,7 +577,7 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
         return new RuleAttempt("success", "The rule extracted a valid EUR amount.", amount, raw);
     }
 
-    private static bool TryParseAmount(
+    private static AmountParseResult TryParseAmount(
         string raw,
         RetailerExtractionRule rule,
         bool invariantNumber,
@@ -580,9 +588,11 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
         {
             return decimal.TryParse(
                 raw,
-                NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent,
+                NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent,
                 CultureInfo.InvariantCulture,
-                out amount);
+                out amount)
+                ? AmountParseResult.Success
+                : AmountParseResult.Failed;
         }
 
         var decimalCharacter = rule.DecimalSeparator == RetailerExtractionDecimalSeparator.Dot
@@ -599,15 +609,42 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
             ? "\\d+"
             : $"(?:\\d{{1,3}}(?:{thousandsPattern}\\d{{3}})+|\\d+)";
         var configuredPattern = new Regex(
-            $"^{integerPattern}(?:{Regex.Escape(decimalCharacter)}\\d{{1,2}})?$",
+            $"^[+\\-\\u2212]?{integerPattern}(?:{Regex.Escape(decimalCharacter)}\\d{{1,2}})?$",
             RegexOptions.CultureInvariant);
-        var candidate = NumericCandidateRegex().Matches(raw)
+        var candidates = NumericCandidateRegex().Matches(raw)
             .Cast<Match>()
+            .Where(match => !HasSeparatedLeadingSign(raw, match.Index))
             .Select(match => match.Value.Trim())
-            .FirstOrDefault(value => configuredPattern.IsMatch(value));
-        if (candidate is null) return false;
+            .Where(value => configuredPattern.IsMatch(value))
+            .Select(candidate => TryNormalizeAmount(
+                candidate,
+                rule,
+                decimalCharacter,
+                thousandsPattern,
+                out var parsed)
+                    ? (decimal?)parsed
+                    : null)
+            .Where(parsed => parsed.HasValue)
+            .Select(parsed => parsed!.Value)
+            .Distinct()
+            .Take(2)
+            .ToList();
+        if (candidates.Count == 0) return AmountParseResult.Failed;
+        if (candidates.Count > 1) return AmountParseResult.Ambiguous;
 
+        amount = candidates[0];
+        return AmountParseResult.Success;
+    }
+
+    private static bool TryNormalizeAmount(
+        string candidate,
+        RetailerExtractionRule rule,
+        string decimalCharacter,
+        string? thousandsPattern,
+        out decimal amount)
+    {
         var normalized = candidate;
+        normalized = normalized.Replace('\u2212', '-');
         if (thousandsPattern is not null)
         {
             normalized = rule.ThousandsSeparator == RetailerExtractionThousandsSeparator.Space
@@ -620,9 +657,16 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
         if (decimalCharacter == ",") normalized = normalized.Replace(',', '.');
         return decimal.TryParse(
             normalized,
-            NumberStyles.AllowDecimalPoint,
+            NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint,
             CultureInfo.InvariantCulture,
             out amount);
+    }
+
+    private static bool HasSeparatedLeadingSign(string raw, int candidateIndex)
+    {
+        var index = candidateIndex - 1;
+        while (index >= 0 && char.IsWhiteSpace(raw[index])) index--;
+        return index >= 0 && raw[index] is '+' or '-' or '\u2212';
     }
 
     private static string? ResolveJsonCurrency(PathCandidate candidate, string? configuredPath)
@@ -647,19 +691,68 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
                 : null;
     }
 
-    private static string? ResolveCssCurrency(IElement element, string raw)
+    private static string? ResolveCssCurrency(IElement element)
     {
+        var values = new List<string>();
         foreach (var attribute in CurrencyAttributes)
         {
             var value = element.GetAttribute(attribute);
+            if (string.IsNullOrWhiteSpace(value)) continue;
             var currency = DetectCurrency(value, attribute == "content");
-            if (currency is not null) return currency;
+            if (currency is not null)
+            {
+                values.Add(value);
+                continue;
+            }
             if (attribute != "content" && !string.IsNullOrWhiteSpace(value))
             {
                 return "NON_EUR";
             }
         }
-        return DetectCurrency(raw, allowNumericOnly: false);
+        return values.Count == 0 ? null : string.Join(' ', values);
+    }
+
+    private static bool HasExplicitNonEuroCurrency(string value, bool isCurrencyMetadata)
+    {
+        if (value.Equals("NON_EUR", StringComparison.Ordinal)) return true;
+
+        var currencies = DetectCurrencies(value);
+        if (currencies.Any(currency => !currency.Equals("EUR", StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+
+        return isCurrencyMetadata
+            && currencies.Count == 0
+            && !value.Equals("EUR", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static IReadOnlySet<string> DetectCurrencies(string value)
+    {
+        var currencies = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var upper = value.ToUpperInvariant();
+        if (upper.Contains("EUR", StringComparison.Ordinal) || upper.Contains('€'))
+        {
+            currencies.Add("EUR");
+        }
+        foreach (Match match in CurrencyCodeRegex().Matches(upper))
+        {
+            if (KnownCurrencyCodes.Contains(match.Value)) currencies.Add(match.Value);
+        }
+        if (upper.Contains('$')) currencies.Add("USD");
+        if (upper.Contains('£')) currencies.Add("GBP");
+        if (upper.Contains('¥')) currencies.Add("JPY");
+        if (upper.Contains("ЛВ", StringComparison.Ordinal)
+            || upper.Contains("ЛЕВ", StringComparison.Ordinal)
+            || upper.Contains("KČ", StringComparison.Ordinal)
+            || upper.Contains("ZŁ", StringComparison.Ordinal)
+            || upper.Any(character =>
+                CharUnicodeInfo.GetUnicodeCategory(character)
+                    == UnicodeCategory.CurrencySymbol))
+        {
+            currencies.Add("NON_EUR");
+        }
+        return currencies;
     }
 
     private static string? DetectCurrency(string? value, bool allowNumericOnly)
@@ -792,7 +885,7 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
     [GeneratedRegex("\\s+", RegexOptions.CultureInvariant)]
     private static partial Regex WhitespaceRegex();
 
-    [GeneratedRegex("[0-9](?:[0-9.,\\u00a0\\u202f ]*[0-9])?", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("[+\\-\\u2212]?[0-9](?:[0-9.,\\u00a0\\u202f ]*[0-9])?", RegexOptions.CultureInvariant)]
     private static partial Regex NumericCandidateRegex();
 
     [GeneratedRegex("(?<![A-Z])[A-Z]{3}(?![A-Z])", RegexOptions.CultureInvariant)]
@@ -836,6 +929,12 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
 
     private sealed record FetchedHtml(Uri FinalUri, string Html);
     private sealed record PathCandidate(JsonElement Value, JsonElement Container);
+    private enum AmountParseResult
+    {
+        Success,
+        Failed,
+        Ambiguous
+    }
     private sealed record RuleAttempt(
         string Outcome,
         string Explanation,
