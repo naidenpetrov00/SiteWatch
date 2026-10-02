@@ -33,6 +33,7 @@
     </ItemGroup>
     <ItemGroup>
         <Folder Include="Cameras\Services\Onvif\Generated\" />
+        <Folder Include="Data\Migrations\" />
     </ItemGroup>
     <ItemGroup>
         <None Update="Data\SeedAssets\**\*">

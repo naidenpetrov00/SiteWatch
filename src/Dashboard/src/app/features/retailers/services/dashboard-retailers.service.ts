@@ -18,6 +18,7 @@ import {
   DashboardRetailersResponse,
   UpdateDashboardRetailerRequest
 } from '../models/dashboard-retailer.models';
+import { retailerExtractionProfileKeys } from './retailer-extraction-profiles.service';
 
 interface CreateDashboardRetailerResponse {
   id: string;
@@ -80,7 +81,13 @@ export class DashboardRetailersService {
           request
         )
       ),
-    onSuccess: async () => this.invalidateRetailerLists()
+    onSuccess: async (_, request) => {
+      await Promise.all([
+        this.invalidateRetailerLists(),
+        this.invalidateCompanyRetailerState([request.companyPersonId]),
+        this.retailerListingsService.invalidateCompany(request.companyPersonId)
+      ]);
+    }
   }));
 
   readonly updateRetailerMutation = injectMutation<
@@ -92,13 +99,21 @@ export class DashboardRetailersService {
     mutationFn: async ({ id, ...request }) =>
       firstValueFrom(this.http.put<void>(buildApiUrl(`/retailers/${id}`), request)),
     onSuccess: async (_, request) => {
+      const previousCompanyPersonId = this.getCachedCompanyPersonId(request.id);
+      const affectedCompanyPersonIds = previousCompanyPersonId
+        ? [...new Set([previousCompanyPersonId, request.companyPersonId])]
+        : undefined;
       await Promise.all([
         this.invalidateRetailerLists(),
         this.queryClient.invalidateQueries({
           queryKey: ['retailers', 'detail', request.id],
           exact: true
         }),
-        this.retailerListingsService.invalidateRetailerLifecycle(request.id)
+        this.invalidateCompanyRetailerState(affectedCompanyPersonIds),
+        this.retailerListingsService.invalidateRetailerLifecycle(
+          request.id,
+          affectedCompanyPersonIds
+        )
       ]);
     }
   }));
@@ -117,13 +132,21 @@ export class DashboardRetailersService {
         )
       ),
     onSuccess: async (_, request) => {
+      const companyPersonId = this.getCachedCompanyPersonId(request.id);
+      const affectedCompanyPersonIds = companyPersonId
+        ? [companyPersonId]
+        : undefined;
       await Promise.all([
         this.invalidateRetailerLists(),
         this.queryClient.invalidateQueries({
           queryKey: ['retailers', 'detail', request.id],
           exact: true
         }),
-        this.retailerListingsService.invalidateRetailerLifecycle(request.id)
+        this.invalidateCompanyRetailerState(affectedCompanyPersonIds),
+        this.retailerListingsService.invalidateRetailerLifecycle(
+          request.id,
+          affectedCompanyPersonIds
+        )
       ]);
     }
   }));
@@ -175,6 +198,59 @@ export class DashboardRetailersService {
     await this.queryClient.invalidateQueries({
       queryKey: ['retailers', 'dashboard']
     });
+  }
+
+  private getCachedCompanyPersonId(retailerId: string): string | null {
+    const details = this.queryClient.getQueryData<DashboardRetailerDetails>(
+      ['retailers', 'detail', retailerId]
+    );
+    if (details) return details.companyPerson.id;
+
+    const dashboardQueries =
+      this.queryClient.getQueriesData<DashboardRetailersResponse>({
+        queryKey: ['retailers', 'dashboard']
+      });
+    for (const [, response] of dashboardQueries) {
+      const retailer = response?.items.find((item) => item.id === retailerId);
+      if (retailer) return retailer.companyPersonId;
+    }
+
+    return null;
+  }
+
+  private async invalidateCompanyRetailerState(
+    companyPersonIds?: readonly string[]
+  ): Promise<void> {
+    if (!companyPersonIds?.length) {
+      await Promise.all([
+        this.queryClient.invalidateQueries({
+          queryKey: ['persons', 'detail']
+        }),
+        this.queryClient.invalidateQueries({
+          predicate: (query) =>
+            query.queryKey[0] === 'retailer-extraction-profiles' &&
+            (query.queryKey[2] === 'current' || query.queryKey[2] === 'overview')
+        })
+      ]);
+      return;
+    }
+
+    await Promise.all(
+      companyPersonIds.flatMap((companyPersonId) => [
+        this.queryClient.invalidateQueries({
+          queryKey: ['persons', 'detail', companyPersonId],
+          exact: true
+        }),
+        this.queryClient.invalidateQueries({
+          queryKey: retailerExtractionProfileKeys.current(companyPersonId),
+          exact: true
+        }),
+        this.queryClient.invalidateQueries({
+          queryKey: retailerExtractionProfileKeys.overview(companyPersonId),
+          exact: true
+        })
+      ])
+    );
   }
 
   private toQueryState(

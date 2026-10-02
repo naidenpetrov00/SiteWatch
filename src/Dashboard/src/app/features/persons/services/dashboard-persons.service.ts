@@ -69,6 +69,17 @@ export class DashboardPersonsService {
     mutationKey: ['persons', 'create'],
     mutationFn: async (request: CreateDashboardPersonRequest) =>
       firstValueFrom(this.http.post<CreateDashboardPersonResponse>(buildApiUrl('/persons'), request)),
+    onSuccess: async () => {
+      await this.queryClient.invalidateQueries({
+        queryKey: ['persons', 'dashboard']
+      });
+    }
+  }));
+
+  readonly updatePersonMutation = injectMutation<void, Error, UpdateDashboardPersonRequest>(() => ({
+    mutationKey: ['persons', 'update'],
+    mutationFn: async (request: UpdateDashboardPersonRequest) =>
+      firstValueFrom(this.http.put<void>(buildApiUrl(`/persons/${request.id}`), request)),
     onSuccess: async (_data, request) => {
       await Promise.all([
         this.queryClient.invalidateQueries({
@@ -79,17 +90,6 @@ export class DashboardPersonsService {
           exact: true
         })
       ]);
-    }
-  }));
-
-  readonly updatePersonMutation = injectMutation<void, Error, UpdateDashboardPersonRequest>(() => ({
-    mutationKey: ['persons', 'update'],
-    mutationFn: async (request: UpdateDashboardPersonRequest) =>
-      firstValueFrom(this.http.put<void>(buildApiUrl(`/persons/${request.id}`), request)),
-    onSuccess: async () => {
-      await this.queryClient.invalidateQueries({
-        queryKey: ['persons', 'dashboard']
-      });
     }
   }));
 

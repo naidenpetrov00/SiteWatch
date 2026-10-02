@@ -747,7 +747,8 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
             || upper.Contains("KČ", StringComparison.Ordinal)
             || upper.Contains("ZŁ", StringComparison.Ordinal)
             || upper.Any(character =>
-                CharUnicodeInfo.GetUnicodeCategory(character)
+                character != '€'
+                && CharUnicodeInfo.GetUnicodeCategory(character)
                     == UnicodeCategory.CurrencySymbol))
         {
             currencies.Add("NON_EUR");
