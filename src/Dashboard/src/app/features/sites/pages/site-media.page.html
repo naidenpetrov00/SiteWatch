@@ -1,53 +1,50 @@
 <main class="site-media-page">
-  <a class="site-media-page__back" routerLink="/manage-sites">← Back to sites</a>
+  <a class="site-media-page__back" routerLink="/manage-sites"><mat-icon>arrow_back</mat-icon>Back to sites</a>
   <header class="site-media-page__header">
-    <div>
-      <p class="site-media-page__eyebrow">Site catalog</p>
-      <h1>Media &amp; files</h1>
-      @if (site(); as currentSite) { <p>{{ currentSite.name }} · {{ currentSite.address }}</p> }
-    </div>
+    <p class="site-media-page__eyebrow">Site catalog</p><h1>Media &amp; files</h1>
+    @if (site(); as currentSite) { <p>{{ currentSite.name }} · {{ currentSite.address }}</p> }
   </header>
-
   @if (siteLoadFailed()) {
-    <p class="site-media-page__notice site-media-page__notice--error" role="alert">This site could not be loaded. Check the link, your permissions, or network connection.</p>
+    <div class="site-media-page__empty site-media-page__empty--error" role="alert"><mat-icon>cloud_off</mat-icon><strong>Unable to load this site</strong><span>Check the link, your permissions, or network connection.</span></div>
   } @else {
-    <section class="site-media-page__panel" aria-label="Site media management">
-      <div class="site-media-page__tabs" role="tablist" aria-label="Media type">
+    <section class="site-media" aria-label="Site media management">
+      <div class="site-media__tabs" role="tablist" aria-label="Media type">
         @for (tab of tabs; track tab) {
-          <button type="button" role="tab" [id]="'site-media-tab-' + tab" [attr.aria-selected]="activeTab() === tab" [class.is-active]="activeTab() === tab" (click)="setTab(tab)" (keydown)="onTabKeydown($event, tab)">{{ tab | titlecase }}</button>
+          <button type="button" role="tab" [id]="'site-media-tab-' + tab" [attr.aria-selected]="activeTab() === tab" [class.site-media__tab--active]="activeTab() === tab" (click)="setTab(tab)" (keydown)="onTabKeydown($event, tab)"><mat-icon>{{ tab === 'images' ? 'photo_library' : tab === 'videos' ? 'video_library' : 'folder' }}</mat-icon>{{ tab | titlecase }}</button>
         }
       </div>
-
-      <section class="site-media-page__upload" aria-label="Upload media">
-        <h2>Upload {{ activeTab() === 'files' ? 'file' : activeTab().slice(0, -1) }}</h2>
-        <div class="site-media-page__upload-fields">
-          <label>File <input type="file" [accept]="activeTab() === 'images' ? '.jpg,.jpeg,.png,.webp,.gif,.heic,.heif' : activeTab() === 'videos' ? '.mp4,.mov,.webm' : ''" (change)="onFileSelected($event)" [disabled]="isUploading()" /></label>
-          @if (activeTab() === 'files') {
-            <label>Document type <select [value]="selectedDocumentType()" (change)="onSelectedDocumentTypeChange($any($event.target).value)">@for (type of documentTypes; track type[0]) { <option [value]="type[0]">{{ type[1] }}</option> }</select></label>
-          } @else {
-            <label>Category <select [value]="selectedCategory()" (change)="onSelectedCategoryChange($any($event.target).value)"><option value="" disabled>Select category</option>@for (category of categoryOptions; track category) { <option [value]="category">{{ category }}</option> }</select></label>
-          }
-          <button mat-flat-button type="button" (click)="upload()" [disabled]="isUploading()">{{ isUploading() ? 'Uploading…' : 'Upload' }}</button>
+      <section class="site-media__upload" aria-labelledby="site-media-upload-heading">
+        <div class="site-media__heading"><div><h2 id="site-media-upload-heading">Add {{ activeTab() === 'files' ? 'files' : activeTab() }}</h2><p>Upload to {{ site()?.name ?? 'this site' }} and apply the correct classification.</p></div><input #fileInput class="site-media__file-input" type="file" [accept]="activeTab() === 'images' ? '.jpg,.jpeg,.png,.webp,.gif,.heic,.heif' : activeTab() === 'videos' ? '.mp4,.mov,.webm' : ''" [disabled]="isUploading()" (change)="onFileSelected($event)" /><button mat-stroked-button type="button" [disabled]="isUploading()" (click)="fileInput.click()"><mat-icon>attach_file</mat-icon>Choose file</button></div>
+        <div class="site-media__drop-zone" [class.site-media__drop-zone--active]="isDragging()" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)"><mat-icon>cloud_upload</mat-icon><div><strong>Drop a {{ activeTab() === 'files' ? 'file' : activeTab().slice(0, -1) }} here</strong><span>@if (activeTab() === 'images') { JPEG, PNG, WebP, GIF, HEIC, or HEIF up to 50 MB. } @else if (activeTab() === 'videos') { MP4, MOV, or WebM up to 500 MB. } @else { Any non-empty file up to 100 MB. }</span></div></div>
+        <div class="site-media__upload-controls">
+          @if (activeTab() === 'files') { <label>Document type<select [value]="selectedDocumentType()" (change)="onSelectedDocumentTypeChange($any($event.target).value)">@for (type of documentTypes; track type[0]) { <option [value]="type[0]">{{ type[1] }}</option> }</select></label> }
+          @else { <label>Category<select [value]="selectedCategory()" (change)="onSelectedCategoryChange($any($event.target).value)"><option value="" disabled>Select category</option>@for (category of categoryOptions; track category) { <option [value]="category">{{ category }}</option> }</select></label> }
+          @if (selectedFile(); as file) { <span class="site-media__selected-file"><mat-icon>description</mat-icon>{{ file.name }}</span> }
+          <button mat-flat-button type="button" (click)="upload()" [disabled]="isUploading()">Upload</button>
         </div>
-        @if (isUploading()) { <div class="site-media-page__progress" aria-live="polite">Upload progress: {{ uploadProgress() === null ? 'processing' : uploadProgress() + '%' }}</div> }
-        @if (validationMessage()) { <p class="site-media-page__notice site-media-page__notice--error" role="alert">{{ validationMessage() }}</p> }
-        @if (operationMessage()) { <p class="site-media-page__notice" aria-live="polite">{{ operationMessage() }}</p> }
+        @if (isUploading()) { <div class="site-media__progress" aria-live="polite"><mat-progress-bar [mode]="uploadProgress() === null ? 'indeterminate' : 'determinate'" [value]="uploadProgress() ?? 0" /><span>Uploading@if (uploadProgress() !== null) { · {{ uploadProgress() }}% }</span></div> }
+        @if (validationMessage()) { <p class="site-media__error" role="alert">{{ validationMessage() }}</p> }
+        @if (operationMessage()) { <p class="site-media__message" aria-live="polite">{{ operationMessage() }}</p> }
       </section>
-
-      @if (mediaQuery.isPending()) { <p class="site-media-page__state" aria-live="polite">Loading media…</p> }
-      @else if (mediaQuery.isError()) { <p class="site-media-page__notice site-media-page__notice--error" role="alert">Media could not be loaded. Check your permissions or network connection and try again.</p> }
-      @else {
-        @if (activeTab() === 'images') {
-          <label class="site-media-page__filter">Filter category <select [value]="categoryFilter()" (change)="onCategoryFilterChange($any($event.target).value)"><option value="All">All categories</option>@for (category of categoryOptions; track category) { <option [value]="category">{{ category }}</option> }</select></label>
-          @if (filteredImages.length === 0) { <p class="site-media-page__state">No images match this filter.</p> } @else { <div class="site-media-page__grid">@for (image of filteredImages; track image.imageId) { <article class="site-media-page__card"><button type="button" (click)="openImage(image)" [attr.aria-label]="'Open image in ' + image.category"><img [src]="imageThumbnailUrls()[image.imageId]" [alt]="'Image in ' + image.category" /></button><div><span>{{ image.category }}</span><time>{{ image.created | date:'mediumDate' }}</time><button mat-button type="button" (click)="deleteItem('images', image.imageId, 'this image')" [disabled]="deletingId() === image.imageId">{{ deletingId() === image.imageId ? 'Deleting…' : 'Delete' }}</button></div></article> }</div> }
+      <section class="site-media__library" [attr.aria-labelledby]="'site-media-tab-' + activeTab()">
+        <div class="site-media__library-heading"><div><h2>{{ activeTab() | titlecase }}</h2><p>Review, open, download, or permanently remove saved site media.</p></div>
+          @if (activeTab() === 'files') { <label>Document type<select [value]="documentTypeFilter()" (change)="onDocumentTypeFilterChange($any($event.target).value)"><option value="All">All document types</option>@for (type of documentTypes; track type[0]) { <option [value]="type[0]">{{ type[1] }}</option> }</select></label> }
+          @else { <label>Category<select [value]="categoryFilter()" (change)="onCategoryFilterChange($any($event.target).value)"><option value="All">All categories</option>@for (category of categoryOptions; track category) { <option [value]="category">{{ category }}</option> }</select></label> }
+        </div>
+        @if (mediaQuery.isPending()) { <div class="site-media__loading" aria-live="polite"><mat-progress-bar mode="indeterminate" /><span>Loading saved media…</span></div> }
+        @else if (mediaQuery.isError()) { <div class="site-media-page__empty site-media-page__empty--error" role="alert"><mat-icon>cloud_off</mat-icon><strong>Unable to load media</strong><span>Check your permissions or network connection and try again.</span></div> }
+        @else if (activeTab() === 'images') {
+          @if (filteredImages.length === 0) { <div class="site-media-page__empty"><mat-icon>photo_library</mat-icon><strong>No images yet</strong><span>Choose an image or drag it into the area above.</span></div> }
+          @else { <div class="site-media__grid">@for (image of visibleImages; track image.imageId) { <article class="site-media-card"><button class="site-media-card__preview" type="button" (click)="openImage(image)" [attr.aria-label]="'View image in ' + image.category">@if (imageThumbnailUrls()[image.imageId]; as url) { <img [src]="url" [alt]="'Image in ' + image.category" /> } @else { <mat-icon>image</mat-icon> }</button><div class="site-media-card__body"><strong>{{ image.category }}</strong><span>{{ image.created | date:'mediumDate' }}</span></div><div class="site-media-card__actions"><button mat-button type="button" (click)="openImage(image)">View</button><button mat-button type="button" (click)="deleteItem('images', image.imageId, 'this image')" [disabled]="deletingId() === image.imageId">{{ deletingId() === image.imageId ? 'Deleting…' : 'Remove' }}</button></div></article> }</div> }
         } @else if (activeTab() === 'videos') {
-          <label class="site-media-page__filter">Filter category <select [value]="categoryFilter()" (change)="onCategoryFilterChange($any($event.target).value)"><option value="All">All categories</option>@for (category of categoryOptions; track category) { <option [value]="category">{{ category }}</option> }</select></label>
-          @if (filteredVideos.length === 0) { <p class="site-media-page__state">No videos match this filter.</p> } @else { <div class="site-media-page__grid">@for (video of filteredVideos; track video.videoId) { <article class="site-media-page__card"><button type="button" (click)="openVideo(video)" [attr.aria-label]="'Play video in ' + video.category"><img [src]="videoSnapshotUrls()[video.videoId]" [alt]="'Video snapshot in ' + video.category" /><span class="site-media-page__play">Play</span></button><div><span>{{ video.category }}</span><time>{{ video.created | date:'mediumDate' }}</time><button mat-button type="button" (click)="deleteItem('videos', video.videoId, 'this video')" [disabled]="deletingId() === video.videoId">{{ deletingId() === video.videoId ? 'Deleting…' : 'Delete' }}</button></div></article> }</div> }
+          @if (filteredVideos.length === 0) { <div class="site-media-page__empty"><mat-icon>video_library</mat-icon><strong>No videos yet</strong><span>Choose a video or drag it into the area above.</span></div> }
+          @else { <div class="site-media__grid">@for (video of visibleVideos; track video.videoId) { <article class="site-media-card"><button class="site-media-card__preview" type="button" (click)="openVideo(video)" [attr.aria-label]="'Play video in ' + video.category">@if (videoSnapshotUrls()[video.videoId]; as url) { <img [src]="url" [alt]="'Video snapshot in ' + video.category" /> } @else { <mat-icon>video_file</mat-icon> }<mat-icon class="site-media-card__play-icon">play_circle</mat-icon></button><div class="site-media-card__body"><strong>{{ video.category }}</strong><span>{{ video.created | date:'mediumDate' }}</span></div><div class="site-media-card__actions"><button mat-button type="button" (click)="openVideo(video)">Play</button><button mat-button type="button" (click)="deleteItem('videos', video.videoId, 'this video')" [disabled]="deletingId() === video.videoId">{{ deletingId() === video.videoId ? 'Deleting…' : 'Remove' }}</button></div></article> }</div> }
         } @else {
-          <label class="site-media-page__filter">Filter document type <select [value]="documentTypeFilter()" (change)="onDocumentTypeFilterChange($any($event.target).value)"><option value="All">All document types</option>@for (type of documentTypes; track type[0]) { <option [value]="type[0]">{{ type[1] }}</option> }</select></label>
-          @if (filteredFiles.length === 0) { <p class="site-media-page__state">No files match this filter.</p> } @else { <ul class="site-media-page__files">@for (file of filteredFiles; track file.fileId) { <li><div><strong>{{ file.fileName }}</strong><span>{{ formatDocumentType(file.documentType) }} · {{ file.created | date:'mediumDate' }}</span></div><div><button mat-button type="button" (click)="openFile(file, false)">Open</button><button mat-button type="button" (click)="openFile(file, true)">Download</button><button mat-button type="button" (click)="deleteItem('files', file.fileId, file.fileName)" [disabled]="deletingId() === file.fileId">{{ deletingId() === file.fileId ? 'Deleting…' : 'Delete' }}</button></div></li> }</ul> }
+          @if (filteredFiles.length === 0) { <div class="site-media-page__empty"><mat-icon>folder</mat-icon><strong>No files yet</strong><span>Choose a file or drag it into the area above.</span></div> }
+          @else { <div class="site-media__grid">@for (file of visibleFiles; track file.fileId) { <article class="site-media-card"><div class="site-media-card__preview"><mat-icon>{{ fileIcon(file) }}</mat-icon></div><div class="site-media-card__body"><strong [title]="file.fileName">{{ file.fileName }}</strong><span>{{ formatDocumentType(file.documentType) }} · {{ file.created | date:'mediumDate' }}</span></div><div class="site-media-card__actions"><button mat-button type="button" (click)="openFile(file, false)">Open</button><button mat-button type="button" (click)="openFile(file, true)">Download</button><button mat-button type="button" (click)="deleteItem('files', file.fileId, file.fileName)" [disabled]="deletingId() === file.fileId">{{ deletingId() === file.fileId ? 'Deleting…' : 'Remove' }}</button></div></article> }</div> }
         }
-      }
+        @if (hasMoreItems) { <div class="site-media__load-more"><button mat-stroked-button type="button" (click)="loadMore()">Load more</button></div> }
+      </section>
     </section>
   }
 </main>

@@ -1,8 +1,10 @@
 import { DatePipe, TitleCasePipe } from '@angular/common';
 import { HttpEventType, HttpResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, signal, untracked } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
@@ -28,7 +30,7 @@ const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
 @Component({
   selector: 'app-site-media-page',
-  imports: [DatePipe, TitleCasePipe, MatButtonModule, MatDialogModule, RouterLink],
+  imports: [DatePipe, TitleCasePipe, MatButtonModule, MatDialogModule, MatIconModule, MatProgressBarModule, RouterLink],
   templateUrl: './site-media.page.html',
   styleUrl: './site-media.page.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -46,6 +48,7 @@ export class SiteMediaPage {
   readonly site = signal<DashboardSite | null>(null);
   readonly siteLoadFailed = signal(false);
   readonly activeTab = signal<SiteMediaKind>('images');
+  readonly mediaDisplayLimit = signal(24);
   readonly tabs: readonly SiteMediaKind[] = ['images', 'videos', 'files'];
   readonly categoryFilter = signal('All');
   readonly documentTypeFilter = signal('All');
@@ -59,6 +62,7 @@ export class SiteMediaPage {
   readonly deletingId = signal<string | null>(null);
   readonly imageThumbnailUrls = signal<Readonly<Record<string, string>>>({});
   readonly videoSnapshotUrls = signal<Readonly<Record<string, string>>>({});
+  readonly isDragging = signal(false);
   readonly documentTypes = FILE_DOCUMENT_TYPES;
   readonly mediaQuery = this.mediaService.mediaQuery;
 
@@ -70,7 +74,10 @@ export class SiteMediaPage {
     effect(() => {
       const media = this.mediaQuery.data();
       if (!media) return;
-      void this.loadPreviewUrls(media.images, media.videos);
+      untracked(() => void this.replacePreviewUrls(
+        media.images.slice(0, this.mediaDisplayLimit()),
+        media.videos.slice(0, this.mediaDisplayLimit())
+      ));
     });
   }
 
@@ -96,8 +103,30 @@ export class SiteMediaPage {
     return type === 'All' ? files : files.filter((file) => file.documentType === type);
   }
 
+  get visibleImages(): readonly SiteImageMedia[] {
+    return this.filteredImages.slice(0, this.mediaDisplayLimit());
+  }
+
+  get visibleVideos(): readonly SiteVideoMedia[] {
+    return this.filteredVideos.slice(0, this.mediaDisplayLimit());
+  }
+
+  get visibleFiles(): readonly SiteFileMedia[] {
+    return this.filteredFiles.slice(0, this.mediaDisplayLimit());
+  }
+
+  get hasMoreItems(): boolean {
+    const total = this.activeTab() === 'images'
+      ? this.filteredImages.length
+      : this.activeTab() === 'videos'
+        ? this.filteredVideos.length
+        : this.filteredFiles.length;
+    return total > this.mediaDisplayLimit();
+  }
+
   setTab(tab: SiteMediaKind): void {
     this.activeTab.set(tab);
+    this.mediaDisplayLimit.set(24);
     this.validationMessage.set(null);
     this.operationMessage.set(null);
   }
@@ -112,8 +141,15 @@ export class SiteMediaPage {
     document.getElementById(`site-media-tab-${nextTab}`)?.focus();
   }
 
-  onCategoryFilterChange(value: string): void { this.categoryFilter.set(value); }
-  onDocumentTypeFilterChange(value: string): void { this.documentTypeFilter.set(value); }
+  onCategoryFilterChange(value: string): void {
+    this.categoryFilter.set(value);
+    this.mediaDisplayLimit.set(24);
+    void this.loadVisiblePreviews();
+  }
+  onDocumentTypeFilterChange(value: string): void {
+    this.documentTypeFilter.set(value);
+    this.mediaDisplayLimit.set(24);
+  }
   onSelectedCategoryChange(value: string): void { this.selectedCategory.set(value); }
   onSelectedDocumentTypeChange(value: string): void { this.selectedDocumentType.set(value); }
 
@@ -122,6 +158,31 @@ export class SiteMediaPage {
     const file = input.files?.item(0) ?? null;
     this.selectedFile.set(file);
     this.validationMessage.set(file ? this.validateFile(file, this.activeTab()) : null);
+    input.value = '';
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    if (!this.isUploading()) this.isDragging.set(true);
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    this.isDragging.set(false);
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    this.isDragging.set(false);
+    if (this.isUploading()) return;
+    const file = event.dataTransfer?.files.item(0) ?? null;
+    this.selectedFile.set(file);
+    this.validationMessage.set(file ? this.validateFile(file, this.activeTab()) : null);
+  }
+
+  loadMore(): void {
+    this.mediaDisplayLimit.update((limit) => limit + 24);
+    void this.loadVisiblePreviews();
   }
 
   async upload(): Promise<void> {
@@ -219,6 +280,14 @@ export class SiteMediaPage {
 
   formatDocumentType = formatDocumentType;
 
+  fileIcon(file: SiteFileMedia): string {
+    if (file.contentType === 'application/pdf') return 'picture_as_pdf';
+    if (file.contentType.includes('zip') || /\.(zip|rar|7z|tar|gz)$/i.test(file.fileName)) return 'folder_zip';
+    if (file.contentType.includes('spreadsheet') || /\.(xls|xlsx|csv)$/i.test(file.fileName)) return 'table_view';
+    if (file.contentType.includes('word') || /\.(doc|docx|odt|txt)$/i.test(file.fileName)) return 'description';
+    return 'draft';
+  }
+
   private async loadSite(): Promise<void> {
     if (!this.siteId) {
       this.siteLoadFailed.set(true);
@@ -233,7 +302,11 @@ export class SiteMediaPage {
     }
   }
 
-  private async loadPreviewUrls(images: readonly SiteImageMedia[], videos: readonly SiteVideoMedia[]): Promise<void> {
+  private async loadVisiblePreviews(): Promise<void> {
+    await this.replacePreviewUrls(this.visibleImages, this.visibleVideos);
+  }
+
+  private async replacePreviewUrls(images: readonly SiteImageMedia[], videos: readonly SiteVideoMedia[]): Promise<void> {
     const requestVersion = ++this.previewRequestVersion;
     this.clearPreviewUrls();
     const [imageEntries, videoEntries] = await Promise.all([
