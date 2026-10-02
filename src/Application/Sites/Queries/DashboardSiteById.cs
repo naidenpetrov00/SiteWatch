@@ -25,6 +25,7 @@ public sealed class DashboardSiteByIdQueryHandler(IApplicationDbContext dbContex
         var site = await dbContext.Sites
             .AsNoTracking()
             .Include(item => item.Manager)
+            .Include(item => item.Users)
             .SingleOrDefaultAsync(item => item.Id == request.SiteId, cancellationToken);
 
         if (site is null)

@@ -4,6 +4,7 @@ export interface CreateDashboardSiteRequest {
   name: string;
   address: string;
   managerId: string;
+  userIds?: readonly string[];
   startDate: string;
   endDate: string | null;
   status: string;

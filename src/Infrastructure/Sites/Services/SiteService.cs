@@ -20,13 +20,10 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
             throw new ArgumentException("Unsupported media policy preset.", nameof(request.MediaPolicyPreset));
         }
 
-        var managerExists = await dbContext.Users
-            .AnyAsync(user => user.Id == request.ManagerId, cancellationToken);
-
-        if (!managerExists)
-        {
-            throw new ArgumentException("Site manager was not found.", nameof(request.ManagerId));
-        }
+        var manager = await dbContext.Users
+            .SingleOrDefaultAsync(user => user.Id == request.ManagerId, cancellationToken)
+            ?? throw new ArgumentException("Site manager was not found.", nameof(request.ManagerId));
+        var accessUsers = await GetAccessUsersAsync(request.UserIds, cancellationToken);
 
         var status = ParseStatus(request.Status);
         var startDate = ParseDate(request.StartDate, nameof(request.StartDate));
@@ -40,6 +37,9 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
             status,
             endDate,
             mediaPolicy);
+
+        site.AddUser(manager);
+        site.AddUserRange(accessUsers);
 
         dbContext.Sites.Add(site);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -64,6 +64,7 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
     public async Task UpdateAsync(UpdateSiteCommand request, CancellationToken cancellationToken)
     {
         var site = await dbContext.Sites
+            .Include(item => item.Users)
             .SingleOrDefaultAsync(item => item.Id == request.Id, cancellationToken);
 
         if (site is null)
@@ -79,13 +80,10 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
             throw new ArgumentException("Unsupported media policy preset.", nameof(request.MediaPolicyPreset));
         }
 
-        var managerExists = await dbContext.Users
-            .AnyAsync(user => user.Id == request.ManagerId, cancellationToken);
-
-        if (!managerExists)
-        {
-            throw new ArgumentException("Site manager was not found.", nameof(request.ManagerId));
-        }
+        var manager = await dbContext.Users
+            .SingleOrDefaultAsync(user => user.Id == request.ManagerId, cancellationToken)
+            ?? throw new ArgumentException("Site manager was not found.", nameof(request.ManagerId));
+        var accessUsers = await GetAccessUsersAsync(request.UserIds, cancellationToken);
 
         site.UpdateDetails(
             request.Name,
@@ -96,7 +94,37 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
             ParseStatus(request.Status),
             preset);
         site.MediaPolicy.AddCategories(request.MediaCategoriesToAdd);
+        site.AddUser(manager);
+        site.AddUserRange(accessUsers);
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task<List<ApplicationUser>> GetAccessUsersAsync(
+        IEnumerable<string> userIds,
+        CancellationToken cancellationToken)
+    {
+        var normalizedIds = userIds
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+
+        if (normalizedIds.Length == 0)
+        {
+            return [];
+        }
+
+        var users = await dbContext.Users
+            .Where(user => normalizedIds.Contains(user.Id))
+            .ToListAsync(cancellationToken);
+
+        if (users.Count != normalizedIds.Length)
+        {
+            throw new ArgumentException(
+                "One or more Site access users were not found.",
+                nameof(userIds));
+        }
+
+        return users;
     }
 
     private static SiteStatus ParseStatus(string value)

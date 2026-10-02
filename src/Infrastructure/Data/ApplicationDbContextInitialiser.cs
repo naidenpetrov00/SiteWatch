@@ -177,7 +177,11 @@ public class ApplicationDbContextInitialiser(
                 LastModifiedBy = SeededBy,
             },
         };
-        sites[0].AddUser(users[0]);
+        foreach (var site in sites)
+        {
+            var manager = users.Single(user => user.Id == site.ManagerId);
+            site.AddUser(manager);
+        }
         sites[2].AddUser(secondaryManager);
         sites[2].AddUserRange(users);
 

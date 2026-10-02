@@ -15,7 +15,7 @@ import { DialogActionBarComponent } from '../../../../shared/ui/dialog-action-ba
 import { DialogShellComponent } from '../../../../shared/ui/dialog-shell/dialog-shell.component';
 import { DashboardUserLookup } from '../../../users/models/dashboard-user-lookup.model';
 import { DashboardUsersService } from '../../../users/services/dashboard-users.service';
-import { DashboardSite } from '../../models/dashboard-site.model';
+import { DashboardSite, DashboardSiteUser } from '../../models/dashboard-site.model';
 import { ALL_MEDIA_FILTER, formatMediaPolicyPreset, MAX_MEDIA_CATEGORY_COUNT, MAX_MEDIA_CATEGORY_LENGTH, normalizeMediaCategory, OTHER_MEDIA_CATEGORY } from '../../models/site-media-policy-presets';
 import { SITE_STATUSES } from '../../models/site-statuses';
 import { UpdateDashboardSiteRequest } from '../../models/update-dashboard-site-request.model';
@@ -41,6 +41,13 @@ export class EditSiteDialogComponent {
   readonly siteStatuses = SITE_STATUSES;
   readonly managerSearchResults = signal<readonly DashboardUserLookup[]>([]);
   readonly managerSearchControl = this.formBuilder.control<string | DashboardUserLookup | null>(this.site.managerDisplayName);
+  readonly accessUserSearchResults = signal<readonly DashboardUserLookup[]>([]);
+  readonly accessUserSearchControl = this.formBuilder.control<string | DashboardUserLookup | null>('');
+  readonly accessUsers = signal<readonly DashboardUserLookup[]>((this.site.accessUsers ?? []).map((user: DashboardSiteUser) => ({
+    id: user.id,
+    displayName: user.displayName,
+    email: user.email
+  })));
   readonly newMediaCategories = signal<readonly string[]>([]);
   readonly categoryError = signal<string | null>(null);
   readonly separatorKeyCodes = [ENTER, COMMA] as const;
@@ -77,6 +84,7 @@ export class EditSiteDialogComponent {
       this.siteForm.controls.managerId.setValue('', { emitEvent: false });
     });
     this.managerSearchControl.valueChanges.pipe(filter((value): value is string => typeof value === 'string'), debounceTime(250), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef)).subscribe((value) => void this.searchManagers(value));
+    this.accessUserSearchControl.valueChanges.pipe(filter((value): value is string => typeof value === 'string'), debounceTime(250), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef)).subscribe((value) => void this.searchAccessUsers(value));
   }
 
   onManagerSelected(event: MatAutocompleteSelectedEvent): void {
@@ -85,6 +93,16 @@ export class EditSiteDialogComponent {
     this.managerSearchResults.set([]);
     this.siteForm.controls.managerId.setValue(manager.id, { emitEvent: false });
   }
+
+  onAccessUserSelected(event: MatAutocompleteSelectedEvent): void {
+    const user = event.option.value as DashboardUserLookup;
+    if (!this.accessUsers().some((item) => item.id === user.id)) {
+      this.accessUsers.update((users) => [...users, user]);
+    }
+    this.accessUserSearchControl.setValue('', { emitEvent: false });
+    this.accessUserSearchResults.set([]);
+  }
+
   closeDialog(): void { this.dialogRef.close(); }
 
   addCategory(event: MatChipInputEvent): void {
@@ -103,7 +121,8 @@ export class EditSiteDialogComponent {
   async saveSite(): Promise<void> {
     if (this.siteForm.invalid) { this.siteForm.markAllAsTouched(); this.managerSearchControl.markAsTouched(); return; }
     const value = this.siteForm.getRawValue();
-    const request: UpdateDashboardSiteRequest = { id: this.site.id, name: value.name, address: value.address, managerId: value.managerId, startDate: this.toDateOnly(value.startDate!), endDate: value.endDate ? this.toDateOnly(value.endDate) : null, status: value.status, mediaPolicyPreset: this.site.mediaPolicy.preset, mediaCategoriesToAdd: this.newMediaCategories() };
+    const accessUserIds = this.accessUsers().map((user) => user.id);
+    const request: UpdateDashboardSiteRequest = { id: this.site.id, name: value.name, address: value.address, managerId: value.managerId, ...(accessUserIds.length > 0 ? { userIds: accessUserIds } : {}), startDate: this.toDateOnly(value.startDate!), endDate: value.endDate ? this.toDateOnly(value.endDate) : null, status: value.status, mediaPolicyPreset: this.site.mediaPolicy.preset, mediaCategoriesToAdd: this.newMediaCategories() };
     try { await this.dashboardSitesService.updateSite(request); this.dialogRef.close(true); } catch { /* Keep the dialog open so the user can retry. */ }
   }
 
@@ -112,6 +131,16 @@ export class EditSiteDialogComponent {
     if (!searchTerm) return;
     try { const managers = await this.dashboardUsersService.searchUsers(searchTerm); if (searchRevision === this.managerSearchRevision) this.managerSearchResults.set(managers); }
     catch { if (searchRevision === this.managerSearchRevision) this.managerSearchResults.set([]); }
+  }
+  private async searchAccessUsers(rawSearchTerm: string): Promise<void> {
+    const searchTerm = rawSearchTerm.trim();
+    this.accessUserSearchResults.set([]);
+    if (!searchTerm) return;
+    try {
+      this.accessUserSearchResults.set(await this.dashboardUsersService.searchUsers(searchTerm));
+    } catch {
+      this.accessUserSearchResults.set([]);
+    }
   }
   private fromDateOnly(value: string | null): Date | null { return value ? new Date(`${value}T00:00:00`) : null; }
   private toDateOnly(value: Date): string { return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`; }

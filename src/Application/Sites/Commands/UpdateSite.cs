@@ -15,6 +15,7 @@ public sealed record UpdateSiteCommand : IRequest
     public string Name { get; init; } = string.Empty;
     public string Address { get; init; } = string.Empty;
     public string ManagerId { get; init; } = string.Empty;
+    public string[] UserIds { get; init; } = [];
     public string StartDate { get; init; } = string.Empty;
     public string? EndDate { get; init; }
     public string Status { get; init; } = string.Empty;

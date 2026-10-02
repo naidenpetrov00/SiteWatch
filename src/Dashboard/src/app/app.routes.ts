@@ -66,6 +66,9 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/offers/pages/site-offers.page').then(
             (m) => m.SiteOffersPage
+          )
+      },
+      {
         path: 'manage-sites/:siteId/media',
         title: 'Site Media & Files',
         loadComponent: () =>

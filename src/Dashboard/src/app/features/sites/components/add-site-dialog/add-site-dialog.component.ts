@@ -46,6 +46,9 @@ export class AddSiteDialogComponent {
   readonly siteStatuses = SITE_STATUSES;
   readonly managerSearchResults = signal<readonly DashboardUserLookup[]>([]);
   readonly managerSearchControl = this.formBuilder.control<string | DashboardUserLookup | null>('');
+  readonly accessUserSearchResults = signal<readonly DashboardUserLookup[]>([]);
+  readonly accessUserSearchControl = this.formBuilder.control<string | DashboardUserLookup | null>('');
+  readonly accessUsers = signal<readonly DashboardUserLookup[]>([]);
   readonly mediaPolicyPresets = signal<readonly SiteMediaPolicyPresetDefinition[]>([]);
   readonly mediaCategories = signal<readonly string[]>([OTHER_MEDIA_CATEGORY]);
   readonly isLoadingPresets = signal(true);
@@ -84,6 +87,11 @@ export class AddSiteDialogComponent {
         this.siteForm.controls.managerId.setValue('', { emitEvent: false });
         void this.searchManagers(value);
       });
+    this.accessUserSearchControl.valueChanges
+      .pipe(debounceTime(250), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe((value) => {
+        if (typeof value === 'string') void this.searchAccessUsers(value);
+      });
     void this.loadMediaPolicyPresets();
   }
 
@@ -92,6 +100,15 @@ export class AddSiteDialogComponent {
     this.managerSearchRevision += 1;
     this.managerSearchResults.set([]);
     this.siteForm.controls.managerId.setValue(manager.id, { emitEvent: false });
+  }
+
+  onAccessUserSelected(event: MatAutocompleteSelectedEvent): void {
+    const user = event.option.value as DashboardUserLookup;
+    if (!this.accessUsers().some((item) => item.id === user.id)) {
+      this.accessUsers.update((users) => [...users, user]);
+    }
+    this.accessUserSearchControl.setValue('', { emitEvent: false });
+    this.accessUserSearchResults.set([]);
   }
 
   selectPreset(preset: SiteMediaPolicyPreset): void {
@@ -129,7 +146,8 @@ export class AddSiteDialogComponent {
     if (this.siteForm.invalid) { this.siteForm.markAllAsTouched(); this.managerSearchControl.markAsTouched(); return; }
     try {
       const value = this.siteForm.getRawValue();
-      await this.dashboardSitesService.createSite({ name: value.name, address: value.address, managerId: value.managerId, startDate: this.toDateOnly(value.startDate!), endDate: value.endDate ? this.toDateOnly(value.endDate) : null, status: value.status, mediaPolicyPreset: value.mediaPolicyPreset, mediaCategories: this.mediaCategories() });
+      const accessUserIds = this.accessUsers().map((user) => user.id);
+      await this.dashboardSitesService.createSite({ name: value.name, address: value.address, managerId: value.managerId, ...(accessUserIds.length > 0 ? { userIds: accessUserIds } : {}), startDate: this.toDateOnly(value.startDate!), endDate: value.endDate ? this.toDateOnly(value.endDate) : null, status: value.status, mediaPolicyPreset: value.mediaPolicyPreset, mediaCategories: this.mediaCategories() });
       this.dialogRef.close(true);
     } catch { /* Keep the dialog open so the user can retry. */ }
   }
@@ -143,6 +161,17 @@ export class AddSiteDialogComponent {
       const managers = await this.dashboardUsersService.searchUsers(searchTerm);
       if (searchRevision === this.managerSearchRevision) this.managerSearchResults.set(managers);
     } catch { if (searchRevision === this.managerSearchRevision) this.managerSearchResults.set([]); }
+  }
+
+  private async searchAccessUsers(rawSearchTerm: string): Promise<void> {
+    const searchTerm = rawSearchTerm.trim();
+    this.accessUserSearchResults.set([]);
+    if (!searchTerm) return;
+    try {
+      this.accessUserSearchResults.set(await this.dashboardUsersService.searchUsers(searchTerm));
+    } catch {
+      this.accessUserSearchResults.set([]);
+    }
   }
 
   private toDateOnly(value: Date): string { return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`; }

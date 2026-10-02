@@ -51,6 +51,39 @@
       }
     </mat-autocomplete>
 
+    <mat-form-field appearance="outline">
+      <mat-label>Users with access</mat-label>
+      <input
+        matInput
+        [formControl]="accessUserSearchControl"
+        [matAutocomplete]="accessUserAutocomplete"
+        autocomplete="off"
+        inputmode="search"
+      />
+      <mat-hint>The Site Manager is granted access automatically.</mat-hint>
+    </mat-form-field>
+    <mat-autocomplete
+      #accessUserAutocomplete="matAutocomplete"
+      [displayWith]="displayManagerSearchValue"
+      (optionSelected)="onAccessUserSelected($event)"
+    >
+      @for (user of accessUserSearchResults(); track user.id) {
+        <mat-option [value]="user">
+          {{ user.displayName }}
+          @if (user.email) { · {{ user.email }} }
+        </mat-option>
+      }
+    </mat-autocomplete>
+    @if (accessUsers().length > 0) {
+      <mat-chip-grid aria-label="Users with access">
+        @for (user of accessUsers(); track user.id) {
+          <mat-chip-row [removable]="false">
+            {{ user.displayName }}
+          </mat-chip-row>
+        }
+      </mat-chip-grid>
+    }
+
     <app-datepicker label="Start Date" [control]="siteForm.controls.startDate" />
     <app-datepicker label="End Date" [control]="siteForm.controls.endDate" [showRequiredError]="false" />
     @if (siteForm.hasError('dateRange') && (siteForm.controls.startDate.touched || siteForm.controls.endDate.touched)) {

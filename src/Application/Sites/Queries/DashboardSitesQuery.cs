@@ -28,6 +28,7 @@ public sealed class DashboardSitesQueryHandler(IApplicationDbContext dbContext)
         var result = await dbContext.Sites
             .AsNoTracking()
             .Include(site => site.Manager)
+            .Include(site => site.Users)
             .ToPagedResultAsync<Site, Site, DashboardSitesQuery>(
                 request,
                 DashboardSitesQuery.Table,
@@ -54,7 +55,8 @@ public sealed record DashboardSiteDto(
     DateOnly StartDate,
     DateOnly? EndDate,
     string Status,
-    SiteMediaPolicyDto MediaPolicy)
+    SiteMediaPolicyDto MediaPolicy,
+    IReadOnlyList<DashboardSiteUserDto>? AccessUsers = null)
 {
     public static DashboardSiteDto From(Site site) => new(
         site.Id,
@@ -66,5 +68,15 @@ public sealed record DashboardSiteDto(
         site.StartDate,
         site.EndDate,
         site.Status.ToString(),
-        SiteMediaPolicyDto.From(site.MediaPolicy));
+        SiteMediaPolicyDto.From(site.MediaPolicy),
+        site.Users
+            .OrderBy(user => user.UserName ?? user.Email ?? user.Id)
+            .Select(user => new DashboardSiteUserDto(
+                user.Id,
+                user.UserName ?? user.Email ?? user.Id,
+                user.Email))
+            .ToList());
 }
+
+/// <summary>Represents a user authorized to access a site.</summary>
+public sealed record DashboardSiteUserDto(string Id, string DisplayName, string? Email);
