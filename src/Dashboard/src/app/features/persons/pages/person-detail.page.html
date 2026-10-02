@@ -1,0 +1,63 @@
+<main class="catalog-detail">
+  <a class="catalog-detail__back" routerLink="/manage-persons">← Back to Persons</a>
+
+  @if (personQuery.isPending()) {
+    <p aria-live="polite">Loading Person…</p>
+  } @else if (personQuery.isError()) {
+    <p class="catalog-detail__error" role="alert">The Person could not be loaded.</p>
+  } @else if (personQuery.data(); as person) {
+    <header class="catalog-detail__header">
+      <div>
+        <p class="catalog-detail__eyebrow">{{ person.type }} Person</p>
+        <h1>{{ person.displayName }}</h1>
+        <p>Person #{{ person.numberId }}</p>
+      </div>
+      <div class="catalog-detail__actions">
+        <button mat-stroked-button type="button" (click)="editPerson()">
+          Edit Person
+        </button>
+      </div>
+    </header>
+
+    <dl class="catalog-detail__facts">
+      <div><dt>Type</dt><dd>{{ person.type }}</dd></div>
+      <div><dt>VAT number</dt><dd>{{ person.vatNumber }}</dd></div>
+      @if (person.eik) {
+        <div><dt>EIK</dt><dd>{{ person.eik }}</dd></div>
+      }
+      @if (person.legalForm) {
+        <div><dt>Legal form</dt><dd>{{ person.legalForm }}</dd></div>
+      }
+      @if (person.egn) {
+        <div><dt>EGN</dt><dd>{{ person.egn }}</dd></div>
+      }
+    </dl>
+
+    @if (person.type.toLowerCase() === 'company' && person.retailers.length > 0) {
+      <section class="catalog-detail__section" aria-labelledby="company-retailers-heading">
+        <div>
+          <p class="catalog-detail__eyebrow">Shared Configuration Scope</p>
+          <h2 id="company-retailers-heading">Affected Retailer Locations</h2>
+          <p>
+            The extraction profile below is shared by all {{ person.retailers.length }}
+            Retailer locations associated with this company.
+          </p>
+        </div>
+        <dl class="catalog-detail__facts">
+          @for (retailer of person.retailers; track retailer.id) {
+            <div>
+              <dt>{{ retailer.displayName }}</dt>
+              <dd>{{ retailer.websiteHost }} · {{ retailer.isActive ? 'Active' : 'Inactive' }}</dd>
+            </div>
+          }
+        </dl>
+      </section>
+
+      <app-company-extraction-profiles [companyPersonId]="person.id" />
+    } @else if (person.type.toLowerCase() === 'company') {
+      <p class="catalog-detail__notice">
+        Extraction profiles are available only after this company Person has an associated Retailer.
+      </p>
+    }
+  }
+</main>

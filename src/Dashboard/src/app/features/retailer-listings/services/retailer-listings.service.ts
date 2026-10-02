@@ -22,6 +22,10 @@ export const retailerListingKeys = {
     state
       ? (['retailer-listings', 'retailer', retailerId, state] as const)
       : (['retailer-listings', 'retailer', retailerId] as const),
+  company: (companyPersonId: string, state?: RetailerListingQueryState) =>
+    state
+      ? (['retailer-listings', 'company', companyPersonId, state] as const)
+      : (['retailer-listings', 'company', companyPersonId] as const),
   detail: (listingId: string) =>
     ['retailer-listings', 'detail', listingId] as const,
   history: (
@@ -66,6 +70,18 @@ export class RetailerListingsService {
     return firstValueFrom(
       this.http.get<RetailerListingsResponse>(
         buildApiUrl('/retailers/' + retailerId + '/product-listings'),
+        { params: this.buildParams(state) }
+      )
+    );
+  }
+
+  getForCompany(
+    companyPersonId: string,
+    state: RetailerListingQueryState
+  ): Promise<RetailerListingsResponse> {
+    return firstValueFrom(
+      this.http.get<RetailerListingsResponse>(
+        buildApiUrl('/persons/' + companyPersonId + '/retailer-listings'),
         { params: this.buildParams(state) }
       )
     );

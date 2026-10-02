@@ -73,11 +73,11 @@ public sealed class RetailerPriceObservation : BaseEntity
         }
         if (extractionProfile is not null
             && (extractionProfile.Status != RetailerExtractionProfileStatus.Published
-                || extractionProfile.RetailerId != listing.RetailerId
+                || extractionProfile.CompanyPersonId != listing.Retailer.CompanyPersonId
                 || matchedRule!.ExtractionProfileId != extractionProfile.Id))
         {
             throw new ArgumentException(
-                "The matched extraction rule must belong to a published profile for the listing retailer.");
+                "The matched extraction rule must belong to a published profile for the listing retailer's company Person.");
         }
 
         var normalizedSourceReference = string.IsNullOrWhiteSpace(sourceReference)

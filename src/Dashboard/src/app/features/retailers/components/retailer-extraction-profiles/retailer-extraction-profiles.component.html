@@ -3,7 +3,10 @@
     <div>
       <p class="extraction__eyebrow">Automation Configuration</p>
       <h2 id="price-extraction-heading">Price Extraction</h2>
-      <p>Define trusted HTTPS hosts and ordered price-location rules for this Retailer.</p>
+      <p>
+        Shared by every Retailer location owned by
+        {{ currentQuery.data()?.owner?.companyDisplayName ?? 'this company' }}.
+      </p>
     </div>
     @if (!currentDraft()) {
       <button
@@ -36,6 +39,10 @@
     </p>
   } @else {
     <div class="extraction__status-grid">
+      <article>
+        <span>Affected locations</span>
+        <strong>{{ currentQuery.data()?.owner?.retailerCount ?? 0 }}</strong>
+      </article>
       <article>
         <span>Active profile</span>
         <strong>
@@ -302,7 +309,7 @@
 
               @if (testModel().sourceType === 'retailerListing') {
                 <label class="extraction__test-control">
-                  <span>Search this retailer’s listings</span>
+                  <span>Search listings from all company Retailer locations</span>
                   <input
                     type="search"
                     placeholder="Product number or title"
@@ -318,17 +325,18 @@
                     <option value="">Select a listing</option>
                     @for (listing of listingsQuery.data()?.items ?? []; track listing.id) {
                       <option [value]="listing.id">
-                        #{{ listing.productNumberId }} · {{ listing.productTitle }} ·
+                        {{ listing.retailerDisplayName }} · #{{ listing.productNumberId }} ·
+                        {{ listing.productTitle }} ·
                         {{ listing.productUrl ? 'URL saved' : 'No URL' }}
                       </option>
                     }
                   </select>
                 </label>
                 @if (listingsQuery.isPending()) {
-                  <p aria-live="polite">Loading retailer listings…</p>
+                  <p aria-live="polite">Loading company retailer listings…</p>
                 } @else if (listingsQuery.isError()) {
                   <p class="extraction__feedback extraction__feedback--error" role="alert">
-                    Retailer listings could not be loaded.
+                    Company retailer listings could not be loaded.
                   </p>
                 }
                 @if (testForm.retailerListingId().touched() && testForm.retailerListingId().errors().length) {

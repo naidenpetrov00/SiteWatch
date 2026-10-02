@@ -4,19 +4,24 @@ using MediatR;
 
 namespace Application.RetailerExtractionProfiles;
 
-/// <summary>Loads all extraction-profile versions for a retailer.</summary>
+/// <summary>Loads all extraction-profile versions for a company Person.</summary>
 [Authorize(Roles = UserRoles.Administrator)]
-public sealed record RetailerExtractionProfileVersionsQuery(Guid RetailerId)
+public sealed record RetailerExtractionProfileVersionsQuery(Guid CompanyPersonId)
     : IRequest<IReadOnlyList<RetailerExtractionProfileSummaryDto>>;
 
-/// <summary>Loads the current draft and active extraction profile for a retailer.</summary>
+/// <summary>Loads the current draft and active extraction profile for a company Person.</summary>
 [Authorize(Roles = UserRoles.Administrator)]
-public sealed record RetailerExtractionCurrentProfilesQuery(Guid RetailerId)
+public sealed record RetailerExtractionCurrentProfilesQuery(Guid CompanyPersonId)
     : IRequest<RetailerExtractionCurrentProfilesDto>;
 
-/// <summary>Loads a complete extraction-profile version owned by a retailer.</summary>
+/// <summary>Loads read-only active extraction status for a company Person.</summary>
 [Authorize(Roles = UserRoles.Administrator)]
-public sealed record RetailerExtractionProfileByIdQuery(Guid RetailerId, Guid ProfileId)
+public sealed record RetailerExtractionOverviewQuery(Guid CompanyPersonId)
+    : IRequest<RetailerExtractionOverviewDto>;
+
+/// <summary>Loads a complete extraction-profile version owned by a company Person.</summary>
+[Authorize(Roles = UserRoles.Administrator)]
+public sealed record RetailerExtractionProfileByIdQuery(Guid CompanyPersonId, Guid ProfileId)
     : IRequest<RetailerExtractionProfileDetailsDto>;
 
 public sealed class RetailerExtractionProfileVersionsHandler(
@@ -28,7 +33,7 @@ public sealed class RetailerExtractionProfileVersionsHandler(
     public Task<IReadOnlyList<RetailerExtractionProfileSummaryDto>> Handle(
         RetailerExtractionProfileVersionsQuery request,
         CancellationToken cancellationToken) =>
-        service.GetVersionsAsync(request.RetailerId, cancellationToken);
+        service.GetVersionsAsync(request.CompanyPersonId, cancellationToken);
 }
 
 public sealed class RetailerExtractionCurrentProfilesHandler(
@@ -38,7 +43,17 @@ public sealed class RetailerExtractionCurrentProfilesHandler(
     public Task<RetailerExtractionCurrentProfilesDto> Handle(
         RetailerExtractionCurrentProfilesQuery request,
         CancellationToken cancellationToken) =>
-        service.GetCurrentAsync(request.RetailerId, cancellationToken);
+        service.GetCurrentAsync(request.CompanyPersonId, cancellationToken);
+}
+
+public sealed class RetailerExtractionOverviewHandler(
+    IRetailerExtractionProfileService service)
+    : IRequestHandler<RetailerExtractionOverviewQuery, RetailerExtractionOverviewDto>
+{
+    public Task<RetailerExtractionOverviewDto> Handle(
+        RetailerExtractionOverviewQuery request,
+        CancellationToken cancellationToken) =>
+        service.GetOverviewAsync(request.CompanyPersonId, cancellationToken);
 }
 
 public sealed class RetailerExtractionProfileByIdHandler(
@@ -48,5 +63,5 @@ public sealed class RetailerExtractionProfileByIdHandler(
     public Task<RetailerExtractionProfileDetailsDto> Handle(
         RetailerExtractionProfileByIdQuery request,
         CancellationToken cancellationToken) =>
-        service.GetByIdAsync(request.RetailerId, request.ProfileId, cancellationToken);
+        service.GetByIdAsync(request.CompanyPersonId, request.ProfileId, cancellationToken);
 }

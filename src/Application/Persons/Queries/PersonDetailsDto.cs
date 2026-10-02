@@ -22,6 +22,7 @@ public sealed record PersonDetailsDto
     public IReadOnlyList<PersonAddressDto> Addresses { get; init; } = [];
     public IReadOnlyList<PersonContactDto> Contacts { get; init; } = [];
     public IReadOnlyList<PersonBankAccountDto> BankAccounts { get; init; } = [];
+    public IReadOnlyList<PersonRetailerSummaryDto> Retailers { get; init; } = [];
 
     public class Mapping : Profile
     {
@@ -47,6 +48,18 @@ public sealed record PersonDetailsDto
             CreateMap<PersonAddress, PersonAddressDto>();
             CreateMap<PersonContact, PersonContactDto>();
             CreateMap<PersonBankAccount, PersonBankAccountDto>();
+            CreateMap<Retailer, PersonRetailerSummaryDto>()
+                .ForMember(
+                    destination => destination.WebsiteHost,
+                    options => options.MapFrom(source => source.NormalizedWebsiteHost));
         }
     }
+}
+
+public sealed record PersonRetailerSummaryDto
+{
+    public Guid Id { get; init; }
+    public string DisplayName { get; init; } = string.Empty;
+    public string WebsiteHost { get; init; } = string.Empty;
+    public bool IsActive { get; init; }
 }

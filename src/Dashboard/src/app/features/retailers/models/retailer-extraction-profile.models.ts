@@ -11,7 +11,7 @@ export type RetailerExtractionPriceBasis = 'item' | 'package';
 
 export interface RetailerExtractionProfileSummary {
   id: string;
-  retailerId: string;
+  companyPersonId: string;
   version: number;
   status: RetailerExtractionProfileStatus;
   isActive: boolean;
@@ -55,8 +55,32 @@ export interface RetailerExtractionProfileDetails {
 }
 
 export interface RetailerExtractionCurrentProfiles {
+  owner: RetailerExtractionOwner;
   draft: RetailerExtractionProfileDetails | null;
   active: RetailerExtractionProfileDetails | null;
+}
+
+export interface RetailerExtractionRetailer {
+  id: string;
+  displayName: string;
+  websiteHost: string;
+  isActive: boolean;
+}
+
+export interface RetailerExtractionOwner {
+  companyPersonId: string;
+  companyDisplayName: string;
+  retailerCount: number;
+  retailers: readonly RetailerExtractionRetailer[];
+}
+
+export interface RetailerExtractionOverview {
+  companyPersonId: string;
+  companyDisplayName: string;
+  retailerCount: number;
+  activeProfileId: string | null;
+  activeVersion: number | null;
+  isCurrentConfigurationValidated: boolean | null;
 }
 
 export interface SaveRetailerExtractionRuleRequest {

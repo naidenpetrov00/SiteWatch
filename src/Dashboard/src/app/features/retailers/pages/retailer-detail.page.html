@@ -59,7 +59,9 @@
       </p>
     }
 
-    <app-retailer-extraction-profiles [retailerId]="retailer.id" />
+    <app-retailer-extraction-profile-summary
+      [companyPersonId]="retailer.companyPerson.id"
+    />
 
     <app-retailer-listings-table
       perspective="retailer"

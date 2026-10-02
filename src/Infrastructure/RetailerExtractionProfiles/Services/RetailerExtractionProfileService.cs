@@ -15,13 +15,13 @@ public sealed class RetailerExtractionProfileService(
     IRetailerExtractionTestRunner testRunner) : IRetailerExtractionProfileService
 {
     public async Task<IReadOnlyList<RetailerExtractionProfileSummaryDto>> GetVersionsAsync(
-        Guid retailerId,
+        Guid companyPersonId,
         CancellationToken cancellationToken)
     {
-        await EnsureRetailerExistsAsync(retailerId, cancellationToken);
+        await LoadEligibleOwnerAsync(companyPersonId, tracking: false, cancellationToken);
         var profiles = await dbContext.RetailerExtractionProfiles
             .AsNoTracking()
-            .Where(profile => profile.RetailerId == retailerId)
+            .Where(profile => profile.CompanyPersonId == companyPersonId)
             .Include(profile => profile.Rules)
             .OrderByDescending(profile => profile.Version)
             .ToListAsync(cancellationToken);
@@ -29,19 +29,23 @@ public sealed class RetailerExtractionProfileService(
     }
 
     public async Task<RetailerExtractionCurrentProfilesDto> GetCurrentAsync(
-        Guid retailerId,
+        Guid companyPersonId,
         CancellationToken cancellationToken)
     {
-        await EnsureRetailerExistsAsync(retailerId, cancellationToken);
+        var owner = await LoadEligibleOwnerAsync(
+            companyPersonId,
+            tracking: false,
+            cancellationToken);
         var profiles = await dbContext.RetailerExtractionProfiles
             .AsNoTracking()
-            .Where(profile => profile.RetailerId == retailerId
+            .Where(profile => profile.CompanyPersonId == companyPersonId
                 && (profile.Status == RetailerExtractionProfileStatus.Draft
                     || profile.IsActive))
             .Include(profile => profile.AllowedHosts)
             .Include(profile => profile.Rules)
             .ToListAsync(cancellationToken);
         return new RetailerExtractionCurrentProfilesDto(
+            ToOwnerDto(owner),
             profiles.Where(profile => profile.Status == RetailerExtractionProfileStatus.Draft)
                 .Select(ToDetailsDto)
                 .SingleOrDefault(),
@@ -50,30 +54,66 @@ public sealed class RetailerExtractionProfileService(
                 .SingleOrDefault());
     }
 
+    public async Task<RetailerExtractionOverviewDto> GetOverviewAsync(
+        Guid companyPersonId,
+        CancellationToken cancellationToken)
+    {
+        var owner = await LoadEligibleOwnerAsync(
+            companyPersonId,
+            tracking: false,
+            cancellationToken);
+        var active = await dbContext.RetailerExtractionProfiles
+            .AsNoTracking()
+            .Where(profile => profile.CompanyPersonId == companyPersonId && profile.IsActive)
+            .Select(profile => new
+            {
+                profile.Id,
+                profile.Version,
+                profile.ConfigurationRevision,
+                profile.ValidatedConfigurationRevision,
+                profile.LastSuccessfulTestAt,
+                profile.LastSuccessfulTestRuleId
+            })
+            .SingleOrDefaultAsync(cancellationToken);
+
+        return new RetailerExtractionOverviewDto(
+            owner.CompanyPerson.Id,
+            owner.CompanyPerson.DisplayName,
+            owner.Retailers.Count,
+            active?.Id,
+            active?.Version,
+            active is null
+                ? null
+                : active.ConfigurationRevision > 0
+                    && active.ValidatedConfigurationRevision == active.ConfigurationRevision
+                    && active.LastSuccessfulTestAt.HasValue
+                    && active.LastSuccessfulTestRuleId.HasValue);
+    }
+
     public async Task<RetailerExtractionProfileDetailsDto> GetByIdAsync(
-        Guid retailerId,
+        Guid companyPersonId,
         Guid profileId,
         CancellationToken cancellationToken) =>
         ToDetailsDto(await LoadProfileAsync(
-            retailerId,
+            companyPersonId,
             profileId,
             tracking: false,
             cancellationToken));
 
     public Task<RetailerExtractionProfileDetailsDto> CreateDraftAsync(
-        Guid retailerId,
+        Guid companyPersonId,
         Guid? sourcePublishedProfileId,
         CancellationToken cancellationToken) =>
         ExecuteMutationAsync(
             async () =>
             {
-                var retailer = await dbContext.Retailers.SingleOrDefaultAsync(
-                    item => item.Id == retailerId,
+                var owner = await LoadEligibleOwnerAsync(
+                    companyPersonId,
+                    tracking: true,
                     cancellationToken);
-                Guard.Against.NotFound(retailerId, retailer);
 
                 if (await dbContext.RetailerExtractionProfiles.AnyAsync(
-                    profile => profile.RetailerId == retailerId
+                    profile => profile.CompanyPersonId == companyPersonId
                         && profile.Status == RetailerExtractionProfileStatus.Draft,
                     cancellationToken))
                 {
@@ -82,7 +122,7 @@ public sealed class RetailerExtractionProfileService(
                 }
 
                 var nextVersion = (await dbContext.RetailerExtractionProfiles
-                    .Where(profile => profile.RetailerId == retailerId)
+                    .Where(profile => profile.CompanyPersonId == companyPersonId)
                     .Select(profile => (int?)profile.Version)
                     .MaxAsync(cancellationToken) ?? 0) + 1;
 
@@ -90,7 +130,8 @@ public sealed class RetailerExtractionProfileService(
                 if (!sourceProfileId.HasValue)
                 {
                     sourceProfileId = await dbContext.RetailerExtractionProfiles
-                        .Where(profile => profile.RetailerId == retailerId && profile.IsActive)
+                        .Where(profile => profile.CompanyPersonId == companyPersonId
+                            && profile.IsActive)
                         .Select(profile => (Guid?)profile.Id)
                         .SingleOrDefaultAsync(cancellationToken);
                 }
@@ -99,7 +140,7 @@ public sealed class RetailerExtractionProfileService(
                 if (sourceProfileId.HasValue)
                 {
                     var source = await LoadProfileAsync(
-                        retailerId,
+                        companyPersonId,
                         sourceProfileId.Value,
                         tracking: true,
                         cancellationToken);
@@ -110,31 +151,46 @@ public sealed class RetailerExtractionProfileService(
                     }
 
                     draft = TryLifecycle(() =>
-                        RetailerExtractionProfile.CloneDraft(retailer, source, nextVersion));
+                        RetailerExtractionProfile.CloneDraft(
+                            owner.CompanyPerson,
+                            source,
+                            nextVersion));
                 }
                 else
                 {
-                    var host = new Uri(retailer.BaseWebsiteUrl).IdnHost;
+                    if (nextVersion > 1)
+                    {
+                        throw new RetailerExtractionProfileConflictException(
+                            "A later draft must clone the active or an explicitly selected published profile.");
+                    }
+
+                    var hosts = owner.Retailers
+                        .Select(retailer => retailer.NormalizedWebsiteHost)
+                        .Distinct(StringComparer.Ordinal)
+                        .ToList();
                     draft = TryLifecycle(() =>
-                        RetailerExtractionProfile.CreateDraft(retailer, nextVersion, [host]));
+                        RetailerExtractionProfile.CreateDraft(
+                            owner.CompanyPerson,
+                            nextVersion,
+                            hosts));
                 }
 
                 SetCreatedAudit(draft);
                 dbContext.RetailerExtractionProfiles.Add(draft);
                 return draft;
             },
-            "The draft could not be created because the retailer profile state changed.",
+            "The draft could not be created because the company profile state changed.",
             cancellationToken);
 
     public Task DeleteDraftAsync(
-        Guid retailerId,
+        Guid companyPersonId,
         Guid profileId,
         CancellationToken cancellationToken) =>
         ExecuteMutationAsync(
             async () =>
             {
                 var profile = await LoadProfileAsync(
-                    retailerId,
+                    companyPersonId,
                     profileId,
                     tracking: true,
                     cancellationToken);
@@ -145,7 +201,7 @@ public sealed class RetailerExtractionProfileService(
             cancellationToken);
 
     public Task<RetailerExtractionProfileDetailsDto> UpdateAllowedHostsAsync(
-        Guid retailerId,
+        Guid companyPersonId,
         Guid profileId,
         IReadOnlyList<string> allowedHosts,
         CancellationToken cancellationToken) =>
@@ -153,7 +209,7 @@ public sealed class RetailerExtractionProfileService(
             async () =>
             {
                 var profile = await LoadProfileAsync(
-                    retailerId,
+                    companyPersonId,
                     profileId,
                     tracking: true,
                     cancellationToken);
@@ -169,7 +225,7 @@ public sealed class RetailerExtractionProfileService(
             cancellationToken);
 
     public Task<RetailerExtractionProfileDetailsDto> AddRuleAsync(
-        Guid retailerId,
+        Guid companyPersonId,
         Guid profileId,
         RetailerExtractionRuleRequest request,
         CancellationToken cancellationToken) =>
@@ -177,7 +233,7 @@ public sealed class RetailerExtractionProfileService(
             async () =>
             {
                 var profile = await LoadProfileAsync(
-                    retailerId,
+                    companyPersonId,
                     profileId,
                     tracking: true,
                     cancellationToken);
@@ -191,13 +247,13 @@ public sealed class RetailerExtractionProfileService(
             cancellationToken);
 
     public Task<RetailerExtractionProfileDetailsDto> UpdateRuleAsync(
-        Guid retailerId,
+        Guid companyPersonId,
         Guid profileId,
         Guid ruleId,
         RetailerExtractionRuleRequest request,
         CancellationToken cancellationToken) =>
         ExecuteProfileMutationAsync(
-            retailerId,
+            companyPersonId,
             profileId,
             profile =>
             {
@@ -208,7 +264,7 @@ public sealed class RetailerExtractionProfileService(
             cancellationToken);
 
     public Task DeleteRuleAsync(
-        Guid retailerId,
+        Guid companyPersonId,
         Guid profileId,
         Guid ruleId,
         CancellationToken cancellationToken) =>
@@ -216,7 +272,7 @@ public sealed class RetailerExtractionProfileService(
             async () =>
             {
                 var profile = await LoadProfileAsync(
-                    retailerId,
+                    companyPersonId,
                     profileId,
                     tracking: true,
                     cancellationToken);
@@ -230,13 +286,13 @@ public sealed class RetailerExtractionProfileService(
             cancellationToken);
 
     public Task<RetailerExtractionProfileDetailsDto> SetRuleEnabledAsync(
-        Guid retailerId,
+        Guid companyPersonId,
         Guid profileId,
         Guid ruleId,
         bool isEnabled,
         CancellationToken cancellationToken) =>
         ExecuteProfileMutationAsync(
-            retailerId,
+            companyPersonId,
             profileId,
             profile =>
             {
@@ -247,7 +303,7 @@ public sealed class RetailerExtractionProfileService(
             cancellationToken);
 
     public Task<RetailerExtractionProfileDetailsDto> ReorderRulesAsync(
-        Guid retailerId,
+        Guid companyPersonId,
         Guid profileId,
         IReadOnlyList<Guid> orderedRuleIds,
         CancellationToken cancellationToken) =>
@@ -255,7 +311,7 @@ public sealed class RetailerExtractionProfileService(
             async () =>
             {
                 var profile = await LoadProfileAsync(
-                    retailerId,
+                    companyPersonId,
                     profileId,
                     tracking: true,
                     cancellationToken);
@@ -269,20 +325,20 @@ public sealed class RetailerExtractionProfileService(
             cancellationToken);
 
     public Task<RetailerExtractionProfileDetailsDto> PublishAsync(
-        Guid retailerId,
+        Guid companyPersonId,
         Guid profileId,
         CancellationToken cancellationToken) =>
         ExecuteMutationAsync(
             async () =>
             {
                 var profile = await LoadProfileAsync(
-                    retailerId,
+                    companyPersonId,
                     profileId,
                     tracking: true,
                     cancellationToken);
                 var currentActive = await dbContext.RetailerExtractionProfiles
                     .SingleOrDefaultAsync(
-                        item => item.RetailerId == retailerId && item.IsActive,
+                        item => item.CompanyPersonId == companyPersonId && item.IsActive,
                         cancellationToken);
                 if (currentActive is not null)
                 {
@@ -299,14 +355,14 @@ public sealed class RetailerExtractionProfileService(
             cancellationToken);
 
     public Task<RetailerExtractionProfileDetailsDto> ActivateAsync(
-        Guid retailerId,
+        Guid companyPersonId,
         Guid profileId,
         CancellationToken cancellationToken) =>
         ExecuteMutationAsync(
             async () =>
             {
                 var profile = await LoadProfileAsync(
-                    retailerId,
+                    companyPersonId,
                     profileId,
                     tracking: true,
                     cancellationToken);
@@ -317,7 +373,7 @@ public sealed class RetailerExtractionProfileService(
 
                 var currentActive = await dbContext.RetailerExtractionProfiles
                     .SingleOrDefaultAsync(
-                        item => item.RetailerId == retailerId && item.IsActive,
+                        item => item.CompanyPersonId == companyPersonId && item.IsActive,
                         cancellationToken);
                 if (currentActive is not null)
                 {
@@ -334,17 +390,19 @@ public sealed class RetailerExtractionProfileService(
             cancellationToken);
 
     public async Task<RetailerExtractionTestResultDto> TestAsync(
-        Guid retailerId,
+        Guid companyPersonId,
         Guid profileId,
         TestRetailerExtractionProfileRequest request,
         CancellationToken cancellationToken)
     {
+        await LoadEligibleOwnerAsync(companyPersonId, tracking: false, cancellationToken);
         var snapshot = await dbContext.RetailerExtractionProfiles
             .AsNoTracking()
             .Include(profile => profile.AllowedHosts)
             .Include(profile => profile.Rules)
             .SingleOrDefaultAsync(
-                profile => profile.Id == profileId && profile.RetailerId == retailerId,
+                profile => profile.Id == profileId
+                    && profile.CompanyPersonId == companyPersonId,
                 cancellationToken);
         if (snapshot is null)
         {
@@ -363,7 +421,7 @@ public sealed class RetailerExtractionProfileService(
             var listing = await dbContext.RetailerListings
                 .AsNoTracking()
                 .Where(item => item.Id == listingId
-                    && item.RetailerId == retailerId)
+                    && item.Retailer.CompanyPersonId == companyPersonId)
                 .Select(item => new { item.ProductUrl })
                 .SingleOrDefaultAsync(cancellationToken);
             if (listing is null)
@@ -405,7 +463,8 @@ public sealed class RetailerExtractionProfileService(
             var current = await dbContext.RetailerExtractionProfiles
                 .Include(profile => profile.Rules)
                 .SingleOrDefaultAsync(
-                    profile => profile.Id == profileId && profile.RetailerId == retailerId,
+                    profile => profile.Id == profileId
+                        && profile.CompanyPersonId == companyPersonId,
                     cancellationToken);
             if (current is null)
             {
@@ -473,7 +532,7 @@ public sealed class RetailerExtractionProfileService(
     }
 
     private Task<RetailerExtractionProfileDetailsDto> ExecuteProfileMutationAsync(
-        Guid retailerId,
+        Guid companyPersonId,
         Guid profileId,
         Action<RetailerExtractionProfile> mutation,
         string persistenceConflictMessage,
@@ -482,7 +541,7 @@ public sealed class RetailerExtractionProfileService(
             async () =>
             {
                 var profile = await LoadProfileAsync(
-                    retailerId,
+                    companyPersonId,
                     profileId,
                     tracking: true,
                     cancellationToken);
@@ -495,11 +554,12 @@ public sealed class RetailerExtractionProfileService(
             cancellationToken);
 
     private async Task<RetailerExtractionProfile> LoadProfileAsync(
-        Guid retailerId,
+        Guid companyPersonId,
         Guid profileId,
         bool tracking,
         CancellationToken cancellationToken)
     {
+        await LoadEligibleOwnerAsync(companyPersonId, tracking: false, cancellationToken);
         IQueryable<RetailerExtractionProfile> query = dbContext.RetailerExtractionProfiles;
         if (!tracking)
         {
@@ -513,25 +573,47 @@ public sealed class RetailerExtractionProfileService(
                 item => item.Id == profileId,
                 cancellationToken);
         Guard.Against.NotFound(profileId, profile);
-        if (profile.RetailerId != retailerId)
+        if (profile.CompanyPersonId != companyPersonId)
         {
             throw new RetailerExtractionProfileConflictException(
-                "The extraction profile does not belong to the requested retailer.");
+                "The extraction profile does not belong to the requested company Person.");
         }
 
         return profile;
     }
 
-    private async Task EnsureRetailerExistsAsync(
-        Guid retailerId,
+    private async Task<EligibleOwner> LoadEligibleOwnerAsync(
+        Guid companyPersonId,
+        bool tracking,
         CancellationToken cancellationToken)
     {
-        if (!await dbContext.Retailers.AsNoTracking().AnyAsync(
-            retailer => retailer.Id == retailerId,
-            cancellationToken))
+        IQueryable<Person> personQuery = dbContext.Persons;
+        IQueryable<Retailer> retailerQuery = dbContext.Retailers;
+        if (!tracking)
         {
-            throw new NotFoundException(nameof(Retailer), retailerId.ToString());
+            personQuery = personQuery.AsNoTracking();
+            retailerQuery = retailerQuery.AsNoTracking();
         }
+
+        var companyPerson = await personQuery.SingleOrDefaultAsync(
+            person => person.Id == companyPersonId && person.Type == PersonType.Company,
+            cancellationToken);
+        if (companyPerson is null)
+        {
+            throw new NotFoundException(nameof(Person), companyPersonId.ToString());
+        }
+
+        var retailers = await retailerQuery
+            .Where(retailer => retailer.CompanyPersonId == companyPersonId)
+            .OrderBy(retailer => retailer.DisplayName)
+            .ThenBy(retailer => retailer.Id)
+            .ToListAsync(cancellationToken);
+        if (retailers.Count == 0)
+        {
+            throw new NotFoundException(nameof(Retailer), companyPersonId.ToString());
+        }
+
+        return new EligibleOwner(companyPerson, retailers);
     }
 
     private async Task StageRulePrioritiesAsync(
@@ -746,7 +828,7 @@ public sealed class RetailerExtractionProfileService(
         RetailerExtractionProfile profile) =>
         new(
             profile.Id,
-            profile.RetailerId,
+            profile.CompanyPersonId,
             profile.Version,
             profile.Status.ToCode(),
             profile.IsActive,
@@ -761,6 +843,19 @@ public sealed class RetailerExtractionProfileService(
             profile.LastSuccessfulTestRuleId,
             profile.Rules.Count,
             profile.Rules.Count(rule => rule.IsEnabled));
+
+    private static RetailerExtractionOwnerDto ToOwnerDto(EligibleOwner owner) =>
+        new(
+            owner.CompanyPerson.Id,
+            owner.CompanyPerson.DisplayName,
+            owner.Retailers.Count,
+            owner.Retailers
+                .Select(retailer => new RetailerExtractionRetailerDto(
+                    retailer.Id,
+                    retailer.DisplayName,
+                    retailer.NormalizedWebsiteHost,
+                    retailer.IsActive))
+                .ToList());
 
     private static RetailerExtractionRuleDto ToRuleDto(RetailerExtractionRule rule) =>
         new(
@@ -781,4 +876,8 @@ public sealed class RetailerExtractionProfileService(
             rule.PriceBasis.ToCode(),
             rule.MinimumValue,
             rule.MaximumValue);
+
+    private sealed record EligibleOwner(
+        Person CompanyPerson,
+        IReadOnlyList<Retailer> Retailers);
 }

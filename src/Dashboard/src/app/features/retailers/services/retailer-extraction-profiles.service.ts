@@ -9,6 +9,7 @@ import { firstValueFrom } from 'rxjs';
 import { buildApiUrl } from '../../../core/api/api-url';
 import {
   RetailerExtractionCurrentProfiles,
+  RetailerExtractionOverview,
   RetailerExtractionProfileDetails,
   RetailerExtractionProfileSummary,
   RetailerExtractionTestResult,
@@ -17,14 +18,16 @@ import {
 } from '../models/retailer-extraction-profile.models';
 
 export const retailerExtractionProfileKeys = {
-  root: (retailerId: string) =>
-    ['retailer-extraction-profiles', retailerId] as const,
-  versions: (retailerId: string) =>
-    ['retailer-extraction-profiles', retailerId, 'versions'] as const,
-  current: (retailerId: string) =>
-    ['retailer-extraction-profiles', retailerId, 'current'] as const,
-  detail: (retailerId: string, profileId: string) =>
-    ['retailer-extraction-profiles', retailerId, 'detail', profileId] as const
+  root: (companyPersonId: string) =>
+    ['retailer-extraction-profiles', companyPersonId] as const,
+  versions: (companyPersonId: string) =>
+    ['retailer-extraction-profiles', companyPersonId, 'versions'] as const,
+  current: (companyPersonId: string) =>
+    ['retailer-extraction-profiles', companyPersonId, 'current'] as const,
+  overview: (companyPersonId: string) =>
+    ['retailer-extraction-profiles', companyPersonId, 'overview'] as const,
+  detail: (companyPersonId: string, profileId: string) =>
+    ['retailer-extraction-profiles', companyPersonId, 'detail', profileId] as const
 };
 
 @Injectable({ providedIn: 'root' })
@@ -48,70 +51,78 @@ export class RetailerExtractionProfilesService {
     mutationFn: (operation) => operation()
   }));
 
-  getVersions(retailerId: string): Promise<readonly RetailerExtractionProfileSummary[]> {
+  getVersions(companyPersonId: string): Promise<readonly RetailerExtractionProfileSummary[]> {
     return firstValueFrom(
-      this.http.get<readonly RetailerExtractionProfileSummary[]>(this.baseUrl(retailerId))
+      this.http.get<readonly RetailerExtractionProfileSummary[]>(this.baseUrl(companyPersonId))
     );
   }
 
-  getCurrent(retailerId: string): Promise<RetailerExtractionCurrentProfiles> {
+  getCurrent(companyPersonId: string): Promise<RetailerExtractionCurrentProfiles> {
     return firstValueFrom(
       this.http.get<RetailerExtractionCurrentProfiles>(
-        `${this.baseUrl(retailerId)}/current`
+        `${this.baseUrl(companyPersonId)}/current`
+      )
+    );
+  }
+
+  getOverview(companyPersonId: string): Promise<RetailerExtractionOverview> {
+    return firstValueFrom(
+      this.http.get<RetailerExtractionOverview>(
+        `${this.baseUrl(companyPersonId)}/overview`
       )
     );
   }
 
   getById(
-    retailerId: string,
+    companyPersonId: string,
     profileId: string
   ): Promise<RetailerExtractionProfileDetails> {
     return firstValueFrom(
       this.http.get<RetailerExtractionProfileDetails>(
-        `${this.baseUrl(retailerId)}/${profileId}`
+        `${this.baseUrl(companyPersonId)}/${profileId}`
       )
     );
   }
 
   async createDraft(
-    retailerId: string,
+    companyPersonId: string,
     sourcePublishedProfileId?: string
   ): Promise<RetailerExtractionProfileDetails> {
     const profile = await this.profileMutation.mutateAsync(
       () => firstValueFrom(
         this.http.post<RetailerExtractionProfileDetails>(
-          `${this.baseUrl(retailerId)}/drafts`,
+          `${this.baseUrl(companyPersonId)}/drafts`,
           sourcePublishedProfileId ? { sourcePublishedProfileId } : {}
         )
       )
     );
-    await this.afterProfileMutation(retailerId, profile);
+    await this.afterProfileMutation(companyPersonId, profile);
     return profile;
   }
 
-  async deleteDraft(retailerId: string, profileId: string): Promise<void> {
+  async deleteDraft(companyPersonId: string, profileId: string): Promise<void> {
     await this.deleteMutation.mutateAsync(
       () => firstValueFrom(
-        this.http.delete<void>(`${this.baseUrl(retailerId)}/${profileId}`)
+        this.http.delete<void>(`${this.baseUrl(companyPersonId)}/${profileId}`)
       )
     );
     this.queryClient.removeQueries({
-      queryKey: retailerExtractionProfileKeys.detail(retailerId, profileId),
+      queryKey: retailerExtractionProfileKeys.detail(companyPersonId, profileId),
       exact: true
     });
-    await this.invalidateOverview(retailerId);
+    await this.invalidateOverview(companyPersonId);
   }
 
   async updateAllowedHosts(
-    retailerId: string,
+    companyPersonId: string,
     profileId: string,
     allowedHosts: readonly string[]
   ): Promise<RetailerExtractionProfileDetails> {
     return this.updateProfile(
-      retailerId,
+      companyPersonId,
       () => firstValueFrom(
         this.http.put<RetailerExtractionProfileDetails>(
-          `${this.baseUrl(retailerId)}/${profileId}/allowed-hosts`,
+          `${this.baseUrl(companyPersonId)}/${profileId}/allowed-hosts`,
           { allowedHosts }
         )
       )
@@ -119,15 +130,15 @@ export class RetailerExtractionProfilesService {
   }
 
   async addRule(
-    retailerId: string,
+    companyPersonId: string,
     profileId: string,
     request: SaveRetailerExtractionRuleRequest
   ): Promise<RetailerExtractionProfileDetails> {
     return this.updateProfile(
-      retailerId,
+      companyPersonId,
       () => firstValueFrom(
         this.http.post<RetailerExtractionProfileDetails>(
-          `${this.baseUrl(retailerId)}/${profileId}/rules`,
+          `${this.baseUrl(companyPersonId)}/${profileId}/rules`,
           request
         )
       )
@@ -135,16 +146,16 @@ export class RetailerExtractionProfilesService {
   }
 
   async updateRule(
-    retailerId: string,
+    companyPersonId: string,
     profileId: string,
     ruleId: string,
     request: SaveRetailerExtractionRuleRequest
   ): Promise<RetailerExtractionProfileDetails> {
     return this.updateProfile(
-      retailerId,
+      companyPersonId,
       () => firstValueFrom(
         this.http.put<RetailerExtractionProfileDetails>(
-          `${this.baseUrl(retailerId)}/${profileId}/rules/${ruleId}`,
+          `${this.baseUrl(companyPersonId)}/${profileId}/rules/${ruleId}`,
           request
         )
       )
@@ -152,31 +163,31 @@ export class RetailerExtractionProfilesService {
   }
 
   async deleteRule(
-    retailerId: string,
+    companyPersonId: string,
     profileId: string,
     ruleId: string
   ): Promise<void> {
     await this.deleteMutation.mutateAsync(
       () => firstValueFrom(
         this.http.delete<void>(
-          `${this.baseUrl(retailerId)}/${profileId}/rules/${ruleId}`
+          `${this.baseUrl(companyPersonId)}/${profileId}/rules/${ruleId}`
         )
       )
     );
-    await this.invalidateProfile(retailerId, profileId);
+    await this.invalidateProfile(companyPersonId, profileId);
   }
 
   async setRuleEnabled(
-    retailerId: string,
+    companyPersonId: string,
     profileId: string,
     ruleId: string,
     isEnabled: boolean
   ): Promise<RetailerExtractionProfileDetails> {
     return this.updateProfile(
-      retailerId,
+      companyPersonId,
       () => firstValueFrom(
         this.http.patch<RetailerExtractionProfileDetails>(
-          `${this.baseUrl(retailerId)}/${profileId}/rules/${ruleId}/${isEnabled ? 'enable' : 'disable'}`,
+          `${this.baseUrl(companyPersonId)}/${profileId}/rules/${ruleId}/${isEnabled ? 'enable' : 'disable'}`,
           {}
         )
       )
@@ -184,15 +195,15 @@ export class RetailerExtractionProfilesService {
   }
 
   async reorderRules(
-    retailerId: string,
+    companyPersonId: string,
     profileId: string,
     orderedRuleIds: readonly string[]
   ): Promise<RetailerExtractionProfileDetails> {
     return this.updateProfile(
-      retailerId,
+      companyPersonId,
       () => firstValueFrom(
         this.http.put<RetailerExtractionProfileDetails>(
-          `${this.baseUrl(retailerId)}/${profileId}/rules/order`,
+          `${this.baseUrl(companyPersonId)}/${profileId}/rules/order`,
           { orderedRuleIds }
         )
       )
@@ -200,14 +211,14 @@ export class RetailerExtractionProfilesService {
   }
 
   async publish(
-    retailerId: string,
+    companyPersonId: string,
     profileId: string
   ): Promise<RetailerExtractionProfileDetails> {
     return this.updateProfile(
-      retailerId,
+      companyPersonId,
       () => firstValueFrom(
         this.http.patch<RetailerExtractionProfileDetails>(
-          `${this.baseUrl(retailerId)}/${profileId}/publish`,
+          `${this.baseUrl(companyPersonId)}/${profileId}/publish`,
           {}
         )
       ),
@@ -216,29 +227,29 @@ export class RetailerExtractionProfilesService {
   }
 
   async test(
-    retailerId: string,
+    companyPersonId: string,
     profileId: string,
     request: TestRetailerExtractionProfileRequest
   ): Promise<RetailerExtractionTestResult> {
     const result = await firstValueFrom(
       this.http.post<RetailerExtractionTestResult>(
-        `${this.baseUrl(retailerId)}/${profileId}/test`,
+        `${this.baseUrl(companyPersonId)}/${profileId}/test`,
         request
       )
     );
-    await this.invalidateProfile(retailerId, profileId);
+    await this.invalidateProfile(companyPersonId, profileId);
     return result;
   }
 
   async activate(
-    retailerId: string,
+    companyPersonId: string,
     profileId: string
   ): Promise<RetailerExtractionProfileDetails> {
     return this.updateProfile(
-      retailerId,
+      companyPersonId,
       () => firstValueFrom(
         this.http.patch<RetailerExtractionProfileDetails>(
-          `${this.baseUrl(retailerId)}/${profileId}/activate`,
+          `${this.baseUrl(companyPersonId)}/${profileId}/activate`,
           {}
         )
       ),
@@ -247,59 +258,63 @@ export class RetailerExtractionProfilesService {
   }
 
   private async updateProfile(
-    retailerId: string,
+    companyPersonId: string,
     request: () => Promise<RetailerExtractionProfileDetails>,
     invalidateAllDetails = false
   ): Promise<RetailerExtractionProfileDetails> {
     const profile = await this.profileMutation.mutateAsync(request);
-    await this.afterProfileMutation(retailerId, profile, invalidateAllDetails);
+    await this.afterProfileMutation(companyPersonId, profile, invalidateAllDetails);
     return profile;
   }
 
   private async afterProfileMutation(
-    retailerId: string,
+    companyPersonId: string,
     profile: RetailerExtractionProfileDetails,
     invalidateAllDetails = false
   ): Promise<void> {
     this.queryClient.setQueryData(
-      retailerExtractionProfileKeys.detail(retailerId, profile.summary.id),
+      retailerExtractionProfileKeys.detail(companyPersonId, profile.summary.id),
       profile
     );
     if (invalidateAllDetails) {
       await this.queryClient.invalidateQueries({
-        queryKey: [...retailerExtractionProfileKeys.root(retailerId), 'detail']
+        queryKey: [...retailerExtractionProfileKeys.root(companyPersonId), 'detail']
       });
     }
-    await this.invalidateOverview(retailerId);
+    await this.invalidateOverview(companyPersonId);
   }
 
   private async invalidateProfile(
-    retailerId: string,
+    companyPersonId: string,
     profileId: string
   ): Promise<void> {
     await Promise.all([
       this.queryClient.invalidateQueries({
-        queryKey: retailerExtractionProfileKeys.detail(retailerId, profileId),
+        queryKey: retailerExtractionProfileKeys.detail(companyPersonId, profileId),
         exact: true
       }),
-      this.invalidateOverview(retailerId)
+      this.invalidateOverview(companyPersonId)
     ]);
   }
 
-  private async invalidateOverview(retailerId: string): Promise<void> {
+  private async invalidateOverview(companyPersonId: string): Promise<void> {
     await Promise.all([
       this.queryClient.invalidateQueries({
-        queryKey: retailerExtractionProfileKeys.versions(retailerId),
+        queryKey: retailerExtractionProfileKeys.versions(companyPersonId),
         exact: true
       }),
       this.queryClient.invalidateQueries({
-        queryKey: retailerExtractionProfileKeys.current(retailerId),
+        queryKey: retailerExtractionProfileKeys.current(companyPersonId),
+        exact: true
+      }),
+      this.queryClient.invalidateQueries({
+        queryKey: retailerExtractionProfileKeys.overview(companyPersonId),
         exact: true
       })
     ]);
   }
 
-  private baseUrl(retailerId: string): string {
-    return buildApiUrl(`/retailers/${retailerId}/price-extraction-profiles`);
+  private baseUrl(companyPersonId: string): string {
+    return buildApiUrl(`/persons/${companyPersonId}/price-extraction-profiles`);
   }
 }

@@ -14,8 +14,8 @@ public sealed class RetailerExtractionProfile : BaseAuditableEntity, IAgregateRo
     {
     }
 
-    public Guid RetailerId { get; private set; }
-    public Retailer Retailer { get; private set; } = null!;
+    public Guid CompanyPersonId { get; private set; }
+    public Person CompanyPerson { get; private set; } = null!;
     public int Version { get; private set; }
     public RetailerExtractionProfileStatus Status { get; private set; }
     public bool IsActive { get; private set; }
@@ -30,11 +30,17 @@ public sealed class RetailerExtractionProfile : BaseAuditableEntity, IAgregateRo
     public IReadOnlyCollection<RetailerExtractionRule> Rules => _rules;
 
     public static RetailerExtractionProfile CreateDraft(
-        Retailer retailer,
+        Person companyPerson,
         int version,
         IEnumerable<string> initialHosts)
     {
-        ArgumentNullException.ThrowIfNull(retailer);
+        ArgumentNullException.ThrowIfNull(companyPerson);
+        if (companyPerson.Type != PersonType.Company)
+        {
+            throw new ArgumentException(
+                "A retailer extraction profile must be owned by a company Person.",
+                nameof(companyPerson));
+        }
         if (version <= 0)
         {
             throw new ArgumentOutOfRangeException(nameof(version));
@@ -43,8 +49,8 @@ public sealed class RetailerExtractionProfile : BaseAuditableEntity, IAgregateRo
         var profile = new RetailerExtractionProfile
         {
             Id = Guid.NewGuid(),
-            Retailer = retailer,
-            RetailerId = retailer.Id,
+            CompanyPerson = companyPerson,
+            CompanyPersonId = companyPerson.Id,
             Version = version,
             Status = RetailerExtractionProfileStatus.Draft,
             IsActive = false
@@ -54,15 +60,15 @@ public sealed class RetailerExtractionProfile : BaseAuditableEntity, IAgregateRo
     }
 
     public static RetailerExtractionProfile CloneDraft(
-        Retailer retailer,
+        Person companyPerson,
         RetailerExtractionProfile source,
         int version)
     {
-        ArgumentNullException.ThrowIfNull(retailer);
+        ArgumentNullException.ThrowIfNull(companyPerson);
         ArgumentNullException.ThrowIfNull(source);
-        if (source.RetailerId != retailer.Id)
+        if (source.CompanyPersonId != companyPerson.Id)
         {
-            throw new InvalidOperationException("The source profile belongs to another retailer.");
+            throw new InvalidOperationException("The source profile belongs to another company Person.");
         }
         if (source.Status != RetailerExtractionProfileStatus.Published)
         {
@@ -70,7 +76,7 @@ public sealed class RetailerExtractionProfile : BaseAuditableEntity, IAgregateRo
         }
 
         var draft = CreateDraft(
-            retailer,
+            companyPerson,
             version,
             source.AllowedHosts.Select(host => host.NormalizedHost));
         foreach (var rule in source.Rules.OrderBy(rule => rule.Priority))

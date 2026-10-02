@@ -54,7 +54,7 @@ import {
 } from '../../../retailer-listings/services/retailer-listings.service';
 
 @Component({
-  selector: 'app-retailer-extraction-profiles',
+  selector: 'app-company-extraction-profiles',
   imports: [
     ReactiveFormsModule,
     FormField,
@@ -67,7 +67,7 @@ import {
   styleUrl: './retailer-extraction-profiles.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class RetailerExtractionProfilesComponent {
+export class CompanyExtractionProfilesComponent {
   private readonly service = inject(RetailerExtractionProfilesService);
   private readonly dialog = inject(MatDialog);
   private readonly formBuilder = inject(FormBuilder);
@@ -75,7 +75,7 @@ export class RetailerExtractionProfilesComponent {
   private loadedProfileId: string | null = null;
   private loadedTestConfigurationKey: string | null = null;
 
-  readonly retailerId = input.required<string>();
+  readonly companyPersonId = input.required<string>();
   readonly selectedProfileId = signal<string | null>(null);
   readonly operationPending = signal(false);
   readonly feedback = signal<string | null>(null);
@@ -128,32 +128,32 @@ export class RetailerExtractionProfilesComponent {
   });
 
   readonly versionsQuery = injectQuery(() => {
-    const retailerId = this.retailerId();
+    const companyPersonId = this.companyPersonId();
     return {
-      queryKey: retailerExtractionProfileKeys.versions(retailerId),
-      queryFn: () => this.service.getVersions(retailerId),
-      enabled: retailerId.length > 0
+      queryKey: retailerExtractionProfileKeys.versions(companyPersonId),
+      queryFn: () => this.service.getVersions(companyPersonId),
+      enabled: companyPersonId.length > 0
     };
   });
   readonly currentQuery = injectQuery(() => {
-    const retailerId = this.retailerId();
+    const companyPersonId = this.companyPersonId();
     return {
-      queryKey: retailerExtractionProfileKeys.current(retailerId),
-      queryFn: () => this.service.getCurrent(retailerId),
-      enabled: retailerId.length > 0
+      queryKey: retailerExtractionProfileKeys.current(companyPersonId),
+      queryFn: () => this.service.getCurrent(companyPersonId),
+      enabled: companyPersonId.length > 0
     };
   });
   readonly detailQuery = injectQuery(() => {
-    const retailerId = this.retailerId();
+    const companyPersonId = this.companyPersonId();
     const profileId = this.selectedProfileId();
     return {
-      queryKey: retailerExtractionProfileKeys.detail(retailerId, profileId ?? ''),
-      queryFn: () => this.service.getById(retailerId, profileId!),
-      enabled: retailerId.length > 0 && profileId !== null
+      queryKey: retailerExtractionProfileKeys.detail(companyPersonId, profileId ?? ''),
+      queryFn: () => this.service.getById(companyPersonId, profileId!),
+      enabled: companyPersonId.length > 0 && profileId !== null
     };
   });
   readonly listingsQuery = injectQuery(() => {
-    const retailerId = this.retailerId();
+    const companyPersonId = this.companyPersonId();
     const model = this.testModel();
     const state = {
       pageIndex: 0,
@@ -165,9 +165,9 @@ export class RetailerExtractionProfilesComponent {
       isActive: null
     };
     return {
-      queryKey: retailerListingKeys.retailer(retailerId, state),
-      queryFn: () => this.listingsService.getForRetailer(retailerId, state),
-      enabled: retailerId.length > 0 &&
+      queryKey: retailerListingKeys.company(companyPersonId, state),
+      queryFn: () => this.listingsService.getForCompany(companyPersonId, state),
+      enabled: companyPersonId.length > 0 &&
         this.detailQuery.data()?.summary.status === 'draft' &&
         model.sourceType === 'retailerListing'
     };
@@ -238,7 +238,7 @@ export class RetailerExtractionProfilesComponent {
       ? source.id
       : this.activeProfile()?.summary.id;
     await this.runMutation(
-      () => this.service.createDraft(this.retailerId(), sourceId),
+      () => this.service.createDraft(this.companyPersonId(), sourceId),
       (profile) => {
         this.selectedProfileId.set(profile.summary.id);
         return sourceId
@@ -265,7 +265,7 @@ export class RetailerExtractionProfilesComponent {
     this.operationPending.set(true);
     this.clearFeedback();
     try {
-      await this.service.deleteDraft(this.retailerId(), profile.summary.id);
+      await this.service.deleteDraft(this.companyPersonId(), profile.summary.id);
       this.hostsForm.reset(
         { allowedHosts: [], hostInput: '' },
         { emitEvent: false }
@@ -336,7 +336,7 @@ export class RetailerExtractionProfilesComponent {
     }
     await this.runMutation(
       () => this.service.updateAllowedHosts(
-        this.retailerId(),
+        this.companyPersonId(),
         profile.summary.id,
         this.hostsForm.controls.allowedHosts.value
       ),
@@ -369,8 +369,8 @@ export class RetailerExtractionProfilesComponent {
 
     await this.runMutation(
       () => rule
-        ? this.service.updateRule(this.retailerId(), profile.summary.id, rule.id, request)
-        : this.service.addRule(this.retailerId(), profile.summary.id, request),
+        ? this.service.updateRule(this.companyPersonId(), profile.summary.id, rule.id, request)
+        : this.service.addRule(this.companyPersonId(), profile.summary.id, request),
       () => rule ? 'Extraction rule was updated.' : 'Extraction rule was added.'
     );
   }
@@ -389,7 +389,7 @@ export class RetailerExtractionProfilesComponent {
     this.operationPending.set(true);
     this.clearFeedback();
     try {
-      await this.service.deleteRule(this.retailerId(), profile.summary.id, rule.id);
+      await this.service.deleteRule(this.companyPersonId(), profile.summary.id, rule.id);
       this.feedback.set('Extraction rule was removed.');
     } catch (error) {
       this.error.set(getRetailerError(error, 'The extraction rule could not be removed.'));
@@ -403,7 +403,7 @@ export class RetailerExtractionProfilesComponent {
     if (!profile || profile.summary.status !== 'draft' || this.operationPending()) return;
     await this.runMutation(
       () => this.service.setRuleEnabled(
-        this.retailerId(),
+        this.companyPersonId(),
         profile.summary.id,
         rule.id,
         !rule.isEnabled
@@ -425,7 +425,7 @@ export class RetailerExtractionProfilesComponent {
     const ids = profile.rules.map((rule) => rule.id);
     [ids[index], ids[target]] = [ids[target], ids[index]];
     await this.runMutation(
-      () => this.service.reorderRules(this.retailerId(), profile.summary.id, ids),
+      () => this.service.reorderRules(this.companyPersonId(), profile.summary.id, ids),
       () => 'Extraction rule order was updated.'
     );
   }
@@ -449,7 +449,7 @@ export class RetailerExtractionProfilesComponent {
       confirmLabel: 'Publish Profile'
     }))) return;
     await this.runMutation(
-      () => this.service.publish(this.retailerId(), profile.summary.id),
+      () => this.service.publish(this.companyPersonId(), profile.summary.id),
       () => `Extraction profile version ${profile.summary.version} was published and activated.`
     );
   }
@@ -464,7 +464,7 @@ export class RetailerExtractionProfilesComponent {
       confirmLabel: 'Activate Version'
     }))) return;
     await this.runMutation(
-      () => this.service.activate(this.retailerId(), version.id),
+      () => this.service.activate(this.companyPersonId(), version.id),
       () => `Extraction profile version ${version.version} is now active.`,
       false
     );
@@ -513,7 +513,7 @@ export class RetailerExtractionProfilesComponent {
       const model = this.testModel();
       try {
         const result = await this.service.test(
-          this.retailerId(),
+          this.companyPersonId(),
           profile.summary.id,
           {
             sourceType: model.sourceType,

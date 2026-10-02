@@ -69,10 +69,16 @@ export class DashboardPersonsService {
     mutationKey: ['persons', 'create'],
     mutationFn: async (request: CreateDashboardPersonRequest) =>
       firstValueFrom(this.http.post<CreateDashboardPersonResponse>(buildApiUrl('/persons'), request)),
-    onSuccess: async () => {
-      await this.queryClient.invalidateQueries({
-        queryKey: ['persons', 'dashboard']
-      });
+    onSuccess: async (_data, request) => {
+      await Promise.all([
+        this.queryClient.invalidateQueries({
+          queryKey: ['persons', 'dashboard']
+        }),
+        this.queryClient.invalidateQueries({
+          queryKey: ['persons', 'detail', request.id],
+          exact: true
+        })
+      ]);
     }
   }));
 

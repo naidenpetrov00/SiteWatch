@@ -44,6 +44,17 @@ public sealed class RetailerProductListingsQuery
     public bool? IsActive { get; set; }
 }
 
+/// <summary>Loads paged Product listings across all Retailers for one company Person.</summary>
+[Authorize(Roles = UserRoles.Administrator)]
+public sealed class CompanyRetailerListingsQuery
+    : TableQueryRequest, IRequest<PagedResult<RetailerListingDto>>
+{
+    public Guid CompanyPersonId { get; set; }
+    public string? SearchTerm { get; set; }
+    public bool IncludeInactive { get; set; }
+    public bool? IsActive { get; set; }
+}
+
 /// <summary>Loads one Product–Retailer listing by identifier.</summary>
 [Authorize(Roles = UserRoles.Administrator)]
 public sealed record RetailerListingByIdQuery(Guid ListingId)
@@ -76,6 +87,17 @@ public sealed class RetailerProductListingsValidator
     public RetailerProductListingsValidator()
     {
         RuleFor(query => query.RetailerId).NotEmpty();
+        RuleFor(query => query.SearchTerm).MaximumLength(200);
+        RetailerListingQueryValidation.AddRules(this);
+    }
+}
+
+public sealed class CompanyRetailerListingsValidator
+    : AbstractValidator<CompanyRetailerListingsQuery>
+{
+    public CompanyRetailerListingsValidator()
+    {
+        RuleFor(query => query.CompanyPersonId).NotEmpty();
         RuleFor(query => query.SearchTerm).MaximumLength(200);
         RetailerListingQueryValidation.AddRules(this);
     }
@@ -118,6 +140,15 @@ public sealed class RetailerProductListingsHandler(IRetailerListingService servi
         RetailerProductListingsQuery request,
         CancellationToken cancellationToken) =>
         service.GetForRetailerAsync(request, cancellationToken);
+}
+
+public sealed class CompanyRetailerListingsHandler(IRetailerListingService service)
+    : IRequestHandler<CompanyRetailerListingsQuery, PagedResult<RetailerListingDto>>
+{
+    public Task<PagedResult<RetailerListingDto>> Handle(
+        CompanyRetailerListingsQuery request,
+        CancellationToken cancellationToken) =>
+        service.GetForCompanyAsync(request, cancellationToken);
 }
 
 public sealed class RetailerListingByIdHandler(IRetailerListingService service)

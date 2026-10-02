@@ -11,6 +11,9 @@ public interface IRetailerListingService
     Task<PagedResult<RetailerListingDto>> GetForRetailerAsync(
         RetailerProductListingsQuery request,
         CancellationToken cancellationToken);
+    Task<PagedResult<RetailerListingDto>> GetForCompanyAsync(
+        CompanyRetailerListingsQuery request,
+        CancellationToken cancellationToken);
     Task<RetailerListingDto> GetByIdAsync(
         Guid listingId,
         CancellationToken cancellationToken);

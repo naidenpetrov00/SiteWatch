@@ -70,6 +70,36 @@ public sealed class RetailerListingService(
             cancellationToken);
     }
 
+    public async Task<PagedResult<RetailerListingDto>> GetForCompanyAsync(
+        CompanyRetailerListingsQuery request,
+        CancellationToken cancellationToken)
+    {
+        var eligibleCompanyExists = await dbContext.Persons.AsNoTracking().AnyAsync(
+            person => person.Id == request.CompanyPersonId
+                && person.Type == PersonType.Company
+                && person.Retailers.Any(),
+            cancellationToken);
+        if (!eligibleCompanyExists)
+        {
+            throw new NotFoundException(nameof(Person), request.CompanyPersonId.ToString());
+        }
+
+        var baseQuery = dbContext.RetailerListings
+            .AsNoTracking()
+            .Where(listing => listing.Retailer.CompanyPersonId == request.CompanyPersonId);
+        return await GetPageAsync(
+            baseQuery,
+            request.SearchTerm,
+            request.IncludeInactive,
+            request.IsActive,
+            request.PageIndex,
+            request.PageSize,
+            request.SortActive,
+            request.SortDirection,
+            productPerspective: false,
+            cancellationToken);
+    }
+
     public async Task<RetailerListingDto> GetByIdAsync(
         Guid listingId,
         CancellationToken cancellationToken)

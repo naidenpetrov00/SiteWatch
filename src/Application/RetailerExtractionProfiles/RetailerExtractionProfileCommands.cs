@@ -5,20 +5,20 @@ using MediatR;
 namespace Application.RetailerExtractionProfiles;
 
 /// <summary>
-/// Creates the single editable draft for a retailer by cloning a supplied or active published
-/// profile; only the first profile is initialized as a blank draft.
+/// Creates the single editable draft for a company Person by cloning a supplied or active
+/// published profile; only the first profile is initialized as a blank draft.
 /// </summary>
 [Authorize(Roles = UserRoles.Administrator)]
 public sealed record CreateRetailerExtractionDraftCommand
     : IRequest<RetailerExtractionProfileDetailsDto>
 {
-    public Guid RetailerId { get; set; }
+    public Guid CompanyPersonId { get; set; }
     public Guid? SourcePublishedProfileId { get; init; }
 }
 
 /// <summary>Deletes an editable draft and all of its configuration.</summary>
 [Authorize(Roles = UserRoles.Administrator)]
-public sealed record DeleteRetailerExtractionDraftCommand(Guid RetailerId, Guid ProfileId)
+public sealed record DeleteRetailerExtractionDraftCommand(Guid CompanyPersonId, Guid ProfileId)
     : IRequest;
 
 /// <summary>Replaces the exact HTTPS host allowlist for a draft.</summary>
@@ -26,7 +26,7 @@ public sealed record DeleteRetailerExtractionDraftCommand(Guid RetailerId, Guid 
 public sealed record UpdateRetailerExtractionAllowedHostsCommand
     : IRequest<RetailerExtractionProfileDetailsDto>
 {
-    public Guid RetailerId { get; set; }
+    public Guid CompanyPersonId { get; set; }
     public Guid ProfileId { get; set; }
     public IReadOnlyList<string> AllowedHosts { get; init; } = [];
 }
@@ -36,7 +36,7 @@ public sealed record UpdateRetailerExtractionAllowedHostsCommand
 public sealed record AddRetailerExtractionRuleCommand
     : RetailerExtractionRuleRequest, IRequest<RetailerExtractionProfileDetailsDto>
 {
-    public Guid RetailerId { get; set; }
+    public Guid CompanyPersonId { get; set; }
     public Guid ProfileId { get; set; }
 }
 
@@ -45,7 +45,7 @@ public sealed record AddRetailerExtractionRuleCommand
 public sealed record UpdateRetailerExtractionRuleCommand
     : RetailerExtractionRuleRequest, IRequest<RetailerExtractionProfileDetailsDto>
 {
-    public Guid RetailerId { get; set; }
+    public Guid CompanyPersonId { get; set; }
     public Guid ProfileId { get; set; }
     public Guid RuleId { get; set; }
 }
@@ -53,14 +53,14 @@ public sealed record UpdateRetailerExtractionRuleCommand
 /// <summary>Deletes one extraction rule from a draft.</summary>
 [Authorize(Roles = UserRoles.Administrator)]
 public sealed record DeleteRetailerExtractionRuleCommand(
-    Guid RetailerId,
+    Guid CompanyPersonId,
     Guid ProfileId,
     Guid RuleId) : IRequest;
 
 /// <summary>Enables or disables one extraction rule in a draft.</summary>
 [Authorize(Roles = UserRoles.Administrator)]
 public sealed record SetRetailerExtractionRuleEnabledCommand(
-    Guid RetailerId,
+    Guid CompanyPersonId,
     Guid ProfileId,
     Guid RuleId,
     bool IsEnabled) : IRequest<RetailerExtractionProfileDetailsDto>;
@@ -70,19 +70,19 @@ public sealed record SetRetailerExtractionRuleEnabledCommand(
 public sealed record ReorderRetailerExtractionRulesCommand
     : IRequest<RetailerExtractionProfileDetailsDto>
 {
-    public Guid RetailerId { get; set; }
+    public Guid CompanyPersonId { get; set; }
     public Guid ProfileId { get; set; }
     public IReadOnlyList<Guid> OrderedRuleIds { get; init; } = [];
 }
 
 /// <summary>Publishes and activates a complete draft.</summary>
 [Authorize(Roles = UserRoles.Administrator)]
-public sealed record PublishRetailerExtractionProfileCommand(Guid RetailerId, Guid ProfileId)
+public sealed record PublishRetailerExtractionProfileCommand(Guid CompanyPersonId, Guid ProfileId)
     : IRequest<RetailerExtractionProfileDetailsDto>;
 
 /// <summary>Activates a retained published profile version.</summary>
 [Authorize(Roles = UserRoles.Administrator)]
-public sealed record ActivateRetailerExtractionProfileCommand(Guid RetailerId, Guid ProfileId)
+public sealed record ActivateRetailerExtractionProfileCommand(Guid CompanyPersonId, Guid ProfileId)
     : IRequest<RetailerExtractionProfileDetailsDto>;
 
 /// <summary>Runs the saved draft configuration against one permitted product URL.</summary>
@@ -90,7 +90,7 @@ public sealed record ActivateRetailerExtractionProfileCommand(Guid RetailerId, G
 public sealed record TestRetailerExtractionProfileCommand
     : IRequest<RetailerExtractionTestResultDto>
 {
-    public Guid RetailerId { get; set; }
+    public Guid CompanyPersonId { get; set; }
     public Guid ProfileId { get; set; }
     public string SourceType { get; init; } = string.Empty;
     public Guid? RetailerListingId { get; init; }
@@ -104,7 +104,7 @@ public sealed class CreateRetailerExtractionDraftHandler(IRetailerExtractionProf
         CreateRetailerExtractionDraftCommand request,
         CancellationToken cancellationToken) =>
         service.CreateDraftAsync(
-            request.RetailerId,
+            request.CompanyPersonId,
             request.SourcePublishedProfileId,
             cancellationToken);
 }
@@ -115,7 +115,7 @@ public sealed class DeleteRetailerExtractionDraftHandler(IRetailerExtractionProf
     public Task Handle(
         DeleteRetailerExtractionDraftCommand request,
         CancellationToken cancellationToken) =>
-        service.DeleteDraftAsync(request.RetailerId, request.ProfileId, cancellationToken);
+        service.DeleteDraftAsync(request.CompanyPersonId, request.ProfileId, cancellationToken);
 }
 
 public sealed class UpdateRetailerExtractionAllowedHostsHandler(
@@ -128,7 +128,7 @@ public sealed class UpdateRetailerExtractionAllowedHostsHandler(
         UpdateRetailerExtractionAllowedHostsCommand request,
         CancellationToken cancellationToken) =>
         service.UpdateAllowedHostsAsync(
-            request.RetailerId,
+            request.CompanyPersonId,
             request.ProfileId,
             request.AllowedHosts,
             cancellationToken);
@@ -140,7 +140,7 @@ public sealed class AddRetailerExtractionRuleHandler(IRetailerExtractionProfileS
     public Task<RetailerExtractionProfileDetailsDto> Handle(
         AddRetailerExtractionRuleCommand request,
         CancellationToken cancellationToken) =>
-        service.AddRuleAsync(request.RetailerId, request.ProfileId, request, cancellationToken);
+        service.AddRuleAsync(request.CompanyPersonId, request.ProfileId, request, cancellationToken);
 }
 
 public sealed class UpdateRetailerExtractionRuleHandler(IRetailerExtractionProfileService service)
@@ -150,7 +150,7 @@ public sealed class UpdateRetailerExtractionRuleHandler(IRetailerExtractionProfi
         UpdateRetailerExtractionRuleCommand request,
         CancellationToken cancellationToken) =>
         service.UpdateRuleAsync(
-            request.RetailerId,
+            request.CompanyPersonId,
             request.ProfileId,
             request.RuleId,
             request,
@@ -164,7 +164,7 @@ public sealed class DeleteRetailerExtractionRuleHandler(IRetailerExtractionProfi
         DeleteRetailerExtractionRuleCommand request,
         CancellationToken cancellationToken) =>
         service.DeleteRuleAsync(
-            request.RetailerId,
+            request.CompanyPersonId,
             request.ProfileId,
             request.RuleId,
             cancellationToken);
@@ -180,7 +180,7 @@ public sealed class SetRetailerExtractionRuleEnabledHandler(
         SetRetailerExtractionRuleEnabledCommand request,
         CancellationToken cancellationToken) =>
         service.SetRuleEnabledAsync(
-            request.RetailerId,
+            request.CompanyPersonId,
             request.ProfileId,
             request.RuleId,
             request.IsEnabled,
@@ -197,7 +197,7 @@ public sealed class ReorderRetailerExtractionRulesHandler(
         ReorderRetailerExtractionRulesCommand request,
         CancellationToken cancellationToken) =>
         service.ReorderRulesAsync(
-            request.RetailerId,
+            request.CompanyPersonId,
             request.ProfileId,
             request.OrderedRuleIds,
             cancellationToken);
@@ -212,7 +212,7 @@ public sealed class PublishRetailerExtractionProfileHandler(
     public Task<RetailerExtractionProfileDetailsDto> Handle(
         PublishRetailerExtractionProfileCommand request,
         CancellationToken cancellationToken) =>
-        service.PublishAsync(request.RetailerId, request.ProfileId, cancellationToken);
+        service.PublishAsync(request.CompanyPersonId, request.ProfileId, cancellationToken);
 }
 
 public sealed class ActivateRetailerExtractionProfileHandler(
@@ -224,7 +224,7 @@ public sealed class ActivateRetailerExtractionProfileHandler(
     public Task<RetailerExtractionProfileDetailsDto> Handle(
         ActivateRetailerExtractionProfileCommand request,
         CancellationToken cancellationToken) =>
-        service.ActivateAsync(request.RetailerId, request.ProfileId, cancellationToken);
+        service.ActivateAsync(request.CompanyPersonId, request.ProfileId, cancellationToken);
 }
 
 public sealed class TestRetailerExtractionProfileHandler(
@@ -235,7 +235,7 @@ public sealed class TestRetailerExtractionProfileHandler(
         TestRetailerExtractionProfileCommand request,
         CancellationToken cancellationToken) =>
         service.TestAsync(
-            request.RetailerId,
+            request.CompanyPersonId,
             request.ProfileId,
             new TestRetailerExtractionProfileRequest
             {

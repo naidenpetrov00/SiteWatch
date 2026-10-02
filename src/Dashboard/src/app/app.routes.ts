@@ -85,6 +85,14 @@ export const routes: Routes = [
           )
       },
       {
+        path: 'manage-persons/:personId',
+        title: 'Person Details',
+        loadComponent: () =>
+          import('./features/persons/pages/person-detail.page').then(
+            (m) => m.PersonDetailPage
+          )
+      },
+      {
         path: 'manage-persons',
         title: 'Manage Persons',
         loadComponent: () =>

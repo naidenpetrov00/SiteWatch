@@ -591,20 +591,11 @@ public class ApplicationDbContextInitialiser(
             return;
         }
 
-        var existingIdentities = await dbContext.Retailers
+        var existingNameValues = await dbContext.Retailers
             .AsNoTracking()
-            .Select(retailer => new
-            {
-                retailer.NormalizedName,
-                retailer.NormalizedWebsiteHost,
-            })
+            .Select(retailer => retailer.NormalizedName)
             .ToListAsync();
-        var existingNames = existingIdentities
-            .Select(identity => identity.NormalizedName)
-            .ToHashSet(StringComparer.Ordinal);
-        var existingHosts = existingIdentities
-            .Select(identity => identity.NormalizedWebsiteHost)
-            .ToHashSet(StringComparer.Ordinal);
+        var existingNames = existingNameValues.ToHashSet(StringComparer.Ordinal);
         var definitions = new[]
         {
             (
@@ -633,8 +624,7 @@ public class ApplicationDbContextInitialiser(
                 companyPerson,
                 definition.BaseWebsiteUrl,
                 definition.Notes);
-            if (existingNames.Contains(retailer.NormalizedName)
-                || existingHosts.Contains(retailer.NormalizedWebsiteHost))
+            if (existingNames.Contains(retailer.NormalizedName))
             {
                 continue;
             }
@@ -650,13 +640,12 @@ public class ApplicationDbContextInitialiser(
             retailer.LastModifiedBy = SeededBy;
             retailers.Add(retailer);
             existingNames.Add(retailer.NormalizedName);
-            existingHosts.Add(retailer.NormalizedWebsiteHost);
         }
 
         if (retailers.Count == 0)
         {
             logger.LogInformation(
-                "Retailer seeding skipped: all seeded retailers already exist or conflict with existing identities.");
+                "Retailer seeding skipped: all seeded retailer names already exist.");
             return;
         }
 

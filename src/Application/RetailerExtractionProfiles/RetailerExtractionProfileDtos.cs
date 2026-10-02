@@ -1,9 +1,9 @@
 namespace Application.RetailerExtractionProfiles;
 
-/// <summary>Represents one extraction-profile version in retailer history.</summary>
+/// <summary>Represents one extraction-profile version in a company Person's history.</summary>
 public sealed record RetailerExtractionProfileSummaryDto(
     Guid Id,
-    Guid RetailerId,
+    Guid CompanyPersonId,
     int Version,
     string Status,
     bool IsActive,
@@ -39,16 +39,40 @@ public sealed record RetailerExtractionRuleDto(
     decimal? MinimumValue,
     decimal? MaximumValue);
 
-/// <summary>Represents a complete retailer extraction-profile version.</summary>
+/// <summary>Represents a complete company-owned retailer extraction-profile version.</summary>
 public sealed record RetailerExtractionProfileDetailsDto(
     RetailerExtractionProfileSummaryDto Summary,
     IReadOnlyList<string> AllowedHosts,
     IReadOnlyList<RetailerExtractionRuleDto> Rules);
 
-/// <summary>Represents the current editable and active profiles for a retailer.</summary>
+/// <summary>Identifies one retailer location affected by a company-owned profile.</summary>
+public sealed record RetailerExtractionRetailerDto(
+    Guid Id,
+    string DisplayName,
+    string WebsiteHost,
+    bool IsActive);
+
+/// <summary>Identifies the company Person and retailer locations sharing a profile history.</summary>
+public sealed record RetailerExtractionOwnerDto(
+    Guid CompanyPersonId,
+    string CompanyDisplayName,
+    int RetailerCount,
+    IReadOnlyList<RetailerExtractionRetailerDto> Retailers);
+
+/// <summary>Represents the current editable and active profiles for a company Person.</summary>
 public sealed record RetailerExtractionCurrentProfilesDto(
+    RetailerExtractionOwnerDto Owner,
     RetailerExtractionProfileDetailsDto? Draft,
     RetailerExtractionProfileDetailsDto? Active);
+
+/// <summary>Represents the read-only shared extraction status shown on retailer pages.</summary>
+public sealed record RetailerExtractionOverviewDto(
+    Guid CompanyPersonId,
+    string CompanyDisplayName,
+    int RetailerCount,
+    Guid? ActiveProfileId,
+    int? ActiveVersion,
+    bool? IsCurrentConfigurationValidated);
 
 /// <summary>Common configuration fields for creating or updating an extraction rule.</summary>
 public abstract record RetailerExtractionRuleRequest

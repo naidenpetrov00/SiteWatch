@@ -15,8 +15,6 @@ public sealed class Retailer : BaseAuditableEntity, IAgregateRoot
     {
     }
 
-    private readonly List<RetailerExtractionProfile> _extractionProfiles = [];
-
     public string DisplayName { get; private set; } = null!;
     public string NormalizedName { get; private set; } = null!;
     public Guid CompanyPersonId { get; private set; }
@@ -25,9 +23,6 @@ public sealed class Retailer : BaseAuditableEntity, IAgregateRoot
     public string NormalizedWebsiteHost { get; private set; } = null!;
     public string? Notes { get; private set; }
     public bool IsActive { get; private set; }
-    public IReadOnlyCollection<RetailerExtractionProfile> ExtractionProfiles =>
-        _extractionProfiles;
-
     public static Retailer Create(
         string displayName,
         Person companyPerson,

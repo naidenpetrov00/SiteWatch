@@ -9,14 +9,21 @@ public sealed class RetailerExtractionProfileVersionsValidator
     : AbstractValidator<RetailerExtractionProfileVersionsQuery>
 {
     public RetailerExtractionProfileVersionsValidator() =>
-        RuleFor(request => request.RetailerId).NotEmpty();
+        RuleFor(request => request.CompanyPersonId).NotEmpty();
 }
 
 public sealed class RetailerExtractionCurrentProfilesValidator
     : AbstractValidator<RetailerExtractionCurrentProfilesQuery>
 {
     public RetailerExtractionCurrentProfilesValidator() =>
-        RuleFor(request => request.RetailerId).NotEmpty();
+        RuleFor(request => request.CompanyPersonId).NotEmpty();
+}
+
+public sealed class RetailerExtractionOverviewValidator
+    : AbstractValidator<RetailerExtractionOverviewQuery>
+{
+    public RetailerExtractionOverviewValidator() =>
+        RuleFor(request => request.CompanyPersonId).NotEmpty();
 }
 
 public sealed class RetailerExtractionProfileByIdValidator
@@ -24,7 +31,7 @@ public sealed class RetailerExtractionProfileByIdValidator
 {
     public RetailerExtractionProfileByIdValidator()
     {
-        RuleFor(request => request.RetailerId).NotEmpty();
+        RuleFor(request => request.CompanyPersonId).NotEmpty();
         RuleFor(request => request.ProfileId).NotEmpty();
     }
 }
@@ -34,7 +41,7 @@ public sealed class CreateRetailerExtractionDraftValidator
 {
     public CreateRetailerExtractionDraftValidator()
     {
-        RuleFor(request => request.RetailerId).NotEmpty();
+        RuleFor(request => request.CompanyPersonId).NotEmpty();
         RuleFor(request => request.SourcePublishedProfileId)
             .NotEqual(Guid.Empty)
             .When(request => request.SourcePublishedProfileId.HasValue);
@@ -46,7 +53,7 @@ public sealed class DeleteRetailerExtractionDraftValidator
 {
     public DeleteRetailerExtractionDraftValidator()
     {
-        RuleFor(request => request.RetailerId).NotEmpty();
+        RuleFor(request => request.CompanyPersonId).NotEmpty();
         RuleFor(request => request.ProfileId).NotEmpty();
     }
 }
@@ -56,7 +63,7 @@ public sealed class UpdateRetailerExtractionAllowedHostsValidator
 {
     public UpdateRetailerExtractionAllowedHostsValidator()
     {
-        RuleFor(request => request.RetailerId).NotEmpty();
+        RuleFor(request => request.CompanyPersonId).NotEmpty();
         RuleFor(request => request.ProfileId).NotEmpty();
         RuleFor(request => request.AllowedHosts).NotNull();
         RuleForEach(request => request.AllowedHosts)
@@ -81,7 +88,7 @@ public sealed class AddRetailerExtractionRuleValidator
 {
     public AddRetailerExtractionRuleValidator()
     {
-        RuleFor(request => request.RetailerId).NotEmpty();
+        RuleFor(request => request.CompanyPersonId).NotEmpty();
         RuleFor(request => request.ProfileId).NotEmpty();
     }
 }
@@ -91,7 +98,7 @@ public sealed class UpdateRetailerExtractionRuleValidator
 {
     public UpdateRetailerExtractionRuleValidator()
     {
-        RuleFor(request => request.RetailerId).NotEmpty();
+        RuleFor(request => request.CompanyPersonId).NotEmpty();
         RuleFor(request => request.ProfileId).NotEmpty();
         RuleFor(request => request.RuleId).NotEmpty();
     }
@@ -102,7 +109,7 @@ public sealed class DeleteRetailerExtractionRuleValidator
 {
     public DeleteRetailerExtractionRuleValidator()
     {
-        RuleFor(request => request.RetailerId).NotEmpty();
+        RuleFor(request => request.CompanyPersonId).NotEmpty();
         RuleFor(request => request.ProfileId).NotEmpty();
         RuleFor(request => request.RuleId).NotEmpty();
     }
@@ -113,7 +120,7 @@ public sealed class SetRetailerExtractionRuleEnabledValidator
 {
     public SetRetailerExtractionRuleEnabledValidator()
     {
-        RuleFor(request => request.RetailerId).NotEmpty();
+        RuleFor(request => request.CompanyPersonId).NotEmpty();
         RuleFor(request => request.ProfileId).NotEmpty();
         RuleFor(request => request.RuleId).NotEmpty();
     }
@@ -124,7 +131,7 @@ public sealed class ReorderRetailerExtractionRulesValidator
 {
     public ReorderRetailerExtractionRulesValidator()
     {
-        RuleFor(request => request.RetailerId).NotEmpty();
+        RuleFor(request => request.CompanyPersonId).NotEmpty();
         RuleFor(request => request.ProfileId).NotEmpty();
         RuleFor(request => request.OrderedRuleIds).NotNull();
         RuleForEach(request => request.OrderedRuleIds).NotEmpty();
@@ -139,7 +146,7 @@ public sealed class PublishRetailerExtractionProfileValidator
 {
     public PublishRetailerExtractionProfileValidator()
     {
-        RuleFor(request => request.RetailerId).NotEmpty();
+        RuleFor(request => request.CompanyPersonId).NotEmpty();
         RuleFor(request => request.ProfileId).NotEmpty();
     }
 }
@@ -149,7 +156,7 @@ public sealed class ActivateRetailerExtractionProfileValidator
 {
     public ActivateRetailerExtractionProfileValidator()
     {
-        RuleFor(request => request.RetailerId).NotEmpty();
+        RuleFor(request => request.CompanyPersonId).NotEmpty();
         RuleFor(request => request.ProfileId).NotEmpty();
     }
 }
@@ -159,7 +166,7 @@ public sealed class TestRetailerExtractionProfileValidator
 {
     public TestRetailerExtractionProfileValidator()
     {
-        RuleFor(request => request.RetailerId).NotEmpty();
+        RuleFor(request => request.CompanyPersonId).NotEmpty();
         RuleFor(request => request.ProfileId).NotEmpty();
         RuleFor(request => request.SourceType)
             .Must(value => value is "retailerListing" or "manualUrl")

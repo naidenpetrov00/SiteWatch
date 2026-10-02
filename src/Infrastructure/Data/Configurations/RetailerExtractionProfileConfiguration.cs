@@ -49,21 +49,21 @@ public sealed class RetailerExtractionProfileConfiguration
             .HasDefaultValue(1L)
             .IsConcurrencyToken();
 
-        builder.HasIndex(profile => new { profile.RetailerId, profile.Version })
+        builder.HasIndex(profile => new { profile.CompanyPersonId, profile.Version })
             .IsUnique();
-        builder.HasIndex(profile => new { profile.RetailerId, profile.Status })
+        builder.HasIndex(profile => new { profile.CompanyPersonId, profile.Status })
             .IsUnique()
-            .HasDatabaseName("IX_RetailerExtractionProfiles_OneDraftPerRetailer")
+            .HasDatabaseName("IX_RetailerExtractionProfiles_OneDraftPerCompanyPerson")
             .HasFilter("[Status] = N'Draft'");
-        builder.HasIndex(profile => new { profile.RetailerId, profile.IsActive })
+        builder.HasIndex(profile => new { profile.CompanyPersonId, profile.IsActive })
             .IsUnique()
-            .HasDatabaseName("IX_RetailerExtractionProfiles_OneActivePerRetailer")
+            .HasDatabaseName("IX_RetailerExtractionProfiles_OneActivePerCompanyPerson")
             .HasFilter("[IsActive] = 1");
         builder.HasIndex(profile => new { profile.Id, profile.LastSuccessfulTestRuleId });
 
-        builder.HasOne(profile => profile.Retailer)
-            .WithMany(retailer => retailer.ExtractionProfiles)
-            .HasForeignKey(profile => profile.RetailerId)
+        builder.HasOne(profile => profile.CompanyPerson)
+            .WithMany(person => person.RetailerExtractionProfiles)
+            .HasForeignKey(profile => profile.CompanyPersonId)
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(profile => profile.LastSuccessfulTestRule)
             .WithMany()

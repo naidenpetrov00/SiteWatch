@@ -10,6 +10,8 @@ public sealed class Person : BaseAuditableEntity, IHasNumberId
     private readonly HashSet<PersonAddress> _addresses = [];
     private readonly HashSet<PersonContact> _contacts = [];
     private readonly HashSet<PersonBankAccount> _bankAccounts = [];
+    private readonly HashSet<Retailer> _retailers = [];
+    private readonly HashSet<RetailerExtractionProfile> _retailerExtractionProfiles = [];
 
     private Person()
     {
@@ -31,6 +33,9 @@ public sealed class Person : BaseAuditableEntity, IHasNumberId
     public IReadOnlyCollection<PersonAddress> Addresses => _addresses;
     public IReadOnlyCollection<PersonContact> Contacts => _contacts;
     public IReadOnlyCollection<PersonBankAccount> BankAccounts => _bankAccounts;
+    public IReadOnlyCollection<Retailer> Retailers => _retailers;
+    public IReadOnlyCollection<RetailerExtractionProfile> RetailerExtractionProfiles =>
+        _retailerExtractionProfiles;
 
     [NotMapped]
     public string DisplayName => Type == PersonType.Company ? CompanyName! : BuildFullName();
@@ -43,7 +48,11 @@ public sealed class Person : BaseAuditableEntity, IHasNumberId
         string? middleName = null
     )
     {
-        var person = new Person { Id = Guid.NewGuid() };
+        var person = new Person
+        {
+            Id = Guid.NewGuid(),
+            Type = PersonType.Individual
+        };
         person.UpdateIndividual(firstName, lastName, egn, vatNumber, middleName);
         return person;
     }
@@ -55,7 +64,11 @@ public sealed class Person : BaseAuditableEntity, IHasNumberId
         string vatNumber
     )
     {
-        var person = new Person { Id = Guid.NewGuid() };
+        var person = new Person
+        {
+            Id = Guid.NewGuid(),
+            Type = PersonType.Company
+        };
         person.UpdateCompany(companyName, legalForm, eik, vatNumber);
         return person;
     }
@@ -68,6 +81,7 @@ public sealed class Person : BaseAuditableEntity, IHasNumberId
         string? middleName = null
     )
     {
+        EnsureType(PersonType.Individual);
         var normalizedFirstName = NormalizeRequiredName(firstName, nameof(firstName));
         var normalizedLastName = NormalizeRequiredName(lastName, nameof(lastName));
         var normalizedEgn = NormalizeTaxIdentifier(Guard.Against.NullOrWhiteSpace(egn));
@@ -111,6 +125,7 @@ public sealed class Person : BaseAuditableEntity, IHasNumberId
 
     public void UpdateCompany(string companyName, CompanyLegalForm? legalForm, string eik, string vatNumber)
     {
+        EnsureType(PersonType.Company);
         var normalizedCompanyName = NormalizeRequiredName(companyName, nameof(companyName));
         var normalizedEik = NormalizeTaxIdentifier(Guard.Against.NullOrWhiteSpace(eik));
         Guard.Against.OutOfRange(
@@ -199,4 +214,12 @@ public sealed class Person : BaseAuditableEntity, IHasNumberId
 
     private static string NormalizeRequiredName(string value, string parameterName) =>
         Guard.Against.NullOrWhiteSpace(value, parameterName).Trim();
+
+    private void EnsureType(PersonType expectedType)
+    {
+        if (Type != expectedType)
+        {
+            throw new InvalidOperationException("A Person's type cannot be changed after creation.");
+        }
+    }
 }

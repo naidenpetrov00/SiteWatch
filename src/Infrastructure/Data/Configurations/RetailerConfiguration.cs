@@ -28,11 +28,11 @@ public sealed class RetailerConfiguration : IEntityTypeConfiguration<Retailer>
         builder.Property(retailer => retailer.IsActive).IsRequired();
 
         builder.HasIndex(retailer => retailer.NormalizedName).IsUnique();
-        builder.HasIndex(retailer => retailer.NormalizedWebsiteHost).IsUnique();
+        builder.HasIndex(retailer => retailer.NormalizedWebsiteHost);
         builder.HasIndex(retailer => retailer.IsActive);
 
         builder.HasOne(retailer => retailer.CompanyPerson)
-            .WithMany()
+            .WithMany(person => person.Retailers)
             .HasForeignKey(retailer => retailer.CompanyPersonId)
             .OnDelete(DeleteBehavior.Restrict);
     }
