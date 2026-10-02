@@ -53,6 +53,14 @@ export const routes: Routes = [
           )
       },
       {
+        path: 'manage-sites/:siteId/media',
+        title: 'Site Media & Files',
+        loadComponent: () =>
+          import('./features/sites/pages/site-media.page').then(
+            (m) => m.SiteMediaPage
+          )
+      },
+      {
         path: 'manage-issues',
         title: 'Manage Issues',
         loadComponent: () =>

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { Router } from '@angular/router';
 
 import { ActionButtonComponent } from '../../../shared/ui/action-button/action-button.component';
 import { DataTableComponent } from '../../../shared/data-table/data-table.component';
@@ -57,6 +58,14 @@ const SITE_COLUMNS: readonly DataTableColumn<DashboardSite>[] = [
     label: 'Media Policy',
     valueAccessor: (site) => site.mediaPolicy.preset,
     displayFormatter: (_, site) => formatMediaPolicyPreset(site.mediaPolicy.preset)
+  },
+  {
+    key: 'media',
+    label: 'Media & files',
+    cellType: 'button',
+    valueAccessor: () => 'Media & files',
+    ariaLabelAccessor: (site) => `Manage media and files for ${site.name}`,
+    exportable: false
   }
 ] as const;
 
@@ -70,6 +79,7 @@ const SITE_COLUMNS: readonly DataTableColumn<DashboardSite>[] = [
 export class ManageSitesPage {
   private readonly dashboardSitesService = inject(DashboardSitesService);
   private readonly dialog = inject(MatDialog);
+  private readonly router = inject(Router);
 
   readonly sites = signal<readonly DashboardSite[]>([]);
   readonly sitesFilteredCount = signal(0);
@@ -116,6 +126,11 @@ export class ManageSitesPage {
   }
 
   async onCellButtonClicked(event: { row: DashboardSite; column: DataTableColumn<DashboardSite> }): Promise<void> {
+    if (event.column.key === 'media') {
+      await this.router.navigate(['/manage-sites', event.row.id, 'media']);
+      return;
+    }
+
     if (event.column.key !== 'numberId') {
       return;
     }
