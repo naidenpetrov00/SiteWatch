@@ -20,4 +20,12 @@ export interface DashboardPersonDetails {
   addresses: readonly CreateDashboardPersonAddressRequest[];
   contacts: readonly CreateDashboardPersonContactRequest[];
   bankAccounts: readonly CreateDashboardPersonBankAccountRequest[];
+  retailers: readonly DashboardPersonRetailerSummary[];
+}
+
+export interface DashboardPersonRetailerSummary {
+  id: string;
+  displayName: string;
+  websiteHost: string;
+  isActive: boolean;
 }

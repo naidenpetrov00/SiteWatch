@@ -1,0 +1,380 @@
+<section class="offer-pricing" aria-labelledby="offer-pricing-heading">
+  <div class="offer-pricing__heading">
+    <div>
+      <p class="offer-pricing__eyebrow">Stage 3</p>
+      <h2 id="offer-pricing-heading">Products &amp; Retailer Pricing</h2>
+    </div>
+    @if (matrix(); as currentMatrix) {
+      <div class="offer-pricing__totals" aria-label="Offer pricing totals">
+        <span [class.offer-pricing__incomplete]="!currentMatrix.requiredPricingComplete">
+          Required: {{ currentMatrix.requiredPricingComplete ? formatCurrency(currentMatrix.requiredTotal) : 'Incomplete' }}
+        </span>
+        <span [class.offer-pricing__incomplete]="!currentMatrix.optionalPricingComplete">
+          Optional: {{ currentMatrix.optionalPricingComplete ? formatCurrency(currentMatrix.optionalTotal) : 'Incomplete' }}
+        </span>
+      </div>
+    }
+  </div>
+
+  @if (feedback()) {
+    <p class="offer-pricing__feedback offer-pricing__feedback--success" aria-live="polite">
+      {{ feedback() }}
+    </p>
+  }
+  @if (error()) {
+    <p class="offer-pricing__feedback offer-pricing__feedback--error" role="alert">
+      {{ error() }}
+    </p>
+  }
+
+  @if (offersService.pricingMatrixQuery.isPending()) {
+    <div class="offer-pricing__loading" aria-live="polite">
+      <mat-spinner diameter="32" />
+      <span>Loading retailer prices…</span>
+    </div>
+  } @else if (offersService.pricingMatrixQuery.isError()) {
+    <p class="offer-pricing__feedback offer-pricing__feedback--error" role="alert">
+      The retailer pricing matrix could not be loaded.
+    </p>
+  } @else if (matrix(); as currentMatrix) {
+    @if (editable()) {
+      <mat-form-field appearance="outline" class="offer-pricing__retailer-search">
+        <mat-label>Add retailer</mat-label>
+        <input
+          matInput
+          [formControl]="retailerSearch"
+          [matAutocomplete]="retailerAutocomplete"
+          autocomplete="off"
+          inputmode="search"
+          placeholder="Search active retailers"
+        />
+        <mat-hint>Choose which retailers become comparison columns.</mat-hint>
+      </mat-form-field>
+      <mat-autocomplete
+        #retailerAutocomplete="matAutocomplete"
+        [displayWith]="displayRetailer"
+        (optionSelected)="onRetailerSelected($event)"
+      >
+        @for (retailer of retailerResults(); track retailer.id) {
+          <mat-option [value]="retailer">
+            <strong>{{ retailer.displayName }}</strong>
+            <span class="offer-pricing__option-detail">{{ retailer.websiteHost }}</span>
+          </mat-option>
+        }
+      </mat-autocomplete>
+    } @else {
+      <p class="offer-pricing__readonly">Saved pricing snapshot · read-only</p>
+    }
+
+    @if (currentMatrix.products.length === 0) {
+      <div class="offer-pricing__empty">
+        <mat-icon aria-hidden="true">price_check</mat-icon>
+        <p>Add Activity requirements before comparing retailer prices.</p>
+      </div>
+    } @else {
+      <p id="offer-pricing-scroll-hint" class="offer-pricing__scroll-hint">
+        Scroll horizontally to compare retailers. Product and requirement context stays pinned.
+      </p>
+      <div
+        class="offer-pricing__table-shell"
+        tabindex="0"
+        aria-labelledby="offer-pricing-heading"
+        aria-describedby="offer-pricing-scroll-hint"
+      >
+        <table
+          mat-table
+          [dataSource]="displayRows()"
+          class="offer-pricing__table"
+          aria-labelledby="offer-pricing-heading"
+          aria-describedby="offer-pricing-scroll-hint"
+        >
+          <ng-container matColumnDef="group">
+            <td
+              mat-cell
+              *matCellDef="let displayRow"
+              role="rowheader"
+              [attr.colspan]="displayedColumns().length"
+            >
+              @if (displayRow.kind === 'activity') {
+                <div class="offer-pricing__group-heading offer-pricing__group-heading--activity">
+                  <span class="offer-pricing__group-kicker">Activity {{ displayRow.activityNumberId }}</span>
+                  <strong>{{ displayRow.activityName }}</strong>
+                </div>
+              } @else if (displayRow.kind === 'section') {
+                <div class="offer-pricing__group-heading offer-pricing__group-heading--section">
+                  <span class="offer-pricing__group-kicker">Section</span>
+                  <strong>{{ displayRow.sectionName || 'Measurement section' }}</strong>
+                </div>
+              }
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="product" sticky>
+            <th mat-header-cell *matHeaderCellDef>Product requirement</th>
+            <td mat-cell *matCellDef="let displayRow" role="rowheader">
+              @if (displayRow.kind === 'product') {
+                @let row = displayRow.product;
+                @let requirement = displayRow.requirement;
+                <div class="offer-pricing__product">
+                  <strong>#{{ row.productNumberId }} · {{ row.title }}</strong>
+                  @if (productIdentity(row)) {
+                    <span>{{ productIdentity(row) }}</span>
+                  }
+                  <span>{{ packageDescription(row) }}</span>
+                  <div class="offer-pricing__requirement-summary">
+                    <span
+                      class="offer-pricing__requirement-state"
+                      [class.offer-pricing__requirement-state--optional]="!requirement.isRequired"
+                    >
+                      {{ requirement.isRequired ? 'Required' : 'Optional' }}
+                    </span>
+                    <strong>Calculated requirement {{ formatQuantity(requirement.calculatedQuantity) }}</strong>
+                  </div>
+                  @if (displayRow.sharedRequirementCount > 1) {
+                    <span class="offer-pricing__shared-badge">
+                      Aggregate pricing shared across {{ displayRow.sharedRequirementCount }} requirements
+                    </span>
+                  }
+                  <span class="offer-pricing__offer-totals">
+                    Offer totals · Required {{ formatQuantity(row.requiredQuantity) }} ·
+                    Optional {{ formatQuantity(row.optionalQuantity) }}
+                  </span>
+                  <details class="offer-pricing__calculation-details">
+                    <summary>Calculation details</summary>
+                    <dl>
+                      <div>
+                        <dt>Configured</dt>
+                        <dd>{{ formatQuantity(requirement.configuredQuantity) }}</dd>
+                      </div>
+                      <div>
+                        <dt>Behavior</dt>
+                        <dd>{{ requirement.quantityBehavior === 'fixed' ? 'Fixed' : 'Proportional' }}</dd>
+                      </div>
+                      <div>
+                        <dt>Measurement</dt>
+                        <dd>
+                          {{ formatQuantity(requirement.requestedMeasurement) }} /
+                          {{ formatQuantity(requirement.basisQuantity) }}
+                          {{ measurementUnit(requirement.measurementUnit) }}
+                        </dd>
+                      </div>
+                    </dl>
+                    @if (requirement.notes) {
+                      <p><strong>Notes:</strong> {{ requirement.notes }}</p>
+                    }
+                  </details>
+                  @if (row.selectedPrice; as selected) {
+                    <div class="offer-pricing__selected-summary">
+                      <span>
+                        Selected {{ selected.retailerDisplayName }} ·
+                        {{ formatCurrency(selected.amount) }} per {{ selected.basis }}
+                      </span>
+                      @if (selected.hasNewerObservation) {
+                        <span class="offer-pricing__newer">Newer price available</span>
+                      }
+                      @if (editable()) {
+                        <button
+                          mat-button
+                          type="button"
+                          [disabled]="isMutating()"
+                          (click)="clearSelection(row)"
+                        >
+                          Clear selection
+                        </button>
+                      }
+                    </div>
+                  } @else {
+                    <span class="offer-pricing__missing-selection">No price selected</span>
+                  }
+                </div>
+              }
+            </td>
+          </ng-container>
+
+          @for (retailer of currentMatrix.retailers; track retailer.retailerId) {
+            <ng-container [matColumnDef]="retailer.retailerId">
+              <th mat-header-cell *matHeaderCellDef>
+                <div class="offer-pricing__retailer-heading">
+                  <span>{{ retailer.displayName }}</span>
+                  @if (!retailer.isActive) {
+                    <small>Inactive</small>
+                  }
+                  @if (editable()) {
+                    <button
+                      mat-icon-button
+                      type="button"
+                      aria-label="Remove {{ retailer.displayName }} from comparison"
+                      [disabled]="isMutating() || !canRemoveRetailer(retailer.retailerId)"
+                      [matTooltip]="canRemoveRetailer(retailer.retailerId) ? 'Remove retailer' : 'Clear selected prices before removing this retailer'"
+                      (click)="removeRetailer(retailer.retailerId, retailer.displayName)"
+                    >
+                      <mat-icon aria-hidden="true">close</mat-icon>
+                    </button>
+                  }
+                </div>
+              </th>
+              <td mat-cell *matCellDef="let displayRow">
+                @if (displayRow.kind === 'product') {
+                  @let row = displayRow.product;
+                  @if (cellFor(row, retailer.retailerId); as cell) {
+                  <div
+                    class="offer-pricing__cell"
+                    [class.offer-pricing__cell--cheapest]="cell.isCheapest"
+                    [class.offer-pricing__cell--selected]="isSelected(row, retailer.retailerId)"
+                  >
+                    @if (
+                      editable() &&
+                      (!retailer.isActive || cell.retailerListingIsActive === false)
+                    ) {
+                      <div class="offer-pricing__inactive-listing">
+                        <strong>
+                          {{ !retailer.isActive ? 'Retailer inactive' : 'Listing inactive' }}
+                        </strong>
+                        <span>Prices remain visible, but cannot be recorded or selected.</span>
+                        <a [routerLink]="['/manage-products', row.productId]">
+                          Manage in Product Catalog
+                        </a>
+                      </div>
+                    }
+                    @if (isEditing(displayRow, retailer.retailerId) && canEditCell(cell)) {
+                      <form
+                        class="offer-pricing__edit-form"
+                        [formGroup]="formFor(row, cell)"
+                        (ngSubmit)="savePrice(displayRow, cell)"
+                      >
+                        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                          <mat-label>EUR price</mat-label>
+                          <input matInput type="number" min="0.01" step="0.01" formControlName="amount" />
+                          <span matTextPrefix>€&nbsp;</span>
+                          @if (formFor(row, cell).controls.amount.touched && formFor(row, cell).controls.amount.invalid) {
+                            <mat-error>Enter a positive price with at most two decimals.</mat-error>
+                          }
+                        </mat-form-field>
+                        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                          <mat-label>Price basis</mat-label>
+                          <mat-select formControlName="basis">
+                            @for (basis of allowedBases(row); track basis) {
+                              <mat-option [value]="basis">{{ basis === 'item' ? 'Individual item' : 'Package' }}</mat-option>
+                            }
+                          </mat-select>
+                        </mat-form-field>
+                        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                          <mat-label>Retailer product URL</mat-label>
+                          <input matInput type="url" formControlName="productUrl" autocomplete="url" />
+                          @if (formFor(row, cell).controls.productUrl.touched && formFor(row, cell).controls.productUrl.invalid) {
+                            <mat-error>Enter an absolute HTTP or HTTPS URL.</mat-error>
+                          }
+                        </mat-form-field>
+                        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                          <mat-label>Retailer product code</mat-label>
+                          <input matInput formControlName="retailerProductCode" maxlength="100" />
+                        </mat-form-field>
+                        <div class="offer-pricing__cell-actions">
+                          <button
+                            mat-flat-button
+                            color="primary"
+                            type="submit"
+                            [disabled]="formFor(row, cell).invalid || isMutating()"
+                          >
+                            {{ isSaving(row, retailer.retailerId) ? 'Saving…' : 'Save' }}
+                          </button>
+                          <button
+                            mat-button
+                            type="button"
+                            [disabled]="isMutating()"
+                            (click)="cancelEdit(displayRow, cell)"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                        @if (cellError(row, retailer.retailerId); as saveError) {
+                          <p class="offer-pricing__cell-error" role="alert">{{ saveError }}</p>
+                        }
+                      </form>
+                    } @else {
+                      @if (cell.latestObservation; as observation) {
+                        <div class="offer-pricing__price">
+                          <strong>{{ formatCurrency(observation.amount) }}</strong>
+                          <span>per {{ observation.basis }}</span>
+                        </div>
+                        <time
+                          [attr.datetime]="observation.observedAt"
+                          [attr.aria-label]="'Observed ' + exactDate(observation.observedAt)"
+                          [matTooltip]="exactDate(observation.observedAt)"
+                        >
+                          {{ relativeAge(observation.observedAt) }}
+                        </time>
+                        @if (row.requiredQuantity > 0 && cell.comparableRequiredTotal !== null) {
+                          <span class="offer-pricing__line-total">
+                            Offer required total {{ formatCurrency(cell.comparableRequiredTotal) }}
+                          </span>
+                        }
+                        @if (row.optionalQuantity > 0 && cell.comparableOptionalTotal !== null) {
+                          <span class="offer-pricing__line-total">
+                            Offer optional total {{ formatCurrency(cell.comparableOptionalTotal) }}
+                          </span>
+                        }
+                        @if (cell.isCheapest) {
+                          <span class="offer-pricing__cheapest-label">Cheapest current</span>
+                        }
+                        @if (isSelected(row, retailer.retailerId)) {
+                          <span class="offer-pricing__selected-label">Selected retailer</span>
+                        }
+                        <div class="offer-pricing__cell-actions">
+                          @if (canEditCell(cell)) {
+                            <button
+                              mat-stroked-button
+                              type="button"
+                              [disabled]="isMutating()"
+                              (click)="usePrice(row, cell)"
+                            >
+                              {{ isSelected(row, retailer.retailerId) && !row.selectedPrice?.hasNewerObservation ? 'Selected' : 'Use this price' }}
+                            </button>
+                            <button
+                              mat-button
+                              type="button"
+                              [disabled]="isMutating()"
+                              (click)="startEdit(displayRow, cell)"
+                            >
+                              {{ isEditingElsewhere(displayRow, retailer.retailerId) ? 'Continue editing here' : 'Edit' }}
+                            </button>
+                          }
+                          <button mat-button type="button" (click)="openHistory(row, cell)">
+                            History
+                          </button>
+                        </div>
+                      } @else {
+                        <span class="offer-pricing__no-price">No price</span>
+                        <div class="offer-pricing__cell-actions">
+                          @if (canEditCell(cell)) {
+                            <button mat-stroked-button type="button" (click)="startEdit(displayRow, cell)">
+                              {{ isEditingElsewhere(displayRow, retailer.retailerId) ? 'Continue editing here' : 'Add price' }}
+                            </button>
+                          }
+                          <button mat-button type="button" (click)="openHistory(row, cell)">
+                            History
+                          </button>
+                        </div>
+                      }
+                    }
+                  </div>
+                }
+                }
+              </td>
+            </ng-container>
+          }
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns(); sticky: true"></tr>
+          <tr mat-row *matRowDef="let row; columns: groupColumns; when: isActivityGroup" class="offer-pricing__activity-row"></tr>
+          <tr mat-row *matRowDef="let row; columns: groupColumns; when: isSectionGroup" class="offer-pricing__section-row"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns(); when: isProductRow" class="offer-pricing__product-row"></tr>
+        </table>
+      </div>
+
+      @if (currentMatrix.retailers.length === 0) {
+        <p class="offer-pricing__no-retailers">
+          Add at least one active Retailer to begin comparing prices.
+        </p>
+      }
+    }
+  }
+</section>

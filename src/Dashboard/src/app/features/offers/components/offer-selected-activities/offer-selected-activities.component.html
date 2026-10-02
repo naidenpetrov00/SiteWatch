@@ -1,0 +1,106 @@
+<section class="offer-selected" aria-labelledby="offer-selected-heading">
+  <div class="offer-selected__heading">
+    <div>
+      <p class="offer-selected__eyebrow">Selected Activities</p>
+      <h2 id="offer-selected-heading">Section Measurements</h2>
+    </div>
+    @if (!editable()) {
+      <p class="offer-selected__readonly">Saved snapshot · read-only</p>
+    }
+  </div>
+
+  @if (feedbackMessage()) {
+    <p class="offer-selected__feedback offer-selected__feedback--success" aria-live="polite">
+      {{ feedbackMessage() }}
+    </p>
+  }
+  @if (errorMessage()) {
+    <p class="offer-selected__feedback offer-selected__feedback--error" role="alert">
+      {{ errorMessage() }}
+    </p>
+  }
+
+  @if (activities().length === 0) {
+    <div class="offer-selected__empty">
+      <mat-icon>playlist_add</mat-icon>
+      <p>No activities have been added to this Offer.</p>
+    </div>
+  } @else {
+    <div class="offer-selected__list">
+      @for (activity of activities(); track activity.id) {
+        <article class="offer-selected__activity">
+          <header>
+            <div>
+              <span class="offer-selected__number">Activity #{{ activity.activityNumberId }}</span>
+              <h3>{{ activity.name }}</h3>
+              @if (activity.description) {
+                <p>{{ activity.description }}</p>
+              }
+            </div>
+            @if (editable()) {
+              <button
+                mat-stroked-button
+                color="warn"
+                type="button"
+                [disabled]="isMutating()"
+                (click)="confirmRemove(activity)"
+              >
+                <mat-icon>remove_circle_outline</mat-icon>
+                Remove
+              </button>
+            }
+          </header>
+
+          @if (activity.sections.length === 0) {
+            <p class="offer-selected__no-sections">
+              This activity snapshot has no requirement sections.
+            </p>
+          } @else {
+            <form [formGroup]="formFor(activity.id)" (ngSubmit)="save(activity)">
+              <div formArrayName="measurements" class="offer-selected__sections">
+                @for (section of activity.sections; track section.id; let index = $index) {
+                  <div class="offer-selected__section">
+                    <div class="offer-selected__section-copy">
+                      <strong>{{ section.name || 'Measurement' }}</strong>
+                      <span>
+                        Basis: {{ formatQuantity(section.basisQuantity) }}
+                        {{ measurementUnit(section.measurementUnit) }}
+                      </span>
+                    </div>
+                    <mat-form-field appearance="outline">
+                      <mat-label>Requested measurement</mat-label>
+                      <input
+                        matInput
+                        type="number"
+                        min="0.0001"
+                        step="any"
+                        [formControlName]="index"
+                      />
+                      <span matTextSuffix>{{ measurementUnit(section.measurementUnit) }}</span>
+                      @if (formFor(activity.id).controls.measurements.controls[index].touched && formFor(activity.id).controls.measurements.controls[index].invalid) {
+                        <mat-error>Enter a positive value with at most four decimal places.</mat-error>
+                      }
+                    </mat-form-field>
+                  </div>
+                }
+              </div>
+
+              @if (editable()) {
+                <div class="offer-selected__actions">
+                  <button
+                    mat-flat-button
+                    color="primary"
+                    type="submit"
+                    [disabled]="formFor(activity.id).invalid || isMutating()"
+                  >
+                    {{ offersService.updateMeasurementsMutation.isPending() ? 'Saving…' : 'Save Measurements' }}
+                  </button>
+                </div>
+              }
+            </form>
+          }
+        </article>
+      }
+    </div>
+  }
+</section>

@@ -1,0 +1,477 @@
+:host {
+  display: block;
+}
+
+.offer-pricing {
+  display: grid;
+  gap: 1rem;
+}
+
+.offer-pricing__heading,
+.offer-pricing__retailer-heading,
+.offer-pricing__cell-actions,
+.offer-pricing__totals,
+.offer-pricing__loading {
+  display: flex;
+  align-items: center;
+}
+
+.offer-pricing__heading {
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.offer-pricing__heading h2,
+.offer-pricing__empty p,
+.offer-pricing__feedback,
+.offer-pricing__readonly,
+.offer-pricing__no-retailers {
+  margin: 0;
+}
+
+.offer-pricing__eyebrow {
+  margin: 0 0 0.25rem;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.offer-pricing__totals {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.offer-pricing__totals span,
+.offer-pricing__cheapest-label,
+.offer-pricing__selected-label,
+.offer-pricing__newer,
+.offer-pricing__missing-selection {
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.offer-pricing__totals span {
+  background: var(--mat-sys-surface-container-high);
+}
+
+.offer-pricing__totals .offer-pricing__incomplete,
+.offer-pricing__missing-selection,
+.offer-pricing__newer {
+  color: var(--mat-sys-error);
+  background: var(--mat-sys-error-container);
+}
+
+.offer-pricing__retailer-search {
+  width: min(100%, 30rem);
+}
+
+.offer-pricing__option-detail {
+  display: block;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.8rem;
+}
+
+.offer-pricing__feedback {
+  padding: 0.8rem 1rem;
+  border-radius: 0.75rem;
+}
+
+.offer-pricing__feedback--success {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.offer-pricing__feedback--error {
+  color: var(--mat-sys-error);
+  background: var(--mat-sys-error-container);
+}
+
+.offer-pricing__cell-error {
+  margin: 0;
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.5rem;
+  color: var(--mat-sys-error);
+  background: var(--mat-sys-error-container);
+  font-size: 0.8rem;
+}
+
+.offer-pricing__readonly,
+.offer-pricing__no-retailers {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.offer-pricing__loading {
+  justify-content: center;
+  gap: 0.75rem;
+  min-height: 8rem;
+}
+
+.offer-pricing__table-shell {
+  max-width: 100%;
+  overflow: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-gutter: stable;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 1rem;
+}
+
+.offer-pricing__table-shell:focus-visible {
+  outline: 3px solid var(--mat-sys-primary);
+  outline-offset: 3px;
+}
+
+.offer-pricing__table {
+  min-width: 100%;
+  width: max-content;
+}
+
+.offer-pricing__table th,
+.offer-pricing__table td {
+  min-width: 18rem;
+  vertical-align: top;
+}
+
+.offer-pricing__table th:first-child,
+.offer-pricing__table td:first-child {
+  left: 0;
+  min-width: 18rem;
+  max-width: 22rem;
+  background: var(--mat-sys-surface-container-lowest);
+}
+
+.offer-pricing__scroll-hint {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.85rem;
+}
+
+.offer-pricing__table th {
+  border-bottom: 2px solid var(--mat-sys-outline);
+  background: var(--mat-sys-surface-container-high);
+}
+
+.offer-pricing__table th:not(:first-child),
+.offer-pricing__table td:not(:first-child) {
+  border-inline-start: 2px solid var(--mat-sys-outline-variant);
+}
+
+.offer-pricing__table th:first-child,
+.offer-pricing__table .offer-pricing__product-row td:first-child {
+  min-width: 24rem;
+  max-width: 30rem;
+  border-inline-end: 2px solid var(--mat-sys-outline);
+  box-shadow: 0.55rem 0 0.8rem -0.75rem rgb(0 0 0 / 55%);
+}
+
+.offer-pricing__product-row td {
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.offer-pricing__table .offer-pricing__activity-row td,
+.offer-pricing__table .offer-pricing__section-row td {
+  left: auto;
+  min-width: 0;
+  max-width: none;
+  padding: 0;
+  border-inline: 0;
+  box-shadow: none;
+}
+
+.offer-pricing__table .offer-pricing__activity-row td {
+  border-block: 2px solid var(--mat-sys-outline);
+  background: var(--mat-sys-primary-container);
+}
+
+.offer-pricing__table .offer-pricing__section-row td {
+  border-bottom: 1px solid var(--mat-sys-outline);
+  background: var(--mat-sys-surface-container-high);
+}
+
+.offer-pricing__activity-row,
+.offer-pricing__section-row {
+  height: auto;
+}
+
+.offer-pricing__group-heading {
+  position: sticky;
+  left: 0;
+  display: grid;
+  width: fit-content;
+  max-width: min(42rem, calc(100vw - 4rem));
+  overflow-wrap: anywhere;
+}
+
+.offer-pricing__group-heading--activity {
+  gap: 0.15rem;
+  padding: 0.9rem 1rem;
+  font-size: 1rem;
+}
+
+.offer-pricing__group-heading--section {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.65rem;
+  padding: 0.65rem 1rem 0.65rem 1.5rem;
+  font-size: 0.9rem;
+}
+
+.offer-pricing__group-kicker {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.offer-pricing__product,
+.offer-pricing__cell,
+.offer-pricing__retailer-heading {
+  overflow-wrap: anywhere;
+}
+
+.offer-pricing__retailer-heading {
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.offer-pricing__retailer-heading small {
+  color: var(--mat-sys-error);
+}
+
+.offer-pricing__product,
+.offer-pricing__cell,
+.offer-pricing__edit-form,
+.offer-pricing__selected-summary {
+  display: grid;
+}
+
+.offer-pricing__product {
+  gap: 0.3rem;
+  padding: 0.75rem 0;
+}
+
+.offer-pricing__requirement-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.offer-pricing__requirement-state,
+.offer-pricing__shared-badge {
+  justify-self: start;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--mat-sys-outline);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.offer-pricing__requirement-state {
+  color: var(--mat-sys-on-primary-container);
+  background: var(--mat-sys-primary-container);
+}
+
+.offer-pricing__requirement-state--optional {
+  color: var(--mat-sys-on-tertiary-container);
+  background: var(--mat-sys-tertiary-container);
+}
+
+.offer-pricing__shared-badge {
+  margin-top: 0.15rem;
+  border-style: dashed;
+  color: var(--mat-sys-on-secondary-container);
+  background: var(--mat-sys-secondary-container);
+}
+
+.offer-pricing__offer-totals {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.offer-pricing__calculation-details {
+  margin-top: 0.25rem;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  padding-top: 0.35rem;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.8rem;
+}
+
+.offer-pricing__calculation-details summary {
+  width: fit-content;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.offer-pricing__calculation-details summary:focus-visible {
+  border-radius: 0.2rem;
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+}
+
+.offer-pricing__calculation-details dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin: 0.65rem 0 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.offer-pricing__calculation-details dl > div {
+  min-width: 0;
+}
+
+.offer-pricing__calculation-details dt {
+  font-weight: 700;
+}
+
+.offer-pricing__calculation-details dd,
+.offer-pricing__calculation-details p {
+  margin: 0.1rem 0 0;
+}
+
+.offer-pricing__product > span:not(.offer-pricing__missing-selection),
+.offer-pricing__selected-summary,
+.offer-pricing__cell time,
+.offer-pricing__line-total {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.82rem;
+}
+
+.offer-pricing__selected-summary {
+  justify-items: start;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+}
+
+.offer-pricing__cell {
+  gap: 0.45rem;
+  min-height: 10rem;
+  padding: 0.8rem;
+  border: 2px solid transparent;
+  border-radius: 0.75rem;
+}
+
+.offer-pricing__cell--cheapest {
+  border-color: #16a34a;
+  background: color-mix(in srgb, #dcfce7 65%, transparent);
+}
+
+.offer-pricing__cell--selected {
+  box-shadow: inset 0 0 0 2px var(--mat-sys-primary);
+}
+
+.offer-pricing__inactive-listing {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.65rem;
+  border: 1px dashed #92400e;
+  border-radius: 0.55rem;
+  color: #78350f;
+  background: #fffbeb;
+  font-size: 0.8rem;
+}
+
+.offer-pricing__inactive-listing a {
+  width: fit-content;
+  color: var(--mat-sys-primary);
+  font-weight: 700;
+  text-underline-offset: 0.2em;
+}
+
+.offer-pricing__inactive-listing a:focus-visible {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+}
+
+.offer-pricing__price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.offer-pricing__price,
+.offer-pricing__line-total,
+.offer-pricing__totals,
+.offer-pricing__offer-totals {
+  font-variant-numeric: tabular-nums;
+}
+
+.offer-pricing__price strong {
+  font-size: 1.15rem;
+}
+
+.offer-pricing__cheapest-label {
+  justify-self: start;
+  color: #166534;
+  background: #dcfce7;
+}
+
+.offer-pricing__selected-label {
+  justify-self: start;
+  color: var(--mat-sys-on-primary-container);
+  background: var(--mat-sys-primary-container);
+}
+
+.offer-pricing__no-price {
+  color: var(--mat-sys-on-surface-variant);
+  font-weight: 700;
+}
+
+.offer-pricing__cell-actions {
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: auto;
+}
+
+.offer-pricing__edit-form {
+  gap: 0.7rem;
+}
+
+.offer-pricing__empty {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  padding: 3rem 1rem;
+  border: 1px dashed var(--mat-sys-outline-variant);
+  border-radius: 1rem;
+  color: var(--mat-sys-on-surface-variant);
+  text-align: center;
+}
+
+@media (max-width: 48rem) {
+  .offer-pricing__heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .offer-pricing__totals {
+    justify-content: flex-start;
+  }
+
+  .offer-pricing__table th,
+  .offer-pricing__table td {
+    min-width: 16rem;
+  }
+
+  .offer-pricing__table th:first-child,
+  .offer-pricing__table .offer-pricing__product-row td:first-child {
+    min-width: 18rem;
+    max-width: 20rem;
+  }
+
+  .offer-pricing__calculation-details dl {
+    grid-template-columns: 1fr;
+  }
+
+  .offer-pricing__group-heading {
+    max-width: calc(100vw - 2.5rem);
+  }
+}

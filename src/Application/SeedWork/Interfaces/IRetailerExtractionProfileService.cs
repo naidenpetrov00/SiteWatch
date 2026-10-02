@@ -1,0 +1,73 @@
+using Application.RetailerExtractionProfiles;
+
+namespace Application.SeedWork.Interfaces;
+
+public interface IRetailerExtractionProfileService
+{
+    Task<IReadOnlyList<RetailerExtractionProfileSummaryDto>> GetVersionsAsync(
+        Guid companyPersonId,
+        CancellationToken cancellationToken);
+    Task<RetailerExtractionCurrentProfilesDto> GetCurrentAsync(
+        Guid companyPersonId,
+        CancellationToken cancellationToken);
+    Task<RetailerExtractionOverviewDto> GetOverviewAsync(
+        Guid companyPersonId,
+        CancellationToken cancellationToken);
+    Task<RetailerExtractionProfileDetailsDto> GetByIdAsync(
+        Guid companyPersonId,
+        Guid profileId,
+        CancellationToken cancellationToken);
+    Task<RetailerExtractionProfileDetailsDto> CreateDraftAsync(
+        Guid companyPersonId,
+        Guid? sourcePublishedProfileId,
+        CancellationToken cancellationToken);
+    Task DeleteDraftAsync(
+        Guid companyPersonId,
+        Guid profileId,
+        CancellationToken cancellationToken);
+    Task<RetailerExtractionProfileDetailsDto> UpdateAllowedHostsAsync(
+        Guid companyPersonId,
+        Guid profileId,
+        IReadOnlyList<string> allowedHosts,
+        CancellationToken cancellationToken);
+    Task<RetailerExtractionProfileDetailsDto> AddRuleAsync(
+        Guid companyPersonId,
+        Guid profileId,
+        RetailerExtractionRuleRequest request,
+        CancellationToken cancellationToken);
+    Task<RetailerExtractionProfileDetailsDto> UpdateRuleAsync(
+        Guid companyPersonId,
+        Guid profileId,
+        Guid ruleId,
+        RetailerExtractionRuleRequest request,
+        CancellationToken cancellationToken);
+    Task DeleteRuleAsync(
+        Guid companyPersonId,
+        Guid profileId,
+        Guid ruleId,
+        CancellationToken cancellationToken);
+    Task<RetailerExtractionProfileDetailsDto> SetRuleEnabledAsync(
+        Guid companyPersonId,
+        Guid profileId,
+        Guid ruleId,
+        bool isEnabled,
+        CancellationToken cancellationToken);
+    Task<RetailerExtractionProfileDetailsDto> ReorderRulesAsync(
+        Guid companyPersonId,
+        Guid profileId,
+        IReadOnlyList<Guid> orderedRuleIds,
+        CancellationToken cancellationToken);
+    Task<RetailerExtractionProfileDetailsDto> PublishAsync(
+        Guid companyPersonId,
+        Guid profileId,
+        CancellationToken cancellationToken);
+    Task<RetailerExtractionProfileDetailsDto> ActivateAsync(
+        Guid companyPersonId,
+        Guid profileId,
+        CancellationToken cancellationToken);
+    Task<RetailerExtractionTestResultDto> TestAsync(
+        Guid companyPersonId,
+        Guid profileId,
+        TestRetailerExtractionProfileRequest request,
+        CancellationToken cancellationToken);
+}

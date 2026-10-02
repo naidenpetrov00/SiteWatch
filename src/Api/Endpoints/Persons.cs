@@ -2,6 +2,7 @@ using Api.SeedWork;
 using Api.SeedWork.Extensions;
 using Application.Persons.Commands;
 using Application.Persons.Queries;
+using Application.RetailerListings;
 using Application.SeedWork.Models;
 using Application.SeedWork.Security;
 using MediatR;
@@ -25,6 +26,12 @@ public class Persons : EndpointGroupBase
         group.MapGet("/{personId:guid}", GetPerson);
         group.MapPut("/{personId:guid}", UpdatePerson);
         group.MapDelete("/{personId:guid}", DeletePerson);
+        group.MapGet("/{companyPersonId:guid}/retailer-listings", GetCompanyRetailerListings)
+            .WithName("GetCompanyRetailerListings")
+            .WithSummary("Get retailer listings across all locations for a company Person")
+            .Produces<PagedResult<RetailerListingDto>>()
+            .ProducesValidationProblem()
+            .Produces(StatusCodes.Status404NotFound);
         dashboardGroup.MapGet("/persons/search", SearchDashboardPersons);
         dashboardGroup.MapGet("/persons/companies/search", SearchCompanyPersons)
             .WithName("SearchCompanyPersons")
@@ -56,6 +63,12 @@ public class Persons : EndpointGroupBase
         await mediator.Send(new DeletePersonCommand { Id = personId });
         return TypedResults.NoContent();
     }
+
+    private static async Task<Ok<PagedResult<RetailerListingDto>>> GetCompanyRetailerListings(
+        IMediator mediator,
+        [AsParameters] CompanyRetailerListingsQuery query,
+        CancellationToken cancellationToken) =>
+        TypedResults.Ok(await mediator.Send(query, cancellationToken));
 
     private static async Task<Ok<PagedResult<PersonTableDto>>> GetDashboardPersons(
         IMediator mediator,

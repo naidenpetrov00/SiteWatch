@@ -23,7 +23,6 @@ public sealed class Retailer : BaseAuditableEntity, IAgregateRoot
     public string NormalizedWebsiteHost { get; private set; } = null!;
     public string? Notes { get; private set; }
     public bool IsActive { get; private set; }
-
     public static Retailer Create(
         string displayName,
         Person companyPerson,

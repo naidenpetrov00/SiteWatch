@@ -9,6 +9,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { buildApiUrl } from '../../../core/api/api-url';
 import { DataTableState } from '../../../shared/data-table/data-table.types';
+import { RetailerListingsService } from '../../retailer-listings/services/retailer-listings.service';
 import {
   CreateDashboardProductRequest,
   DashboardProduct,
@@ -42,6 +43,7 @@ const DEFAULT_QUERY_STATE: DashboardProductsQueryState = {
 export class DashboardProductsService {
   private readonly http = inject(HttpClient);
   private readonly queryClient = inject(QueryClient);
+  private readonly retailerListingsService = inject(RetailerListingsService);
   private readonly queryState = signal<DashboardProductsQueryState>(DEFAULT_QUERY_STATE);
 
   readonly dashboardProductsQuery = injectQuery<DashboardProductsResponse>(() => {
@@ -85,7 +87,16 @@ export class DashboardProductsService {
       firstValueFrom(
         this.http.put<void>(buildApiUrl(`/products/${request.id}`), request)
       ),
-    onSuccess: async () => this.invalidateProductLists()
+    onSuccess: async (_, request) => {
+      await Promise.all([
+        this.invalidateProductLists(),
+        this.queryClient.invalidateQueries({
+          queryKey: ['products', 'detail', request.id],
+          exact: true
+        }),
+        this.retailerListingsService.invalidateProductLifecycle(request.id)
+      ]);
+    }
   }));
 
   setTableState(state: DataTableState<DashboardProduct>): void {

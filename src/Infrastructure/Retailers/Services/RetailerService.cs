@@ -5,7 +5,6 @@ using Application.SeedWork.Interfaces;
 using Ardalis.GuardClauses;
 using Domain.Entities;
 using Domain.SeedWork.Enums;
-using Domain.ValueObjects;
 using FluentValidation;
 using FluentValidation.Results;
 using Infrastructure.Data;
@@ -26,7 +25,6 @@ public sealed class RetailerService(ApplicationDbContext dbContext) : IRetailerS
                     cancellationToken);
                 await EnsureUniqueIdentityAsync(
                     request.DisplayName,
-                    request.BaseWebsiteUrl,
                     null,
                     cancellationToken);
 
@@ -38,7 +36,7 @@ public sealed class RetailerService(ApplicationDbContext dbContext) : IRetailerS
                 dbContext.Retailers.Add(retailer);
                 return retailer.Id;
             },
-            "A retailer with this display name or website host already exists.",
+            "A retailer with this display name already exists.",
             cancellationToken);
 
     public Task UpdateAsync(
@@ -54,9 +52,12 @@ public sealed class RetailerService(ApplicationDbContext dbContext) : IRetailerS
                 var companyPerson = await LoadCompanyPersonAsync(
                     request.CompanyPersonId,
                     cancellationToken);
+                await EnsureCompanyRetainsRetailerAsync(
+                    retailer,
+                    request.CompanyPersonId,
+                    cancellationToken);
                 await EnsureUniqueIdentityAsync(
                     request.DisplayName,
-                    request.BaseWebsiteUrl,
                     request.Id,
                     cancellationToken);
 
@@ -66,7 +67,7 @@ public sealed class RetailerService(ApplicationDbContext dbContext) : IRetailerS
                     request.BaseWebsiteUrl,
                     request.Notes);
             },
-            "A retailer with this display name or website host already exists.",
+            "A retailer with this display name already exists.",
             cancellationToken);
 
     public Task SetActiveAsync(
@@ -116,35 +117,49 @@ public sealed class RetailerService(ApplicationDbContext dbContext) : IRetailerS
 
     private async Task EnsureUniqueIdentityAsync(
         string displayName,
-        string baseWebsiteUrl,
         Guid? excludedRetailerId,
         CancellationToken cancellationToken)
     {
         var normalizedName = Retailer.NormalizeNameKey(displayName);
-        var normalizedHost = RetailerWebsite.Create(baseWebsiteUrl).NormalizedHost;
         var conflictingRetailer = await dbContext.Retailers
             .AsNoTracking()
             .Where(retailer => !excludedRetailerId.HasValue
                 || retailer.Id != excludedRetailerId.Value)
-            .Where(retailer => retailer.NormalizedName == normalizedName
-                || retailer.NormalizedWebsiteHost == normalizedHost)
-            .Select(retailer => new
-            {
-                SameName = retailer.NormalizedName == normalizedName,
-                SameHost = retailer.NormalizedWebsiteHost == normalizedHost
-            })
-            .FirstOrDefaultAsync(cancellationToken);
+            .AnyAsync(retailer => retailer.NormalizedName == normalizedName, cancellationToken);
 
-        if (conflictingRetailer?.SameName == true)
+        if (conflictingRetailer)
         {
             throw new RetailerConflictException(
                 "A retailer with this normalized display name already exists.");
         }
+    }
 
-        if (conflictingRetailer?.SameHost == true)
+    private async Task EnsureCompanyRetainsRetailerAsync(
+        Retailer retailer,
+        Guid requestedCompanyPersonId,
+        CancellationToken cancellationToken)
+    {
+        if (retailer.CompanyPersonId == requestedCompanyPersonId)
+        {
+            return;
+        }
+
+        var companyOwnsProfiles = await dbContext.RetailerExtractionProfiles.AnyAsync(
+            profile => profile.CompanyPersonId == retailer.CompanyPersonId,
+            cancellationToken);
+        if (!companyOwnsProfiles)
+        {
+            return;
+        }
+
+        var hasAnotherRetailer = await dbContext.Retailers.AnyAsync(
+            item => item.CompanyPersonId == retailer.CompanyPersonId
+                && item.Id != retailer.Id,
+            cancellationToken);
+        if (!hasAnotherRetailer)
         {
             throw new RetailerConflictException(
-                "A retailer already represents this website host.");
+                "This retailer is the last location associated with a company Person that owns extraction profiles.");
         }
     }
 

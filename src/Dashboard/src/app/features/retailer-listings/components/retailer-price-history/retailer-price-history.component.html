@@ -1,0 +1,75 @@
+<section
+  class="price-history"
+  [attr.aria-label]="retailerName() + ' price history for ' + productLabel()"
+>
+  <p class="price-history__product">{{ productLabel() }}</p>
+
+  @if (loading()) {
+    <div class="price-history__loading" aria-live="polite">
+      <mat-spinner diameter="32" />
+      <span>Loading price history…</span>
+    </div>
+  } @else if (error()) {
+    <p class="price-history__error" role="alert">{{ error() }}</p>
+  } @else if (history(); as currentHistory) {
+    <div class="price-history__status">
+      @if (currentHistory.retailerListingIsActive === false) {
+        <strong>Listing inactive</strong>
+      }
+      @if (currentHistory.retailerProductCode) {
+        <span>Retailer code: {{ currentHistory.retailerProductCode }}</span>
+      }
+      @if (currentHistory.productUrl) {
+        <a [href]="currentHistory.productUrl" target="_blank" rel="noopener noreferrer">
+          Open retailer product
+        </a>
+      }
+    </div>
+
+    @if (currentHistory.items.length === 0) {
+      <p class="price-history__empty">No price observations have been recorded.</p>
+    } @else {
+      <ol class="price-history__list">
+        @for (observation of currentHistory.items; track observation.id) {
+          <li>
+            <div class="price-history__price">
+              <strong>{{ formatCurrency(observation.amount) }}</strong>
+              <span>per {{ observation.basis }}</span>
+            </div>
+            <dl>
+              <div>
+                <dt>Observed</dt>
+                <dd>
+                  <time [attr.datetime]="observation.observedAt">
+                    {{ formatDateTime(observation.observedAt) }}
+                  </time>
+                </dd>
+              </div>
+              <div>
+                <dt>Recorded</dt>
+                <dd>
+                  <time [attr.datetime]="observation.recordedAt">
+                    {{ formatDateTime(observation.recordedAt) }}
+                  </time>
+                </dd>
+              </div>
+              <div><dt>Source</dt><dd>{{ observation.source }}</dd></div>
+              <div><dt>Recorded by</dt><dd>{{ observation.recordedBy }}</dd></div>
+              @if (observation.sourceReference) {
+                <div><dt>Source reference</dt><dd>{{ observation.sourceReference }}</dd></div>
+              }
+            </dl>
+          </li>
+        }
+      </ol>
+    }
+
+    <mat-paginator
+      [length]="currentHistory.totalCount"
+      [pageIndex]="currentHistory.pageIndex"
+      [pageSize]="currentHistory.pageSize"
+      [hidePageSize]="true"
+      (page)="onPage($event)"
+    />
+  }
+</section>

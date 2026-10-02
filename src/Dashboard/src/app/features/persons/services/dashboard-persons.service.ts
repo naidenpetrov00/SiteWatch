@@ -80,10 +80,16 @@ export class DashboardPersonsService {
     mutationKey: ['persons', 'update'],
     mutationFn: async (request: UpdateDashboardPersonRequest) =>
       firstValueFrom(this.http.put<void>(buildApiUrl(`/persons/${request.id}`), request)),
-    onSuccess: async () => {
-      await this.queryClient.invalidateQueries({
-        queryKey: ['persons', 'dashboard']
-      });
+    onSuccess: async (_data, request) => {
+      await Promise.all([
+        this.queryClient.invalidateQueries({
+          queryKey: ['persons', 'dashboard']
+        }),
+        this.queryClient.invalidateQueries({
+          queryKey: ['persons', 'detail', request.id],
+          exact: true
+        })
+      ]);
     }
   }));
 

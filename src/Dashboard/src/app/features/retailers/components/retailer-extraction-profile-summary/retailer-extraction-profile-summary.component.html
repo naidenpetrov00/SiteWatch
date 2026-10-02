@@ -1,0 +1,42 @@
+<section class="shared-profile" aria-labelledby="shared-profile-heading">
+  <header>
+    <div>
+      <p>Automation Configuration</p>
+      <h2 id="shared-profile-heading">Shared Price Extraction</h2>
+    </div>
+  </header>
+
+  @if (overviewQuery.isPending()) {
+    <p aria-live="polite">Loading shared extraction status…</p>
+  } @else if (overviewQuery.isError()) {
+    <p class="shared-profile__error" role="alert">
+      The shared extraction status could not be loaded.
+    </p>
+  } @else if (overviewQuery.data(); as overview) {
+    <p>
+      This Retailer uses the extraction configuration owned by
+      <strong>{{ overview.companyDisplayName }}</strong>. Changes apply to all
+      {{ overview.retailerCount }} associated Retailer locations.
+    </p>
+    <dl>
+      <div>
+        <dt>Active profile</dt>
+        <dd>{{ overview.activeVersion === null ? 'None' : 'Version ' + overview.activeVersion }}</dd>
+      </div>
+      <div>
+        <dt>Validation</dt>
+        <dd>
+          {{ overview.activeVersion === null
+            ? 'No active profile'
+            : overview.isCurrentConfigurationValidated
+              ? 'Validated'
+              : 'Not validated' }}
+        </dd>
+      </div>
+    </dl>
+    <a
+      mat-stroked-button
+      [routerLink]="['/manage-persons', overview.companyPersonId]"
+    >Manage shared extraction profile</a>
+  }
+</section>

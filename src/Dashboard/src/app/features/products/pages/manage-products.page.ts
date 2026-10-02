@@ -27,7 +27,6 @@ const PRODUCT_COLUMNS: readonly DataTableColumn<DashboardProduct>[] = [
     key: 'numberId',
     label: 'Number Id',
     sortable: true,
-    cellType: 'button',
     filter: { kind: 'number', placeholder: 'Filter Number Id' }
   },
   {
@@ -40,7 +39,11 @@ const PRODUCT_COLUMNS: readonly DataTableColumn<DashboardProduct>[] = [
     key: 'title',
     label: 'Title',
     sortable: true,
-    filter: { kind: 'text', placeholder: 'Filter Title' }
+    cellType: 'internal-link',
+    filter: { kind: 'text', placeholder: 'Filter Title' },
+    linkRouteAccessor: (product) => ['/manage-products', product.id],
+    ariaLabelAccessor: (product) =>
+      'Open Product ' + product.numberId + ', ' + product.title
   },
   {
     key: 'category',
@@ -146,17 +149,4 @@ export class ManageProductsPage {
     });
   }
 
-  async onNumberIdClick(product: DashboardProduct): Promise<void> {
-    try {
-      const details = await this.productsService.getProductById(product.id);
-      this.dialog.open(ProductDialogComponent, {
-        autoFocus: false,
-        width: '72rem',
-        maxWidth: 'calc(100vw - 2rem)',
-        data: details
-      });
-    } catch {
-      // Keep the catalog usable if detail loading fails.
-    }
-  }
 }

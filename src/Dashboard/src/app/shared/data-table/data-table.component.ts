@@ -7,6 +7,7 @@ import {
   output,
   signal
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -14,12 +15,15 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 import {
   DataTableColumn,
   DataTableExportRequest,
   DataTableFilterMode,
   DataTablePageState,
+  DataTableRowAction,
+  DataTableRowActionEvent,
   DataTableState,
   DataTableSortState
 } from './data-table.types';
@@ -41,6 +45,8 @@ import { ActionButtonComponent } from '../ui/action-button/action-button.compone
     MatSelectModule,
     MatSortModule,
     MatTableModule,
+    MatTooltipModule,
+    RouterLink,
     ActionButtonComponent
   ],
   templateUrl: './data-table.component.html',
@@ -48,6 +54,8 @@ import { ActionButtonComponent } from '../ui/action-button/action-button.compone
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DataTableComponent<T extends object> {
+  private static readonly rowActionsColumnKey = '__rowActions';
+
   readonly columns = input.required<readonly DataTableColumn<T>[]>();
   readonly rows = input.required<readonly T[]>();
   readonly filteredRowsTotal = input.required<number>();
@@ -59,11 +67,13 @@ export class DataTableComponent<T extends object> {
   readonly pageSizeOptions = input<readonly number[]>([5, 10, 25]);
   readonly filterApplyMode = input<DataTableFilterMode>('instant');
   readonly errorRowPredicate = input<((row: T) => boolean) | null>(null);
+  readonly rowActions = input<readonly DataTableRowAction<T>[]>([]);
 
   readonly tableStateChange = output<DataTableState<T>>();
   readonly searchRequested = output<DataTableState<T>>();
   readonly exportRequested = output<DataTableExportRequest<T>>();
   readonly cellButtonClicked = output<{ row: T; column: DataTableColumn<T> }>();
+  readonly rowActionClicked = output<DataTableRowActionEvent<T>>();
 
   readonly draftFilterState = signal<Record<string, string>>({});
   readonly appliedFilterState = signal<Record<string, string>>({});
@@ -77,7 +87,12 @@ export class DataTableComponent<T extends object> {
     pageSize: this.pageSize()
   });
 
-  readonly displayedColumns = computed(() => this.columns().map((column) => column.key));
+  readonly displayedColumns = computed(() => {
+    const columns: string[] = this.columns().map((column) => column.key);
+    return this.rowActions().length > 0
+      ? [...columns, DataTableComponent.rowActionsColumnKey]
+      : columns;
+  });
   readonly filteredRowsCount = computed(() => this.filteredRowsTotal());
   readonly overallRowsCount = computed(() => this.overallRowsTotal());
   readonly filterableColumns = computed(() =>
@@ -225,12 +240,39 @@ export class DataTableComponent<T extends object> {
     });
   }
 
+  onRowActionClick(row: T, action: DataTableRowAction<T>): void {
+    if (action.disabledPredicate?.(row)) {
+      return;
+    }
+
+    this.rowActionClicked.emit({ row, action });
+  }
+
+  getRowActionAriaLabel(row: T, action: DataTableRowAction<T>): string {
+    return action.ariaLabelAccessor?.(row) ?? action.label;
+  }
+
+  isRowActionDisabled(row: T, action: DataTableRowAction<T>): boolean {
+    return action.disabledPredicate?.(row) ?? false;
+  }
+
   getCellAriaLabel(row: T, column: DataTableColumn<T>): string | null {
     return column.ariaLabelAccessor?.(row) ?? null;
   }
 
   getLinkHref(row: T, column: DataTableColumn<T>): string | null {
     return column.linkHrefAccessor?.(row) ?? null;
+  }
+
+  getLinkRoute(
+    row: T,
+    column: DataTableColumn<T>
+  ): string | readonly (string | number)[] {
+    return column.linkRouteAccessor?.(row) ?? '/';
+  }
+
+  getTooltip(row: T, column: DataTableColumn<T>): string | null {
+    return column.tooltipAccessor?.(row) ?? null;
   }
 
   isCellButtonDisabled(row: T, column: DataTableColumn<T>): boolean {

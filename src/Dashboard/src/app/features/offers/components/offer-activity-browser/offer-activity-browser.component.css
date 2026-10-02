@@ -1,0 +1,125 @@
+:host {
+  display: block;
+}
+
+.offer-activity-browser {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 1rem;
+  background: var(--mat-sys-surface-container-lowest);
+}
+
+.offer-activity-browser__heading,
+.offer-activity-browser__tree-actions,
+.offer-activity-tree__row {
+  display: flex;
+  align-items: center;
+}
+
+.offer-activity-browser__heading {
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.offer-activity-browser__heading h2,
+.offer-activity-browser__state p {
+  margin: 0;
+}
+
+.offer-activity-browser__eyebrow {
+  margin: 0 0 0.25rem;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.offer-activity-browser__search {
+  width: 100%;
+}
+
+.offer-activity-browser__tree-region {
+  max-height: 32rem;
+  overflow: auto;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.75rem;
+}
+
+.offer-activity-tree {
+  display: block;
+  padding: 0.5rem;
+  background: transparent;
+}
+
+.offer-activity-tree__row {
+  flex: 1;
+  min-width: 0;
+  min-height: 3.25rem;
+  gap: 0.4rem;
+  padding: 0 0.35rem;
+  border-radius: 0.6rem;
+}
+
+.offer-activity-tree__row:hover {
+  background: var(--mat-sys-surface-container-low);
+}
+
+.offer-activity-tree__row--selected {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+.offer-activity-tree__row--archived {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.offer-activity-tree__spacer {
+  flex: 0 0 3rem;
+}
+
+.offer-activity-tree__kind {
+  color: var(--mat-sys-primary);
+}
+
+.offer-activity-tree__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.offer-activity-tree__number,
+.offer-activity-tree__badge {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.8rem;
+}
+
+.offer-activity-tree__badge {
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: var(--mat-sys-surface-container-high);
+}
+
+.offer-activity-browser__state {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  padding: 3rem 1rem;
+  color: var(--mat-sys-on-surface-variant);
+  text-align: center;
+}
+
+.offer-activity-browser__error {
+  margin: 0;
+  color: var(--mat-sys-error);
+}
+
+@media (max-width: 40rem) {
+  .offer-activity-tree__number {
+    display: none;
+  }
+}

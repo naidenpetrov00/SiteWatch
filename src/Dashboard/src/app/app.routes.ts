@@ -53,6 +53,19 @@ export const routes: Routes = [
           )
       },
       {
+        path: 'sites/:siteId/offers/:offerId',
+        title: 'Offer Workspace',
+        loadComponent: () =>
+          import('./features/offers/pages/offer-workspace.page').then(
+            (m) => m.OfferWorkspacePage
+          )
+      },
+      {
+        path: 'sites/:siteId/offers',
+        title: 'Site Offers',
+        loadComponent: () =>
+          import('./features/offers/pages/site-offers.page').then(
+            (m) => m.SiteOffersPage
         path: 'manage-sites/:siteId/media',
         title: 'Site Media & Files',
         loadComponent: () =>
@@ -77,6 +90,14 @@ export const routes: Routes = [
           )
       },
       {
+        path: 'manage-persons/:personId',
+        title: 'Person Details',
+        loadComponent: () =>
+          import('./features/persons/pages/person-detail.page').then(
+            (m) => m.PersonDetailPage
+          )
+      },
+      {
         path: 'manage-persons',
         title: 'Manage Persons',
         loadComponent: () =>
@@ -85,11 +106,27 @@ export const routes: Routes = [
           )
       },
       {
+        path: 'manage-products/:productId',
+        title: 'Product Retailer Listings',
+        loadComponent: () =>
+          import('./features/products/pages/product-detail.page').then(
+            (m) => m.ProductDetailPage
+          )
+      },
+      {
         path: 'manage-products',
         title: 'Manage Products',
         loadComponent: () =>
           import('./features/products/pages/manage-products.page').then(
             (m) => m.ManageProductsPage
+          )
+      },
+      {
+        path: 'manage-retailers/:retailerId',
+        title: 'Retailer Product Listings',
+        loadComponent: () =>
+          import('./features/retailers/pages/retailer-detail.page').then(
+            (m) => m.RetailerDetailPage
           )
       },
       {

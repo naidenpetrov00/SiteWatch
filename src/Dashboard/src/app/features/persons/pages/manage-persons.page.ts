@@ -6,6 +6,7 @@ import {
   signal
 } from '@angular/core';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { Router } from '@angular/router';
 
 import { ActionButtonComponent } from '../../../shared/ui/action-button/action-button.component';
 import { DataTableComponent } from '../../../shared/data-table/data-table.component';
@@ -14,7 +15,6 @@ import {
   DataTableState
 } from '../../../shared/data-table/data-table.types';
 import { AddPersonDialogComponent } from '../components/add-person-dialog/add-person-dialog.component';
-import { EditPersonDialogComponent } from '../components/edit-person-dialog/edit-person-dialog.component';
 import { DashboardPerson } from '../models/dashboard-person.model';
 import { DashboardPersonsService } from '../services/dashboard-persons.service';
 
@@ -105,6 +105,7 @@ const PERSON_COLUMNS: readonly DataTableColumn<DashboardPerson>[] = [
 export class ManagePersonsPage {
   private readonly dashboardPersonsService = inject(DashboardPersonsService);
   private readonly dialog = inject(MatDialog);
+  private readonly router = inject(Router);
 
   readonly persons = signal<readonly DashboardPerson[]>([]);
   readonly personsFilteredCount = signal(0);
@@ -150,18 +151,7 @@ export class ManagePersonsPage {
     });
   }
 
-  async onNumberIdClick(person: DashboardPerson): Promise<void> {
-    try {
-      const details = await this.dashboardPersonsService.getPersonById(person.id);
-
-      this.dialog.open(EditPersonDialogComponent, {
-        autoFocus: false,
-        width: '72rem',
-        maxWidth: 'calc(100vw - 2rem)',
-        data: details
-      });
-    } catch {
-      // Keep the table usable if the detail fetch fails.
-    }
+  onNumberIdClick(person: DashboardPerson): void {
+    void this.router.navigate(['/manage-persons', person.id]);
   }
 }

@@ -1,0 +1,116 @@
+.listing-dialog__form {
+  display: grid;
+  gap: 1rem;
+  min-width: min(42rem, calc(100vw - 4rem));
+}
+
+.listing-dialog__identity {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 0.85rem;
+  background: var(--mat-sys-surface-container);
+}
+
+.listing-dialog__identity div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.listing-dialog__identity span {
+  color: rgba(15, 23, 42, 0.66);
+  font-size: 0.78rem;
+}
+
+.listing-dialog__identity strong {
+  overflow-wrap: anywhere;
+}
+
+.listing-dialog__status {
+  grid-column: 1 / -1;
+  width: fit-content;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: #166534 !important;
+  font-weight: 700;
+}
+
+.listing-dialog__status--inactive {
+  color: #92400e !important;
+  border-style: dashed;
+}
+
+.listing-dialog__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.listing-dialog__wide {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+.listing-dialog__price {
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  border-radius: 0.85rem;
+}
+
+.listing-dialog__price legend {
+  padding-inline: 0.4rem;
+  font-weight: 700;
+}
+
+.listing-dialog__price p {
+  margin-top: 0;
+  color: rgba(15, 23, 42, 0.7);
+}
+
+.listing-dialog__current-price {
+  font-variant-numeric: tabular-nums;
+}
+
+.listing-dialog__error {
+  margin: 0;
+  color: var(--mat-sys-error);
+}
+
+.listing-dialog__success {
+  margin: 0;
+  color: #166534;
+}
+
+.listing-dialog__history {
+  margin-top: 1rem;
+  border-top: 1px solid rgba(15, 23, 42, 0.14);
+  padding-top: 1rem;
+}
+
+.listing-dialog__history summary {
+  cursor: pointer;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.listing-dialog__action-spacer {
+  flex: 1;
+}
+
+@media (max-width: 42rem) {
+  .listing-dialog__form {
+    min-width: 0;
+  }
+
+  .listing-dialog__identity,
+  .listing-dialog__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .listing-dialog__wide {
+    grid-column: auto;
+  }
+}

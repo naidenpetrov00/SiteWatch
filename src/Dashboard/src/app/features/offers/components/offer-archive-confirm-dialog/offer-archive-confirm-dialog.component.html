@@ -1,0 +1,15 @@
+<app-dialog-shell
+  eyebrow="Offer Lifecycle"
+  title="Archive Offer"
+  subtitle="The offer will remain available for historical reference and cannot be edited."
+>
+  <p>Archive Offer #{{ data.offerNumber }}?</p>
+
+  <app-dialog-action-bar
+    dialog-shell-actions
+    cancelLabel="Cancel"
+    submitLabel="Archive"
+    (cancel)="cancel()"
+    (submit)="confirm()"
+  />
+</app-dialog-shell>

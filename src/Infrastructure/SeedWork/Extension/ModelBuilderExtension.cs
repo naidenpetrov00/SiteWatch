@@ -28,5 +28,8 @@ internal static class ModelBuilderExtension
         modelBuilder.HasSequence<int>("ActivityNumberIds", "dbo")
             .StartsAt(1)
             .IncrementsBy(1);
+        modelBuilder.HasSequence<int>("OfferNumberIds", "dbo")
+            .StartsAt(1)
+            .IncrementsBy(1);
     }
 }

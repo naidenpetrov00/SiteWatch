@@ -78,6 +78,14 @@ public sealed class PersonService(ApplicationDbContext dbContext) : IPersonServi
 
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)
     {
+        if (await dbContext.RetailerExtractionProfiles.AnyAsync(
+                profile => profile.CompanyPersonId == id,
+                cancellationToken))
+        {
+            throw new PersonConflictException(
+                "This company Person owns retailer extraction profiles and cannot be deleted.");
+        }
+
         if (await dbContext.Retailers.AnyAsync(
                 retailer => retailer.CompanyPersonId == id,
                 cancellationToken))

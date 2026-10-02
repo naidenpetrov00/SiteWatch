@@ -1,0 +1,50 @@
+<main class="catalog-detail">
+  <a class="catalog-detail__back" routerLink="/manage-products">← Back to Products</a>
+
+  @if (productQuery.isPending()) {
+    <p aria-live="polite">Loading Product…</p>
+  } @else if (productQuery.isError()) {
+    <p class="catalog-detail__error" role="alert">The Product could not be loaded.</p>
+  } @else if (productQuery.data(); as product) {
+    <header class="catalog-detail__header">
+      <div>
+        <p class="catalog-detail__eyebrow">Product #{{ product.numberId }}</p>
+        <h1>{{ product.title }}</h1>
+        <p>{{ product.brand }} {{ product.model }}</p>
+      </div>
+      <div class="catalog-detail__actions">
+        <button mat-stroked-button type="button" (click)="editProduct()">
+          Edit Product
+        </button>
+        <app-action-button
+          label="Add Listing"
+          variant="primary"
+          [disabled]="product.status !== 'Active'"
+          (clicked)="openAddListing()"
+        />
+      </div>
+    </header>
+
+    <dl class="catalog-detail__facts">
+      <div><dt>Status</dt><dd>{{ product.status }}</dd></div>
+      <div><dt>Category</dt><dd>{{ product.category }}</dd></div>
+      <div><dt>Package</dt><dd>{{ packageLabel() }}</dd></div>
+      <div>
+        <dt>Search phrase</dt>
+        <dd>{{ product.effectivePrimarySearchPhrase }}</dd>
+      </div>
+    </dl>
+
+    @if (product.status !== 'Active') {
+      <p class="catalog-detail__notice">
+        Activate this Product before creating or reactivating retailer listings.
+      </p>
+    }
+
+    <app-retailer-listings-table
+      perspective="product"
+      [ownerId]="product.id"
+      [fixedProduct]="product"
+    />
+  }
+</main>

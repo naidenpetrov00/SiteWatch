@@ -78,7 +78,14 @@
     </div>
   }
 
-  <div class="data-table__table-shell">
+  <p id="data-table-scroll-hint" class="data-table__scroll-hint">
+    Scroll horizontally to view additional columns.
+  </p>
+  <div
+    class="data-table__table-shell"
+    tabindex="0"
+    aria-describedby="data-table-scroll-hint"
+  >
     <table
       mat-table
       matSort
@@ -93,7 +100,7 @@
           <th
             mat-header-cell
             *matHeaderCellDef
-            [mat-sort-header]="column.key"
+            [mat-sort-header]="column.sortKey ?? column.key"
             [disabled]="column.sortable === false"
             [style.text-align]="column.align ?? 'start'"
             [style.width]="column.width ?? null"
@@ -103,6 +110,8 @@
           <td
             mat-cell
             *matCellDef="let row"
+            [matTooltip]="getTooltip(row, column) ?? ''"
+            [attr.aria-label]="getTooltip(row, column)"
             [style.text-align]="column.align ?? 'start'"
           >
             @if (column.cellType === 'button') {
@@ -117,19 +126,52 @@
                 {{ renderCell(row, column) }}
               </button>
             } @else if (column.cellType === 'external-link') {
+              @if (getLinkHref(row, column); as href) {
+                <a
+                  mat-stroked-button
+                  class="data-table__cell-button"
+                  [href]="href"
+                  [attr.aria-label]="getCellAriaLabel(row, column)"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {{ renderCell(row, column) }}
+                </a>
+              } @else {
+                {{ renderCell(row, column) }}
+              }
+            } @else if (column.cellType === 'internal-link') {
               <a
-                mat-stroked-button
-                class="data-table__cell-button"
-                [href]="getLinkHref(row, column)"
+                class="data-table__internal-link"
+                [routerLink]="getLinkRoute(row, column)"
                 [attr.aria-label]="getCellAriaLabel(row, column)"
-                target="_blank"
-                rel="noopener noreferrer"
               >
                 {{ renderCell(row, column) }}
               </a>
             } @else {
               {{ renderCell(row, column) }}
             }
+          </td>
+        </ng-container>
+      }
+
+      @if (rowActions().length > 0) {
+        <ng-container matColumnDef="__rowActions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let row">
+            <div class="data-table__row-actions">
+              @for (action of rowActions(); track action.id) {
+                <button
+                  mat-stroked-button
+                  type="button"
+                  [attr.aria-label]="getRowActionAriaLabel(row, action)"
+                  [disabled]="isRowActionDisabled(row, action)"
+                  (click)="onRowActionClick(row, action)"
+                >
+                  {{ action.label }}
+                </button>
+              }
+            </div>
           </td>
         </ng-container>
       }

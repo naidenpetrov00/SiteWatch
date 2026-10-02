@@ -1,0 +1,418 @@
+<section class="extraction" aria-labelledby="price-extraction-heading">
+  <header class="extraction__header">
+    <div>
+      <p class="extraction__eyebrow">Automation Configuration</p>
+      <h2 id="price-extraction-heading">Price Extraction</h2>
+      <p>
+        Shared by every Retailer location owned by
+        {{ currentQuery.data()?.owner?.companyDisplayName ?? 'this company' }}.
+      </p>
+    </div>
+    @if (!currentDraft()) {
+      <button
+        mat-flat-button
+        type="button"
+        [disabled]="operationPending()"
+        (click)="createDraft()"
+      >
+        {{ activeProfile() ? 'Create Draft from Active' : 'Create Draft' }}
+      </button>
+    }
+  </header>
+
+  @if (feedback()) {
+    <p class="extraction__feedback extraction__feedback--success" aria-live="polite">
+      {{ feedback() }}
+    </p>
+  }
+  @if (error()) {
+    <p class="extraction__feedback extraction__feedback--error" role="alert">
+      {{ error() }}
+    </p>
+  }
+
+  @if (versionsQuery.isPending() || currentQuery.isPending()) {
+    <p aria-live="polite">Loading extraction profiles…</p>
+  } @else if (versionsQuery.isError() || currentQuery.isError()) {
+    <p class="extraction__feedback extraction__feedback--error" role="alert">
+      Extraction profiles could not be loaded.
+    </p>
+  } @else {
+    <div class="extraction__status-grid">
+      <article>
+        <span>Affected locations</span>
+        <strong>{{ currentQuery.data()?.owner?.retailerCount ?? 0 }}</strong>
+      </article>
+      <article>
+        <span>Active profile</span>
+        <strong>
+          {{ activeProfile() ? 'Version ' + activeProfile()!.summary.version : 'None' }}
+        </strong>
+      </article>
+      <article>
+        <span>Current draft</span>
+        <strong>
+          {{ currentDraft() ? 'Version ' + currentDraft()!.summary.version : 'None' }}
+        </strong>
+      </article>
+    </div>
+
+    @if ((versionsQuery.data() ?? []).length > 0) {
+      <div class="extraction__history">
+        <h3>Version History</h3>
+        <div class="extraction__version-list">
+          @for (version of versionsQuery.data() ?? []; track version.id) {
+            <article
+              class="extraction__version"
+              [class.extraction__version--selected]="version.id === selectedProfileId()"
+            >
+              <div>
+                <strong>Version {{ version.version }}</strong>
+                <span class="extraction__badge">
+                  {{ version.status === 'draft' ? 'Draft' : version.isActive ? 'Active' : 'Published' }}
+                </span>
+                <small>{{ version.ruleCount }} rules · {{ version.enabledRuleCount }} enabled</small>
+              </div>
+              <div class="extraction__version-actions">
+                <button
+                  mat-stroked-button
+                  type="button"
+                  [attr.aria-label]="'View extraction profile version ' + version.version"
+                  [disabled]="version.id === selectedProfileId() || operationPending()"
+                  (click)="selectVersion(version)"
+                >View</button>
+                @if (version.status === 'published' && !version.isActive) {
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    [attr.aria-label]="'Activate extraction profile version ' + version.version"
+                    [disabled]="operationPending()"
+                    (click)="activate(version)"
+                  >Activate</button>
+                }
+                @if (version.status === 'published' && !currentDraft()) {
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    [attr.aria-label]="'Create draft from extraction profile version ' + version.version"
+                    [disabled]="operationPending()"
+                    (click)="createDraft(version)"
+                  >Create Draft</button>
+                }
+              </div>
+            </article>
+          }
+        </div>
+      </div>
+    }
+
+    @if (detailQuery.isPending()) {
+      <p aria-live="polite">Loading selected profile…</p>
+    } @else if (detailQuery.isError()) {
+      <p class="extraction__feedback extraction__feedback--error" role="alert">
+        The selected extraction profile could not be loaded.
+      </p>
+    } @else if (selectedProfile(); as profile) {
+      <article class="extraction__editor">
+        <header class="extraction__editor-header">
+          <div>
+            <p class="extraction__eyebrow">
+              {{ profile.summary.status === 'draft' ? 'Editable Draft' : 'Immutable Published Version' }}
+            </p>
+            <h3>Version {{ profile.summary.version }}</h3>
+            <p>
+              {{ profile.summary.status === 'published'
+                ? 'Published ' + formatDate(profile.summary.publishedAt)
+                : 'Last changed ' + formatDate(profile.summary.lastModified) }}
+            </p>
+          </div>
+          @if (profile.summary.status === 'draft') {
+            <div class="extraction__editor-actions">
+              <button
+                mat-stroked-button
+                type="button"
+                [disabled]="operationPending()"
+                (click)="discardDraft()"
+              >Discard Draft</button>
+              <button
+                mat-flat-button
+                type="button"
+                [disabled]="operationPending() || !profile.summary.isCurrentConfigurationValidated"
+                (click)="publish()"
+              >Publish Draft</button>
+            </div>
+          }
+        </header>
+
+        @if (profile.summary.status === 'published') {
+          <p class="extraction__notice">
+            Published profile configuration is read-only. Create a new draft to make changes.
+          </p>
+        }
+
+        <section class="extraction__hosts" aria-labelledby="allowed-hosts-heading">
+          <div class="extraction__section-heading">
+            <div>
+              <h4 id="allowed-hosts-heading">Allowed HTTPS Hosts</h4>
+              <p>Exact hostnames only; schemes, ports, paths, wildcards, and IP addresses are rejected.</p>
+            </div>
+            @if (profile.summary.status === 'draft') {
+              <div class="extraction__editor-actions">
+                <button
+                  mat-button
+                  type="button"
+                  [disabled]="!hostsForm.dirty || operationPending()"
+                  (click)="discardHostChanges()"
+                >Discard Host Changes</button>
+                <button
+                  mat-stroked-button
+                  type="button"
+                  [disabled]="!hostsForm.dirty || operationPending()"
+                  (click)="saveHosts()"
+                >Save Hosts</button>
+              </div>
+            }
+          </div>
+
+          @if (profile.summary.status === 'draft') {
+            <mat-form-field appearance="outline" class="extraction__host-field">
+              <mat-label>Add allowed host</mat-label>
+              <mat-chip-grid #hostGrid aria-label="Allowed HTTPS hosts">
+                @for (host of hostsForm.controls.allowedHosts.value; track host) {
+                  <mat-chip-row (removed)="removeHost(host)">
+                    {{ host }}
+                    <button matChipRemove type="button" [attr.aria-label]="'Remove ' + host">×</button>
+                  </mat-chip-row>
+                }
+                <input
+                  placeholder="shop.example.com"
+                  [formControl]="hostInput"
+                  [matChipInputFor]="hostGrid"
+                  [matChipInputAddOnBlur]="true"
+                  [matChipInputSeparatorKeyCodes]="hostSeparatorKeyCodes"
+                  (matChipInputTokenEnd)="addHost($event)"
+                />
+              </mat-chip-grid>
+            </mat-form-field>
+          } @else {
+            <mat-chip-set aria-label="Allowed HTTPS hosts">
+              @for (host of profile.allowedHosts; track host) {
+                <mat-chip>{{ host }}</mat-chip>
+              } @empty {
+                <span>No allowed hosts.</span>
+              }
+            </mat-chip-set>
+          }
+        </section>
+
+        <section aria-labelledby="extraction-rules-heading">
+          <div class="extraction__section-heading">
+            <div>
+              <h4 id="extraction-rules-heading">Ordered Extraction Rules</h4>
+              <p>The future collector will try enabled rules in priority order.</p>
+            </div>
+            @if (profile.summary.status === 'draft') {
+              <button
+                mat-stroked-button
+                type="button"
+                [disabled]="operationPending()"
+                (click)="openRuleDialog(null)"
+              >Add Rule</button>
+            }
+          </div>
+
+          <div class="extraction__rules">
+            @for (rule of profile.rules; track rule.id; let index = $index) {
+              <article class="extraction__rule" [class.extraction__rule--disabled]="!rule.isEnabled">
+                <div class="extraction__rule-main">
+                  <span class="extraction__priority">{{ rule.priority }}</span>
+                  <div>
+                    <h5>{{ rule.name }}</h5>
+                    <p>
+                      {{ ruleTypeLabel(rule) }} · {{ rule.priceBasis }} · EUR ·
+                      {{ rule.isEnabled ? 'Enabled' : 'Disabled' }}
+                    </p>
+                    @if (rule.ruleType === 'jsonLd') {
+                      <small>{{ rule.jsonLdObjectType }} → {{ rule.jsonLdPricePath }}</small>
+                    } @else {
+                      <small>{{ rule.cssSelector }} → {{ rule.cssValueSource }}</small>
+                    }
+                  </div>
+                </div>
+                @if (profile.summary.status === 'draft') {
+                  <div class="extraction__rule-actions">
+                    <button mat-button type="button" [attr.aria-label]="'Move ' + rule.name + ' up'" [disabled]="index === 0 || operationPending()" (click)="moveRule(index, -1)">Up</button>
+                    <button mat-button type="button" [attr.aria-label]="'Move ' + rule.name + ' down'" [disabled]="index === profile.rules.length - 1 || operationPending()" (click)="moveRule(index, 1)">Down</button>
+                    <button mat-button type="button" [attr.aria-label]="(rule.isEnabled ? 'Disable ' : 'Enable ') + rule.name" [disabled]="operationPending()" (click)="setRuleEnabled(rule)">
+                      {{ rule.isEnabled ? 'Disable' : 'Enable' }}
+                    </button>
+                    <button mat-button type="button" [attr.aria-label]="'Edit ' + rule.name" [disabled]="operationPending()" (click)="openRuleDialog(rule)">Edit</button>
+                    <button mat-button type="button" [attr.aria-label]="'Remove ' + rule.name" [disabled]="operationPending()" (click)="deleteRule(rule)">Remove</button>
+                  </div>
+                }
+              </article>
+            } @empty {
+              <p class="extraction__empty">No extraction rules are configured.</p>
+            }
+          </div>
+        </section>
+
+        @if (profile.summary.status === 'draft') {
+          <section class="extraction__test" aria-labelledby="extraction-test-heading">
+            <div class="extraction__section-heading">
+              <div>
+                <h4 id="extraction-test-heading">Test Draft</h4>
+                <p>Test the current saved configuration against server-rendered HTML before publishing.</p>
+              </div>
+              <span
+                class="extraction__badge"
+                [class.extraction__badge--valid]="profile.summary.isCurrentConfigurationValidated"
+              >
+                {{ profile.summary.isCurrentConfigurationValidated ? 'Validated' : 'Not validated' }}
+              </span>
+            </div>
+
+            @if (profile.summary.isCurrentConfigurationValidated) {
+              <p class="extraction__notice">
+                Current revision {{ profile.summary.configurationRevision }} passed on
+                {{ formatDate(profile.summary.lastSuccessfulTestAt) }}.
+              </p>
+            } @else {
+              <p class="extraction__notice">
+                A successful extraction test against revision
+                {{ profile.summary.configurationRevision }} is required before publishing.
+              </p>
+            }
+
+            <form class="extraction__test-form" (submit)="runTest(); $event.preventDefault()">
+              <fieldset class="extraction__source-modes">
+                <legend>Test source</legend>
+                <label>
+                  <input
+                    type="radio"
+                    value="retailerListing"
+                    [formField]="testForm.sourceType"
+                    (change)="setTestSource('retailerListing')"
+                  />
+                  Existing listing
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    value="manualUrl"
+                    [formField]="testForm.sourceType"
+                    (change)="setTestSource('manualUrl')"
+                  />
+                  Manual URL
+                </label>
+              </fieldset>
+
+              @if (testModel().sourceType === 'retailerListing') {
+                <label class="extraction__test-control">
+                  <span>Search listings from all company Retailer locations</span>
+                  <input
+                    type="search"
+                    placeholder="Product number or title"
+                    [formField]="testForm.listingSearch"
+                  />
+                </label>
+                @if (testForm.listingSearch().touched() && testForm.listingSearch().errors().length) {
+                  <p class="extraction__field-error">{{ testForm.listingSearch().errors()[0].message }}</p>
+                }
+                <label class="extraction__test-control">
+                  <span>Retailer listing</span>
+                  <select [formField]="testForm.retailerListingId">
+                    <option value="">Select a listing</option>
+                    @for (listing of listingsQuery.data()?.items ?? []; track listing.id) {
+                      <option [value]="listing.id">
+                        {{ listing.retailerDisplayName }} · #{{ listing.productNumberId }} ·
+                        {{ listing.productTitle }} ·
+                        {{ listing.productUrl ? 'URL saved' : 'No URL' }}
+                      </option>
+                    }
+                  </select>
+                </label>
+                @if (listingsQuery.isPending()) {
+                  <p aria-live="polite">Loading company retailer listings…</p>
+                } @else if (listingsQuery.isError()) {
+                  <p class="extraction__feedback extraction__feedback--error" role="alert">
+                    Company retailer listings could not be loaded.
+                  </p>
+                }
+                @if (testForm.retailerListingId().touched() && testForm.retailerListingId().errors().length) {
+                  <p class="extraction__field-error">{{ testForm.retailerListingId().errors()[0].message }}</p>
+                }
+              } @else {
+                <label class="extraction__test-control">
+                  <span>Absolute HTTPS product URL</span>
+                  <input
+                    type="url"
+                    placeholder="https://shop.example.com/product"
+                    [formField]="testForm.manualUrl"
+                  />
+                </label>
+                @if (testForm.manualUrl().touched() && testForm.manualUrl().errors().length) {
+                  <p class="extraction__field-error">{{ testForm.manualUrl().errors()[0].message }}</p>
+                }
+              }
+
+              @if (hasUnsavedHostChanges()) {
+                <p class="extraction__notice">
+                  Save or discard the host changes and commit the pending hostname before testing.
+                </p>
+              }
+              <button
+                mat-flat-button
+                type="submit"
+                [disabled]="testPending() || operationPending() || testForm().invalid() || testForm().pending() || hasUnsavedHostChanges()"
+              >{{ testPending() ? 'Testing…' : 'Run Test' }}</button>
+            </form>
+
+            @if (testError()) {
+              <p class="extraction__feedback extraction__feedback--error" role="alert">
+                {{ testError() }}
+              </p>
+            }
+
+            @if (testResult(); as result) {
+              <article class="extraction__test-result" aria-live="polite">
+                <div>
+                  <strong>{{ result.success ? 'Extraction succeeded' : 'No rule matched' }}</strong>
+                  <small>Tested {{ formatDate(result.testedAt) }}</small>
+                  <small class="extraction__tested-url">{{ result.testedUrl }}</small>
+                </div>
+
+                @if (result.extraction; as extraction) {
+                  <dl class="extraction__result-grid">
+                    <div><dt>EUR amount</dt><dd>€{{ formatAmount(extraction.amount) }}</dd></div>
+                    <div><dt>Price basis</dt><dd>{{ extraction.priceBasis }}</dd></div>
+                    <div><dt>Matched rule</dt><dd>{{ extraction.ruleName }}</dd></div>
+                    <div><dt>Priority</dt><dd>{{ extraction.rulePriority }}</dd></div>
+                    <div class="extraction__result-wide"><dt>Raw value</dt><dd>{{ extraction.rawValue }}</dd></div>
+                  </dl>
+                }
+
+                <h5>Ordered rule diagnostics</h5>
+                <ol class="extraction__diagnostics">
+                  @for (diagnostic of result.diagnostics; track diagnostic.ruleId) {
+                    <li>
+                      <div>
+                        <strong>{{ diagnostic.priority }}. {{ diagnostic.ruleName }}</strong>
+                        <span class="extraction__badge">{{ diagnosticLabel(diagnostic.outcome) }}</span>
+                      </div>
+                      <p>{{ diagnostic.explanation }}</p>
+                    </li>
+                  } @empty {
+                    <li>No enabled rules were available to attempt.</li>
+                  }
+                </ol>
+              </article>
+            }
+          </section>
+        }
+      </article>
+    } @else {
+      <p class="extraction__empty">Create a draft to configure price extraction.</p>
+    }
+  }
+</section>

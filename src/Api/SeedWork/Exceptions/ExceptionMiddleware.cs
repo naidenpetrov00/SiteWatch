@@ -2,7 +2,10 @@
 using Application.ActivityCatalog;
 using Application.Cameras;
 using Application.Persons;
+using Application.RetailerListings;
 using Application.Retailers;
+using Application.RetailerExtractionProfiles;
+using Application.Offers;
 using Ardalis.GuardClauses;
 using Application.SeedWork.Exceptions;
 using FluentValidation;
@@ -62,6 +65,19 @@ internal sealed class ExceptionMiddleware(
                 instance = context.Request.Path.Value,
             }));
         }
+        catch (RetailerListingConflictException ex)
+        {
+            logger.LogInformation(ex, "A retailer listing operation was rejected due to a conflict.");
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            context.Response.ContentType = "application/problem+json";
+            await context.Response.WriteAsync(JsonSerializer.Serialize(new
+            {
+                status = StatusCodes.Status409Conflict,
+                title = "Retailer listing conflict",
+                detail = ex.Message,
+                instance = context.Request.Path.Value,
+            }));
+        }
         catch (RetailerConflictException ex)
         {
             logger.LogInformation(ex, "A retailer operation was rejected due to a conflict.");
@@ -75,6 +91,54 @@ internal sealed class ExceptionMiddleware(
                 instance = context.Request.Path.Value,
             }));
         }
+        catch (RetailerExtractionProfileConflictException ex)
+        {
+            logger.LogInformation(
+                ex,
+                "A retailer extraction-profile operation was rejected due to a conflict.");
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            context.Response.ContentType = "application/problem+json";
+            await context.Response.WriteAsync(JsonSerializer.Serialize(new
+            {
+                status = StatusCodes.Status409Conflict,
+                title = "Retailer extraction profile conflict",
+                detail = ex.Message,
+                instance = context.Request.Path.Value,
+            }));
+        }
+        catch (RetailerExtractionTestException ex)
+        {
+            var (status, title, category) = ex.Kind switch
+            {
+                RetailerExtractionTestFailureKind.Security => (
+                    StatusCodes.Status422UnprocessableEntity,
+                    "Extraction URL rejected",
+                    "security"),
+                RetailerExtractionTestFailureKind.Network => (
+                    StatusCodes.Status502BadGateway,
+                    "Remote page unavailable",
+                    "network"),
+                RetailerExtractionTestFailureKind.Content => (
+                    StatusCodes.Status502BadGateway,
+                    "Remote content rejected",
+                    "content"),
+                RetailerExtractionTestFailureKind.Timeout => (
+                    StatusCodes.Status504GatewayTimeout,
+                    "Extraction test timed out",
+                    "timeout"),
+                _ => throw new ArgumentOutOfRangeException()
+            };
+            context.Response.StatusCode = status;
+            context.Response.ContentType = "application/problem+json";
+            await context.Response.WriteAsync(JsonSerializer.Serialize(new
+            {
+                status,
+                title,
+                detail = ex.Message,
+                category,
+                instance = context.Request.Path.Value,
+            }));
+        }
         catch (PersonConflictException ex)
         {
             logger.LogInformation(ex, "A Person operation was rejected due to retained references.");
@@ -84,6 +148,19 @@ internal sealed class ExceptionMiddleware(
             {
                 status = StatusCodes.Status409Conflict,
                 title = "Person conflict",
+                detail = ex.Message,
+                instance = context.Request.Path.Value,
+            }));
+        }
+        catch (OfferConflictException ex)
+        {
+            logger.LogInformation(ex, "An offer operation was rejected due to its lifecycle state.");
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            context.Response.ContentType = "application/problem+json";
+            await context.Response.WriteAsync(JsonSerializer.Serialize(new
+            {
+                status = StatusCodes.Status409Conflict,
+                title = "Offer conflict",
                 detail = ex.Message,
                 instance = context.Request.Path.Value,
             }));

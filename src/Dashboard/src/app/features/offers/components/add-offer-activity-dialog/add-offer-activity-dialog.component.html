@@ -1,0 +1,70 @@
+<app-dialog-shell
+  eyebrow="Offer Activities"
+  [title]="'Add #' + data.candidate.numberId + ' · ' + data.candidate.name"
+  subtitle="Enter the requested measurement for every section before adding this activity."
+>
+  <form
+    [id]="formId"
+    class="add-offer-activity__form"
+    [formGroup]="form"
+    novalidate
+    (ngSubmit)="submit()"
+  >
+    @if (data.candidate.description) {
+      <p class="add-offer-activity__description">
+        {{ data.candidate.description }}
+      </p>
+    }
+
+    @if (data.candidate.sections.length === 0) {
+      <p class="add-offer-activity__empty">
+        This activity has no requirement sections and can be added without measurements.
+      </p>
+    } @else {
+      <div formArrayName="measurements" class="add-offer-activity__sections">
+        @for (section of data.candidate.sections; track section.id; let index = $index) {
+          <section class="add-offer-activity__section">
+            <div>
+              <strong>{{ section.name || 'Measurement' }}</strong>
+              <span>
+                Catalog basis: {{ formatQuantity(section.basisQuantity) }}
+                {{ measurementUnit(section.measurementUnit) }}
+              </span>
+            </div>
+            <mat-form-field appearance="outline">
+              <mat-label>Requested measurement</mat-label>
+              <input
+                matInput
+                type="number"
+                min="0.0001"
+                step="any"
+                [formControlName]="index"
+              />
+              <span matTextSuffix>{{ measurementUnit(section.measurementUnit) }}</span>
+              @if (form.controls.measurements.controls[index].touched && form.controls.measurements.controls[index].invalid) {
+                <mat-error>Enter a positive value with at most four decimal places.</mat-error>
+              }
+            </mat-form-field>
+          </section>
+        }
+      </div>
+    }
+
+    @if (errorMessage()) {
+      <p class="add-offer-activity__error" role="alert">
+        {{ errorMessage() }}
+      </p>
+    }
+  </form>
+
+  <app-dialog-action-bar
+    dialog-shell-actions
+    cancelLabel="Cancel"
+    submitLabel="Add Activity"
+    [submitFormId]="formId"
+    submitButtonType="submit"
+    [cancelDisabled]="isSaving()"
+    [submitDisabled]="form.invalid || isSaving()"
+    (cancel)="close()"
+  />
+</app-dialog-shell>

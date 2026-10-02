@@ -37,6 +37,14 @@
   color: rgba(15, 23, 42, 0.7);
 }
 
+.manage-sites-page__feedback {
+  margin: 0;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface-container);
+  color: var(--mat-sys-error);
+}
+
 @media (max-width: 48rem) {
   .manage-sites-page__header {
     flex-direction: column;

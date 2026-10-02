@@ -1,0 +1,124 @@
+<app-dialog-shell
+  eyebrow="Price Extraction"
+  [title]="title"
+  subtitle="Selectors and paths are stored as configuration data and are never executed."
+>
+  <form
+    [id]="formId"
+    class="rule-dialog__form"
+    [formGroup]="form"
+    novalidate
+    (ngSubmit)="submit()"
+  >
+    <mat-form-field appearance="outline" class="rule-dialog__wide">
+      <mat-label>Name</mat-label>
+      <input matInput formControlName="name" maxlength="200" />
+      @if (form.controls.name.touched && form.controls.name.invalid) {
+        <mat-error>Enter a meaningful name of no more than 200 characters.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Rule Type</mat-label>
+      <mat-select formControlName="ruleType">
+        <mat-option value="jsonLd">JSON-LD</mat-option>
+        <mat-option value="cssSelector">CSS selector</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-checkbox formControlName="isEnabled">Enabled</mat-checkbox>
+
+    @if (form.controls.ruleType.value === 'jsonLd') {
+      <mat-form-field appearance="outline">
+        <mat-label>JSON-LD Object Type</mat-label>
+        <input matInput formControlName="jsonLdObjectType" maxlength="200" placeholder="Product" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Price Path</mat-label>
+        <input matInput formControlName="jsonLdPricePath" maxlength="512" placeholder="offers.price" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="rule-dialog__wide">
+        <mat-label>Currency Path (optional)</mat-label>
+        <input matInput formControlName="jsonLdCurrencyPath" maxlength="512" placeholder="offers.priceCurrency" />
+      </mat-form-field>
+    } @else {
+      <mat-form-field appearance="outline" class="rule-dialog__wide">
+        <mat-label>CSS Selector</mat-label>
+        <input matInput formControlName="cssSelector" maxlength="2048" placeholder=".product-price" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Value Source</mat-label>
+        <mat-select formControlName="cssValueSource">
+          <mat-option value="textContent">Text content</mat-option>
+          <mat-option value="attribute">Attribute</mat-option>
+        </mat-select>
+      </mat-form-field>
+      @if (form.controls.cssValueSource.value === 'attribute') {
+        <mat-form-field appearance="outline">
+          <mat-label>Attribute Name</mat-label>
+          <input matInput formControlName="cssAttributeName" maxlength="200" placeholder="content" />
+        </mat-form-field>
+      }
+    }
+
+    <mat-form-field appearance="outline">
+      <mat-label>Decimal Separator</mat-label>
+      <mat-select formControlName="decimalSeparator">
+        <mat-option value="comma">Comma (,)</mat-option>
+        <mat-option value="dot">Dot (.)</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Thousands Separator</mat-label>
+      <mat-select formControlName="thousandsSeparator">
+        <mat-option value="none">None</mat-option>
+        <mat-option value="space">Space</mat-option>
+        <mat-option value="dot">Dot (.)</mat-option>
+        <mat-option value="comma">Comma (,)</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Price Basis</mat-label>
+      <mat-select formControlName="priceBasis">
+        <mat-option value="item">Item</mat-option>
+        <mat-option value="package">Package</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <div class="rule-dialog__currency" aria-label="Expected currency EUR">
+      Expected currency: <strong>EUR</strong>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Minimum Acceptable Price</mat-label>
+      <input matInput type="number" formControlName="minimumValue" step="0.01" min="0.01" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Maximum Acceptable Price</mat-label>
+      <input matInput type="number" formControlName="maximumValue" step="0.01" min="0.01" />
+    </mat-form-field>
+
+    @if (form.touched && form.hasError('separatorConflict')) {
+      <p class="rule-dialog__error" role="alert">Decimal and thousands separators must differ.</p>
+    }
+    @if (form.touched && form.hasError('invalidRange')) {
+      <p class="rule-dialog__error" role="alert">Maximum price must not be below minimum price.</p>
+    }
+    @if (form.touched && (form.hasError('jsonLdRequired') || form.hasError('cssRequired'))) {
+      <p class="rule-dialog__error" role="alert">Complete the fields required for the selected rule type.</p>
+    }
+  </form>
+
+  <app-dialog-action-bar
+    dialog-shell-actions
+    cancelLabel="Cancel"
+    [submitLabel]="submitLabel"
+    [submitFormId]="formId"
+    submitButtonType="submit"
+    [submitDisabled]="form.invalid"
+    (cancel)="close()"
+  />
+</app-dialog-shell>

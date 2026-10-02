@@ -1,0 +1,51 @@
+.add-offer-activity__form,
+.add-offer-activity__sections {
+  display: grid;
+  gap: 1rem;
+}
+
+.add-offer-activity__form {
+  min-width: min(42rem, calc(100vw - 4rem));
+}
+
+.add-offer-activity__description,
+.add-offer-activity__empty {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.add-offer-activity__section {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(13rem, 0.8fr);
+  align-items: start;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.8rem;
+  background: var(--mat-sys-surface-container-low);
+}
+
+.add-offer-activity__section div {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.add-offer-activity__section span {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.9rem;
+}
+
+.add-offer-activity__error {
+  margin: 0;
+  color: var(--mat-sys-error);
+}
+
+@media (max-width: 40rem) {
+  .add-offer-activity__form {
+    min-width: 0;
+  }
+
+  .add-offer-activity__section {
+    grid-template-columns: 1fr;
+  }
+}
