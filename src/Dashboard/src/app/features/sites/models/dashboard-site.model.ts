@@ -11,4 +11,6 @@ export interface DashboardSite {
   endDate: string | null;
   status: string;
   mediaPolicy: SiteMediaPolicy;
+  /** Dashboard-only table action; not supplied by the API. */
+  media?: string;
 }

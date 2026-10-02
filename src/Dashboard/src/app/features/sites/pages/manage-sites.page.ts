@@ -65,6 +65,14 @@ const SITE_COLUMNS: readonly DataTableColumn<DashboardSite>[] = [
     label: 'Media Policy',
     valueAccessor: (site) => site.mediaPolicy.preset,
     displayFormatter: (_, site) => formatMediaPolicyPreset(site.mediaPolicy.preset)
+  },
+  {
+    key: 'media',
+    label: 'Media & files',
+    cellType: 'button',
+    valueAccessor: () => 'Media & files',
+    ariaLabelAccessor: (site) => `Manage media and files for ${site.name}`,
+    exportable: false
   }
 ] as const;
 
@@ -140,6 +148,11 @@ export class ManageSitesPage {
   }
 
   async onCellButtonClicked(event: { row: DashboardSite; column: DataTableColumn<DashboardSite> }): Promise<void> {
+    if (event.column.key === 'media') {
+      await this.router.navigate(['/manage-sites', event.row.id, 'media']);
+      return;
+    }
+
     if (event.column.key !== 'numberId') {
       return;
     }
