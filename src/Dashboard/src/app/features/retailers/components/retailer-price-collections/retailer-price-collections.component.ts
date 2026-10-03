@@ -11,6 +11,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 
 import {
+  RetailerPriceCollectionRunDetails,
   RetailerPriceCollectionRunSummary,
   isPriceCollectionRunUnfinished
 } from '../../models/retailer-price-collection.models';
@@ -40,7 +41,7 @@ export class RetailerPriceCollectionsComponent {
   readonly feedback = signal<string | null>(null);
   readonly error = signal<string | null>(null);
 
-  readonly recentQuery = injectQuery(() => {
+  readonly recentQuery = injectQuery<readonly RetailerPriceCollectionRunSummary[]>(() => {
     const companyPersonId = this.companyPersonId();
     return {
       queryKey: retailerPriceCollectionKeys.recent(companyPersonId),
@@ -51,7 +52,7 @@ export class RetailerPriceCollectionsComponent {
     };
   });
 
-  readonly detailQuery = injectQuery(() => {
+  readonly detailQuery = injectQuery<RetailerPriceCollectionRunDetails>(() => {
     const companyPersonId = this.companyPersonId();
     const runId = this.selectedRunId();
     const pageIndex = this.pageIndex();
