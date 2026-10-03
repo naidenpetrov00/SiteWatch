@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
@@ -30,19 +31,24 @@ public sealed partial class RetailerExtractionEngine(
         IReadOnlyList<RetailerExtractionRule> rules,
         CancellationToken cancellationToken)
     {
-        using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutSource.CancelAfter(OverallTimeout);
+        using var extractionTimeout = new PausableExtractionTimeout(
+            cancellationToken,
+            OverallTimeout);
         try
         {
             var initialUri = ValidateUrl(productUrl, allowedHosts);
-            var fetched = await FetchHtmlAsync(initialUri, allowedHosts, timeoutSource.Token);
-            timeoutSource.Token.ThrowIfCancellationRequested();
+            var fetched = await FetchHtmlAsync(
+                initialUri,
+                allowedHosts,
+                extractionTimeout,
+                cancellationToken);
+            extractionTimeout.Token.ThrowIfCancellationRequested();
 
             var parser = new HtmlParser();
             IDocument document;
             try
             {
-                document = await parser.ParseDocumentAsync(fetched.Html, timeoutSource.Token);
+                document = await parser.ParseDocumentAsync(fetched.Html, extractionTimeout.Token);
             }
             catch (OperationCanceledException)
             {
@@ -56,16 +62,16 @@ public sealed partial class RetailerExtractionEngine(
                     "The bounded HTML document could not be parsed.",
                     exception);
             }
-            timeoutSource.Token.ThrowIfCancellationRequested();
+            extractionTimeout.Token.ThrowIfCancellationRequested();
 
             var diagnostics = new List<RetailerExtractionRuleDiagnosticDto>();
             foreach (var rule in rules.OrderBy(rule => rule.Priority))
             {
-                timeoutSource.Token.ThrowIfCancellationRequested();
+                extractionTimeout.Token.ThrowIfCancellationRequested();
                 var attempt = rule.RuleType == RetailerExtractionRuleType.JsonLd
                     ? EvaluateJsonLd(document, rule)
                     : EvaluateCss(document, rule);
-                timeoutSource.Token.ThrowIfCancellationRequested();
+                extractionTimeout.Token.ThrowIfCancellationRequested();
                 diagnostics.Add(new RetailerExtractionRuleDiagnosticDto(
                     rule.Id,
                     rule.Name,
@@ -115,6 +121,7 @@ public sealed partial class RetailerExtractionEngine(
     private async Task<FetchedHtml> FetchHtmlAsync(
         Uri initialUri,
         IReadOnlySet<string> allowedHosts,
+        PausableExtractionTimeout extractionTimeout,
         CancellationToken cancellationToken)
     {
         var current = initialUri;
@@ -122,10 +129,15 @@ public sealed partial class RetailerExtractionEngine(
         for (var redirects = 0; ; redirects++)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            extractionTimeout.Pause();
+            extractionTimeout.Token.ThrowIfCancellationRequested();
             await using var hostLease = await hostGate.AcquireAsync(
                 current.IdnHost,
                 cancellationToken);
-            var addresses = await ResolveAndValidateAsync(current.IdnHost, cancellationToken);
+            extractionTimeout.Resume();
+            var addresses = await ResolveAndValidateAsync(
+                current.IdnHost,
+                extractionTimeout.Token);
             using var handler = CreatePinnedHandler(addresses);
             using var client = new HttpClient(handler)
             {
@@ -144,7 +156,7 @@ public sealed partial class RetailerExtractionEngine(
                 response = await client.SendAsync(
                     request,
                     HttpCompletionOption.ResponseHeadersRead,
-                    cancellationToken);
+                    extractionTimeout.Token);
             }
             catch (OperationCanceledException)
             {
@@ -219,12 +231,12 @@ public sealed partial class RetailerExtractionEngine(
                         "The remote HTML document uses an unsupported content encoding.");
                 }
 
-                await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+                await using var stream = await response.Content.ReadAsStreamAsync(extractionTimeout.Token);
                 using var buffer = new MemoryStream();
                 var chunk = new byte[81920];
                 while (true)
                 {
-                    var read = await stream.ReadAsync(chunk, cancellationToken);
+                    var read = await stream.ReadAsync(chunk, extractionTimeout.Token);
                     if (read == 0) break;
                     if (buffer.Length + read > MaximumResponseBytes)
                     {
@@ -232,7 +244,7 @@ public sealed partial class RetailerExtractionEngine(
                             RetailerExtractionFailureKind.Content,
                             "The remote HTML document exceeds the five MiB limit.");
                     }
-                    await buffer.WriteAsync(chunk.AsMemory(0, read), cancellationToken);
+                    await buffer.WriteAsync(chunk.AsMemory(0, read), extractionTimeout.Token);
                 }
                 if (buffer.Length == 0)
                 {
@@ -248,9 +260,49 @@ public sealed partial class RetailerExtractionEngine(
                     detectEncodingFromByteOrderMarks: true);
                 return new FetchedHtml(
                     current,
-                    await reader.ReadToEndAsync(cancellationToken));
+                    await reader.ReadToEndAsync(extractionTimeout.Token));
             }
         }
+    }
+
+    private sealed class PausableExtractionTimeout : IDisposable
+    {
+        private readonly CancellationTokenSource source;
+        private readonly Stopwatch elapsed = new();
+        private readonly TimeSpan timeout;
+
+        public PausableExtractionTimeout(CancellationToken cancellationToken, TimeSpan timeout)
+        {
+            source = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            this.timeout = timeout;
+        }
+
+        public CancellationToken Token => source.Token;
+
+        public void Resume()
+        {
+            if (elapsed.IsRunning || source.IsCancellationRequested) return;
+
+            var remaining = timeout - elapsed.Elapsed;
+            if (remaining <= TimeSpan.Zero)
+            {
+                source.Cancel();
+                return;
+            }
+
+            elapsed.Start();
+            source.CancelAfter(remaining);
+        }
+
+        public void Pause()
+        {
+            if (!elapsed.IsRunning) return;
+
+            source.CancelAfter(Timeout.InfiniteTimeSpan);
+            elapsed.Stop();
+        }
+
+        public void Dispose() => source.Dispose();
     }
 
     private static SocketsHttpHandler CreatePinnedHandler(IReadOnlyList<IPAddress> addresses) =>

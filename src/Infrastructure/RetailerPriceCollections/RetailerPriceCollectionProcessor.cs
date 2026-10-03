@@ -290,10 +290,6 @@ public sealed class RetailerPriceCollectionProcessor(
         {
             return ("listingInactive", "The retailer listing became inactive after the run was created.");
         }
-        if (string.IsNullOrWhiteSpace(listing.ProductUrl))
-        {
-            return ("productUrlRemoved", "The saved product URL was removed after the run was created.");
-        }
         return null;
     }
 

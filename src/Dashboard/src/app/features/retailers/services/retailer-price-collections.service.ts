@@ -88,18 +88,8 @@ export class RetailerPriceCollectionsService {
     return run;
   }
 
-  async invalidateAfterProgress(
-    companyPersonId: string,
-    runId: string
-  ): Promise<void> {
+  async invalidatePriceDependentQueries(companyPersonId: string): Promise<void> {
     await Promise.all([
-      this.queryClient.invalidateQueries({
-        queryKey: retailerPriceCollectionKeys.recent(companyPersonId)
-      }),
-      this.queryClient.invalidateQueries({
-        queryKey: retailerPriceCollectionKeys.details(companyPersonId, runId),
-        refetchType: 'inactive'
-      }),
       this.queryClient.invalidateQueries({
         queryKey: ['retailer-listings', 'company', companyPersonId]
       }),

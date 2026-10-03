@@ -30,7 +30,11 @@ import { getRetailerError } from '../../utils/retailer-error';
 })
 export class RetailerPriceCollectionsComponent {
   private readonly service = inject(RetailerPriceCollectionsService);
-  private lastProgressSignature: string | null = null;
+  private lastObservedRun: {
+    id: string;
+    succeededCount: number;
+    unfinished: boolean;
+  } | null = null;
 
   readonly companyPersonId = input.required<string>();
   readonly activeProfileAvailable = input.required<boolean>();
@@ -113,19 +117,22 @@ export class RetailerPriceCollectionsComponent {
     effect(() => {
       const run = this.recentQuery.data()?.[0];
       if (!run) return;
-      const signature = [
-        run.id,
-        run.status,
-        run.queuedCount,
-        run.runningCount,
-        run.processedCount,
-        run.succeededCount,
-        run.failedCount,
-        run.skippedCount
-      ].join(':');
-      if (signature === this.lastProgressSignature) return;
-      this.lastProgressSignature = signature;
-      void this.service.invalidateAfterProgress(this.companyPersonId(), run.id);
+      const current = {
+        id: run.id,
+        succeededCount: run.succeededCount,
+        unfinished: isPriceCollectionRunUnfinished(run)
+      };
+      const previous = this.lastObservedRun;
+      this.lastObservedRun = current;
+      const pricesMayHaveChanged = previous === null
+        ? current.succeededCount > 0 || !current.unfinished
+        : previous.id !== current.id
+          ? current.succeededCount > 0 || !current.unfinished
+          : current.succeededCount > previous.succeededCount
+            || (previous.unfinished && !current.unfinished);
+      if (!pricesMayHaveChanged) return;
+
+      void this.service.invalidatePriceDependentQueries(this.companyPersonId());
     });
   }
 
