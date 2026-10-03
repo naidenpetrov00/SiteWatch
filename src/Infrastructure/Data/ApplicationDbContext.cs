@@ -28,6 +28,12 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
         Set<RetailerExtractionAllowedHost>();
     public DbSet<RetailerExtractionRule> RetailerExtractionRules =>
         Set<RetailerExtractionRule>();
+    public DbSet<RetailerPriceCollectionRun> RetailerPriceCollectionRuns =>
+        Set<RetailerPriceCollectionRun>();
+    public DbSet<RetailerPriceCollectionRunItem> RetailerPriceCollectionRunItems =>
+        Set<RetailerPriceCollectionRunItem>();
+    internal DbSet<RetailerPriceCollectionWorkerLease> RetailerPriceCollectionWorkerLeases =>
+        Set<RetailerPriceCollectionWorkerLease>();
     public DbSet<ActivityCatalogNode> ActivityCatalogNodes => Set<ActivityCatalogNode>();
     public DbSet<ActivityRequirementSection> ActivityRequirementSections =>
         Set<ActivityRequirementSection>();

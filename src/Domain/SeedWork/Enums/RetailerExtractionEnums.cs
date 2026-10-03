@@ -32,8 +32,44 @@ public enum RetailerExtractionThousandsSeparator
     Space = 3
 }
 
+public enum RetailerPriceCollectionRunStatus
+{
+    Queued = 0,
+    Running = 1,
+    Completed = 2,
+    CompletedWithFailures = 3
+}
+
+public enum RetailerPriceCollectionRunItemStatus
+{
+    Queued = 0,
+    Running = 1,
+    Succeeded = 2,
+    Failed = 3,
+    Skipped = 4
+}
+
 public static class RetailerExtractionCodes
 {
+    public static string ToCode(this RetailerPriceCollectionRunStatus status) => status switch
+    {
+        RetailerPriceCollectionRunStatus.Queued => "queued",
+        RetailerPriceCollectionRunStatus.Running => "running",
+        RetailerPriceCollectionRunStatus.Completed => "completed",
+        RetailerPriceCollectionRunStatus.CompletedWithFailures => "completedWithFailures",
+        _ => throw new ArgumentOutOfRangeException(nameof(status), status, null)
+    };
+
+    public static string ToCode(this RetailerPriceCollectionRunItemStatus status) => status switch
+    {
+        RetailerPriceCollectionRunItemStatus.Queued => "queued",
+        RetailerPriceCollectionRunItemStatus.Running => "running",
+        RetailerPriceCollectionRunItemStatus.Succeeded => "succeeded",
+        RetailerPriceCollectionRunItemStatus.Failed => "failed",
+        RetailerPriceCollectionRunItemStatus.Skipped => "skipped",
+        _ => throw new ArgumentOutOfRangeException(nameof(status), status, null)
+    };
+
     public static string ToCode(this RetailerExtractionProfileStatus status) => status switch
     {
         RetailerExtractionProfileStatus.Draft => "draft",

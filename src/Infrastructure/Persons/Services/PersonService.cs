@@ -86,6 +86,14 @@ public sealed class PersonService(ApplicationDbContext dbContext) : IPersonServi
                 "This company Person owns retailer extraction profiles and cannot be deleted.");
         }
 
+        if (await dbContext.RetailerPriceCollectionRuns.AnyAsync(
+                run => run.CompanyPersonId == id,
+                cancellationToken))
+        {
+            throw new PersonConflictException(
+                "This company Person owns retained price-collection runs and cannot be deleted.");
+        }
+
         if (await dbContext.Retailers.AnyAsync(
                 retailer => retailer.CompanyPersonId == id,
                 cancellationToken))

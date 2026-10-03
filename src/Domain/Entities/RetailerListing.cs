@@ -83,6 +83,37 @@ public sealed class RetailerListing : BaseAuditableEntity, IAgregateRoot
         return observation;
     }
 
+    public RetailerPriceObservation RecordAutomatedPrice(
+        decimal amount,
+        PriceBasis basis,
+        DateTimeOffset observedAt,
+        DateTimeOffset recordedAt,
+        string sourceReference,
+        string recordedBy,
+        RetailerExtractionProfile extractionProfile,
+        RetailerExtractionRule matchedRule)
+    {
+        if (!IsActive)
+        {
+            throw new InvalidOperationException(
+                "Prices cannot be recorded for an inactive retailer listing.");
+        }
+
+        var observation = RetailerPriceObservation.Create(
+            this,
+            amount,
+            basis,
+            observedAt,
+            recordedAt,
+            PriceObservationSource.Automated,
+            sourceReference,
+            recordedBy,
+            extractionProfile,
+            matchedRule);
+        _priceObservations.Add(observation);
+        return observation;
+    }
+
     public void Activate() => IsActive = true;
 
     public void Deactivate() => IsActive = false;

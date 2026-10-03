@@ -52,6 +52,7 @@ import {
   RetailerListingsService,
   retailerListingKeys
 } from '../../../retailer-listings/services/retailer-listings.service';
+import { RetailerPriceCollectionsComponent } from '../retailer-price-collections/retailer-price-collections.component';
 
 @Component({
   selector: 'app-company-extraction-profiles',
@@ -61,7 +62,8 @@ import {
     MatButtonModule,
     MatChipsModule,
     MatFormFieldModule,
-    MatInputModule
+    MatInputModule,
+    RetailerPriceCollectionsComponent
   ],
   templateUrl: './retailer-extraction-profiles.component.html',
   styleUrl: './retailer-extraction-profiles.component.css',
