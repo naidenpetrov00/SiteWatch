@@ -3,6 +3,7 @@ using Application.Offers.Commands;
 using Application.Offers.Finalization;
 using Application.Offers.Queries;
 using Application.Offers.Pricing;
+using Application.RetailerPriceCollections;
 using Application.SeedWork.Models;
 using Application.SeedWork.Security;
 using MediatR;
@@ -103,6 +104,32 @@ public sealed class Offers : EndpointGroupBase
             .WithName("GetOfferPricingMatrix")
             .WithSummary("Get the Product-by-Retailer pricing matrix for an Offer")
             .Produces<OfferPricingMatrixDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
+        group.MapGet(
+                "/{offerId:guid}/pricing/online-price-collections/options",
+                GetOnlinePriceCollectionOptions)
+            .WithName("GetOfferOnlinePriceCollectionOptions")
+            .WithSummary("Get server-derived online price collection choices for a draft Offer")
+            .Produces<OfferOnlinePriceCollectionOptionsDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict);
+        group.MapPost(
+                "/{offerId:guid}/pricing/online-price-collection-runs",
+                StartOnlinePriceCollectionRuns)
+            .WithName("StartOfferOnlinePriceCollectionRuns")
+            .WithSummary("Start one durable offer-scoped price collection run per selected company")
+            .Produces<OfferOnlinePriceCollectionStartResponseDto>(StatusCodes.Status200OK)
+            .Produces<OfferOnlinePriceCollectionStartResponseDto>(StatusCodes.Status202Accepted)
+            .ProducesValidationProblem()
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict);
+        group.MapGet(
+                "/{offerId:guid}/pricing/online-price-collection-runs",
+                GetOnlinePriceCollectionRuns)
+            .WithName("GetOfferOnlinePriceCollectionRuns")
+            .WithSummary("Get recent durable price collection runs admitted from an Offer")
+            .Produces<IReadOnlyList<RetailerPriceCollectionRunSummaryDto>>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
             .Produces(StatusCodes.Status404NotFound);
         group.MapPost("/{offerId:guid}/pricing/retailers", AddPricingRetailer)
             .WithName("AddOfferPricingRetailer")
@@ -300,6 +327,46 @@ public sealed class Offers : EndpointGroupBase
         CancellationToken cancellationToken) =>
         TypedResults.Ok(await mediator.Send(
             new OfferPricingMatrixQuery(siteId, offerId),
+            cancellationToken));
+
+    private static async Task<Ok<OfferOnlinePriceCollectionOptionsDto>>
+        GetOnlinePriceCollectionOptions(
+            IMediator mediator,
+            Guid siteId,
+            Guid offerId,
+            CancellationToken cancellationToken) =>
+        TypedResults.Ok(await mediator.Send(
+            new OfferOnlinePriceCollectionOptionsQuery(siteId, offerId),
+            cancellationToken));
+
+    private static async Task<IResult> StartOnlinePriceCollectionRuns(
+        IMediator mediator,
+        Guid siteId,
+        Guid offerId,
+        StartOfferOnlinePriceCollectionCommand command,
+        CancellationToken cancellationToken)
+    {
+        command.SiteId = siteId;
+        command.OfferId = offerId;
+        var response = await mediator.Send(command, cancellationToken);
+        if (response.Outcomes.Any(outcome => outcome.Run is not null))
+        {
+            return TypedResults.Accepted(
+                $"/sites/{siteId}/offers/{offerId}/pricing/online-price-collection-runs",
+                response);
+        }
+        return TypedResults.Ok(response);
+    }
+
+    private static async Task<Ok<IReadOnlyList<RetailerPriceCollectionRunSummaryDto>>>
+        GetOnlinePriceCollectionRuns(
+            IMediator mediator,
+            Guid siteId,
+            Guid offerId,
+            int limit = 25,
+            CancellationToken cancellationToken = default) =>
+        TypedResults.Ok(await mediator.Send(
+            new OfferOnlinePriceCollectionRunsQuery(siteId, offerId, limit),
             cancellationToken));
 
     private static async Task<Created<OfferPricingMatrixDto>> AddPricingRetailer(

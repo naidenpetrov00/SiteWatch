@@ -87,6 +87,7 @@ public static class DependencyInjection
         services.AddSingleton<RetailerExtractionHostGate>();
         services.AddScoped<IRetailerExtractionEngine, RetailerExtractionEngine>();
         services.AddScoped<IRetailerPriceCollectionService, RetailerPriceCollectionService>();
+        services.AddScoped<IOfferOnlinePriceCollectionService, OfferOnlinePriceCollectionService>();
         services.AddScoped<IRetailerPriceCollectionProcessor, RetailerPriceCollectionProcessor>();
         services.AddScoped<IActivityCatalogService, ActivityCatalogService>();
         services.AddScoped<IActivityRequirementService, ActivityRequirementService>();

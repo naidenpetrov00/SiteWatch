@@ -14,6 +14,7 @@ export type RetailerPriceCollectionRunItemStatus =
 export interface RetailerPriceCollectionRunSummary {
   id: string;
   companyPersonId: string;
+  offerId: string | null;
   companyDisplayName: string;
   extractionProfileId: string;
   extractionProfileVersion: number;

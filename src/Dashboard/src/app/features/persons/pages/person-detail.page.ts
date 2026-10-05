@@ -26,6 +26,7 @@ export class PersonDetailPage {
   private readonly dialog = inject(MatDialog);
 
   readonly personId = input.required<string>();
+  readonly runId = input<string>();
   readonly personQuery = injectQuery(() => {
     const personId = this.personId();
     return {

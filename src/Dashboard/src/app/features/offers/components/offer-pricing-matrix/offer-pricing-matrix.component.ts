@@ -34,7 +34,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { debounceTime, distinctUntilChanged, firstValueFrom } from 'rxjs';
 
 import { DashboardRetailerLookup } from '../../../retailers/models/dashboard-retailer.models';
 import { DashboardRetailersService } from '../../../retailers/services/dashboard-retailers.service';
@@ -42,12 +42,19 @@ import { RetailerPriceHistoryDialogComponent } from '../../../retailer-listings/
 import { RetailerPriceHistoryDialogData } from '../../../retailer-listings/models/retailer-listing.models';
 import {
   OfferPriceBasis,
+  OfferOnlinePriceCollectionStartOutcome,
+  OfferOnlinePriceCollectionStartResponse,
   OfferPricingRequirement,
   OfferPricingProductRow,
   OfferRetailerPriceCell
 } from '../../models/offer.models';
 import { OffersService } from '../../services/offers.service';
 import { getOfferError } from '../../utils/offer-error';
+import {
+  OfferOnlinePriceCollectionDialogComponent,
+  OfferOnlinePriceCollectionDialogData
+} from '../offer-online-price-collection-dialog/offer-online-price-collection-dialog.component';
+import { isPriceCollectionRunUnfinished } from '../../../retailers/models/retailer-price-collection.models';
 import {
   formatOfferQuantity,
   measurementUnitLabel,
@@ -115,6 +122,7 @@ export class OfferPricingMatrixComponent {
   private readonly dialog = inject(MatDialog);
   private searchRevision = 0;
   private configuredIdentity: string | null = null;
+  private observedRuns = new Map<string, { succeededCount: number; unfinished: boolean }>();
 
   readonly siteId = input.required<string>();
   readonly offerId = input.required<string>();
@@ -145,6 +153,7 @@ export class OfferPricingMatrixComponent {
   readonly error = signal<string | null>(null);
   readonly savingCellKey = signal<string | null>(null);
   readonly cellErrors = signal<ReadonlyMap<string, string>>(new Map());
+  readonly collectionOutcomes = signal<readonly OfferOnlinePriceCollectionStartOutcome[]>([]);
 
   readonly isMutating = computed(
     () =>
@@ -152,7 +161,8 @@ export class OfferPricingMatrixComponent {
       this.offersService.removePricingRetailerMutation.isPending() ||
       this.offersService.recordManualPriceMutation.isPending() ||
       this.offersService.selectProductPriceMutation.isPending() ||
-      this.offersService.clearProductPriceMutation.isPending()
+      this.offersService.clearProductPriceMutation.isPending() ||
+      this.offersService.startOnlinePriceCollectionMutation.isPending()
   );
 
   readonly displayRetailer = (
@@ -186,6 +196,67 @@ export class OfferPricingMatrixComponent {
         this.reconcileForms(matrix.products, matrix.status === 'Draft', untracked(this.forms));
       }
     });
+
+    effect(() => {
+      const runs = this.offersService.onlinePriceCollectionRunsQuery.data();
+      if (!runs) return;
+      let pricesChanged = false;
+      let availabilityChanged = false;
+      const currentIds = new Set<string>();
+      for (const run of runs) {
+        currentIds.add(run.id);
+        const current = {
+          succeededCount: run.succeededCount,
+          unfinished: isPriceCollectionRunUnfinished(run)
+        };
+        const previous = this.observedRuns.get(run.id);
+        if (
+          (previous === undefined && current.succeededCount > 0) ||
+          (previous !== undefined && current.succeededCount > previous.succeededCount) ||
+          (previous?.unfinished === true && !current.unfinished)
+        ) {
+          pricesChanged = true;
+        }
+        if (previous?.unfinished === true && !current.unfinished) {
+          availabilityChanged = true;
+        }
+        this.observedRuns.set(run.id, current);
+      }
+      for (const runId of this.observedRuns.keys()) {
+        if (!currentIds.has(runId)) this.observedRuns.delete(runId);
+      }
+      if (pricesChanged) {
+        void this.offersService.refreshPricesAfterCollection(this.siteId(), this.offerId());
+      }
+      if (availabilityChanged) {
+        void this.offersService.refreshOnlinePriceCollectionOptions();
+      }
+    });
+  }
+
+  async openOnlinePriceCollection(): Promise<void> {
+    if (!this.editable() || this.isMutating()) return;
+    this.feedback.set(null);
+    this.error.set(null);
+    const dialogRef = this.dialog.open<
+      OfferOnlinePriceCollectionDialogComponent,
+      OfferOnlinePriceCollectionDialogData,
+      OfferOnlinePriceCollectionStartResponse | null
+    >(OfferOnlinePriceCollectionDialogComponent, {
+      autoFocus: false,
+      restoreFocus: true,
+      width: '48rem',
+      maxWidth: 'calc(100vw - 2rem)',
+      data: { siteId: this.siteId(), offerId: this.offerId() }
+    });
+    const response = await firstValueFrom(dialogRef.afterClosed());
+    if (!response) return;
+    this.collectionOutcomes.set(response.outcomes);
+    const accepted = response.outcomes.filter(outcome => outcome.run !== null).length;
+    const unavailable = response.outcomes.length - accepted;
+    this.feedback.set(
+      `${accepted} company run(s) queued${unavailable > 0 ? `; ${unavailable} could not start` : ''}. Durable work continues if you leave this page.`
+    );
   }
 
   async onRetailerSelected(event: MatAutocompleteSelectedEvent): Promise<void> {
@@ -440,6 +511,14 @@ export class OfferPricingMatrixComponent {
           style: 'currency',
           currency: 'EUR'
         }).format(amount);
+  }
+
+  runProgress(processedCount: number, totalCount: number): number {
+    return totalCount === 0 ? 100 : Math.round((processedCount / totalCount) * 100);
+  }
+
+  statusLabel(status: string): string {
+    return status.replace(/([A-Z])/g, ' $1').replace(/^./, value => value.toUpperCase());
   }
 
   relativeAge(value: string): string {

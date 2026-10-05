@@ -4,6 +4,7 @@ namespace Application.RetailerPriceCollections;
 public sealed record RetailerPriceCollectionRunSummaryDto(
     Guid Id,
     Guid CompanyPersonId,
+    Guid? OfferId,
     string CompanyDisplayName,
     Guid ExtractionProfileId,
     int ExtractionProfileVersion,

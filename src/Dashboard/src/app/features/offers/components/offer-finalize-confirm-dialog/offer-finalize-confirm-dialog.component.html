@@ -27,6 +27,7 @@
         <dd>{{ formatCurrency(current.selectedOptionalTotal) }}</dd>
       </div>
       <div><dt>Selected prices with newer observations</dt><dd>{{ current.selectedPricesWithNewerObservations.length }}</dd></div>
+      <div><dt>Online price collections still running</dt><dd>{{ current.unfinishedOnlinePriceCollectionRunCount }}</dd></div>
     </dl>
 
     @if (current.blockingReasons.length > 0) {

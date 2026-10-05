@@ -78,6 +78,7 @@ export class CompanyExtractionProfilesComponent {
   private loadedTestConfigurationKey: string | null = null;
 
   readonly companyPersonId = input.required<string>();
+  readonly initialRunId = input<string>();
   readonly selectedProfileId = signal<string | null>(null);
   readonly operationPending = signal(false);
   readonly feedback = signal<string | null>(null);

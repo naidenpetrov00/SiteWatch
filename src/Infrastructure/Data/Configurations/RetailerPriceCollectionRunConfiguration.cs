@@ -47,9 +47,16 @@ public sealed class RetailerPriceCollectionRunConfiguration
             .WithMany()
             .HasForeignKey(run => run.ExtractionProfileId)
             .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(run => run.Offer)
+            .WithMany()
+            .HasForeignKey(run => run.OfferId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(run => new { run.CompanyPersonId, run.RequestedAt, run.Id })
             .IsDescending(false, true, true);
+        builder.HasIndex(run => new { run.OfferId, run.RequestedAt, run.Id })
+            .IsDescending(false, true, true)
+            .HasFilter("[OfferId] IS NOT NULL");
         builder.HasIndex(run => run.CompanyPersonId)
             .IsUnique()
             .HasDatabaseName("IX_RetailerPriceCollectionRuns_OneUnfinishedPerCompany")

@@ -13,6 +13,8 @@ public sealed class RetailerPriceCollectionRun : BaseAuditableEntity, IAgregateR
 
     public Guid CompanyPersonId { get; private set; }
     public Person CompanyPerson { get; private set; } = null!;
+    public Guid? OfferId { get; private set; }
+    public Offer? Offer { get; private set; }
     public Guid ExtractionProfileId { get; private set; }
     public RetailerExtractionProfile ExtractionProfile { get; private set; } = null!;
     public RetailerPriceCollectionRunStatus Status { get; private set; }
@@ -34,7 +36,8 @@ public sealed class RetailerPriceCollectionRun : BaseAuditableEntity, IAgregateR
         RetailerExtractionProfile extractionProfile,
         IEnumerable<RetailerListing> listings,
         DateTimeOffset requestedAt,
-        string requestedBy)
+        string requestedBy,
+        Offer? offer = null)
     {
         ArgumentNullException.ThrowIfNull(companyPerson);
         ArgumentNullException.ThrowIfNull(extractionProfile);
@@ -52,12 +55,20 @@ public sealed class RetailerPriceCollectionRun : BaseAuditableEntity, IAgregateR
                 "A price-collection run requires the company's active published profile.");
         }
         EnsureUtc(requestedAt, nameof(requestedAt));
+        if (offer is not null && offer.Status != OfferStatus.Draft)
+        {
+            throw new ArgumentException(
+                "An offer-scoped price-collection run requires a draft offer.",
+                nameof(offer));
+        }
 
         var run = new RetailerPriceCollectionRun
         {
             Id = Guid.NewGuid(),
             CompanyPerson = companyPerson,
             CompanyPersonId = companyPerson.Id,
+            Offer = offer,
+            OfferId = offer?.Id,
             ExtractionProfile = extractionProfile,
             ExtractionProfileId = extractionProfile.Id,
             Status = RetailerPriceCollectionRunStatus.Queued,

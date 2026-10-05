@@ -38,6 +38,7 @@ export class RetailerPriceCollectionsComponent {
 
   readonly companyPersonId = input.required<string>();
   readonly activeProfileAvailable = input.required<boolean>();
+  readonly initialRunId = input<string>();
   readonly selectedRunId = signal<string | null>(null);
   readonly pageIndex = signal(0);
   readonly pageSize = 25;
@@ -106,10 +107,18 @@ export class RetailerPriceCollectionsComponent {
 
   constructor() {
     effect(() => {
+      const initialRunId = this.initialRunId();
+      if (initialRunId && this.selectedRunId() !== initialRunId) {
+        this.pageIndex.set(0);
+        this.selectedRunId.set(initialRunId);
+      }
+    });
+
+    effect(() => {
       const runs = this.recentQuery.data();
       if (!runs?.length) return;
       const selectedId = this.selectedRunId();
-      if (!selectedId || !runs.some((run) => run.id === selectedId)) {
+      if (!selectedId) {
         this.selectRun(runs.find(isPriceCollectionRunUnfinished) ?? runs[0]);
       }
     });

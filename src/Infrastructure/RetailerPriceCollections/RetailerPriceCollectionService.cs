@@ -183,6 +183,7 @@ public sealed class RetailerPriceCollectionService(
         new(
             run.Id,
             run.CompanyPersonId,
+            run.OfferId,
             companyDisplayName,
             run.ExtractionProfileId,
             profileVersion,
