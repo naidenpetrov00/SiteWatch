@@ -636,6 +636,22 @@ export class OffersService {
     await this.onlinePriceCollectionOptionsQuery.refetch();
   }
 
+  async refreshPricingAfterListingMetadata(
+    siteId: string,
+    offerId: string
+  ): Promise<void> {
+    await Promise.all([
+      this.queryClient.invalidateQueries({
+        queryKey: this.pricingQueryKey(siteId, offerId),
+        exact: true
+      }),
+      this.queryClient.invalidateQueries({
+        queryKey: this.onlineCollectionOptionsKey(siteId, offerId),
+        exact: true
+      })
+    ]);
+  }
+
   async refreshPricesAfterCollection(siteId: string, offerId: string): Promise<void> {
     await Promise.all([
       this.queryClient.invalidateQueries({

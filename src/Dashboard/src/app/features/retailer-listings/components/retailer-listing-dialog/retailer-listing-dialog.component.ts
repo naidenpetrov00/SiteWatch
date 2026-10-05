@@ -121,8 +121,11 @@ export class RetailerListingDialogComponent {
   );
 
   readonly isEditing = computed(() => this.listing() !== null);
+  readonly isMetadataOnly = computed(() => this.data.metadataOnly === true);
   readonly title = computed(() =>
-    this.isEditing() ? 'Manage retailer listing' : 'Add retailer listing'
+    this.isMetadataOnly()
+      ? this.isEditing() ? 'Edit product link' : 'Add product link'
+      : this.isEditing() ? 'Manage retailer listing' : 'Add retailer listing'
   );
   readonly priceEntryEnabled = computed(() => {
     const listing = this.listing();
@@ -177,7 +180,7 @@ export class RetailerListingDialogComponent {
     }
 
     effect(() => {
-      const active = this.priceEntryEnabled();
+      const active = !this.isMetadataOnly() && this.priceEntryEnabled();
       const controls = [this.form.controls.amount, this.form.controls.basis];
       for (const control of controls) {
         active
@@ -264,7 +267,9 @@ export class RetailerListingDialogComponent {
     this.saving.set(true);
     const value = this.form.getRawValue();
     const current = this.listing();
-    const amount = this.priceEntryEnabled() ? value.amount : null;
+    const amount = !this.isMetadataOnly() && this.priceEntryEnabled()
+      ? value.amount
+      : null;
     const basis = amount === null ? null : value.basis;
     let saved: RetailerListing;
     try {
@@ -291,7 +296,7 @@ export class RetailerListingDialogComponent {
       this.saving.set(false);
     }
 
-    if (current && amount !== null) {
+    if (!this.isMetadataOnly() && current && amount !== null) {
       this.listing.set(saved);
       this.form.controls.amount.reset(null);
       this.form.controls.basis.reset(null);
@@ -370,11 +375,8 @@ export class RetailerListingDialogComponent {
       id: listing.productId,
       numberId: listing.productNumberId,
       title: listing.productTitle,
-      category: 'other',
-      brand: listing.productBrand,
-      model: listing.productModel,
       packageQuantity: listing.productPackageQuantity,
-      packageUnit: listing.productPackageUnit as DashboardProductLookup['packageUnit']
+      packageUnit: listing.productPackageUnit
     };
   }
 
@@ -384,9 +386,7 @@ export class RetailerListingDialogComponent {
     if (!listing) return null;
     return {
       id: listing.retailerId,
-      displayName: listing.retailerDisplayName,
-      baseWebsiteUrl: listing.retailerBaseWebsiteUrl,
-      websiteHost: new URL(listing.retailerBaseWebsiteUrl).host
+      displayName: listing.retailerDisplayName
     };
   }
 }

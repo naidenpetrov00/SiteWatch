@@ -129,7 +129,7 @@ export class RetailerListingsService {
     const listing = await firstValueFrom(
       this.http.post<RetailerListing>(buildApiUrl('/retailer-listings'), request)
     );
-    await this.afterMutation(listing);
+    await this.afterMutation(listing, request.amount !== null);
     return listing;
   }
 
@@ -141,7 +141,7 @@ export class RetailerListingsService {
         body
       )
     );
-    await this.afterMutation(listing);
+    await this.afterMutation(listing, request.amount !== null);
     return listing;
   }
 
@@ -164,16 +164,17 @@ export class RetailerListingsService {
     return updated;
   }
 
-  async invalidatePair(productId: string, retailerId: string): Promise<void> {
-    await Promise.all([
+  async invalidatePair(
+    productId: string,
+    retailerId: string,
+    includeHistory = true
+  ): Promise<void> {
+    const invalidations = [
       this.queryClient.invalidateQueries({
         queryKey: retailerListingKeys.product(productId)
       }),
       this.queryClient.invalidateQueries({
         queryKey: retailerListingKeys.retailer(retailerId)
-      }),
-      this.queryClient.invalidateQueries({
-        queryKey: retailerListingKeys.history(productId, retailerId)
       }),
       this.queryClient.invalidateQueries({
         predicate: (query) =>
@@ -184,7 +185,13 @@ export class RetailerListingsService {
             retailerId
           )
       })
-    ]);
+    ];
+    if (includeHistory) {
+      invalidations.push(this.queryClient.invalidateQueries({
+        queryKey: retailerListingKeys.history(productId, retailerId)
+      }));
+    }
+    await Promise.all(invalidations);
   }
 
   async invalidateRetailerLifecycle(
@@ -262,12 +269,15 @@ export class RetailerListingsService {
     });
   }
 
-  private async afterMutation(listing: RetailerListing): Promise<void> {
+  private async afterMutation(
+    listing: RetailerListing,
+    includeHistory = true
+  ): Promise<void> {
     this.queryClient.setQueryData(retailerListingKeys.detail(listing.id), listing);
     this.patchListingPages(retailerListingKeys.product(listing.productId), listing);
     this.patchListingPages(retailerListingKeys.retailer(listing.retailerId), listing);
     await Promise.all([
-      this.invalidatePair(listing.productId, listing.retailerId),
+      this.invalidatePair(listing.productId, listing.retailerId, includeHistory),
       this.queryClient.invalidateQueries({
         queryKey: retailerListingKeys.companies()
       })

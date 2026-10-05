@@ -26,7 +26,13 @@
       }
     </section>
 
-    @if (!isEditing()) {
+    @if (isMetadataOnly()) {
+      <p class="listing-dialog__context-note">
+        {{ data.contextNote || 'This link is reusable retailer-listing data outside the current offer.' }}
+      </p>
+    }
+
+    @if (!isEditing() && !(data.fixedProduct && data.fixedRetailer)) {
       <mat-form-field appearance="outline" class="listing-dialog__wide">
         <mat-label>
           {{ data.fixedProduct ? 'Retailer' : 'Product' }}
@@ -88,6 +94,7 @@
       </mat-form-field>
     </div>
 
+    @if (!isMetadataOnly()) {
     <fieldset class="listing-dialog__price">
       <legend>Optional new manual price</legend>
       @if (listing()?.latestObservation; as latest) {
@@ -139,6 +146,7 @@
         </p>
       }
     </fieldset>
+    }
 
     @if (saveError()) {
       <p class="listing-dialog__error" role="alert">{{ saveError() }}</p>
@@ -148,7 +156,7 @@
     }
   </form>
 
-  @if (listing(); as current) {
+  @if (!isMetadataOnly() && listing(); as current) {
     <details
       class="listing-dialog__history"
       [open]="historyExpanded()"
@@ -169,7 +177,7 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-  @if (listing(); as current) {
+  @if (!isMetadataOnly() && listing(); as current) {
     <button
       mat-stroked-button
       type="button"
@@ -199,6 +207,6 @@
     form="retailer-listing-form"
     [disabled]="!canSave()"
   >
-    {{ saving() ? 'Saving…' : isEditing() ? 'Save listing' : 'Add listing' }}
+    {{ saving() ? 'Saving…' : isMetadataOnly() ? 'Save product link' : isEditing() ? 'Save listing' : 'Add listing' }}
   </button>
 </mat-dialog-actions>

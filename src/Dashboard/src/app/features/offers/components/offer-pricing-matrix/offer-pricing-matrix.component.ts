@@ -38,8 +38,17 @@ import { debounceTime, distinctUntilChanged, firstValueFrom } from 'rxjs';
 
 import { DashboardRetailerLookup } from '../../../retailers/models/dashboard-retailer.models';
 import { DashboardRetailersService } from '../../../retailers/services/dashboard-retailers.service';
+import { RetailerListingDialogComponent } from '../../../retailer-listings/components/retailer-listing-dialog/retailer-listing-dialog.component';
 import { RetailerPriceHistoryDialogComponent } from '../../../retailer-listings/components/retailer-price-history-dialog/retailer-price-history-dialog.component';
-import { RetailerPriceHistoryDialogData } from '../../../retailer-listings/models/retailer-listing.models';
+import {
+  RetailerListing,
+  RetailerListingDialogData,
+  RetailerPriceHistoryDialogData
+} from '../../../retailer-listings/models/retailer-listing.models';
+import {
+  RetailerListingsService,
+  getRetailerListingError
+} from '../../../retailer-listings/services/retailer-listings.service';
 import {
   OfferPriceBasis,
   OfferOnlinePriceCollectionStartOutcome,
@@ -117,6 +126,7 @@ type PricingDisplayRow =
 export class OfferPricingMatrixComponent {
   readonly offersService = inject(OffersService);
   private readonly retailersService = inject(DashboardRetailersService);
+  private readonly retailerListingsService = inject(RetailerListingsService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialog = inject(MatDialog);
@@ -289,6 +299,72 @@ export class OfferPricingMatrixComponent {
       this.feedback.set(`${displayName} removed from the comparison.`);
     } catch (error) {
       this.error.set(getOfferError(error));
+    }
+  }
+
+  async openProductLink(
+    row: OfferPricingProductRow,
+    cell: OfferRetailerPriceCell
+  ): Promise<void> {
+    if (!this.canManageProductLink() || this.isMutating()) return;
+
+    this.clearFeedback();
+    const key = this.cellKey(row.offerProductLineId, cell.retailerId);
+    this.clearCellError(key);
+    let listing: RetailerListing | null = null;
+    try {
+      if (cell.retailerListingId) {
+        listing = await this.retailerListingsService.getById(cell.retailerListingId);
+      }
+    } catch (error) {
+      this.cellErrors.update((current) => {
+        const next = new Map(current);
+        next.set(key, getRetailerListingError(error, 'The retailer listing could not be loaded.'));
+        return next;
+      });
+      return;
+    }
+
+    const dialogRef = this.dialog.open<
+      RetailerListingDialogComponent,
+      RetailerListingDialogData,
+      RetailerListing | null
+    >(RetailerListingDialogComponent, {
+      autoFocus: false,
+      restoreFocus: true,
+      width: '42rem',
+      maxWidth: 'calc(100vw - 2rem)',
+      data: {
+        listing,
+        fixedProduct: {
+          id: row.productId,
+          numberId: row.productNumberId,
+          title: row.title,
+          packageQuantity: row.packageQuantity,
+          packageUnit: row.packageUnit
+        },
+        fixedRetailer: {
+          id: cell.retailerId,
+          displayName: this.retailerName(cell.retailerId)
+        },
+        metadataOnly: true,
+        contextNote: 'This product link is reusable retailer-listing data outside the current offer.'
+      }
+    });
+    const saved = await firstValueFrom(dialogRef.afterClosed());
+    if (!saved) return;
+
+    try {
+      await this.offersService.refreshPricingAfterListingMetadata(
+        this.siteId(),
+        this.offerId()
+      );
+      this.feedback.set(this.productLinkCollectionMessage(row, saved));
+    } catch {
+      this.feedback.set('Product link saved as reusable retailer-listing data.');
+      this.error.set(
+        'The saved link could not be refreshed in this offer. Reload the offer before starting collection.'
+      );
     }
   }
 
@@ -476,6 +552,10 @@ export class OfferPricingMatrixComponent {
     );
   }
 
+  canManageProductLink(): boolean {
+    return this.editable();
+  }
+
   canRemoveRetailer(retailerId: string): boolean {
     return !(this.matrix()?.products.some(
       (row) => row.selectedPrice?.retailerId === retailerId
@@ -499,6 +579,52 @@ export class OfferPricingMatrixComponent {
   retailerName(retailerId: string): string {
     return this.matrix()?.retailers.find((item) => item.retailerId === retailerId)
       ?.displayName ?? 'Retailer';
+  }
+
+  private productLinkCollectionMessage(
+    row: OfferPricingProductRow,
+    listing: RetailerListing
+  ): string {
+    const company = this.offersService.onlinePriceCollectionOptionsQuery.data()
+      ?.companies.find((option) =>
+        option.retailers.some((retailer) => retailer.retailerId === listing.retailerId)
+      );
+    const exclusion = company?.exclusions.find((item) =>
+      item.productId === row.productId && item.retailerId === listing.retailerId
+    );
+    const prefix = 'Product link saved as reusable retailer-listing data.';
+    if (!company) {
+      return `${prefix} Collection readiness is not available for this retailer company.`;
+    }
+
+    const companyBlocker = company.canStart
+      ? null
+      : this.collectionBlockerMessage(company.blockingCodes)
+        ?? 'the retailer company is not currently available for collection.';
+    if (exclusion) {
+      return companyBlocker
+        ? `${prefix} This product/retailer pair is not collectable: ${exclusion.message} ${companyBlocker}`
+        : `${prefix} This product/retailer pair is not collectable: ${exclusion.message}`;
+    }
+    if (companyBlocker) {
+      return `${prefix} The link is eligible, but collection is temporarily blocked: ${companyBlocker}`;
+    }
+    return `${prefix} The link is currently ready for online collection.`;
+  }
+
+  private collectionBlockerMessage(blockingCodes: readonly string[]): string | null {
+    if (blockingCodes.includes('missingActivePublishedProfile')) {
+      return 'the retailer company has no active published extraction profile.';
+    }
+    if (blockingCodes.includes('unfinishedCompanyRun')) {
+      return 'another collection run for the retailer company is still queued or running.';
+    }
+    if (blockingCodes.includes('noCollectableListings')) {
+      return 'the retailer company has no collectable listings.';
+    }
+    return blockingCodes.length > 0
+      ? 'the retailer company is not currently available for collection.'
+      : null;
   }
 
   formatQuantity = formatOfferQuantity;

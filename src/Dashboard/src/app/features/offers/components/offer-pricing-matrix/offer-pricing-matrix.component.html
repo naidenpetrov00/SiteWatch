@@ -303,6 +303,18 @@
                         </a>
                       </div>
                     }
+                    @if (canManageProductLink()) {
+                      <div class="offer-pricing__cell-actions">
+                        <button
+                          mat-button
+                          type="button"
+                          [disabled]="isMutating()"
+                          (click)="openProductLink(row, cell)"
+                        >
+                          {{ cell.retailerListingId ? 'Edit product link' : 'Add product link' }}
+                        </button>
+                      </div>
+                    }
                     @if (isEditing(displayRow, retailer.retailerId) && canEditCell(cell)) {
                       <form
                         class="offer-pricing__edit-form"
