@@ -18,6 +18,8 @@ import {
   OfferActivityCatalogNode,
   OfferDetails,
   OfferFinalizationReadiness,
+  OfferOnlinePriceCollectionOptions,
+  OfferOnlinePriceCollectionStartResponse,
   OfferPricingMatrix,
   OfferPricingProductRow,
   OfferRetailerPriceCell,
@@ -27,9 +29,14 @@ import {
   RemoveOfferActivityRequest,
   SelectOfferProductPriceRequest,
   SiteOffersResponse,
+  StartOfferOnlinePriceCollectionRequest,
   UpdateOfferActivityMeasurementsRequest,
   UpdateOfferMetadataRequest
 } from '../models/offer.models';
+import {
+  RetailerPriceCollectionRunSummary,
+  isPriceCollectionRunUnfinished
+} from '../../retailers/models/retailer-price-collection.models';
 
 interface SiteOffersQueryState {
   pageIndex: number;
@@ -156,6 +163,43 @@ export class OffersService {
           )
         ),
       enabled: route.siteId.length > 0 && route.offerId.length > 0
+    };
+  });
+
+  readonly onlinePriceCollectionOptionsQuery = injectQuery<
+    OfferOnlinePriceCollectionOptions
+  >(() => {
+    const route = this.detailRoute();
+    return {
+      queryKey: this.onlineCollectionOptionsKey(route.siteId, route.offerId),
+      queryFn: () => firstValueFrom(
+        this.http.get<OfferOnlinePriceCollectionOptions>(
+          buildApiUrl(
+            `/sites/${route.siteId}/offers/${route.offerId}/pricing/online-price-collections/options`
+          )
+        )
+      ),
+      enabled: route.siteId.length > 0 && route.offerId.length > 0 &&
+        this.offerDetailsQuery.data()?.status === 'Draft'
+    };
+  });
+
+  readonly onlinePriceCollectionRunsQuery = injectQuery<
+    readonly RetailerPriceCollectionRunSummary[]
+  >(() => {
+    const route = this.detailRoute();
+    return {
+      queryKey: this.onlineCollectionRunsKey(route.siteId, route.offerId),
+      queryFn: () => firstValueFrom(
+        this.http.get<readonly RetailerPriceCollectionRunSummary[]>(
+          buildApiUrl(
+            `/sites/${route.siteId}/offers/${route.offerId}/pricing/online-price-collection-runs`
+          )
+        )
+      ),
+      enabled: route.siteId.length > 0 && route.offerId.length > 0,
+      refetchInterval: (query) =>
+        query.state.data?.some(isPriceCollectionRunUnfinished) ? 3000 : false
     };
   });
 
@@ -425,6 +469,38 @@ export class OffersService {
       this.invalidateOfferPricingMutation(request.siteId, request.offerId)
   }));
 
+  readonly startOnlinePriceCollectionMutation = injectMutation<
+    OfferOnlinePriceCollectionStartResponse,
+    Error,
+    StartOfferOnlinePriceCollectionRequest
+  >(() => ({
+    mutationKey: ['offers', 'pricing', 'online-price-collection', 'start'],
+    mutationFn: ({ siteId, offerId, companyPersonIds }) => firstValueFrom(
+      this.http.post<OfferOnlinePriceCollectionStartResponse>(
+        buildApiUrl(
+          `/sites/${siteId}/offers/${offerId}/pricing/online-price-collection-runs`
+        ),
+        { companyPersonIds }
+      )
+    ),
+    onSuccess: async (_, request) => {
+      await Promise.all([
+        this.queryClient.invalidateQueries({
+          queryKey: this.onlineCollectionRunsKey(request.siteId, request.offerId),
+          exact: true
+        }),
+        this.queryClient.invalidateQueries({
+          queryKey: this.onlineCollectionOptionsKey(request.siteId, request.offerId),
+          exact: true
+        }),
+        this.queryClient.invalidateQueries({
+          queryKey: this.readinessQueryKey(request.siteId, request.offerId),
+          exact: true
+        })
+      ]);
+    }
+  }));
+
   configureList(siteId: string): void {
     if (this.listSiteId() !== siteId) {
       this.listSiteId.set(siteId);
@@ -550,6 +626,45 @@ export class OffersService {
     return this.clearProductPriceMutation.mutateAsync(request);
   }
 
+  startOnlinePriceCollection(
+    request: StartOfferOnlinePriceCollectionRequest
+  ): Promise<OfferOnlinePriceCollectionStartResponse> {
+    return this.startOnlinePriceCollectionMutation.mutateAsync(request);
+  }
+
+  async refreshOnlinePriceCollectionOptions(): Promise<void> {
+    await this.onlinePriceCollectionOptionsQuery.refetch();
+  }
+
+  async refreshPricingAfterListingMetadata(
+    siteId: string,
+    offerId: string
+  ): Promise<void> {
+    await Promise.all([
+      this.queryClient.invalidateQueries({
+        queryKey: this.pricingQueryKey(siteId, offerId),
+        exact: true
+      }),
+      this.queryClient.invalidateQueries({
+        queryKey: this.onlineCollectionOptionsKey(siteId, offerId),
+        exact: true
+      })
+    ]);
+  }
+
+  async refreshPricesAfterCollection(siteId: string, offerId: string): Promise<void> {
+    await Promise.all([
+      this.queryClient.invalidateQueries({
+        queryKey: this.pricingQueryKey(siteId, offerId),
+        exact: true
+      }),
+      this.queryClient.invalidateQueries({
+        queryKey: this.readinessQueryKey(siteId, offerId),
+        exact: true
+      })
+    ]);
+  }
+
   private async invalidateSiteOffers(siteId: string): Promise<void> {
     await this.queryClient.invalidateQueries({
       queryKey: ['offers', 'site', siteId]
@@ -574,6 +689,10 @@ export class OffersService {
       this.queryClient.invalidateQueries({
         queryKey: this.readinessQueryKey(siteId, offerId),
         exact: true
+      }),
+      this.queryClient.invalidateQueries({
+        queryKey: this.onlineCollectionOptionsKey(siteId, offerId),
+        exact: true
       })
     ]);
   }
@@ -596,6 +715,10 @@ export class OffersService {
       }),
       this.queryClient.invalidateQueries({
         queryKey: this.readinessQueryKey(siteId, offerId),
+        exact: true
+      }),
+      this.queryClient.invalidateQueries({
+        queryKey: this.onlineCollectionOptionsKey(siteId, offerId),
         exact: true
       })
     ]);
@@ -654,6 +777,14 @@ export class OffersService {
 
   private pricingQueryKey(siteId: string, offerId: string) {
     return ['offers', 'site', siteId, 'pricing', offerId] as const;
+  }
+
+  private onlineCollectionOptionsKey(siteId: string, offerId: string) {
+    return ['offers', 'site', siteId, 'online-price-collection-options', offerId] as const;
+  }
+
+  private onlineCollectionRunsKey(siteId: string, offerId: string) {
+    return ['offers', 'site', siteId, 'online-price-collection-runs', offerId] as const;
   }
 
   private buildQueryParams(state: SiteOffersQueryState): HttpParams {

@@ -18,6 +18,8 @@ public interface IApplicationDbContext
     DbSet<RetailerExtractionProfile> RetailerExtractionProfiles { get; }
     DbSet<RetailerExtractionAllowedHost> RetailerExtractionAllowedHosts { get; }
     DbSet<RetailerExtractionRule> RetailerExtractionRules { get; }
+    DbSet<RetailerPriceCollectionRun> RetailerPriceCollectionRuns { get; }
+    DbSet<RetailerPriceCollectionRunItem> RetailerPriceCollectionRunItems { get; }
     DbSet<ActivityCatalogNode> ActivityCatalogNodes { get; }
     DbSet<ActivityRequirementSection> ActivityRequirementSections { get; }
     DbSet<ActivityProductRequirement> ActivityProductRequirements { get; }

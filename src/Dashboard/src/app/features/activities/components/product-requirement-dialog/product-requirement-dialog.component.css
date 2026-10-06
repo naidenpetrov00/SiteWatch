@@ -11,6 +11,24 @@
   grid-column: 1 / -1;
 }
 
+.product-requirement-dialog__product-picker {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.product-requirement-dialog__product-picker mat-form-field {
+  width: 100%;
+}
+
+.product-requirement-dialog__create-product {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.875rem;
+}
+
 .product-requirement-dialog__product-summary {
   display: grid;
   gap: 0.25rem;
@@ -55,5 +73,10 @@
   .product-requirement-dialog__product-summary,
   .product-requirement-dialog__error {
     grid-column: auto;
+  }
+
+  .product-requirement-dialog__create-product {
+    align-items: stretch;
+    flex-direction: column;
   }
 }

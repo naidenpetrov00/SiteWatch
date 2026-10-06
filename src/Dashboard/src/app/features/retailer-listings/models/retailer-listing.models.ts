@@ -1,6 +1,3 @@
-import { DashboardProductDetails, DashboardProductLookup } from '../../products/models/dashboard-product.models';
-import { DashboardRetailerDetails, DashboardRetailerLookup } from '../../retailers/models/dashboard-retailer.models';
-
 export type RetailerPriceBasis = 'item' | 'package';
 export type RetailerPriceSource = 'manual' | 'automated';
 
@@ -84,17 +81,25 @@ export interface UpdateRetailerListingRequest {
   basis: RetailerPriceBasis | null;
 }
 
-export type RetailerListingFixedProduct =
-  | DashboardProductDetails
-  | DashboardProductLookup;
-export type RetailerListingFixedRetailer =
-  | DashboardRetailerDetails
-  | DashboardRetailerLookup;
+export interface RetailerListingFixedProduct {
+  id: string;
+  numberId: number;
+  title: string;
+  packageQuantity: number | null;
+  packageUnit: string | null;
+}
+
+export interface RetailerListingFixedRetailer {
+  id: string;
+  displayName: string;
+}
 
 export interface RetailerListingDialogData {
   listing: RetailerListing | null;
   fixedProduct?: RetailerListingFixedProduct;
   fixedRetailer?: RetailerListingFixedRetailer;
+  metadataOnly?: boolean;
+  contextNote?: string;
 }
 
 export interface RetailerPriceHistoryDialogData {

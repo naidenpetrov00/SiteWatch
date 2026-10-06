@@ -17,7 +17,10 @@ import {
   RetailerListing,
   RetailerListingDialogData
 } from '../../retailer-listings/models/retailer-listing.models';
-import { ProductDialogComponent } from '../components/product-dialog/product-dialog.component';
+import {
+  ProductDialogComponent,
+  ProductDialogResult
+} from '../components/product-dialog/product-dialog.component';
 import { DashboardProductsService } from '../services/dashboard-products.service';
 
 @Component({
@@ -49,7 +52,11 @@ export class ProductDetailPage {
   async editProduct(): Promise<void> {
     const product = this.productQuery.data();
     if (!product) return;
-    const dialogRef = this.dialog.open<ProductDialogComponent, typeof product, boolean>(
+    const dialogRef = this.dialog.open<
+      ProductDialogComponent,
+      typeof product,
+      ProductDialogResult
+    >(
       ProductDialogComponent,
       {
         autoFocus: false,

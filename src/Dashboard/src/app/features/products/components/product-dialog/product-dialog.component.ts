@@ -39,6 +39,8 @@ import {
 } from '../../models/dashboard-product.models';
 import { DashboardProductsService } from '../../services/dashboard-products.service';
 
+export type ProductDialogResult = true | { createdProductId: string };
+
 type ProductDialogTabId = 'details' | 'search';
 type SearchCollectionName =
   | 'alternativeSearchPhrases'
@@ -68,7 +70,9 @@ const PRODUCT_DIALOG_TABS = [
 })
 export class ProductDialogComponent {
   private readonly formBuilder = inject(FormBuilder);
-  private readonly dialogRef = inject(MatDialogRef<ProductDialogComponent>);
+  private readonly dialogRef = inject(
+    MatDialogRef<ProductDialogComponent, ProductDialogResult>
+  );
   private readonly productsService = inject(DashboardProductsService);
   private readonly product = inject<DashboardProductDetails | null>(MAT_DIALOG_DATA, {
     optional: true
@@ -187,10 +191,11 @@ export class ProductDialogComponent {
     try {
       if (this.product) {
         await this.productsService.updateProduct({ id: this.product.id, ...request });
+        this.dialogRef.close(true);
       } else {
-        await this.productsService.createProduct(request);
+        const created = await this.productsService.createProduct(request);
+        this.dialogRef.close({ createdProductId: created.id });
       }
-      this.dialogRef.close(true);
     } catch {
       // Keep the form intact so the administrator can correct or retry it.
     }

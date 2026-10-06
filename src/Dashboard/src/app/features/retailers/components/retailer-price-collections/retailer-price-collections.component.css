@@ -1,0 +1,176 @@
+:host {
+  display: block;
+}
+
+.collection {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 1rem;
+  background: var(--mat-sys-surface-container-low);
+}
+
+.collection__header,
+.collection__details > header,
+.collection__current-heading,
+.collection__pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.collection h3,
+.collection h4,
+.collection p {
+  margin-top: 0;
+}
+
+.collection__eyebrow {
+  margin-bottom: 0.25rem;
+  color: var(--mat-sys-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.collection__notice,
+.collection__empty,
+.collection__feedback,
+.collection__current {
+  margin: 1rem 0 0;
+  padding: 0.875rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface-container);
+}
+
+.collection__feedback--success {
+  color: var(--mat-sys-primary);
+}
+
+.collection__feedback--error {
+  color: var(--mat-sys-error);
+}
+
+.collection__current progress {
+  width: 100%;
+  margin: 0.75rem 0;
+  accent-color: var(--mat-sys-primary);
+}
+
+.collection__counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.collection__history,
+.collection__details {
+  margin-top: 1.5rem;
+}
+
+.collection__run-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.collection__run {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.75rem;
+  color: inherit;
+  background: var(--mat-sys-surface);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.collection__run--selected {
+  border-color: var(--mat-sys-primary);
+  background: var(--mat-sys-primary-container);
+}
+
+.collection__run > span,
+td {
+  min-width: 0;
+}
+
+.collection__run > span:last-child {
+  text-align: right;
+}
+
+.collection small {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--mat-sys-on-surface-variant);
+  overflow-wrap: anywhere;
+}
+
+.collection__badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: var(--mat-sys-secondary-container);
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.collection__table-wrap {
+  margin-top: 1rem;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  min-width: 75rem;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+td {
+  max-width: 18rem;
+  overflow-wrap: anywhere;
+}
+
+.collection__pager {
+  margin-top: 1rem;
+}
+
+@media (max-width: 720px) {
+  .collection__header,
+  .collection__details > header,
+  .collection__current-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .collection__run {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .collection__run > span:last-child {
+    text-align: left;
+  }
+}

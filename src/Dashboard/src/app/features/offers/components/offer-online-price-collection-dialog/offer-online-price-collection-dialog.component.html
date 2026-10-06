@@ -1,0 +1,70 @@
+<app-dialog-shell
+  eyebrow="Durable Automation"
+  title="Refresh Online Prices"
+  subtitle="Choose retailer companies. Each accepted company receives its own durable run."
+>
+  @if (offersService.onlinePriceCollectionOptionsQuery.isPending() ||
+       offersService.onlinePriceCollectionOptionsQuery.isFetching()) {
+    <p aria-live="polite">Checking current offer listings and company profiles…</p>
+  } @else if (offersService.onlinePriceCollectionOptionsQuery.isError()) {
+    <p class="collection-dialog__error" role="alert">
+      Collection choices could not be loaded. Close this dialog and try again.
+    </p>
+  } @else if (options(); as current) {
+    <div class="collection-dialog__companies">
+      @for (company of current.companies; track company.companyPersonId) {
+        <article class="collection-dialog__company">
+          <mat-checkbox
+            [checked]="isSelected(company.companyPersonId)"
+            [disabled]="!company.canStart || submitting()"
+            (change)="toggle(company, $event.checked)"
+          >
+            <strong>{{ company.companyDisplayName }}</strong>
+          </mat-checkbox>
+          <p>
+            {{ company.eligibleListingCount }} collectable listing(s) across
+            {{ company.retailers.length }} offer retailer column(s).
+          </p>
+          @if (!company.canStart) {
+            <p class="collection-dialog__blocked">{{ blockingLabel(company) }}</p>
+          }
+          <ul class="collection-dialog__retailers">
+            @for (retailer of company.retailers; track retailer.retailerId) {
+              <li>{{ retailer.displayName }} · {{ retailer.isActive ? 'Active' : 'Inactive' }}</li>
+            }
+          </ul>
+          @if (company.exclusions.length > 0) {
+            <details>
+              <summary>{{ company.exclusions.length }} unavailable product/location pair(s)</summary>
+              <ul class="collection-dialog__exclusions">
+                @for (item of company.exclusions; track item.offerProductLineId + '/' + item.retailerId) {
+                  <li>
+                    <strong>#{{ item.productNumberId }} · {{ item.productTitle }}</strong>
+                    at {{ item.retailerDisplayName }} — {{ item.message }}
+                    <small>{{ item.code }}</small>
+                  </li>
+                }
+              </ul>
+            </details>
+          }
+        </article>
+      } @empty {
+        <p>No retailer companies are represented in this offer.</p>
+      }
+    </div>
+  }
+
+  @if (error()) {
+    <p class="collection-dialog__error" role="alert">{{ error() }}</p>
+  }
+
+  <app-dialog-action-bar
+    dialog-shell-actions
+    cancelLabel="Cancel"
+    [cancelDisabled]="submitting()"
+    [submitLabel]="submitting() ? 'Queuing…' : 'Queue selected companies'"
+    [submitDisabled]="!canSubmit()"
+    (cancel)="cancel()"
+    (submit)="submit()"
+  />
+</app-dialog-shell>

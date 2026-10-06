@@ -1,6 +1,6 @@
 namespace Application.RetailerExtractionProfiles;
 
-public enum RetailerExtractionTestFailureKind
+public enum RetailerExtractionFailureKind
 {
     Security,
     Network,
@@ -8,10 +8,10 @@ public enum RetailerExtractionTestFailureKind
     Timeout
 }
 
-public sealed class RetailerExtractionTestException(
-    RetailerExtractionTestFailureKind kind,
+public sealed class RetailerExtractionException(
+    RetailerExtractionFailureKind kind,
     string message,
     Exception? innerException = null) : Exception(message, innerException)
 {
-    public RetailerExtractionTestFailureKind Kind { get; } = kind;
+    public RetailerExtractionFailureKind Kind { get; } = kind;
 }

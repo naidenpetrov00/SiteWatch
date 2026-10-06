@@ -22,6 +22,7 @@ public static class DependencyInjection
         builder.Services.AddDataProtection();
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddScoped<IUser, CurrentUser>();
+        builder.Services.AddHostedService<RetailerPriceCollectionHostedService>();
         builder.Services.AddSingleton<
             IInvoiceFileAccessTicketService,
             InvoiceFileAccessTicketService>();

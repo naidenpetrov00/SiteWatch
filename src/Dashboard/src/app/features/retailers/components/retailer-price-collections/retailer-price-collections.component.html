@@ -1,0 +1,194 @@
+<section class="collection" aria-labelledby="price-collection-heading">
+  <header class="collection__header">
+    <div>
+      <p class="collection__eyebrow">Durable Automation</p>
+      <h3 id="price-collection-heading">Price Collection</h3>
+      <p>
+        Collect EUR prices from every saved company listing. Accepted work continues after
+        you leave this page or the API restarts.
+      </p>
+    </div>
+    <button
+      mat-flat-button
+      type="button"
+      [disabled]="disabledReason() !== null || startPending()"
+      (click)="start()"
+    >
+      {{ startPending() ? 'Queuing…' : 'Run Price Collection' }}
+    </button>
+  </header>
+
+  @if (disabledReason(); as reason) {
+    <p class="collection__notice">{{ reason }}</p>
+  }
+  @if (feedback()) {
+    <p class="collection__feedback collection__feedback--success" aria-live="polite">
+      {{ feedback() }}
+    </p>
+  }
+  @if (error()) {
+    <p class="collection__feedback collection__feedback--error" role="alert">
+      {{ error() }}
+    </p>
+  }
+
+  @if (recentQuery.isPending()) {
+    <p aria-live="polite">Loading collection runs…</p>
+  } @else if (recentQuery.isError()) {
+    <p class="collection__feedback collection__feedback--error" role="alert">
+      Collection history could not be loaded.
+    </p>
+  } @else if ((recentQuery.data() ?? []).length === 0) {
+    <p class="collection__empty">No price-collection runs have been requested yet.</p>
+  } @else {
+    @if (unfinishedRun(); as current) {
+      <article class="collection__current" aria-live="polite">
+        <div class="collection__current-heading">
+          <div>
+            <span class="collection__badge">{{ statusLabel(current.status) }}</span>
+            <strong>Current run · Profile version {{ current.extractionProfileVersion }}</strong>
+          </div>
+          <strong>{{ progress(current) }}%</strong>
+        </div>
+        <progress
+          [value]="current.totalCount === 0 ? 1 : current.processedCount"
+          [max]="current.totalCount || 1"
+        ></progress>
+        <div class="collection__counts">
+          <span>Total <strong>{{ current.totalCount }}</strong></span>
+          <span>Queued <strong>{{ current.queuedCount }}</strong></span>
+          <span>Running <strong>{{ current.runningCount }}</strong></span>
+          <span>Processed <strong>{{ current.processedCount }}</strong></span>
+          <span>Succeeded <strong>{{ current.succeededCount }}</strong></span>
+          <span>Failed <strong>{{ current.failedCount }}</strong></span>
+          <span>Skipped <strong>{{ current.skippedCount }}</strong></span>
+        </div>
+      </article>
+    }
+
+    <div class="collection__history">
+      <h4>Recent Runs</h4>
+      <div class="collection__run-list">
+        @for (run of recentQuery.data() ?? []; track run.id) {
+          <button
+            type="button"
+            class="collection__run"
+            [class.collection__run--selected]="run.id === selectedRunId()"
+            (click)="selectRun(run)"
+          >
+            <span>
+              <strong>{{ formatDate(run.requestedAt) }}</strong>
+              <small>Profile v{{ run.extractionProfileVersion }} · requested by {{ run.requestedBy }}</small>
+            </span>
+            <span>
+              <span class="collection__badge">{{ statusLabel(run.status) }}</span>
+              <small>{{ run.processedCount }} / {{ run.totalCount }} processed</small>
+            </span>
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (detailQuery.isPending()) {
+      <p aria-live="polite">Loading run results…</p>
+    } @else if (detailQuery.isError()) {
+      <p class="collection__feedback collection__feedback--error" role="alert">
+        Run results could not be loaded.
+      </p>
+    } @else if (detailQuery.data(); as details) {
+      <div class="collection__details">
+        <header>
+          <div>
+            <h4>Run Results</h4>
+            <p>
+              {{ statusLabel(details.run.status) }} · Profile version
+              {{ details.run.extractionProfileVersion }} · Requested
+              {{ formatDate(details.run.requestedAt) }}
+            </p>
+          </div>
+          <div class="collection__counts">
+            <span>Succeeded <strong>{{ details.run.succeededCount }}</strong></span>
+            <span>Failed <strong>{{ details.run.failedCount }}</strong></span>
+            <span>Skipped <strong>{{ details.run.skippedCount }}</strong></span>
+          </div>
+        </header>
+
+        <div class="collection__table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Retailer location</th>
+                <th scope="col">Product / listing</th>
+                <th scope="col">Status</th>
+                <th scope="col">EUR price</th>
+                <th scope="col">Matched rule</th>
+                <th scope="col">Observation</th>
+                <th scope="col">Source</th>
+                <th scope="col">Diagnostic</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of details.items; track item.id) {
+                <tr>
+                  <td>{{ item.retailerDisplayName }}</td>
+                  <td>
+                    <strong>#{{ item.productNumberId }} · {{ item.productTitle }}</strong>
+                    <small>
+                      {{ item.retailerProductCode || 'No retailer code' }} ·
+                      {{ item.retailerListingId }}
+                    </small>
+                  </td>
+                  <td><span class="collection__badge">{{ statusLabel(item.status) }}</span></td>
+                  <td>
+                    {{ formatAmount(item.amount, item.currencyCode) }}
+                    @if (item.priceBasis) { <small>{{ item.priceBasis }}</small> }
+                    @if (item.observedAt) {
+                      <small>Observed {{ formatDate(item.observedAt) }}</small>
+                    }
+                    @if (item.recordedAt) {
+                      <small>Recorded {{ formatDate(item.recordedAt) }}</small>
+                    }
+                  </td>
+                  <td>
+                    {{ item.matchedRuleName || '—' }}
+                    @if (item.matchedRulePriority !== null) {
+                      <small>Priority {{ item.matchedRulePriority }}</small>
+                    }
+                  </td>
+                  <td>{{ item.retailerPriceObservationId || '—' }}</td>
+                  <td>
+                    @if (item.finalSourceUrl || item.capturedProductUrl; as sourceUrl) {
+                      <a [href]="sourceUrl" target="_blank" rel="noopener noreferrer">Open source</a>
+                    } @else { — }
+                  </td>
+                  <td>
+                    {{ item.diagnosticMessage || '—' }}
+                    @if (item.diagnosticCode) { <small>{{ item.diagnosticCode }}</small> }
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="8">This run has no listing items.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <footer class="collection__pager">
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="details.pageIndex === 0"
+            (click)="previousPage()"
+          >Previous</button>
+          <span>Page {{ details.pageIndex + 1 }} of {{ pageCount() }}</span>
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="details.pageIndex + 1 >= pageCount()"
+            (click)="nextPage()"
+          >Next</button>
+        </footer>
+      </div>
+    }
+  }
+</section>

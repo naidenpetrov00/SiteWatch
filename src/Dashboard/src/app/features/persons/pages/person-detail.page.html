@@ -53,7 +53,10 @@
         </dl>
       </section>
 
-      <app-company-extraction-profiles [companyPersonId]="person.id" />
+      <app-company-extraction-profiles
+        [companyPersonId]="person.id"
+        [initialRunId]="runId()"
+      />
     } @else if (person.type.toLowerCase() === 'company') {
       <p class="catalog-detail__notice">
         Extraction profiles are available only after this company Person has an associated Retailer.

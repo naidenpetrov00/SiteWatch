@@ -64,3 +64,4 @@ Evaluate averages against these improvement goals without hiding regressions:
 - PTZ visible response toward 1.6 seconds or less.
 - RTSP first frame no worse than approximately 1.2 seconds.
 - No material increase in buffering, freezing, or reconnects.
+
