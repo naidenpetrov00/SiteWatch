@@ -34,6 +34,9 @@ public interface IOfferService
     Task UpdateActivityMeasurementsAsync(
         UpdateOfferActivityMeasurementsCommand request,
         CancellationToken cancellationToken);
+    Task UpdateActivitySectionPricingAsync(
+        UpdateOfferActivitySectionPricingCommand request,
+        CancellationToken cancellationToken);
     Task<OfferDetailsDto> GetByIdAsync(
         Guid siteId,
         Guid offerId,

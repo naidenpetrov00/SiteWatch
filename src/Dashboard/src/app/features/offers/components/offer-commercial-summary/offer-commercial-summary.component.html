@@ -1,0 +1,133 @@
+<section class="offer-commercial" aria-labelledby="offer-commercial-heading">
+  <div class="offer-commercial__heading">
+    <div>
+      <p class="offer-commercial__eyebrow">Stage 4</p>
+      <h2 id="offer-commercial-heading">Discounts &amp; Offer Total</h2>
+    </div>
+    @if (!editable()) {
+      <p class="offer-commercial__readonly">Finalized pricing · read-only</p>
+    }
+  </div>
+
+  @if (feedback()) {
+    <p class="offer-commercial__feedback offer-commercial__feedback--success" aria-live="polite">
+      {{ feedback() }}
+    </p>
+  }
+  @if (error()) {
+    <p class="offer-commercial__feedback offer-commercial__feedback--error" role="alert">
+      {{ error() }}
+    </p>
+  }
+
+  @if (offersService.pricingMatrixQuery.isPending()) {
+    <p class="offer-commercial__feedback" aria-live="polite">Loading Offer totals…</p>
+  } @else if (offersService.pricingMatrixQuery.isError()) {
+    <p class="offer-commercial__feedback offer-commercial__feedback--error" role="alert">
+      Offer totals could not be loaded.
+    </p>
+  } @else if (matrix(); as currentMatrix) {
+    @let totals = currentMatrix.commercialTotals;
+
+    @if (!totals.activityPricingComplete || !totals.productPricingComplete) {
+      <div class="offer-commercial__incomplete" role="status">
+        <strong>Totals are partial.</strong>
+        <span>
+          @if (!totals.activityPricingComplete) {
+            Some activity sections still need pricing or must be marked free.
+          }
+          @if (!totals.productPricingComplete) {
+            Some required or optional product pricing is unavailable.
+          }
+        </span>
+      </div>
+    }
+
+    @if (editable()) {
+      <form [formGroup]="discountForm" (ngSubmit)="save()">
+        <mat-form-field appearance="outline">
+          <mat-label>Activity discount</mat-label>
+          <input
+            matInput
+            type="number"
+            min="0"
+            max="100"
+            step="0.01"
+            formControlName="activityDiscountPercentage"
+          />
+          <span matTextSuffix>%</span>
+          @if (discountForm.controls.activityDiscountPercentage.touched && discountForm.controls.activityDiscountPercentage.invalid) {
+            <mat-error>Enter a percentage from 0 through 100 with at most two decimals.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Product discount</mat-label>
+          <input
+            matInput
+            type="number"
+            min="0"
+            max="100"
+            step="0.01"
+            formControlName="productDiscountPercentage"
+          />
+          <span matTextSuffix>%</span>
+          @if (discountForm.controls.productDiscountPercentage.touched && discountForm.controls.productDiscountPercentage.invalid) {
+            <mat-error>Enter a percentage from 0 through 100 with at most two decimals.</mat-error>
+          }
+        </mat-form-field>
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          [disabled]="discountForm.invalid || isMutating()"
+        >
+          {{ isMutating() ? 'Saving…' : 'Save Discounts' }}
+        </button>
+      </form>
+    } @else {
+      <dl class="offer-commercial__discounts">
+        <div>
+          <dt>Activity discount</dt>
+          <dd>{{ totals.activityDiscountPercentage }}%</dd>
+        </div>
+        <div>
+          <dt>Product discount</dt>
+          <dd>{{ totals.productDiscountPercentage }}%</dd>
+        </div>
+      </dl>
+    }
+
+    <dl class="offer-commercial__totals">
+      <div>
+        <dt>Activity subtotal before discount</dt>
+        <dd>{{ formatCurrency(totals.activitySubtotalBeforeDiscount) }}</dd>
+      </div>
+      <div>
+        <dt>Activity discount amount</dt>
+        <dd>{{ formatCurrency(totals.activityDiscountAmount) }}</dd>
+      </div>
+      <div>
+        <dt>Activity total after discount</dt>
+        <dd>{{ formatCurrency(totals.activityTotalAfterDiscount) }}</dd>
+      </div>
+      <div>
+        <dt>Product subtotal before discount</dt>
+        <dd>{{ formatCurrency(totals.productSubtotalBeforeDiscount) }}</dd>
+      </div>
+      <div>
+        <dt>Product discount amount</dt>
+        <dd>{{ formatCurrency(totals.productDiscountAmount) }}</dd>
+      </div>
+      <div>
+        <dt>Product total after discount</dt>
+        <dd>{{ formatCurrency(totals.productTotalAfterDiscount) }}</dd>
+      </div>
+      <div class="offer-commercial__combined">
+        <dt>Combined Offer total</dt>
+        <dd>{{ formatCurrency(totals.combinedOfferTotal) }}</dd>
+      </div>
+    </dl>
+  }
+</section>

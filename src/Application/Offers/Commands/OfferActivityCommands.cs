@@ -1,5 +1,7 @@
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Security;
+using Domain.Entities;
+using Domain.SeedWork.Enums;
 using FluentValidation;
 using MediatR;
 
@@ -9,6 +11,12 @@ namespace Application.Offers.Commands;
 public sealed record OfferSectionMeasurementInput(
     Guid SectionId,
     decimal RequestedMeasurement);
+
+/// <summary>Supplies the complete selling-price state for one Offer activity section.</summary>
+public sealed record OfferSectionPricingInput(
+    Guid SectionId,
+    string? PricingMode,
+    decimal? PriceAmount);
 
 /// <summary>Adds an active Activity Catalog item and its immutable requirement snapshot.</summary>
 [Authorize(Roles = UserRoles.Administrator)]
@@ -66,6 +74,25 @@ public sealed class UpdateOfferActivityMeasurementsHandler(IOfferService offerSe
         UpdateOfferActivityMeasurementsCommand request,
         CancellationToken cancellationToken) =>
         offerService.UpdateActivityMeasurementsAsync(request, cancellationToken);
+}
+
+/// <summary>Replaces pricing for every section of one selected Offer activity.</summary>
+[Authorize(Roles = UserRoles.Administrator)]
+public sealed record UpdateOfferActivitySectionPricingCommand : IRequest
+{
+    public Guid SiteId { get; set; }
+    public Guid OfferId { get; set; }
+    public Guid OfferActivityId { get; set; }
+    public IReadOnlyList<OfferSectionPricingInput> SectionPricing { get; init; } = [];
+}
+
+public sealed class UpdateOfferActivitySectionPricingHandler(IOfferService offerService)
+    : IRequestHandler<UpdateOfferActivitySectionPricingCommand>
+{
+    public Task Handle(
+        UpdateOfferActivitySectionPricingCommand request,
+        CancellationToken cancellationToken) =>
+        offerService.UpdateActivitySectionPricingAsync(request, cancellationToken);
 }
 
 public sealed class OfferSectionMeasurementInputValidator
@@ -127,6 +154,79 @@ public sealed class UpdateOfferActivityMeasurementsValidator
                 measurements is not null
                 && measurements.Select(measurement => measurement.SectionId).Distinct().Count()
                 == measurements.Count)
+            .WithMessage("Each Offer activity section can be supplied only once.");
+    }
+}
+
+public sealed class OfferSectionPricingInputValidator
+    : AbstractValidator<OfferSectionPricingInput>
+{
+    public OfferSectionPricingInputValidator()
+    {
+        RuleFor(input => input.SectionId).NotEmpty();
+        RuleFor(input => input).Custom((input, context) =>
+        {
+            if (input.PricingMode is null)
+            {
+                if (input.PriceAmount.HasValue)
+                {
+                    context.AddFailure(
+                        nameof(input.PriceAmount),
+                        "Missing activity pricing cannot include an amount.");
+                }
+                return;
+            }
+
+            if (!ActivityPricingModeCodes.TryParse(input.PricingMode, out var mode))
+            {
+                context.AddFailure(
+                    nameof(input.PricingMode),
+                    "PricingMode must be fixed, per-measurement, free, or null.");
+                return;
+            }
+
+            if (mode == ActivityPricingMode.Free)
+            {
+                if (input.PriceAmount.HasValue)
+                {
+                    context.AddFailure(
+                        nameof(input.PriceAmount),
+                        "Free activity pricing cannot include an amount.");
+                }
+                return;
+            }
+
+            if (!input.PriceAmount.HasValue
+                || input.PriceAmount.Value <= 0m
+                || input.PriceAmount.Value > OfferActivitySection.MaximumPriceAmount)
+            {
+                context.AddFailure(
+                    nameof(input.PriceAmount),
+                    "A fixed or per-measurement price must be within the supported positive EUR range.");
+            }
+            else if (decimal.Round(input.PriceAmount.Value, 2) != input.PriceAmount.Value)
+            {
+                context.AddFailure(
+                    nameof(input.PriceAmount),
+                    "An activity price cannot have more than two decimal places.");
+            }
+        });
+    }
+}
+
+public sealed class UpdateOfferActivitySectionPricingValidator
+    : AbstractValidator<UpdateOfferActivitySectionPricingCommand>
+{
+    public UpdateOfferActivitySectionPricingValidator()
+    {
+        RuleFor(command => command.SiteId).NotEmpty();
+        RuleFor(command => command.OfferId).NotEmpty();
+        RuleFor(command => command.OfferActivityId).NotEmpty();
+        RuleForEach(command => command.SectionPricing)
+            .SetValidator(new OfferSectionPricingInputValidator());
+        RuleFor(command => command.SectionPricing)
+            .Must(inputs => inputs is not null
+                && inputs.Select(input => input.SectionId).Distinct().Count() == inputs.Count)
             .WithMessage("Each Offer activity section can be supplied only once.");
     }
 }

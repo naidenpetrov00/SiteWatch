@@ -199,5 +199,14 @@
         [offerId]="offerId()"
       />
     </section>
+
+    <section class="offer-workspace__stage-four" aria-label="Offer discounts and totals">
+      <app-offer-commercial-summary
+        [siteId]="siteId()"
+        [offerId]="offerId()"
+        [matrix]="pricing()"
+        [editable]="isDraft()"
+      />
+    </section>
   }
 </main>

@@ -293,6 +293,25 @@ public sealed class OfferPricingService(
             "The selected price could not be cleared because the Offer changed.",
             cancellationToken);
 
+    public Task UpdateDiscountsAsync(
+        UpdateOfferDiscountsCommand request,
+        CancellationToken cancellationToken) =>
+        ExecuteMutationAsync(
+            async () =>
+            {
+                var offer = await LoadTrackedOfferAsync(
+                    request.SiteId,
+                    request.OfferId,
+                    cancellationToken);
+                EnsureDraft(offer);
+                offer.UpdateDiscounts(
+                    request.ActivityDiscountPercentage,
+                    request.ProductDiscountPercentage);
+                SetOfferAudit(offer);
+            },
+            "The discounts could not be updated because the Offer changed.",
+            cancellationToken);
+
     private async Task<Offer> LoadMatrixOfferAsync(
         Guid siteId,
         Guid offerId,
@@ -300,6 +319,8 @@ public sealed class OfferPricingService(
     {
         var offer = await dbContext.Offers
             .AsNoTrackingWithIdentityResolution()
+            .Include(item => item.Activities)
+            .ThenInclude(activity => activity.Sections)
             .Include(item => item.RetailerComparisons)
             .ThenInclude(comparison => comparison.Retailer)
             .Include(item => item.ProductLines)
@@ -363,6 +384,7 @@ public sealed class OfferPricingService(
         var optionalTotal = optionalComplete
             ? SumTotals(rows.Select(row => row.SelectedOptionalTotal))
             : null;
+        var commercialTotals = OfferCommercialTotals.Calculate(offer).Totals;
         return new OfferPricingMatrixDto(
             offer.Id,
             offer.Status.ToString(),
@@ -371,6 +393,7 @@ public sealed class OfferPricingService(
             optionalComplete && optionalTotal.HasValue,
             requiredTotal,
             optionalTotal,
+            commercialTotals,
             retailers,
             rows);
     }

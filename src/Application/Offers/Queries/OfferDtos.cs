@@ -79,6 +79,9 @@ public sealed record OfferDetailsDto(
                         section.BasisQuantity,
                         section.MeasurementUnit.ToCode(),
                         section.RequestedMeasurement,
+                        section.PricingMode?.ToCode(),
+                        section.PriceAmount,
+                        TryCalculateSectionTotal(section),
                         section.SortOrder))
                     .ToList()))
             .ToList(),
@@ -122,6 +125,19 @@ public sealed record OfferDetailsDto(
                         contribution.CalculatedQuantity))
                     .ToList()))
             .ToList());
+
+    private static decimal? TryCalculateSectionTotal(OfferActivitySection section)
+    {
+        try
+        {
+            return section.CalculatePriceTotal();
+        }
+        catch (Exception exception) when (
+            exception is InvalidOperationException or OverflowException)
+        {
+            return null;
+        }
+    }
 }
 
 /// <summary>Represents one selected activity snapshot in an Offer.</summary>
@@ -142,6 +158,9 @@ public sealed record OfferActivitySectionDto(
     decimal BasisQuantity,
     string MeasurementUnit,
     decimal RequestedMeasurement,
+    string? PricingMode,
+    decimal? PriceAmount,
+    decimal? PriceTotal,
     int SortOrder);
 
 /// <summary>Represents one persisted aggregate Product line in an Offer.</summary>

@@ -11,6 +11,7 @@ public sealed record OfferPricingMatrixDto(
     bool OptionalPricingComplete,
     decimal? RequiredTotal,
     decimal? OptionalTotal,
+    OfferCommercialTotalsDto CommercialTotals,
     IReadOnlyList<OfferPricingRetailerDto> Retailers,
     IReadOnlyList<OfferPricingProductRowDto> Products);
 

@@ -55,9 +55,9 @@
             <p class="offer-selected__no-sections">
               This activity snapshot has no requirement sections.
             </p>
-          } @else {
-            <form [formGroup]="formFor(activity.id)" (ngSubmit)="save(activity)">
-              <div formArrayName="measurements" class="offer-selected__sections">
+          } @else if (editable()) {
+            <form [formGroup]="formFor(activity.id)">
+              <div class="offer-selected__sections">
                 @for (section of activity.sections; track section.id; let index = $index) {
                   <div class="offer-selected__section">
                     <div class="offer-selected__section-copy">
@@ -66,38 +66,113 @@
                         Basis: {{ formatQuantity(section.basisQuantity) }}
                         {{ measurementUnit(section.measurementUnit) }}
                       </span>
+                      <span>
+                        Current price total: {{ formatCurrency(section.priceTotal) }}
+                      </span>
                     </div>
-                    <mat-form-field appearance="outline">
-                      <mat-label>Requested measurement</mat-label>
-                      <input
-                        matInput
-                        type="number"
-                        min="0.0001"
-                        step="any"
-                        [formControlName]="index"
-                      />
-                      <span matTextSuffix>{{ measurementUnit(section.measurementUnit) }}</span>
-                      @if (formFor(activity.id).controls.measurements.controls[index].touched && formFor(activity.id).controls.measurements.controls[index].invalid) {
-                        <mat-error>Enter a positive value with at most four decimal places.</mat-error>
+                    <div class="offer-selected__section-fields">
+                      <mat-form-field appearance="outline">
+                        <mat-label>Requested measurement</mat-label>
+                        <input
+                          matInput
+                          type="number"
+                          min="0.0001"
+                          step="any"
+                          [formControl]="formFor(activity.id).controls.measurements.controls[index]"
+                        />
+                        <span matTextSuffix>{{ measurementUnit(section.measurementUnit) }}</span>
+                        @if (formFor(activity.id).controls.measurements.controls[index].touched && formFor(activity.id).controls.measurements.controls[index].invalid) {
+                          <mat-error>Enter a positive value with at most four decimal places.</mat-error>
+                        }
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline">
+                        <mat-label>Activity pricing</mat-label>
+                        <mat-select
+                          [formControl]="formFor(activity.id).controls.pricing.controls[index].controls.pricingMode"
+                          (selectionChange)="onPricingModeChange(activity.id, index)"
+                        >
+                          <mat-option [value]="null">Not priced</mat-option>
+                          <mat-option value="fixed">Fixed section price</mat-option>
+                          <mat-option value="per-measurement">Per measurement</mat-option>
+                          <mat-option value="free">Included / free</mat-option>
+                        </mat-select>
+                      </mat-form-field>
+
+                      @if (
+                        formFor(activity.id).controls.pricing.controls[index].controls.pricingMode.value === 'fixed' ||
+                        formFor(activity.id).controls.pricing.controls[index].controls.pricingMode.value === 'per-measurement'
+                      ) {
+                        <mat-form-field appearance="outline">
+                          <mat-label>
+                            {{ formFor(activity.id).controls.pricing.controls[index].controls.pricingMode.value === 'fixed' ? 'Fixed EUR price' : 'EUR price per measurement' }}
+                          </mat-label>
+                          <input
+                            matInput
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            [formControl]="formFor(activity.id).controls.pricing.controls[index].controls.priceAmount"
+                          />
+                          <span matTextPrefix>€&nbsp;</span>
+                          @if (formFor(activity.id).controls.pricing.controls[index].touched && formFor(activity.id).controls.pricing.controls[index].invalid) {
+                            <mat-error>Enter a positive EUR amount with at most two decimals.</mat-error>
+                          }
+                        </mat-form-field>
                       }
-                    </mat-form-field>
+                    </div>
                   </div>
                 }
               </div>
 
-              @if (editable()) {
-                <div class="offer-selected__actions">
-                  <button
-                    mat-flat-button
-                    color="primary"
-                    type="submit"
-                    [disabled]="formFor(activity.id).invalid || isMutating()"
-                  >
-                    {{ offersService.updateMeasurementsMutation.isPending() ? 'Saving…' : 'Save Measurements' }}
-                  </button>
+              <div class="offer-selected__actions">
+                <button
+                  mat-stroked-button
+                  type="button"
+                  [disabled]="formFor(activity.id).controls.measurements.invalid || isMutating()"
+                  (click)="saveMeasurements(activity)"
+                >
+                  {{ offersService.updateMeasurementsMutation.isPending() ? 'Saving…' : 'Save Measurements' }}
+                </button>
+                <button
+                  mat-flat-button
+                  color="primary"
+                  type="button"
+                  [disabled]="formFor(activity.id).controls.pricing.invalid || isMutating()"
+                  (click)="savePricing(activity)"
+                >
+                  {{ offersService.updateActivityPricingMutation.isPending() ? 'Saving…' : 'Save Activity Pricing' }}
+                </button>
+              </div>
+            </form>
+          } @else {
+            <div class="offer-selected__sections">
+              @for (section of activity.sections; track section.id) {
+                <div class="offer-selected__section offer-selected__section--readonly">
+                  <div class="offer-selected__section-copy">
+                    <strong>{{ section.name || 'Measurement' }}</strong>
+                    <span>
+                      {{ formatQuantity(section.requestedMeasurement) }}
+                      {{ measurementUnit(section.measurementUnit) }} requested
+                    </span>
+                  </div>
+                  <dl class="offer-selected__pricing-summary">
+                    <div>
+                      <dt>Pricing</dt>
+                      <dd>{{ pricingModeLabel(section.pricingMode) }}</dd>
+                    </div>
+                    <div>
+                      <dt>Price</dt>
+                      <dd>{{ formatCurrency(section.priceAmount) }}</dd>
+                    </div>
+                    <div>
+                      <dt>Section total</dt>
+                      <dd>{{ formatCurrency(section.priceTotal) }}</dd>
+                    </div>
+                  </dl>
                 </div>
               }
-            </form>
+            </div>
           }
         </article>
       }

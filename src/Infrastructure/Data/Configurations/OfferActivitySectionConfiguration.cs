@@ -11,7 +11,13 @@ public sealed class OfferActivitySectionConfiguration
 {
     public void Configure(EntityTypeBuilder<OfferActivitySection> builder)
     {
-        builder.ToTable("OfferActivitySections");
+        builder.ToTable(
+            "OfferActivitySections",
+            table => table.HasCheckConstraint(
+                "CK_OfferActivitySections_Pricing",
+                "([PricingMode] IS NULL AND [PriceAmount] IS NULL) OR "
+                + "([PricingMode] = N'free' AND [PriceAmount] IS NULL) OR "
+                + "([PricingMode] IN (N'fixed', N'per-measurement') AND [PriceAmount] > 0)"));
 
         builder.Property(section => section.Name)
             .HasMaxLength(ActivityRequirementSection.MaxNameLength);
@@ -21,6 +27,14 @@ public sealed class OfferActivitySectionConfiguration
         builder.Property(section => section.RequestedMeasurement)
             .HasPrecision(18, 4)
             .IsRequired();
+        var pricingModeConverter = new ValueConverter<ActivityPricingMode?, string?>(
+            mode => mode.HasValue ? mode.Value.ToCode() : null,
+            value => ParsePricingMode(value));
+        builder.Property(section => section.PricingMode)
+            .HasConversion(pricingModeConverter)
+            .HasMaxLength(32);
+        builder.Property(section => section.PriceAmount)
+            .HasPrecision(18, 2);
         var measurementUnitConverter = new ValueConverter<ActivityMeasurementUnit, string>(
             unit => unit.ToCode(),
             value => ParseMeasurementUnit(value));
@@ -49,4 +63,17 @@ public sealed class OfferActivitySectionConfiguration
             ? unit
             : throw new InvalidOperationException(
                 $"Unsupported stored activity measurement unit '{value}'.");
+
+    private static ActivityPricingMode? ParsePricingMode(string? value)
+    {
+        if (value is null)
+        {
+            return null;
+        }
+
+        return ActivityPricingModeCodes.TryParse(value, out var mode)
+            ? mode
+            : throw new InvalidOperationException(
+                $"Unsupported stored activity pricing mode '{value}'.");
+    }
 }

@@ -1,5 +1,6 @@
 using Domain.Entities;
 using Domain.SeedWork.Enums;
+using Application.Offers.Pricing;
 
 namespace Application.Offers.Finalization;
 
@@ -9,12 +10,23 @@ public sealed record OfferReadinessProductDto(
     int ProductNumberId,
     string Title);
 
+/// <summary>Identifies an Offer activity section in finalization readiness details.</summary>
+public sealed record OfferReadinessActivitySectionDto(
+    Guid OfferActivitySectionId,
+    int ActivityNumberId,
+    string ActivityName,
+    string? SectionName);
+
 /// <summary>Describes whether the current persisted Offer can be finalized.</summary>
 public sealed record OfferFinalizationReadinessDto(
     Guid OfferId,
     string Status,
     string CurrencyCode,
     int SelectedActivityCount,
+    int ActivitySectionCount,
+    int ActivitySectionsWithPricing,
+    IReadOnlyList<OfferReadinessActivitySectionDto> ActivitySectionsMissingPricing,
+    IReadOnlyList<OfferReadinessActivitySectionDto> ActivitySectionsWithInvalidPricing,
     int RequiredProductCount,
     int RequiredProductsWithSelectedPrices,
     IReadOnlyList<OfferReadinessProductDto> RequiredProductsMissingSelectedPrices,
@@ -25,6 +37,8 @@ public sealed record OfferFinalizationReadinessDto(
     decimal? SelectedOptionalTotal,
     bool RequiredPricingComplete,
     bool OptionalPricingComplete,
+    bool DiscountsValid,
+    OfferCommercialTotalsDto CommercialTotals,
     IReadOnlyList<OfferReadinessProductDto> SelectedPricesWithNewerObservations,
     int UnfinishedOnlinePriceCollectionRunCount,
     bool CanFinalize,
@@ -46,11 +60,48 @@ public static class OfferFinalizationReadiness
         var invalidRequired = new List<OfferReadinessProductDto>();
         var missingOptional = new List<OfferReadinessProductDto>();
         var invalidOptional = new List<OfferReadinessProductDto>();
+        var missingActivityPricing = new List<OfferReadinessActivitySectionDto>();
+        var invalidActivityPricing = new List<OfferReadinessActivitySectionDto>();
         var newer = new List<OfferReadinessProductDto>();
         decimal? requiredSubtotal = 0m;
         decimal? optionalSubtotal = null;
         var requiredOverflow = false;
         var optionalOverflow = false;
+        var commercial = OfferCommercialTotals.Calculate(offer);
+
+        foreach (var activity in offer.Activities
+                     .OrderBy(item => item.SortOrder)
+                     .ThenBy(item => item.Id))
+        {
+            foreach (var section in activity.Sections
+                         .OrderBy(item => item.SortOrder)
+                         .ThenBy(item => item.Id))
+            {
+                var item = new OfferReadinessActivitySectionDto(
+                    section.Id,
+                    activity.ActivityNumberId,
+                    activity.Name,
+                    section.Name);
+                if (!section.PricingMode.HasValue)
+                {
+                    missingActivityPricing.Add(item);
+                    continue;
+                }
+
+                try
+                {
+                    if (section.CalculatePriceTotal() is not >= 0m)
+                    {
+                        invalidActivityPricing.Add(item);
+                    }
+                }
+                catch (Exception exception) when (
+                    exception is InvalidOperationException or OverflowException)
+                {
+                    invalidActivityPricing.Add(item);
+                }
+            }
+        }
 
         var lines = offer.ProductLines
             .OrderBy(line => line.ProductNumberId)
@@ -109,6 +160,28 @@ public static class OfferFinalizationReadiness
         {
             reasons.Add("Select at least one activity before finalizing.");
         }
+        foreach (var section in missingActivityPricing)
+        {
+            reasons.Add(
+                $"Activity #{section.ActivityNumberId} · {section.ActivityName} · {section.SectionName ?? "Measurement"} needs pricing or must be marked free.");
+        }
+        foreach (var section in invalidActivityPricing)
+        {
+            reasons.Add(
+                $"Activity #{section.ActivityNumberId} · {section.ActivityName} · {section.SectionName ?? "Measurement"} has invalid pricing.");
+        }
+        if (commercial.ActivityTotalFailed)
+        {
+            reasons.Add("The activity EUR total exceeds the supported range.");
+        }
+        if (!commercial.DiscountsValid)
+        {
+            reasons.Add("Both Offer discounts must be percentages from 0 through 100.");
+        }
+        if (commercial.CombinedTotalFailed)
+        {
+            reasons.Add("The combined Offer EUR total exceeds the supported range.");
+        }
         foreach (var product in missingRequired)
         {
             reasons.Add($"Required product #{product.ProductNumberId} · {product.Title} needs a selected price.");
@@ -140,6 +213,17 @@ public static class OfferFinalizationReadiness
         {
             warnings.Add("The selected optional EUR total exceeds the supported range.");
         }
+        if (commercial.OptionalProductTotalFailed
+            && !warnings.Contains("The selected optional EUR total exceeds the supported range."))
+        {
+            warnings.Add("The selected optional EUR total cannot be calculated.");
+        }
+        if (commercial.OptionalProductTotalFailed
+            && commercial.Totals.CombinedOfferTotal is null)
+        {
+            warnings.Add(
+                "The combined Offer total is unavailable because an optional product total failed.");
+        }
         foreach (var product in newer)
         {
             warnings.Add($"Selected price for product #{product.ProductNumberId} · {product.Title} has a newer retailer observation.");
@@ -150,6 +234,11 @@ public static class OfferFinalizationReadiness
             offer.Status.ToString(),
             RetailerPriceObservation.EuroCurrencyCode,
             offer.Activities.Count,
+            offer.Activities.Sum(activity => activity.Sections.Count),
+            offer.Activities.Sum(activity =>
+                activity.Sections.Count(section => section.PricingMode.HasValue)),
+            missingActivityPricing,
+            invalidActivityPricing,
             lines.Count(line => line.RequiredQuantity > 0m),
             lines.Count(line => line.RequiredQuantity > 0m && line.PriceSelection is not null),
             missingRequired,
@@ -160,6 +249,8 @@ public static class OfferFinalizationReadiness
             optionalSubtotal,
             missingRequired.Count == 0 && invalidRequired.Count == 0 && !requiredOverflow,
             missingOptional.Count == 0 && invalidOptional.Count == 0 && !optionalOverflow,
+            commercial.DiscountsValid,
+            commercial.Totals,
             newer,
             unfinishedOnlinePriceCollectionRunCount,
             reasons.Count == 0,

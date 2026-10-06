@@ -1,0 +1,136 @@
+:host {
+  display: block;
+}
+
+.offer-commercial {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 1rem;
+  background: var(--mat-sys-surface-container-lowest);
+}
+
+.offer-commercial__heading,
+.offer-commercial form {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.offer-commercial__eyebrow {
+  margin: 0 0 0.25rem;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.offer-commercial h2,
+.offer-commercial__readonly,
+.offer-commercial__feedback,
+.offer-commercial__incomplete {
+  margin: 0;
+}
+
+.offer-commercial__readonly {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.offer-commercial form {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.offer-commercial form mat-form-field {
+  width: min(100%, 18rem);
+}
+
+.offer-commercial__feedback,
+.offer-commercial__incomplete {
+  padding: 0.8rem 1rem;
+  border-radius: 0.75rem;
+}
+
+.offer-commercial__feedback {
+  background: var(--mat-sys-surface-container);
+}
+
+.offer-commercial__feedback--success {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.offer-commercial__feedback--error {
+  color: var(--mat-sys-error);
+  background: var(--mat-sys-error-container);
+}
+
+.offer-commercial__incomplete {
+  display: grid;
+  gap: 0.2rem;
+  color: var(--mat-sys-on-tertiary-container);
+  background: var(--mat-sys-tertiary-container);
+}
+
+.offer-commercial__totals,
+.offer-commercial__discounts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.offer-commercial__discounts {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.offer-commercial__totals > div,
+.offer-commercial__discounts > div {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface-container-low);
+}
+
+.offer-commercial dt {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.offer-commercial dd {
+  margin: 0;
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.offer-commercial__totals .offer-commercial__combined {
+  color: var(--mat-sys-on-primary-container);
+  background: var(--mat-sys-primary-container);
+}
+
+.offer-commercial__combined dd {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+@media (max-width: 48rem) {
+  .offer-commercial__totals,
+  .offer-commercial__discounts {
+    grid-template-columns: 1fr;
+  }
+
+  .offer-commercial__heading,
+  .offer-commercial form {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .offer-commercial form mat-form-field {
+    width: 100%;
+  }
+}

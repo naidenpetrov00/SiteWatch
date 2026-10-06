@@ -32,6 +32,7 @@ export interface OfferDetails extends OfferSummary {
 
 export type OfferActivityMeasurementUnit = 'piece' | 'cm' | 'm' | 'm2' | 'm3';
 export type OfferProductQuantityBehavior = 'proportional' | 'fixed';
+export type OfferActivityPricingMode = 'fixed' | 'per-measurement' | 'free';
 
 export interface OfferActivity {
   id: string;
@@ -50,6 +51,9 @@ export interface OfferActivitySection {
   basisQuantity: number;
   measurementUnit: OfferActivityMeasurementUnit;
   requestedMeasurement: number;
+  pricingMode: OfferActivityPricingMode | null;
+  priceAmount: number | null;
+  priceTotal: number | null;
   sortOrder: number;
 }
 
@@ -140,6 +144,17 @@ export interface RemoveOfferActivityRequest {
 export interface UpdateOfferActivityMeasurementsRequest
   extends RemoveOfferActivityRequest {
   sectionMeasurements: readonly OfferSectionMeasurementRequest[];
+}
+
+export interface OfferSectionPricingRequest {
+  sectionId: string;
+  pricingMode: OfferActivityPricingMode | null;
+  priceAmount: number | null;
+}
+
+export interface UpdateOfferActivitySectionPricingRequest
+  extends RemoveOfferActivityRequest {
+  sectionPricing: readonly OfferSectionPricingRequest[];
 }
 
 export interface OfferSiteIdentity {
@@ -264,8 +279,30 @@ export interface OfferPricingMatrix {
   optionalPricingComplete: boolean;
   requiredTotal: number | null;
   optionalTotal: number | null;
+  commercialTotals: OfferCommercialTotals;
   retailers: readonly OfferPricingRetailer[];
   products: readonly OfferPricingProductRow[];
+}
+
+export interface OfferCommercialTotals {
+  activityPricingComplete: boolean;
+  productPricingComplete: boolean;
+  activitySubtotalBeforeDiscount: number | null;
+  activityDiscountPercentage: number;
+  activityDiscountAmount: number | null;
+  activityTotalAfterDiscount: number | null;
+  productSubtotalBeforeDiscount: number | null;
+  productDiscountPercentage: number;
+  productDiscountAmount: number | null;
+  productTotalAfterDiscount: number | null;
+  combinedOfferTotal: number | null;
+}
+
+export interface UpdateOfferDiscountsRequest {
+  siteId: string;
+  offerId: string;
+  activityDiscountPercentage: number;
+  productDiscountPercentage: number;
 }
 
 export interface OfferReadinessProduct {
@@ -274,11 +311,22 @@ export interface OfferReadinessProduct {
   title: string;
 }
 
+export interface OfferReadinessActivitySection {
+  offerActivitySectionId: string;
+  activityNumberId: number;
+  activityName: string;
+  sectionName: string | null;
+}
+
 export interface OfferFinalizationReadiness {
   offerId: string;
   status: OfferStatus;
   currencyCode: 'EUR';
   selectedActivityCount: number;
+  activitySectionCount: number;
+  activitySectionsWithPricing: number;
+  activitySectionsMissingPricing: readonly OfferReadinessActivitySection[];
+  activitySectionsWithInvalidPricing: readonly OfferReadinessActivitySection[];
   requiredProductCount: number;
   requiredProductsWithSelectedPrices: number;
   requiredProductsMissingSelectedPrices: readonly OfferReadinessProduct[];
@@ -289,6 +337,8 @@ export interface OfferFinalizationReadiness {
   selectedOptionalTotal: number | null;
   requiredPricingComplete: boolean;
   optionalPricingComplete: boolean;
+  discountsValid: boolean;
+  commercialTotals: OfferCommercialTotals;
   selectedPricesWithNewerObservations: readonly OfferReadinessProduct[];
   unfinishedOnlinePriceCollectionRunCount: number;
   canFinalize: boolean;

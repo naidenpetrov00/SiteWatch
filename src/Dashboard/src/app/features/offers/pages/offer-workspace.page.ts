@@ -26,6 +26,7 @@ import {
   OfferFinalizeConfirmDialogData
 } from '../components/offer-finalize-confirm-dialog/offer-finalize-confirm-dialog.component';
 import { OfferPricingMatrixComponent } from '../components/offer-pricing-matrix/offer-pricing-matrix.component';
+import { OfferCommercialSummaryComponent } from '../components/offer-commercial-summary/offer-commercial-summary.component';
 import { OfferSelectedActivitiesComponent } from '../components/offer-selected-activities/offer-selected-activities.component';
 import { OffersService } from '../services/offers.service';
 import { getOfferError } from '../utils/offer-error';
@@ -38,6 +39,7 @@ import { getOfferError } from '../utils/offer-error';
     MatFormFieldModule,
     MatInputModule,
     OfferActivityBrowserComponent,
+    OfferCommercialSummaryComponent,
     OfferPricingMatrixComponent,
     OfferSelectedActivitiesComponent,
     ReactiveFormsModule,
@@ -56,8 +58,10 @@ export class OfferWorkspacePage {
   readonly siteId = input.required<string>();
   readonly offerId = input.required<string>();
   readonly offer = computed(() => this.offersService.offerDetailsQuery.data());
+  readonly pricing = computed(() => this.offersService.pricingMatrixQuery.data());
   readonly isDraft = computed(() => this.offer()?.status === 'Draft');
   readonly pricingMatrix = viewChild(OfferPricingMatrixComponent);
+  readonly commercialSummary = viewChild(OfferCommercialSummaryComponent);
   readonly selectedActivities = viewChild(OfferSelectedActivitiesComponent);
   readonly pageMessage = signal<string | null>(null);
   readonly pageError = signal<string | null>(null);
@@ -131,12 +135,14 @@ export class OfferWorkspacePage {
     }
 
     if (this.metadataForm.dirty || this.pricingMatrix()?.hasUnsavedEdits() ||
+        this.commercialSummary()?.hasUnsavedEdits() ||
         this.selectedActivities()?.hasUnsavedEdits()) {
       this.pageError.set('Save or cancel unsaved Offer edits before finalizing.');
       return;
     }
     if (this.isSaving() || this.isArchiving() ||
         this.pricingMatrix()?.isMutating() ||
+        this.commercialSummary()?.isMutating() ||
         this.selectedActivities()?.isMutating() ||
         this.offersService.addActivityMutation.isPending()) {
       this.pageError.set('Wait for the current Offer change to finish before finalizing.');

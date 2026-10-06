@@ -74,6 +74,15 @@ public sealed class Offers : EndpointGroupBase
             .ProducesValidationProblem()
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status409Conflict);
+        group.MapPut(
+                "/{offerId:guid}/activities/{offerActivityId:guid}/section-pricing",
+                UpdateActivitySectionPricing)
+            .WithName("UpdateOfferActivitySectionPricing")
+            .WithSummary("Replace pricing for every section of a selected Offer activity")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict);
         group.MapPut("/{offerId:guid}", UpdateOfferMetadata)
             .WithName("UpdateSiteOfferMetadata")
             .WithSummary("Update the editable metadata of a draft offer")
@@ -105,6 +114,13 @@ public sealed class Offers : EndpointGroupBase
             .WithSummary("Get the Product-by-Retailer pricing matrix for an Offer")
             .Produces<OfferPricingMatrixDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound);
+        group.MapPut("/{offerId:guid}/discounts", UpdateDiscounts)
+            .WithName("UpdateOfferDiscounts")
+            .WithSummary("Replace both category-wide discounts on a draft Offer")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict);
         group.MapGet(
                 "/{offerId:guid}/pricing/online-price-collections/options",
                 GetOnlinePriceCollectionOptions)
@@ -273,6 +289,21 @@ public sealed class Offers : EndpointGroupBase
         return TypedResults.NoContent();
     }
 
+    private static async Task<NoContent> UpdateActivitySectionPricing(
+        IMediator mediator,
+        Guid siteId,
+        Guid offerId,
+        Guid offerActivityId,
+        UpdateOfferActivitySectionPricingCommand command,
+        CancellationToken cancellationToken)
+    {
+        command.SiteId = siteId;
+        command.OfferId = offerId;
+        command.OfferActivityId = offerActivityId;
+        await mediator.Send(command, cancellationToken);
+        return TypedResults.NoContent();
+    }
+
     private static async Task<NoContent> UpdateOfferMetadata(
         IMediator mediator,
         Guid siteId,
@@ -328,6 +359,19 @@ public sealed class Offers : EndpointGroupBase
         TypedResults.Ok(await mediator.Send(
             new OfferPricingMatrixQuery(siteId, offerId),
             cancellationToken));
+
+    private static async Task<NoContent> UpdateDiscounts(
+        IMediator mediator,
+        Guid siteId,
+        Guid offerId,
+        UpdateOfferDiscountsCommand command,
+        CancellationToken cancellationToken)
+    {
+        command.SiteId = siteId;
+        command.OfferId = offerId;
+        await mediator.Send(command, cancellationToken);
+        return TypedResults.NoContent();
+    }
 
     private static async Task<Ok<OfferOnlinePriceCollectionOptionsDto>>
         GetOnlinePriceCollectionOptions(

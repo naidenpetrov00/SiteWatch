@@ -230,6 +230,35 @@ public sealed class OfferService(ApplicationDbContext dbContext, IUser user) : I
             "The measurements could not be updated because the Offer changed.",
             cancellationToken);
 
+    public Task UpdateActivitySectionPricingAsync(
+        UpdateOfferActivitySectionPricingCommand request,
+        CancellationToken cancellationToken) =>
+        ExecuteMutationAsync(
+            async () =>
+            {
+                var offer = await GetTrackedOfferGraphAsync(
+                    request.SiteId,
+                    request.OfferId,
+                    cancellationToken);
+                EnsureDraft(offer);
+                var activity = offer.Activities.SingleOrDefault(
+                    current => current.Id == request.OfferActivityId);
+                if (activity is null)
+                {
+                    throw new NotFoundException(
+                        nameof(OfferActivity),
+                        request.OfferActivityId.ToString());
+                }
+
+                var pricing = ValidateOfferSectionPricing(
+                    activity.Sections,
+                    request.SectionPricing);
+                offer.UpdateActivitySectionPricing(activity, pricing);
+                SetAuditValues(offer, isNew: false);
+            },
+            "The activity pricing could not be updated because the Offer changed.",
+            cancellationToken);
+
     public Task ArchiveAsync(
         Guid siteId,
         Guid offerId,
@@ -457,6 +486,7 @@ public sealed class OfferService(ApplicationDbContext dbContext, IUser user) : I
     {
         var query = dbContext.Offers
             .Include(offer => offer.Activities)
+            .ThenInclude(activity => activity.Sections)
             .Include(offer => offer.ProductLines)
             .ThenInclude(line => line.PriceSelection)
             .AsSplitQuery();
@@ -589,9 +619,45 @@ public sealed class OfferService(ApplicationDbContext dbContext, IUser user) : I
         return measurements;
     }
 
+    private static Dictionary<Guid, (ActivityPricingMode? PricingMode, decimal? PriceAmount)>
+        ValidateOfferSectionPricing(
+            IReadOnlyCollection<OfferActivitySection> sections,
+            IReadOnlyList<OfferSectionPricingInput> inputs)
+    {
+        var pricing = inputs.ToDictionary(
+            input => input.SectionId,
+            input =>
+            {
+                ActivityPricingMode? mode = null;
+                if (input.PricingMode is not null)
+                {
+                    if (!ActivityPricingModeCodes.TryParse(input.PricingMode, out var parsed))
+                    {
+                        ThrowPricingValidation(
+                            "PricingMode must be fixed, per-measurement, free, or null.");
+                    }
+                    mode = parsed;
+                }
+
+                return (mode, input.PriceAmount);
+            });
+        if (pricing.Count != sections.Count
+            || sections.Any(section => !pricing.ContainsKey(section.Id)))
+        {
+            ThrowPricingValidation(
+                "Supply exactly one pricing entry for every selected activity section.");
+        }
+
+        return pricing;
+    }
+
     private static void ThrowMeasurementValidation(string message) =>
         throw new ValidationException(
             [new ValidationFailure("SectionMeasurements", message)]);
+
+    private static void ThrowPricingValidation(string message) =>
+        throw new ValidationException(
+            [new ValidationFailure("SectionPricing", message)]);
 
     private static void EnsureDraft(Offer offer)
     {
