@@ -3,22 +3,22 @@ using Domain.Entities;
 
 namespace Application.SeedWork.Interfaces;
 
-public interface IRetailerExtractionTestRunner
+public interface IRetailerExtractionEngine
 {
-    Task<RetailerExtractionRunnerResult> RunAsync(
+    Task<RetailerExtractionEngineResult> RunAsync(
         string productUrl,
         IReadOnlySet<string> allowedHosts,
         IReadOnlyList<RetailerExtractionRule> rules,
         CancellationToken cancellationToken);
 }
 
-public sealed record RetailerExtractionRunnerResult(
-    DateTimeOffset TestedAt,
-    string TestedUrl,
-    RetailerExtractionRunnerMatch? Match,
+public sealed record RetailerExtractionEngineResult(
+    DateTimeOffset ExtractedAt,
+    string FinalUrl,
+    RetailerExtractionEngineMatch? Match,
     IReadOnlyList<RetailerExtractionRuleDiagnosticDto> Diagnostics);
 
-public sealed record RetailerExtractionRunnerMatch(
+public sealed record RetailerExtractionEngineMatch(
     Guid RuleId,
     decimal Amount,
     string RawValue);

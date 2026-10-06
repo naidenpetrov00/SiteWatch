@@ -13,6 +13,11 @@
   background: var(--mat-sys-surface-container);
 }
 
+.listing-dialog__context-note {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
 .listing-dialog__identity div {
   display: grid;
   gap: 0.2rem;

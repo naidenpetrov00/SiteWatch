@@ -18,11 +18,12 @@ import {
   MatAutocompleteModule,
   MatAutocompleteSelectedEvent
 } from '@angular/material/autocomplete';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MatButtonModule } from '@angular/material/button';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { debounceTime, distinctUntilChanged, firstValueFrom } from 'rxjs';
 
 import { DialogActionBarComponent } from '../../../../shared/ui/dialog-action-bar/dialog-action-bar.component';
 import { DialogShellComponent } from '../../../../shared/ui/dialog-shell/dialog-shell.component';
@@ -30,6 +31,10 @@ import {
   DashboardProductLookup,
   PRODUCT_PACKAGE_UNIT_OPTIONS
 } from '../../../products/models/dashboard-product.models';
+import {
+  ProductDialogComponent,
+  ProductDialogResult
+} from '../../../products/components/product-dialog/product-dialog.component';
 import { DashboardProductsService } from '../../../products/services/dashboard-products.service';
 import {
   ActivityProductRequirement,
@@ -50,6 +55,7 @@ export interface ProductRequirementDialogData {
   imports: [
     ReactiveFormsModule,
     MatAutocompleteModule,
+    MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
@@ -66,6 +72,7 @@ export class ProductRequirementDialogComponent {
   private readonly dialogRef = inject(
     MatDialogRef<ProductRequirementDialogComponent>
   );
+  private readonly dialog = inject(MatDialog);
   private readonly formBuilder = inject(FormBuilder);
   private readonly catalogService = inject(ActivityCatalogService);
   private readonly productsService = inject(DashboardProductsService);
@@ -74,6 +81,7 @@ export class ProductRequirementDialogComponent {
 
   readonly searchResults = signal<readonly DashboardProductLookup[]>([]);
   readonly selectedProduct = signal<DashboardProductLookup | null>(null);
+  readonly selectedProductStatus = signal<string | null>(null);
   readonly errorMessage = signal<string | null>(null);
   readonly productSearchControl = this.formBuilder.control<
     string | DashboardProductLookup | null
@@ -125,6 +133,7 @@ export class ProductRequirementDialogComponent {
           if (typeof value !== 'string') return;
           this.form.controls.productId.setValue('', { emitEvent: false });
           this.selectedProduct.set(null);
+          this.selectedProductStatus.set(null);
           void this.searchProducts(value);
         });
     }
@@ -135,7 +144,56 @@ export class ProductRequirementDialogComponent {
     this.searchRevision += 1;
     this.searchResults.set([]);
     this.selectedProduct.set(product);
+    this.selectedProductStatus.set(null);
     this.form.controls.productId.setValue(product.id, { emitEvent: false });
+  }
+
+  async createProduct(): Promise<void> {
+    if (this.data.requirement) return;
+
+    this.errorMessage.set(null);
+    const dialogRef = this.dialog.open<
+      ProductDialogComponent,
+      null,
+      ProductDialogResult
+    >(ProductDialogComponent, {
+      autoFocus: false,
+      restoreFocus: true,
+      width: '52rem',
+      maxWidth: 'calc(100vw - 2rem)',
+      data: null
+    });
+    const result = await firstValueFrom(dialogRef.afterClosed());
+    if (!result || result === true) return;
+
+    try {
+      const product = await this.productsService.getProductById(result.createdProductId);
+      const selected: DashboardProductLookup = {
+        id: product.id,
+        numberId: product.numberId,
+        title: product.title,
+        category: product.category,
+        brand: product.brand,
+        model: product.model,
+        packageQuantity: product.packageQuantity,
+        packageUnit: product.packageUnit
+      };
+      this.searchRevision += 1;
+      this.searchResults.set([]);
+      this.selectedProduct.set(selected);
+      this.selectedProductStatus.set(product.status);
+      this.productSearchControl.setValue(selected, { emitEvent: false });
+      this.form.controls.productId.setValue(selected.id, { emitEvent: false });
+      if (product.status !== 'Active') {
+        this.errorMessage.set(
+          'The product was created, but only active products can be attached to an activity.'
+        );
+      }
+    } catch {
+      this.errorMessage.set(
+        'The product was created, but could not be loaded here. Search for it to attach it; do not create it again.'
+      );
+    }
   }
 
   close(): void {
@@ -146,6 +204,12 @@ export class ProductRequirementDialogComponent {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.productSearchControl.markAsTouched();
+      return;
+    }
+
+    if (!this.data.requirement && this.selectedProductStatus() !== null &&
+        this.selectedProductStatus() !== 'Active') {
+      this.errorMessage.set('Only active products can be attached to an activity.');
       return;
     }
 

@@ -5,6 +5,7 @@ using Application.Persons;
 using Application.RetailerListings;
 using Application.Retailers;
 using Application.RetailerExtractionProfiles;
+using Application.RetailerPriceCollections;
 using Application.Offers;
 using Ardalis.GuardClauses;
 using Application.SeedWork.Exceptions;
@@ -106,23 +107,23 @@ internal sealed class ExceptionMiddleware(
                 instance = context.Request.Path.Value,
             }));
         }
-        catch (RetailerExtractionTestException ex)
+        catch (RetailerExtractionException ex)
         {
             var (status, title, category) = ex.Kind switch
             {
-                RetailerExtractionTestFailureKind.Security => (
+                RetailerExtractionFailureKind.Security => (
                     StatusCodes.Status422UnprocessableEntity,
                     "Extraction URL rejected",
                     "security"),
-                RetailerExtractionTestFailureKind.Network => (
+                RetailerExtractionFailureKind.Network => (
                     StatusCodes.Status502BadGateway,
                     "Remote page unavailable",
                     "network"),
-                RetailerExtractionTestFailureKind.Content => (
+                RetailerExtractionFailureKind.Content => (
                     StatusCodes.Status502BadGateway,
                     "Remote content rejected",
                     "content"),
-                RetailerExtractionTestFailureKind.Timeout => (
+                RetailerExtractionFailureKind.Timeout => (
                     StatusCodes.Status504GatewayTimeout,
                     "Extraction test timed out",
                     "timeout"),
@@ -136,6 +137,19 @@ internal sealed class ExceptionMiddleware(
                 title,
                 detail = ex.Message,
                 category,
+                instance = context.Request.Path.Value,
+            }));
+        }
+        catch (RetailerPriceCollectionConflictException ex)
+        {
+            logger.LogInformation(ex, "A retailer price-collection run was rejected.");
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            context.Response.ContentType = "application/problem+json";
+            await context.Response.WriteAsync(JsonSerializer.Serialize(new
+            {
+                status = StatusCodes.Status409Conflict,
+                title = "Retailer price collection conflict",
+                detail = ex.Message,
                 instance = context.Request.Path.Value,
             }));
         }

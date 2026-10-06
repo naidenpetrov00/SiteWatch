@@ -506,7 +506,17 @@ public sealed class OfferService(ApplicationDbContext dbContext, IUser user) : I
                 && latestId != item.ObservationId)
             .Select(item => item.LineId)
             .ToHashSet();
-        return OfferFinalizationReadiness.Evaluate(offer, linesWithNewerObservations);
+        var unfinishedOnlinePriceCollectionRunCount = await dbContext
+            .RetailerPriceCollectionRuns
+            .CountAsync(
+                run => run.OfferId == offer.Id
+                    && (run.Status == RetailerPriceCollectionRunStatus.Queued
+                        || run.Status == RetailerPriceCollectionRunStatus.Running),
+                cancellationToken);
+        return OfferFinalizationReadiness.Evaluate(
+            offer,
+            linesWithNewerObservations,
+            unfinishedOnlinePriceCollectionRunCount);
     }
 
     private async Task<Offer> GetTrackedOfferAsync(

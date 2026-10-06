@@ -26,6 +26,29 @@
       {{ error() }}
     </p>
   }
+  @if (collectionOutcomes().length > 0) {
+    <section class="offer-pricing__collection-outcomes" aria-label="Online price collection admission results">
+      @for (outcome of collectionOutcomes(); track outcome.companyPersonId) {
+        <article [class.offer-pricing__collection-outcome--unavailable]="outcome.run === null">
+          <strong>{{ outcome.companyDisplayName }}</strong>
+          <span>{{ outcome.message }}</span>
+          @if (outcome.exclusions.length > 0) {
+            <details>
+              <summary>{{ outcome.exclusions.length }} product/location pair(s) were not collectable</summary>
+              <ul>
+                @for (item of outcome.exclusions; track item.offerProductLineId + '/' + item.retailerId) {
+                  <li>
+                    #{{ item.productNumberId }} · {{ item.productTitle }} at
+                    {{ item.retailerDisplayName }} — {{ item.message }}
+                  </li>
+                }
+              </ul>
+            </details>
+          }
+        </article>
+      }
+    </section>
+  }
 
   @if (offersService.pricingMatrixQuery.isPending()) {
     <div class="offer-pricing__loading" aria-live="polite">
@@ -38,6 +61,17 @@
     </p>
   } @else if (matrix(); as currentMatrix) {
     @if (editable()) {
+      <div class="offer-pricing__online-actions">
+        <button
+          mat-flat-button
+          type="button"
+          [disabled]="isMutating() || currentMatrix.products.length === 0 || currentMatrix.retailers.length === 0"
+          (click)="openOnlinePriceCollection()"
+        >
+          Refresh Online Prices
+        </button>
+        <span>One durable run will be created for each accepted retailer company.</span>
+      </div>
       <mat-form-field appearance="outline" class="offer-pricing__retailer-search">
         <mat-label>Add retailer</mat-label>
         <input
@@ -64,6 +98,40 @@
       </mat-autocomplete>
     } @else {
       <p class="offer-pricing__readonly">Saved pricing snapshot · read-only</p>
+    }
+
+
+    @if (offersService.onlinePriceCollectionRunsQuery.isError()) {
+      <p class="offer-pricing__feedback offer-pricing__feedback--error" role="alert">
+        Offer collection history could not be loaded.
+      </p>
+    } @else if ((offersService.onlinePriceCollectionRunsQuery.data() ?? []).length > 0) {
+      <section class="offer-pricing__collection-runs" aria-labelledby="offer-collection-runs-heading">
+        <h3 id="offer-collection-runs-heading">Online Price Collection Runs</h3>
+        @for (run of offersService.onlinePriceCollectionRunsQuery.data() ?? []; track run.id) {
+          <article>
+            <div>
+              <strong>{{ run.companyDisplayName }}</strong>
+              <span>{{ statusLabel(run.status) }} · Profile v{{ run.extractionProfileVersion }}</span>
+            </div>
+            <progress
+              [value]="run.totalCount === 0 ? 1 : run.processedCount"
+              [max]="run.totalCount || 1"
+            ></progress>
+            <span>
+              {{ runProgress(run.processedCount, run.totalCount) }}% ·
+              {{ run.succeededCount }} succeeded · {{ run.failedCount }} failed ·
+              {{ run.skippedCount }} skipped
+            </span>
+            <a
+              mat-stroked-button
+              [routerLink]="['/manage-persons', run.companyPersonId]"
+              [queryParams]="{ runId: run.id }"
+              fragment="price-collection-heading"
+            >View run details</a>
+          </article>
+        }
+      </section>
     }
 
     @if (currentMatrix.products.length === 0) {
@@ -233,6 +301,18 @@
                         <a [routerLink]="['/manage-products', row.productId]">
                           Manage in Product Catalog
                         </a>
+                      </div>
+                    }
+                    @if (canManageProductLink()) {
+                      <div class="offer-pricing__cell-actions">
+                        <button
+                          mat-button
+                          type="button"
+                          [disabled]="isMutating()"
+                          (click)="openProductLink(row, cell)"
+                        >
+                          {{ cell.retailerListingId ? 'Edit product link' : 'Add product link' }}
+                        </button>
                       </div>
                     }
                     @if (isEditing(displayRow, retailer.retailerId) && canEditCell(cell)) {

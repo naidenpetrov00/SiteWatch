@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
@@ -13,7 +14,8 @@ using Domain.SeedWork.Enums;
 
 namespace Infrastructure.RetailerExtractionProfiles.Services;
 
-public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTestRunner
+public sealed partial class RetailerExtractionEngine(
+    RetailerExtractionHostGate hostGate) : IRetailerExtractionEngine
 {
     private const int MaximumRedirects = 5;
     private const int MaximumResponseBytes = 5 * 1024 * 1024;
@@ -23,25 +25,30 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
     private static readonly string[] CurrencyAttributes =
         ["currency", "data-currency", "data-price-currency", "pricecurrency", "content"];
 
-    public async Task<RetailerExtractionRunnerResult> RunAsync(
+    public async Task<RetailerExtractionEngineResult> RunAsync(
         string productUrl,
         IReadOnlySet<string> allowedHosts,
         IReadOnlyList<RetailerExtractionRule> rules,
         CancellationToken cancellationToken)
     {
-        using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutSource.CancelAfter(OverallTimeout);
+        using var extractionTimeout = new PausableExtractionTimeout(
+            cancellationToken,
+            OverallTimeout);
         try
         {
             var initialUri = ValidateUrl(productUrl, allowedHosts);
-            var fetched = await FetchHtmlAsync(initialUri, allowedHosts, timeoutSource.Token);
-            timeoutSource.Token.ThrowIfCancellationRequested();
+            var fetched = await FetchHtmlAsync(
+                initialUri,
+                allowedHosts,
+                extractionTimeout,
+                cancellationToken);
+            extractionTimeout.Token.ThrowIfCancellationRequested();
 
             var parser = new HtmlParser();
             IDocument document;
             try
             {
-                document = await parser.ParseDocumentAsync(fetched.Html, timeoutSource.Token);
+                document = await parser.ParseDocumentAsync(fetched.Html, extractionTimeout.Token);
             }
             catch (OperationCanceledException)
             {
@@ -50,21 +57,21 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
             catch (Exception exception) when (exception is ArgumentException
                 or InvalidOperationException)
             {
-                throw new RetailerExtractionTestException(
-                    RetailerExtractionTestFailureKind.Content,
+                throw new RetailerExtractionException(
+                    RetailerExtractionFailureKind.Content,
                     "The bounded HTML document could not be parsed.",
                     exception);
             }
-            timeoutSource.Token.ThrowIfCancellationRequested();
+            extractionTimeout.Token.ThrowIfCancellationRequested();
 
             var diagnostics = new List<RetailerExtractionRuleDiagnosticDto>();
             foreach (var rule in rules.OrderBy(rule => rule.Priority))
             {
-                timeoutSource.Token.ThrowIfCancellationRequested();
+                extractionTimeout.Token.ThrowIfCancellationRequested();
                 var attempt = rule.RuleType == RetailerExtractionRuleType.JsonLd
                     ? EvaluateJsonLd(document, rule)
                     : EvaluateCss(document, rule);
-                timeoutSource.Token.ThrowIfCancellationRequested();
+                extractionTimeout.Token.ThrowIfCancellationRequested();
                 diagnostics.Add(new RetailerExtractionRuleDiagnosticDto(
                     rule.Id,
                     rule.Name,
@@ -74,10 +81,10 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
                     attempt.Explanation));
                 if (attempt.Amount.HasValue)
                 {
-                    return new RetailerExtractionRunnerResult(
+                    return new RetailerExtractionEngineResult(
                         DateTimeOffset.UtcNow,
                         fetched.FinalUri.AbsoluteUri,
-                        new RetailerExtractionRunnerMatch(
+                        new RetailerExtractionEngineMatch(
                             rule.Id,
                             attempt.Amount.Value,
                             NormalizeRaw(attempt.RawValue!)),
@@ -85,7 +92,7 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
                 }
             }
 
-            return new RetailerExtractionRunnerResult(
+            return new RetailerExtractionEngineResult(
                 DateTimeOffset.UtcNow,
                 fetched.FinalUri.AbsoluteUri,
                 null,
@@ -93,27 +100,28 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
         }
         catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
         {
-            throw new RetailerExtractionTestException(
-                RetailerExtractionTestFailureKind.Timeout,
-                "The extraction test exceeded the fifteen-second time limit.",
+            throw new RetailerExtractionException(
+                RetailerExtractionFailureKind.Timeout,
+                "Price extraction exceeded the fifteen-second time limit.",
                 exception);
         }
-        catch (RetailerExtractionTestException)
+        catch (RetailerExtractionException)
         {
             throw;
         }
         catch (IOException exception)
         {
-            throw new RetailerExtractionTestException(
-                RetailerExtractionTestFailureKind.Network,
+            throw new RetailerExtractionException(
+                RetailerExtractionFailureKind.Network,
                 "The remote HTML document could not be downloaded completely.",
                 exception);
         }
     }
 
-    private static async Task<FetchedHtml> FetchHtmlAsync(
+    private async Task<FetchedHtml> FetchHtmlAsync(
         Uri initialUri,
         IReadOnlySet<string> allowedHosts,
+        PausableExtractionTimeout extractionTimeout,
         CancellationToken cancellationToken)
     {
         var current = initialUri;
@@ -121,7 +129,15 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
         for (var redirects = 0; ; redirects++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var addresses = await ResolveAndValidateAsync(current.IdnHost, cancellationToken);
+            extractionTimeout.Pause();
+            extractionTimeout.Token.ThrowIfCancellationRequested();
+            await using var hostLease = await hostGate.AcquireAsync(
+                current.IdnHost,
+                cancellationToken);
+            extractionTimeout.Resume();
+            var addresses = await ResolveAndValidateAsync(
+                current.IdnHost,
+                extractionTimeout.Token);
             using var handler = CreatePinnedHandler(addresses);
             using var client = new HttpClient(handler)
             {
@@ -132,7 +148,7 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
             request.VersionPolicy = HttpVersionPolicy.RequestVersionExact;
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/html"));
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xhtml+xml"));
-            request.Headers.UserAgent.ParseAdd("SiteWatch-Extraction-Test/1.0");
+            request.Headers.UserAgent.ParseAdd("SiteWatch-Price-Extraction/1.0");
 
             HttpResponseMessage response;
             try
@@ -140,7 +156,7 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
                 response = await client.SendAsync(
                     request,
                     HttpCompletionOption.ResponseHeadersRead,
-                    cancellationToken);
+                    extractionTimeout.Token);
             }
             catch (OperationCanceledException)
             {
@@ -148,8 +164,8 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
             }
             catch (HttpRequestException exception)
             {
-                throw new RetailerExtractionTestException(
-                    RetailerExtractionTestFailureKind.Network,
+                throw new RetailerExtractionException(
+                    RetailerExtractionFailureKind.Network,
                     "The remote server could not be reached securely.",
                     exception);
             }
@@ -160,14 +176,14 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
                 {
                     if (redirects >= MaximumRedirects)
                     {
-                        throw new RetailerExtractionTestException(
-                            RetailerExtractionTestFailureKind.Network,
+                        throw new RetailerExtractionException(
+                            RetailerExtractionFailureKind.Network,
                             "The remote server exceeded the redirect limit.");
                     }
                     if (response.Headers.Location is null)
                     {
-                        throw new RetailerExtractionTestException(
-                            RetailerExtractionTestFailureKind.Network,
+                        throw new RetailerExtractionException(
+                            RetailerExtractionFailureKind.Network,
                             "The remote server returned an invalid redirect.");
                     }
 
@@ -177,8 +193,8 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
                     current = ValidateUrl(destination.AbsoluteUri, allowedHosts);
                     if (!visited.Add(current.AbsoluteUri))
                     {
-                        throw new RetailerExtractionTestException(
-                            RetailerExtractionTestFailureKind.Network,
+                        throw new RetailerExtractionException(
+                            RetailerExtractionFailureKind.Network,
                             "The remote server returned a redirect loop.");
                     }
                     continue;
@@ -186,8 +202,8 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new RetailerExtractionTestException(
-                        RetailerExtractionTestFailureKind.Network,
+                    throw new RetailerExtractionException(
+                        RetailerExtractionFailureKind.Network,
                         "The remote server returned an unsuccessful status.");
                 }
 
@@ -198,42 +214,42 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
                         "application/xhtml+xml",
                         StringComparison.OrdinalIgnoreCase))
                 {
-                    throw new RetailerExtractionTestException(
-                        RetailerExtractionTestFailureKind.Content,
+                    throw new RetailerExtractionException(
+                        RetailerExtractionFailureKind.Content,
                         "The remote response is not an HTML document.");
                 }
                 if (response.Content.Headers.ContentLength is > MaximumResponseBytes)
                 {
-                    throw new RetailerExtractionTestException(
-                        RetailerExtractionTestFailureKind.Content,
+                    throw new RetailerExtractionException(
+                        RetailerExtractionFailureKind.Content,
                         "The remote HTML document exceeds the five MiB limit.");
                 }
                 if (response.Content.Headers.ContentEncoding.Count > 0)
                 {
-                    throw new RetailerExtractionTestException(
-                        RetailerExtractionTestFailureKind.Content,
+                    throw new RetailerExtractionException(
+                        RetailerExtractionFailureKind.Content,
                         "The remote HTML document uses an unsupported content encoding.");
                 }
 
-                await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+                await using var stream = await response.Content.ReadAsStreamAsync(extractionTimeout.Token);
                 using var buffer = new MemoryStream();
                 var chunk = new byte[81920];
                 while (true)
                 {
-                    var read = await stream.ReadAsync(chunk, cancellationToken);
+                    var read = await stream.ReadAsync(chunk, extractionTimeout.Token);
                     if (read == 0) break;
                     if (buffer.Length + read > MaximumResponseBytes)
                     {
-                        throw new RetailerExtractionTestException(
-                            RetailerExtractionTestFailureKind.Content,
+                        throw new RetailerExtractionException(
+                            RetailerExtractionFailureKind.Content,
                             "The remote HTML document exceeds the five MiB limit.");
                     }
-                    await buffer.WriteAsync(chunk.AsMemory(0, read), cancellationToken);
+                    await buffer.WriteAsync(chunk.AsMemory(0, read), extractionTimeout.Token);
                 }
                 if (buffer.Length == 0)
                 {
-                    throw new RetailerExtractionTestException(
-                        RetailerExtractionTestFailureKind.Content,
+                    throw new RetailerExtractionException(
+                        RetailerExtractionFailureKind.Content,
                         "The remote HTML document is empty.");
                 }
 
@@ -244,9 +260,49 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
                     detectEncodingFromByteOrderMarks: true);
                 return new FetchedHtml(
                     current,
-                    await reader.ReadToEndAsync(cancellationToken));
+                    await reader.ReadToEndAsync(extractionTimeout.Token));
             }
         }
+    }
+
+    private sealed class PausableExtractionTimeout : IDisposable
+    {
+        private readonly CancellationTokenSource source;
+        private readonly Stopwatch elapsed = new();
+        private readonly TimeSpan timeout;
+
+        public PausableExtractionTimeout(CancellationToken cancellationToken, TimeSpan timeout)
+        {
+            source = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            this.timeout = timeout;
+        }
+
+        public CancellationToken Token => source.Token;
+
+        public void Resume()
+        {
+            if (elapsed.IsRunning || source.IsCancellationRequested) return;
+
+            var remaining = timeout - elapsed.Elapsed;
+            if (remaining <= TimeSpan.Zero)
+            {
+                source.Cancel();
+                return;
+            }
+
+            elapsed.Start();
+            source.CancelAfter(remaining);
+        }
+
+        public void Pause()
+        {
+            if (!elapsed.IsRunning) return;
+
+            source.CancelAfter(Timeout.InfiniteTimeSpan);
+            elapsed.Stop();
+        }
+
+        public void Dispose() => source.Dispose();
     }
 
     private static SocketsHttpHandler CreatePinnedHandler(IReadOnlyList<IPAddress> addresses) =>
@@ -302,8 +358,8 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
             || !string.IsNullOrEmpty(uri.Fragment)
             || (!uri.IsDefaultPort && uri.Port != 443))
         {
-            throw new RetailerExtractionTestException(
-                RetailerExtractionTestFailureKind.Security,
+            throw new RetailerExtractionException(
+                RetailerExtractionFailureKind.Security,
                 "Only absolute HTTPS URLs without credentials, fragments, or non-standard ports are allowed.");
         }
 
@@ -316,8 +372,8 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
         }
         catch (ArgumentException exception)
         {
-            throw new RetailerExtractionTestException(
-                RetailerExtractionTestFailureKind.Security,
+            throw new RetailerExtractionException(
+                RetailerExtractionFailureKind.Security,
                 "The URL hostname is malformed.",
                 exception);
         }
@@ -327,9 +383,9 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
             || IsInternalHostname(normalizedHost)
             || !allowedHosts.Contains(normalizedHost))
         {
-            throw new RetailerExtractionTestException(
-                RetailerExtractionTestFailureKind.Security,
-                "The URL hostname is not permitted by the saved draft configuration.");
+            throw new RetailerExtractionException(
+                RetailerExtractionFailureKind.Security,
+                "The URL hostname is not permitted by the saved extraction configuration.");
         }
 
         var builder = new UriBuilder(uri) { Host = normalizedHost };
@@ -351,22 +407,22 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
         }
         catch (Exception exception) when (exception is SocketException or ArgumentException)
         {
-            throw new RetailerExtractionTestException(
-                RetailerExtractionTestFailureKind.Network,
+            throw new RetailerExtractionException(
+                RetailerExtractionFailureKind.Network,
                 "The permitted hostname could not be resolved.",
                 exception);
         }
 
         if (addresses.Length == 0)
         {
-            throw new RetailerExtractionTestException(
-                RetailerExtractionTestFailureKind.Network,
+            throw new RetailerExtractionException(
+                RetailerExtractionFailureKind.Network,
                 "The permitted hostname did not resolve to a destination.");
         }
         if (addresses.Any(address => !IsGlobalUnicast(address)))
         {
-            throw new RetailerExtractionTestException(
-                RetailerExtractionTestFailureKind.Security,
+            throw new RetailerExtractionException(
+                RetailerExtractionFailureKind.Security,
                 "The hostname resolves to a non-public destination.");
         }
 
@@ -904,8 +960,8 @@ public sealed partial class RetailerExtractionTestRunner : IRetailerExtractionTe
         }
         catch (ArgumentException exception)
         {
-            throw new RetailerExtractionTestException(
-                RetailerExtractionTestFailureKind.Content,
+            throw new RetailerExtractionException(
+                RetailerExtractionFailureKind.Content,
                 "The remote HTML document declares an unsupported character encoding.",
                 exception);
         }

@@ -26,6 +26,7 @@ public sealed record OfferFinalizationReadinessDto(
     bool RequiredPricingComplete,
     bool OptionalPricingComplete,
     IReadOnlyList<OfferReadinessProductDto> SelectedPricesWithNewerObservations,
+    int UnfinishedOnlinePriceCollectionRunCount,
     bool CanFinalize,
     IReadOnlyList<string> BlockingReasons,
     IReadOnlyList<string> Warnings);
@@ -34,10 +35,12 @@ public static class OfferFinalizationReadiness
 {
     public static OfferFinalizationReadinessDto Evaluate(
         Offer offer,
-        IReadOnlySet<Guid> linesWithNewerObservations)
+        IReadOnlySet<Guid> linesWithNewerObservations,
+        int unfinishedOnlinePriceCollectionRunCount)
     {
         ArgumentNullException.ThrowIfNull(offer);
         ArgumentNullException.ThrowIfNull(linesWithNewerObservations);
+        ArgumentOutOfRangeException.ThrowIfNegative(unfinishedOnlinePriceCollectionRunCount);
 
         var missingRequired = new List<OfferReadinessProductDto>();
         var invalidRequired = new List<OfferReadinessProductDto>();
@@ -118,6 +121,11 @@ public static class OfferFinalizationReadiness
         {
             reasons.Add("The selected required EUR total exceeds the supported range.");
         }
+        if (unfinishedOnlinePriceCollectionRunCount > 0)
+        {
+            reasons.Add(
+                $"Wait for {unfinishedOnlinePriceCollectionRunCount} online price collection run(s) to finish before finalizing.");
+        }
 
         var warnings = new List<string>();
         foreach (var product in missingOptional)
@@ -153,6 +161,7 @@ public static class OfferFinalizationReadiness
             missingRequired.Count == 0 && invalidRequired.Count == 0 && !requiredOverflow,
             missingOptional.Count == 0 && invalidOptional.Count == 0 && !optionalOverflow,
             newer,
+            unfinishedOnlinePriceCollectionRunCount,
             reasons.Count == 0,
             reasons,
             warnings);

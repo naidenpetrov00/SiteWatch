@@ -6,7 +6,7 @@ namespace Domain.Entities;
 public sealed class RetailerPriceObservation : BaseEntity
 {
     public const string EuroCurrencyCode = "EUR";
-    public const int MaxSourceReferenceLength = 500;
+    public const int MaxSourceReferenceLength = RetailerListing.MaxProductUrlLength;
 
     private RetailerPriceObservation()
     {

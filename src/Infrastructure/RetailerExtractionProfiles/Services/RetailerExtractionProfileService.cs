@@ -12,7 +12,7 @@ namespace Infrastructure.RetailerExtractionProfiles.Services;
 public sealed class RetailerExtractionProfileService(
     ApplicationDbContext dbContext,
     IUser user,
-    IRetailerExtractionTestRunner testRunner) : IRetailerExtractionProfileService
+    IRetailerExtractionEngine extractionEngine) : IRetailerExtractionProfileService
 {
     public async Task<IReadOnlyList<RetailerExtractionProfileSummaryDto>> GetVersionsAsync(
         Guid companyPersonId,
@@ -444,7 +444,7 @@ public sealed class RetailerExtractionProfileService(
         }
 
         var expectedRevision = snapshot.ConfigurationRevision;
-        var runnerResult = await testRunner.RunAsync(
+        var runnerResult = await extractionEngine.RunAsync(
             productUrl,
             snapshot.AllowedHosts
                 .Select(host => host.NormalizedHost)
@@ -492,7 +492,7 @@ public sealed class RetailerExtractionProfileService(
 
                 TryLifecycle(() => current.RecordSuccessfulTest(
                     expectedRevision,
-                    runnerResult.TestedAt,
+                    runnerResult.ExtractedAt,
                     matchedRule));
                 SetModifiedAudit(current);
                 await dbContext.SaveChangesAsync(cancellationToken);
@@ -509,8 +509,8 @@ public sealed class RetailerExtractionProfileService(
 
             await transaction.CommitAsync(cancellationToken);
             return new RetailerExtractionTestResultDto(
-                runnerResult.TestedAt,
-                runnerResult.TestedUrl,
+                runnerResult.ExtractedAt,
+                runnerResult.FinalUrl,
                 current.Id,
                 extraction is not null,
                 current.IsCurrentConfigurationValidated,

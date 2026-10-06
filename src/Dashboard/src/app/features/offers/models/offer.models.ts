@@ -3,6 +3,7 @@ import {
   RetailerPriceObservation,
   RetailerPriceSource
 } from '../../retailer-listings/models/retailer-listing.models';
+import { RetailerPriceCollectionRunSummary } from '../../retailers/models/retailer-price-collection.models';
 
 export type OfferStatus = 'Draft' | 'Finalized' | 'Archived';
 
@@ -289,6 +290,7 @@ export interface OfferFinalizationReadiness {
   requiredPricingComplete: boolean;
   optionalPricingComplete: boolean;
   selectedPricesWithNewerObservations: readonly OfferReadinessProduct[];
+  unfinishedOnlinePriceCollectionRunCount: number;
   canFinalize: boolean;
   blockingReasons: readonly string[];
   warnings: readonly string[];
@@ -318,4 +320,59 @@ export interface SelectOfferProductPriceRequest {
   offerProductLineId: string;
   retailerId: string;
   observationId: string;
+}
+
+export interface OfferOnlinePriceCollectionRetailer {
+  retailerId: string;
+  displayName: string;
+  isActive: boolean;
+}
+
+export interface OfferOnlinePriceCollectionExclusion {
+  offerProductLineId: string;
+  productId: string;
+  productNumberId: number;
+  productTitle: string;
+  retailerId: string;
+  retailerDisplayName: string;
+  code: 'missingListing' | 'missingProductUrl' | 'retailerInactive' | 'listingInactive';
+  message: string;
+}
+
+export interface OfferOnlinePriceCollectionCompanyOption {
+  companyPersonId: string;
+  companyDisplayName: string;
+  retailers: readonly OfferOnlinePriceCollectionRetailer[];
+  eligibleListingCount: number;
+  exclusions: readonly OfferOnlinePriceCollectionExclusion[];
+  hasActivePublishedProfile: boolean;
+  unfinishedRun: RetailerPriceCollectionRunSummary | null;
+  canStart: boolean;
+  blockingCodes: readonly string[];
+}
+
+export interface OfferOnlinePriceCollectionOptions {
+  offerId: string;
+  companies: readonly OfferOnlinePriceCollectionCompanyOption[];
+}
+
+export interface OfferOnlinePriceCollectionStartOutcome {
+  companyPersonId: string;
+  companyDisplayName: string;
+  status: 'accepted' | 'unavailable';
+  code: 'accepted' | 'stateChanged';
+  message: string;
+  run: RetailerPriceCollectionRunSummary | null;
+  exclusions: readonly OfferOnlinePriceCollectionExclusion[];
+}
+
+export interface OfferOnlinePriceCollectionStartResponse {
+  offerId: string;
+  outcomes: readonly OfferOnlinePriceCollectionStartOutcome[];
+}
+
+export interface StartOfferOnlinePriceCollectionRequest {
+  siteId: string;
+  offerId: string;
+  companyPersonIds: readonly string[];
 }
