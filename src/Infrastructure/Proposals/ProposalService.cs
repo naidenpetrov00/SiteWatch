@@ -61,6 +61,12 @@ internal sealed class ProposalService(
                 "Issue the existing draft Proposal before creating another revision.");
         }
 
+        if (existing.Count > 0 && existing[^1].Status == ProposalStatus.Accepted)
+        {
+            throw new ProposalConflictException(
+                "An accepted Proposal is terminal; another revision cannot be created.");
+        }
+
         var revisionNumber = existing.Count == 0
             ? 1
             : checked(existing[^1].RevisionNumber + 1);
@@ -133,7 +139,14 @@ internal sealed class ProposalService(
         Guid proposalId,
         CancellationToken cancellationToken)
     {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable,
+            cancellationToken);
         var proposal = await LoadProposalAsync(siteId, proposalId, tracked: true, cancellationToken);
+        await dbContext.Proposals
+            .Where(item => item.SourceOfferId == proposal.SourceOfferId)
+            .Select(item => item.RevisionNumber)
+            .ToListAsync(cancellationToken);
         try
         {
             proposal.EnsureCanIssue();
@@ -182,6 +195,7 @@ internal sealed class ProposalService(
             await SaveMutationAsync(
                 "The Proposal could not be issued because the revision changed.",
                 cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
         }
         catch
         {
@@ -209,9 +223,18 @@ internal sealed class ProposalService(
     public async Task<ProposalDetailsDto> GetByIdAsync(
         Guid siteId,
         Guid proposalId,
-        CancellationToken cancellationToken) =>
-        ProposalDetailsDto.From(
-            await LoadProposalAsync(siteId, proposalId, tracked: false, cancellationToken));
+        CancellationToken cancellationToken)
+    {
+        var proposal = await LoadProposalAsync(
+            siteId,
+            proposalId,
+            tracked: false,
+            cancellationToken);
+        var supersededBy = await GetSupersedingRevisionAsync(
+            proposal,
+            cancellationToken);
+        return ProposalDetailsDto.From(proposal, supersededBy);
+    }
 
     public async Task<IReadOnlyList<ProposalSummaryDto>> GetHistoryAsync(
         Guid siteId,
@@ -232,7 +255,18 @@ internal sealed class ProposalService(
                 && proposal.SourceOfferId == offerId)
             .OrderByDescending(proposal => proposal.RevisionNumber)
             .ToListAsync(cancellationToken);
-        return proposals.Select(ProposalSummaryDto.From).ToList();
+        var highestClientVisibleRevision = proposals
+            .Where(IsClientVisible)
+            .Select(proposal => (int?)proposal.RevisionNumber)
+            .Max();
+        return proposals
+            .Select(proposal => ProposalSummaryDto.From(
+                proposal,
+                highestClientVisibleRevision.HasValue
+                    && highestClientVisibleRevision.Value > proposal.RevisionNumber
+                    ? highestClientVisibleRevision
+                    : null))
+            .ToList();
     }
 
     public async Task<ProposalPdfInfoDto> GetPdfInfoAsync(
@@ -247,7 +281,7 @@ internal sealed class ProposalService(
                 item => item.Id == proposalId && item.SiteId == siteId,
                 cancellationToken)
             ?? throw new NotFoundException(nameof(Proposal), proposalId.ToString());
-        if (proposal.Status != ProposalStatus.Issued || proposal.Document is null)
+        if (!IsClientVisible(proposal) || proposal.Document is null)
         {
             throw new ProposalConflictException(
                 "A PDF is available only for an issued Proposal.");
@@ -276,7 +310,203 @@ internal sealed class ProposalService(
                 item => item.Id == proposalId && item.SiteId == siteId,
                 cancellationToken)
             ?? throw new NotFoundException(nameof(Proposal), proposalId.ToString());
-        if (proposal.Status != ProposalStatus.Issued || proposal.Document is null)
+        if (!IsClientVisible(proposal) || proposal.Document is null)
+        {
+            throw new NotFoundException("Proposal PDF", proposalId.ToString());
+        }
+
+        return await documentStorage.DownloadAsync(
+            proposal.Document.BlobName,
+            proposal.Document.FileName,
+            cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ClientProposalSummaryDto>> GetClientListAsync(
+        Guid siteId,
+        CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        var hasSiteAccess = await dbContext.Sites
+            .AsNoTracking()
+            .AnyAsync(site => site.Id == siteId
+                && site.Users.Any(siteUser => siteUser.Id == userId),
+                cancellationToken);
+        if (!hasSiteAccess)
+        {
+            throw new NotFoundException(nameof(Site), siteId.ToString());
+        }
+
+        var proposals = await dbContext.Proposals
+            .AsNoTracking()
+            .Where(proposal => proposal.SiteId == siteId
+                && proposal.RecipientUserId == userId
+                && proposal.Site.Users.Any(siteUser => siteUser.Id == userId)
+                && (proposal.Status == ProposalStatus.Issued
+                    || proposal.Status == ProposalStatus.Accepted
+                    || proposal.Status == ProposalStatus.Rejected))
+            .OrderByDescending(proposal => proposal.IssuedAt)
+            .ThenByDescending(proposal => proposal.RevisionNumber)
+            .ToListAsync(cancellationToken);
+
+        var sourceOfferIds = proposals
+            .Select(proposal => proposal.SourceOfferId)
+            .Distinct()
+            .ToList();
+        var clientVisibleRevisions = await dbContext.Proposals
+            .AsNoTracking()
+            .Where(proposal => sourceOfferIds.Contains(proposal.SourceOfferId)
+                && (proposal.Status == ProposalStatus.Issued
+                    || proposal.Status == ProposalStatus.Accepted
+                    || proposal.Status == ProposalStatus.Rejected))
+            .Select(proposal => new
+            {
+                proposal.SourceOfferId,
+                proposal.RevisionNumber
+            })
+            .ToListAsync(cancellationToken);
+        var highestByOffer = clientVisibleRevisions
+            .GroupBy(proposal => proposal.SourceOfferId)
+            .ToDictionary(
+                group => group.Key,
+                group => group.Max(proposal => proposal.RevisionNumber));
+        return proposals.Select(proposal =>
+        {
+            var highest = highestByOffer[proposal.SourceOfferId];
+            return ClientProposalSummaryDto.From(
+                proposal,
+                highest > proposal.RevisionNumber ? highest : null);
+        }).ToList();
+    }
+
+    public async Task<ClientProposalDetailsDto> GetClientByIdAsync(
+        Guid siteId,
+        Guid proposalId,
+        CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        var viewedAt = DateTimeOffset.UtcNow;
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(
+            IsolationLevel.ReadCommitted,
+            cancellationToken);
+        await dbContext.Proposals
+            .Where(proposal => proposal.Id == proposalId
+                && proposal.SiteId == siteId
+                && proposal.RecipientUserId == userId
+                && proposal.Site.Users.Any(siteUser => siteUser.Id == userId)
+                && (proposal.Status == ProposalStatus.Issued
+                    || proposal.Status == ProposalStatus.Accepted
+                    || proposal.Status == ProposalStatus.Rejected)
+                && proposal.FirstViewedAt == null)
+            .ExecuteUpdateAsync(
+                updates => updates.SetProperty(
+                    proposal => proposal.FirstViewedAt,
+                    viewedAt),
+                cancellationToken);
+
+        var proposal = await LoadAuthorizedClientProposalAsync(
+            siteId,
+            proposalId,
+            userId,
+            tracked: false,
+            cancellationToken);
+        var supersededBy = await GetSupersedingRevisionAsync(
+            proposal,
+            cancellationToken);
+        var details = ClientProposalDetailsDto.From(proposal, supersededBy);
+        await transaction.CommitAsync(cancellationToken);
+        return details;
+    }
+
+    public async Task<ClientProposalDetailsDto> RespondAsync(
+        RespondToProposalCommand request,
+        CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable,
+            cancellationToken);
+        var proposal = await LoadAuthorizedClientProposalAsync(
+            request.SiteId,
+            request.ProposalId,
+            userId,
+            tracked: true,
+            cancellationToken);
+        var supersedingRevision = await GetSupersedingRevisionAsync(
+            proposal,
+            cancellationToken);
+        if (supersedingRevision.HasValue)
+        {
+            throw new ProposalConflictException(
+                $"Revision {proposal.RevisionNumber} was superseded by revision {supersedingRevision.Value}.");
+        }
+
+        var decision = string.Equals(
+            request.Decision,
+            nameof(ProposalStatus.Accepted),
+            StringComparison.Ordinal)
+            ? ProposalStatus.Accepted
+            : ProposalStatus.Rejected;
+        try
+        {
+            proposal.Respond(
+                decision,
+                DateTimeOffset.UtcNow,
+                userId,
+                request.Comment);
+            await SaveMutationAsync(
+                "The Proposal response could not be saved because its state changed.",
+                cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (Exception exception) when (
+            exception is InvalidOperationException or ArgumentException)
+        {
+            throw new ProposalConflictException(exception.Message, exception);
+        }
+
+        return ClientProposalDetailsDto.From(proposal, null);
+    }
+
+    public async Task<ProposalPdfInfoDto> GetClientPdfInfoAsync(
+        Guid siteId,
+        Guid proposalId,
+        CancellationToken cancellationToken)
+    {
+        var proposal = await LoadAuthorizedClientProposalAsync(
+            siteId,
+            proposalId,
+            GetCurrentUserId(),
+            tracked: false,
+            cancellationToken);
+        if (proposal.Document is null)
+        {
+            throw new NotFoundException("Proposal PDF", proposalId.ToString());
+        }
+
+        return new ProposalPdfInfoDto(
+            proposal.Document.FileName,
+            proposal.Document.ContentType);
+    }
+
+    public async Task<ProposalFileResponse> DownloadClientPdfAsync(
+        Guid siteId,
+        Guid proposalId,
+        string ticketUserId,
+        CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        if (!string.Equals(userId, ticketUserId, StringComparison.Ordinal))
+        {
+            throw new NotFoundException("Proposal PDF", proposalId.ToString());
+        }
+
+        var proposal = await LoadAuthorizedClientProposalAsync(
+            siteId,
+            proposalId,
+            userId,
+            tracked: false,
+            cancellationToken);
+        if (proposal.Document is null)
         {
             throw new NotFoundException("Proposal PDF", proposalId.ToString());
         }
@@ -306,6 +536,55 @@ internal sealed class ProposalService(
         return proposal
             ?? throw new NotFoundException(nameof(Proposal), proposalId.ToString());
     }
+
+    private async Task<Proposal> LoadAuthorizedClientProposalAsync(
+        Guid siteId,
+        Guid proposalId,
+        string userId,
+        bool tracked,
+        CancellationToken cancellationToken)
+    {
+        var query = dbContext.Proposals
+            .Include(proposal => proposal.Document)
+            .Include(proposal => proposal.Activities)
+            .ThenInclude(activity => activity.Sections)
+            .Include(proposal => proposal.ProductLines)
+            .Where(proposal => proposal.Id == proposalId
+                && proposal.SiteId == siteId
+                && proposal.RecipientUserId == userId
+                && proposal.Site.Users.Any(siteUser => siteUser.Id == userId)
+                && (proposal.Status == ProposalStatus.Issued
+                    || proposal.Status == ProposalStatus.Accepted
+                    || proposal.Status == ProposalStatus.Rejected))
+            .AsSplitQuery();
+        var proposal = await (tracked
+                ? query
+                : query.AsNoTrackingWithIdentityResolution())
+            .SingleOrDefaultAsync(cancellationToken);
+        return proposal
+            ?? throw new NotFoundException(nameof(Proposal), proposalId.ToString());
+    }
+
+    private async Task<int?> GetSupersedingRevisionAsync(
+        Proposal proposal,
+        CancellationToken cancellationToken) =>
+        await dbContext.Proposals
+            .AsNoTracking()
+            .Where(candidate => candidate.SourceOfferId == proposal.SourceOfferId
+                && candidate.RevisionNumber > proposal.RevisionNumber
+                && (candidate.Status == ProposalStatus.Issued
+                    || candidate.Status == ProposalStatus.Accepted
+                    || candidate.Status == ProposalStatus.Rejected))
+            .Select(candidate => (int?)candidate.RevisionNumber)
+            .MaxAsync(cancellationToken);
+
+    private string GetCurrentUserId() =>
+        user.Id ?? throw new UnauthorizedAccessException();
+
+    private static bool IsClientVisible(Proposal proposal) =>
+        proposal.Status is ProposalStatus.Issued
+            or ProposalStatus.Accepted
+            or ProposalStatus.Rejected;
 
     private async Task SaveMutationAsync(
         string conflictMessage,

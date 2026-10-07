@@ -66,6 +66,39 @@ public sealed class Proposals : EndpointGroupBase
             .WithSummary("Download an issued Proposal PDF using temporary access")
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound);
+
+        var clientGroup = app
+            .MapGroup("/client/sites/{siteId:guid}/proposals")
+            .RequireAuthorization()
+            .WithTags("Client Proposals");
+        clientGroup.MapGet("", GetClientProposals)
+            .WithName("GetClientProposals")
+            .WithSummary("List client-visible Proposal revisions addressed to the current user")
+            .Produces<IReadOnlyList<ClientProposalSummaryDto>>(StatusCodes.Status200OK);
+        clientGroup.MapGet("/{proposalId:guid}", GetClientProposal)
+            .WithName("GetClientProposal")
+            .WithSummary("Get a Proposal snapshot addressed to the current user")
+            .Produces<ClientProposalDetailsDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
+        clientGroup.MapPatch("/{proposalId:guid}/response", RespondToClientProposal)
+            .WithName("RespondToClientProposal")
+            .WithSummary("Accept or reject an eligible Proposal revision")
+            .Produces<ClientProposalDetailsDto>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict);
+        clientGroup.MapGet("/{proposalId:guid}/pdf-access", GetClientProposalPdfAccess)
+            .WithName("GetClientProposalPdfAccess")
+            .WithSummary("Get recipient-bound temporary access to a Proposal PDF")
+            .Produces<ProposalPdfAccessResponse>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
+        app.MapGet("/client/proposals/pdf", DownloadClientProposalPdf)
+            .RequireAuthorization()
+            .WithTags("Client Proposals")
+            .WithName("DownloadClientProposalPdf")
+            .WithSummary("Download a Proposal PDF using recipient-bound temporary access")
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
     }
 
     private static async Task<Created<ProposalCreatedResponse>> CreateProposal(
@@ -196,6 +229,95 @@ public sealed class Proposals : EndpointGroupBase
         response.Headers["X-Content-Type-Options"] = "nosniff";
     }
 
+    private static async Task<Ok<IReadOnlyList<ClientProposalSummaryDto>>> GetClientProposals(
+        IMediator mediator,
+        Guid siteId,
+        CancellationToken cancellationToken) =>
+        TypedResults.Ok(await mediator.Send(
+            new ClientProposalListQuery(siteId),
+            cancellationToken));
+
+    private static async Task<Ok<ClientProposalDetailsDto>> GetClientProposal(
+        IMediator mediator,
+        Guid siteId,
+        Guid proposalId,
+        CancellationToken cancellationToken) =>
+        TypedResults.Ok(await mediator.Send(
+            new ClientProposalByIdQuery(siteId, proposalId),
+            cancellationToken));
+
+    private static async Task<Ok<ClientProposalDetailsDto>> RespondToClientProposal(
+        IMediator mediator,
+        Guid siteId,
+        Guid proposalId,
+        RespondToProposalRequest request,
+        CancellationToken cancellationToken) =>
+        TypedResults.Ok(await mediator.Send(
+            new RespondToProposalCommand(
+                siteId,
+                proposalId,
+                request.Decision,
+                request.Comment),
+            cancellationToken));
+
+    private static async Task<Ok<ProposalPdfAccessResponse>> GetClientProposalPdfAccess(
+        IMediator mediator,
+        IClientProposalPdfAccessTicketService ticketService,
+        IUser user,
+        HttpContext httpContext,
+        Guid siteId,
+        Guid proposalId,
+        CancellationToken cancellationToken)
+    {
+        var file = await mediator.Send(
+            new ClientProposalPdfInfoQuery(siteId, proposalId),
+            cancellationToken);
+        var userId = user.Id ?? throw new UnauthorizedAccessException();
+        var expiresAt = DateTimeOffset.UtcNow.Add(PdfAccessLifetime);
+        var ticket = ticketService.Create(siteId, proposalId, userId, expiresAt);
+        var url = QueryHelpers.AddQueryString(
+            "/client/proposals/pdf",
+            "ticket",
+            ticket);
+        SetSensitiveResponseHeaders(httpContext.Response);
+        return TypedResults.Ok(new ProposalPdfAccessResponse(
+            url,
+            file.FileName,
+            file.ContentType,
+            expiresAt));
+    }
+
+    private static async Task<Results<FileStreamHttpResult, NotFound>> DownloadClientProposalPdf(
+        IMediator mediator,
+        IClientProposalPdfAccessTicketService ticketService,
+        IUser user,
+        HttpContext httpContext,
+        string? ticket,
+        CancellationToken cancellationToken)
+    {
+        SetSensitiveResponseHeaders(httpContext.Response);
+        if (!ticketService.TryRead(ticket ?? string.Empty, out var accessTicket)
+            || accessTicket is null
+            || !string.Equals(user.Id, accessTicket.UserId, StringComparison.Ordinal))
+        {
+            return TypedResults.NotFound();
+        }
+
+        var file = await mediator.Send(
+            new ClientProposalPdfDownloadQuery(
+                accessTicket.SiteId,
+                accessTicket.ProposalId,
+                accessTicket.UserId),
+            cancellationToken);
+        httpContext.Response.ContentLength = file.ContentLength;
+        httpContext.Response.GetTypedHeaders().ContentDisposition =
+            new ContentDispositionHeaderValue("attachment")
+            {
+                FileNameStar = file.FileName
+            };
+        return TypedResults.File(file.Stream, file.ContentType);
+    }
+
     /// <summary>Represents the identifier of a newly created Proposal revision.</summary>
     public sealed record ProposalCreatedResponse(Guid Id);
 
@@ -211,4 +333,9 @@ public sealed class Proposals : EndpointGroupBase
         string FileName,
         string ContentType,
         DateTimeOffset ExpiresAt);
+
+    /// <summary>Contains an irreversible client Proposal response.</summary>
+    public sealed record RespondToProposalRequest(
+        string Decision,
+        string? Comment);
 }

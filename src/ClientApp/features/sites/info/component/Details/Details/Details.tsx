@@ -12,6 +12,7 @@ import { useGetSiteImageIdsBySiteId } from "@/features/sites/info/images/hooks/u
 import { useGetSiteInvoices } from "@/features/sites/info/invoices/hooks/useGetSiteInvoices";
 import { useGetSiteVideoIdsBySiteId } from "@/features/sites/info/videos/hooks/useGetSiteVideoIdsBySiteId";
 import { useGetSiteIssues } from "@/features/sites/info/issues/hooks/useGetSiteIssues";
+import { useClientProposals } from "@/features/sites/proposals/api";
 
 const temporaryCount = (minimum: number, maximum: number) =>
   String(Math.floor(Math.random() * (maximum - minimum + 1)) + minimum);
@@ -28,6 +29,7 @@ const detailCards: DetailsCardItem[] = [
   },
   { label: "Files", value: "View", helper: "Files", path: "Files" },
   { label: "Issues", value: "View", helper: "View and manage", path: "Issues" },
+  { label: "Proposals", value: "View", helper: "Offers awaiting you", path: "Proposals" },
   {
     label: "People On Site",
     value: temporaryCount(1, 50),
@@ -56,12 +58,14 @@ const Details = () => {
     enabled: canViewInvoices,
   });
   const issuesQuery = useGetSiteIssues({ siteId });
+  const proposalsQuery = useClientProposals(siteId);
   const resourceCounts: Record<string, string> = {
     Images: imageIdsQuery.isSuccess ? String(imageIdsQuery.data.length) : "—",
     Videos: videoIdsQuery.isSuccess ? String(videoIdsQuery.data.length) : "—",
     Invoices: invoicesQuery.isSuccess ? String(invoicesQuery.data.length) : "—",
     Files: fileIdsQuery.isSuccess ? String(fileIdsQuery.data.length) : "—",
     Issues: issuesQuery.isSuccess ? String(issuesQuery.data.length) : "—",
+    Proposals: proposalsQuery.isSuccess ? String(proposalsQuery.data.length) : "—",
   };
   const visibleDetailCards = detailCards.filter(
     (card) => !card.allowedRoles || hasAnyRole(card.allowedRoles),

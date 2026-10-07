@@ -75,6 +75,10 @@ export class OfferWorkspacePage {
   readonly hasDraftProposal = computed(() =>
     this.proposals().some((proposal) => proposal.status === 'Draft')
   );
+  readonly latestProposal = computed(() => this.proposals()[0] ?? null);
+  readonly canCreateProposal = computed(() =>
+    !this.hasDraftProposal() && this.latestProposal()?.status !== 'Accepted'
+  );
   readonly metadataForm = this.formBuilder.group({
     title: ['', [Validators.maxLength(200)]],
     notes: ['', [Validators.maxLength(2000)]]
@@ -223,7 +227,7 @@ export class OfferWorkspacePage {
     if (
       !offer ||
       offer.status !== 'Finalized' ||
-      this.hasDraftProposal() ||
+      !this.canCreateProposal() ||
       this.proposalsService.createMutation.isPending()
     ) {
       return;

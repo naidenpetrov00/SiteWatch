@@ -1,87 +1,64 @@
-export type ProposalStatus = 'Draft' | 'Issued' | 'Accepted' | 'Rejected';
+export type ProposalStatus = "Issued" | "Accepted" | "Rejected";
 
-export interface ProposalSummary {
+export type ClientProposalSummary = {
   id: string;
   numberId: number;
   revisionNumber: number;
-  siteId: string;
-  sourceOfferId: string;
-  sourceOfferNumberId: number;
-  recipientDisplayName: string;
-  recipientEmail: string;
   status: ProposalStatus;
   validUntil: string | null;
-  created: string;
-  issuedAt: string | null;
+  issuedAt: string;
   firstViewedAt: string | null;
   respondedAt: string | null;
   responseComment: string | null;
   total: number;
-  currencyCode: 'EUR';
+  currencyCode: "EUR";
+  siteName: string;
   excludesUnpricedOptionalItems: boolean;
-  unpricedOptionalItemCount: number;
   canRespond: boolean;
   supersededByRevisionNumber: number | null;
-}
+};
 
-export interface ProposalActivitySection {
+export type ProposalActivitySection = {
   id: string;
-  sourceOfferActivitySectionId: string;
   name: string | null;
-  basisQuantity: number;
-  measurementUnit: string;
   requestedMeasurement: number;
+  measurementUnit: string;
   pricingMode: string;
   priceAmount: number | null;
   calculatedTotal: number;
-  sortOrder: number;
-}
+};
 
-export interface ProposalActivity {
+export type ProposalActivity = {
   id: string;
-  sourceOfferActivityId: string;
   activityNumberId: number;
   name: string;
   description: string | null;
-  sortOrder: number;
   sections: readonly ProposalActivitySection[];
-}
+};
 
-export interface ProposalProductLine {
+export type ProposalProduct = {
   id: string;
-  sourceOfferProductLineId: string;
-  productId: string;
   productNumberId: number;
   title: string;
-  category: string;
   brand: string | null;
   model: string | null;
-  packageQuantity: number | null;
-  packageUnit: string | null;
   requiredQuantity: number;
   optionalQuantity: number;
-  selectedRetailerId: string | null;
   selectedRetailerDisplayName: string | null;
   selectedPriceAmount: number | null;
-  selectedPriceCurrencyCode: 'EUR' | null;
   selectedPriceBasis: string | null;
   requiredTotal: number | null;
   optionalTotal: number | null;
   isOptionalPriceExcluded: boolean;
-  sortOrder: number;
-}
+};
 
-export interface ProposalDetails extends ProposalSummary {
+export type ClientProposalDetails = ClientProposalSummary & {
   siteNumberId: number;
-  siteName: string;
   siteAddress: string;
-  sourceOfferFinalizedAt: string;
-  recipientUserId: string;
+  recipientDisplayName: string;
+  recipientEmail: string;
   publicNotes: string | null;
   paymentTerms: string | null;
-  lastModified: string;
-  issuedBy: string | null;
-  respondedByUserId: string | null;
   activitySubtotalBeforeDiscount: number;
   activityDiscountPercentage: number;
   activityDiscountAmount: number;
@@ -90,26 +67,17 @@ export interface ProposalDetails extends ProposalSummary {
   productDiscountPercentage: number;
   productDiscountAmount: number;
   productTotalAfterDiscount: number;
+  unpricedOptionalItemCount: number;
   hasPdf: boolean;
   activities: readonly ProposalActivity[];
-  products: readonly ProposalProductLine[];
-}
+  products: readonly ProposalProduct[];
+};
 
-export interface CreateProposalResponse {
-  id: string;
-}
+export type ProposalResponseDecision = "Accepted" | "Rejected";
 
-export interface UpdateProposalMetadataRequest {
-  siteId: string;
-  proposalId: string;
-  validUntil: string | null;
-  publicNotes: string | null;
-  paymentTerms: string | null;
-}
-
-export interface ProposalPdfAccess {
+export type ProposalPdfAccess = {
   url: string;
   fileName: string;
   contentType: string;
   expiresAt: string;
-}
+};

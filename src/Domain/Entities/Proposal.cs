@@ -7,6 +7,7 @@ public sealed class Proposal : BaseAuditableEntity, IHasNumberId, IAgregateRoot
 {
     public const int MaxPublicNotesLength = 2000;
     public const int MaxPaymentTermsLength = 2000;
+    public const int MaxResponseCommentLength = 2000;
     public const string EuroCurrencyCode = "EUR";
 
     private readonly List<ProposalActivity> _activities = [];
@@ -48,6 +49,10 @@ public sealed class Proposal : BaseAuditableEntity, IHasNumberId, IAgregateRoot
     public bool ExcludesUnpricedOptionalItems => UnpricedOptionalItemCount > 0;
     public DateTimeOffset? IssuedAt { get; private set; }
     public string? IssuedBy { get; private set; }
+    public DateTimeOffset? FirstViewedAt { get; private set; }
+    public DateTimeOffset? RespondedAt { get; private set; }
+    public string? RespondedByUserId { get; private set; }
+    public string? ResponseComment { get; private set; }
     public ProposalDocument? Document { get; private set; }
     public byte[] RowVersion { get; private set; } = [];
     public IReadOnlyCollection<ProposalActivity> Activities => _activities;
@@ -210,6 +215,79 @@ public sealed class Proposal : BaseAuditableEntity, IHasNumberId, IAgregateRoot
         IssuedBy = issuedBy;
     }
 
+    public bool RecordFirstView(DateTimeOffset viewedAt)
+    {
+        EnsureClientVisible();
+        EnsureUtc(viewedAt, nameof(viewedAt));
+        if (!IssuedAt.HasValue || viewedAt < IssuedAt.Value)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(viewedAt),
+                "The first-view time cannot precede issuance.");
+        }
+        if (FirstViewedAt.HasValue)
+        {
+            return false;
+        }
+
+        FirstViewedAt = viewedAt;
+        return true;
+    }
+
+    public void Respond(
+        ProposalStatus decision,
+        DateTimeOffset respondedAt,
+        string actingUserId,
+        string? comment)
+    {
+        if (Status != ProposalStatus.Issued)
+        {
+            throw new InvalidOperationException(
+                "Only an issued Proposal can be accepted or rejected.");
+        }
+
+        if (decision is not ProposalStatus.Accepted and not ProposalStatus.Rejected)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(decision),
+                decision,
+                "The response must be Accepted or Rejected.");
+        }
+
+        EnsureUtc(respondedAt, nameof(respondedAt));
+        if (!IssuedAt.HasValue || respondedAt < IssuedAt.Value)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(respondedAt),
+                "The response time cannot precede issuance.");
+        }
+        var normalizedUserId = NormalizeRequired(
+            actingUserId,
+            450,
+            "responding user ID");
+        if (!string.Equals(
+                normalizedUserId,
+                RecipientUserId,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "Only the snapshotted Proposal recipient can respond.");
+        }
+
+        Status = decision;
+        RespondedAt = respondedAt;
+        RespondedByUserId = normalizedUserId;
+        ResponseComment = NormalizeOptional(
+            comment,
+            MaxResponseCommentLength,
+            nameof(comment));
+    }
+
+    public bool IsClientVisible() =>
+        Status is ProposalStatus.Issued
+            or ProposalStatus.Accepted
+            or ProposalStatus.Rejected;
+
     private void CalculateTotals()
     {
         try
@@ -245,7 +323,26 @@ public sealed class Proposal : BaseAuditableEntity, IHasNumberId, IAgregateRoot
     {
         if (Status != ProposalStatus.Draft)
         {
-            throw new InvalidOperationException("Issued Proposals are immutable.");
+            throw new InvalidOperationException("Non-draft Proposals are immutable.");
+        }
+    }
+
+    private void EnsureClientVisible()
+    {
+        if (!IsClientVisible())
+        {
+            throw new InvalidOperationException(
+                "Only an issued Proposal can be viewed by its recipient.");
+        }
+    }
+
+    private static void EnsureUtc(DateTimeOffset value, string parameterName)
+    {
+        if (value.Offset != TimeSpan.Zero)
+        {
+            throw new ArgumentException(
+                "Proposal interaction time must be UTC.",
+                parameterName);
         }
     }
 

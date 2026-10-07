@@ -52,9 +52,11 @@
 }
 .proposal-page form,
 .proposal-page__identity dl,
-.proposal-page__totals dl { display: grid; gap: 0.8rem; margin: 0; }
+.proposal-page__totals dl,
+.proposal-page__interaction { display: grid; gap: 0.8rem; margin: 0; }
 .proposal-page__identity dl div,
-.proposal-page__totals dl div { display: flex; justify-content: space-between; gap: 1rem; }
+.proposal-page__totals dl div,
+.proposal-page__interaction div { display: flex; justify-content: space-between; gap: 1rem; }
 .proposal-page dt { font-weight: 700; }
 .proposal-page dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
 .proposal-page__feedback,
@@ -85,6 +87,7 @@
   .proposal-page__header,
   .proposal-page__section-heading,
   .proposal-page__identity dl div,
-  .proposal-page__totals dl div { align-items: start; flex-direction: column; }
+  .proposal-page__totals dl div,
+  .proposal-page__interaction div { align-items: start; flex-direction: column; }
   .proposal-page dd { text-align: left; }
 }

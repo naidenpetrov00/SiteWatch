@@ -38,4 +38,28 @@ public interface IProposalService
         Guid proposalId,
         string userId,
         CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<ClientProposalSummaryDto>> GetClientListAsync(
+        Guid siteId,
+        CancellationToken cancellationToken);
+
+    Task<ClientProposalDetailsDto> GetClientByIdAsync(
+        Guid siteId,
+        Guid proposalId,
+        CancellationToken cancellationToken);
+
+    Task<ClientProposalDetailsDto> RespondAsync(
+        RespondToProposalCommand request,
+        CancellationToken cancellationToken);
+
+    Task<ProposalPdfInfoDto> GetClientPdfInfoAsync(
+        Guid siteId,
+        Guid proposalId,
+        CancellationToken cancellationToken);
+
+    Task<ProposalFileResponse> DownloadClientPdfAsync(
+        Guid siteId,
+        Guid proposalId,
+        string ticketUserId,
+        CancellationToken cancellationToken);
 }

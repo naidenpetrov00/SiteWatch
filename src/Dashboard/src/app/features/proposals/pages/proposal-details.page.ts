@@ -155,7 +155,7 @@ export class ProposalDetailsPage {
 
   async downloadPdf(): Promise<void> {
     const proposal = this.proposal();
-    if (!proposal?.hasPdf || proposal.status !== 'Issued') {
+    if (!proposal?.hasPdf || proposal.status === 'Draft') {
       return;
     }
 

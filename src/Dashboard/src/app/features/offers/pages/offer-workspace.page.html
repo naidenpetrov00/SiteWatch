@@ -215,7 +215,7 @@
           <p class="offer-workspace__eyebrow">Stage 5</p>
           <h2 id="offer-proposals-heading">Proposal History</h2>
         </div>
-        @if (currentOffer.status === 'Finalized' && !hasDraftProposal()) {
+        @if (currentOffer.status === 'Finalized' && canCreateProposal()) {
           <button
             mat-flat-button
             color="primary"
@@ -227,6 +227,12 @@
           </button>
         }
       </div>
+
+      @if (latestProposal()?.status === 'Accepted') {
+        <p class="offer-workspace__readonly-note">
+          The latest Proposal revision was accepted. No further revision can be created.
+        </p>
+      }
 
       @if (isLoadingProposals()) {
         <p class="offer-workspace__feedback" aria-live="polite">Loading Proposal history…</p>
@@ -250,6 +256,11 @@
                 <strong>Proposal #{{ proposal.numberId }} · Revision {{ proposal.revisionNumber }}</strong>
                 <span>
                   {{ proposal.status }} · {{ formatMoney(proposal.total) }}
+                  @if (proposal.supersededByRevisionNumber) {
+                    · superseded by revision {{ proposal.supersededByRevisionNumber }}
+                  } @else if (proposal.canRespond) {
+                    · awaiting client response
+                  }
                   @if (proposal.excludesUnpricedOptionalItems) {
                     · excludes unpriced optional items
                   }

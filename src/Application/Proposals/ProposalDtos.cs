@@ -17,12 +17,19 @@ public sealed record ProposalSummaryDto(
     DateOnly? ValidUntil,
     DateTimeOffset Created,
     DateTimeOffset? IssuedAt,
+    DateTimeOffset? FirstViewedAt,
+    DateTimeOffset? RespondedAt,
+    string? ResponseComment,
     decimal Total,
     string CurrencyCode,
     bool ExcludesUnpricedOptionalItems,
-    int UnpricedOptionalItemCount)
+    int UnpricedOptionalItemCount,
+    bool CanRespond,
+    int? SupersededByRevisionNumber)
 {
-    public static ProposalSummaryDto From(Proposal proposal) => new(
+    public static ProposalSummaryDto From(
+        Proposal proposal,
+        int? supersededByRevisionNumber = null) => new(
         proposal.Id,
         proposal.NumberId,
         proposal.RevisionNumber,
@@ -35,10 +42,16 @@ public sealed record ProposalSummaryDto(
         proposal.ValidUntil,
         proposal.Created,
         proposal.IssuedAt,
+        proposal.FirstViewedAt,
+        proposal.RespondedAt,
+        proposal.ResponseComment,
         proposal.Total,
         proposal.CurrencyCode,
         proposal.ExcludesUnpricedOptionalItems,
-        proposal.UnpricedOptionalItemCount);
+        proposal.UnpricedOptionalItemCount,
+        proposal.Status == ProposalStatus.Issued
+            && !supersededByRevisionNumber.HasValue,
+        supersededByRevisionNumber);
 }
 
 /// <summary>Represents a complete immutable commercial Proposal snapshot.</summary>
@@ -64,6 +77,12 @@ public sealed record ProposalDetailsDto(
     DateTimeOffset LastModified,
     DateTimeOffset? IssuedAt,
     string? IssuedBy,
+    DateTimeOffset? FirstViewedAt,
+    DateTimeOffset? RespondedAt,
+    string? RespondedByUserId,
+    string? ResponseComment,
+    bool CanRespond,
+    int? SupersededByRevisionNumber,
     string CurrencyCode,
     decimal ActivitySubtotalBeforeDiscount,
     decimal ActivityDiscountPercentage,
@@ -80,7 +99,9 @@ public sealed record ProposalDetailsDto(
     IReadOnlyList<ProposalActivityDto> Activities,
     IReadOnlyList<ProposalProductLineDto> Products)
 {
-    public static ProposalDetailsDto From(Proposal proposal) => new(
+    public static ProposalDetailsDto From(
+        Proposal proposal,
+        int? supersededByRevisionNumber = null) => new(
         proposal.Id,
         proposal.NumberId,
         proposal.RevisionNumber,
@@ -102,6 +123,13 @@ public sealed record ProposalDetailsDto(
         proposal.LastModified,
         proposal.IssuedAt,
         proposal.IssuedBy,
+        proposal.FirstViewedAt,
+        proposal.RespondedAt,
+        proposal.RespondedByUserId,
+        proposal.ResponseComment,
+        proposal.Status == ProposalStatus.Issued
+            && !supersededByRevisionNumber.HasValue,
+        supersededByRevisionNumber,
         proposal.CurrencyCode,
         proposal.ActivitySubtotalBeforeDiscount,
         proposal.ActivityDiscountPercentage,
@@ -167,6 +195,125 @@ public sealed record ProposalDetailsDto(
                 line.IsOptionalPriceExcluded,
                 line.SortOrder))
             .ToList());
+}
+
+/// <summary>Represents one client-visible Proposal revision.</summary>
+public sealed record ClientProposalSummaryDto(
+    Guid Id,
+    int NumberId,
+    int RevisionNumber,
+    string Status,
+    DateOnly? ValidUntil,
+    DateTimeOffset IssuedAt,
+    DateTimeOffset? FirstViewedAt,
+    DateTimeOffset? RespondedAt,
+    string? ResponseComment,
+    decimal Total,
+    string CurrencyCode,
+    string SiteName,
+    bool ExcludesUnpricedOptionalItems,
+    bool CanRespond,
+    int? SupersededByRevisionNumber)
+{
+    public static ClientProposalSummaryDto From(
+        Proposal proposal,
+        int? supersededByRevisionNumber) => new(
+        proposal.Id,
+        proposal.NumberId,
+        proposal.RevisionNumber,
+        proposal.Status.ToString(),
+        proposal.ValidUntil,
+        proposal.IssuedAt!.Value,
+        proposal.FirstViewedAt,
+        proposal.RespondedAt,
+        proposal.ResponseComment,
+        proposal.Total,
+        proposal.CurrencyCode,
+        proposal.SiteName,
+        proposal.ExcludesUnpricedOptionalItems,
+        proposal.Status == ProposalStatus.Issued
+            && !supersededByRevisionNumber.HasValue,
+        supersededByRevisionNumber);
+}
+
+/// <summary>Represents an immutable Proposal snapshot visible to its recipient.</summary>
+public sealed record ClientProposalDetailsDto(
+    Guid Id,
+    int NumberId,
+    int RevisionNumber,
+    string Status,
+    DateOnly? ValidUntil,
+    DateTimeOffset IssuedAt,
+    DateTimeOffset? FirstViewedAt,
+    DateTimeOffset? RespondedAt,
+    string? ResponseComment,
+    bool CanRespond,
+    int? SupersededByRevisionNumber,
+    int SiteNumberId,
+    string SiteName,
+    string SiteAddress,
+    string RecipientDisplayName,
+    string RecipientEmail,
+    string? PublicNotes,
+    string? PaymentTerms,
+    string CurrencyCode,
+    decimal ActivitySubtotalBeforeDiscount,
+    decimal ActivityDiscountPercentage,
+    decimal ActivityDiscountAmount,
+    decimal ActivityTotalAfterDiscount,
+    decimal ProductSubtotalBeforeDiscount,
+    decimal ProductDiscountPercentage,
+    decimal ProductDiscountAmount,
+    decimal ProductTotalAfterDiscount,
+    decimal Total,
+    bool ExcludesUnpricedOptionalItems,
+    int UnpricedOptionalItemCount,
+    bool HasPdf,
+    IReadOnlyList<ProposalActivityDto> Activities,
+    IReadOnlyList<ProposalProductLineDto> Products)
+{
+    public static ClientProposalDetailsDto From(
+        Proposal proposal,
+        int? supersededByRevisionNumber)
+    {
+        var details = ProposalDetailsDto.From(
+            proposal,
+            supersededByRevisionNumber);
+        return new ClientProposalDetailsDto(
+            details.Id,
+            details.NumberId,
+            details.RevisionNumber,
+            details.Status,
+            details.ValidUntil,
+            details.IssuedAt!.Value,
+            details.FirstViewedAt,
+            details.RespondedAt,
+            details.ResponseComment,
+            details.CanRespond,
+            details.SupersededByRevisionNumber,
+            details.SiteNumberId,
+            details.SiteName,
+            details.SiteAddress,
+            details.RecipientDisplayName,
+            details.RecipientEmail,
+            details.PublicNotes,
+            details.PaymentTerms,
+            details.CurrencyCode,
+            details.ActivitySubtotalBeforeDiscount,
+            details.ActivityDiscountPercentage,
+            details.ActivityDiscountAmount,
+            details.ActivityTotalAfterDiscount,
+            details.ProductSubtotalBeforeDiscount,
+            details.ProductDiscountPercentage,
+            details.ProductDiscountAmount,
+            details.ProductTotalAfterDiscount,
+            details.Total,
+            details.ExcludesUnpricedOptionalItems,
+            details.UnpricedOptionalItemCount,
+            details.HasPdf,
+            details.Activities,
+            details.Products);
+    }
 }
 
 /// <summary>Represents a snapshotted Proposal activity.</summary>

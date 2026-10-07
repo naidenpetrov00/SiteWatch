@@ -44,6 +44,12 @@
         {{ current.unpricedOptionalItemCount === 1 ? 'item' : 'items' }}.
       </aside>
     }
+    @if (current.supersededByRevisionNumber) {
+      <aside class="proposal-page__warning" role="note">
+        This revision was superseded by revision {{ current.supersededByRevisionNumber }}.
+        It remains available for history and PDF download.
+      </aside>
+    }
 
     <div class="proposal-page__top-grid">
       <section class="proposal-page__panel" aria-labelledby="proposal-metadata-heading">
@@ -112,6 +118,37 @@
         </dl>
       </aside>
     </div>
+
+    <section class="proposal-page__panel" aria-labelledby="proposal-client-response-heading">
+      <h2 id="proposal-client-response-heading">Client Interaction &amp; Response</h2>
+      <dl class="proposal-page__interaction">
+        <div>
+          <dt>First viewed</dt>
+          <dd>{{ current.firstViewedAt ? formatDateTime(current.firstViewedAt) : 'Not viewed' }}</dd>
+        </div>
+        <div><dt>Response status</dt><dd>{{ current.status }}</dd></div>
+        <div>
+          <dt>Response eligibility</dt>
+          <dd>
+            @if (current.canRespond) {
+              Awaiting response
+            } @else if (current.supersededByRevisionNumber) {
+              Superseded by revision {{ current.supersededByRevisionNumber }}
+            } @else if (current.status === 'Accepted' || current.status === 'Rejected') {
+              Response completed
+            } @else {
+              Not available
+            }
+          </dd>
+        </div>
+        <div>
+          <dt>Responded</dt>
+          <dd>{{ current.respondedAt ? formatDateTime(current.respondedAt) : 'Awaiting response' }}</dd>
+        </div>
+        <div><dt>Responded by</dt><dd>{{ current.respondedByUserId ?? '—' }}</dd></div>
+        <div><dt>Comment</dt><dd>{{ current.responseComment ?? 'No comment provided' }}</dd></div>
+      </dl>
+    </section>
 
     <section class="proposal-page__panel" aria-labelledby="proposal-activities-heading">
       <h2 id="proposal-activities-heading">Activities</h2>

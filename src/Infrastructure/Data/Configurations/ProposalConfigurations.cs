@@ -24,6 +24,21 @@ public sealed class ProposalConfiguration : IEntityTypeConfiguration<Proposal>
                 table.HasCheckConstraint(
                     "CK_Proposals_UnpricedOptionalItemCount",
                     "[UnpricedOptionalItemCount] >= 0");
+                table.HasCheckConstraint(
+                    "CK_Proposals_ResponseMetadata",
+                    "(([Status] IN (N'Draft', N'Issued') "
+                    + "AND [RespondedAt] IS NULL "
+                    + "AND [RespondedByUserId] IS NULL "
+                    + "AND [ResponseComment] IS NULL) "
+                    + "OR ([Status] IN (N'Accepted', N'Rejected') "
+                    + "AND [RespondedAt] IS NOT NULL "
+                    + "AND [RespondedByUserId] IS NOT NULL))");
+                table.HasCheckConstraint(
+                    "CK_Proposals_InteractionTimestamps",
+                    "([FirstViewedAt] IS NULL "
+                    + "OR ([IssuedAt] IS NOT NULL AND [FirstViewedAt] >= [IssuedAt])) "
+                    + "AND ([RespondedAt] IS NULL "
+                    + "OR ([IssuedAt] IS NOT NULL AND [RespondedAt] >= [IssuedAt]))");
             });
 
         builder.Property(proposal => proposal.NumberId)
@@ -45,6 +60,9 @@ public sealed class ProposalConfiguration : IEntityTypeConfiguration<Proposal>
         builder.Property(proposal => proposal.PaymentTerms)
             .HasMaxLength(Proposal.MaxPaymentTermsLength);
         builder.Property(proposal => proposal.IssuedBy).HasMaxLength(450);
+        builder.Property(proposal => proposal.RespondedByUserId).HasMaxLength(450);
+        builder.Property(proposal => proposal.ResponseComment)
+            .HasMaxLength(Proposal.MaxResponseCommentLength);
         builder.Property(proposal => proposal.ActivitySubtotalBeforeDiscount).HasPrecision(18, 2);
         builder.Property(proposal => proposal.ActivityDiscountPercentage).HasPrecision(5, 2);
         builder.Property(proposal => proposal.ActivityDiscountAmount).HasPrecision(18, 2);
@@ -65,6 +83,12 @@ public sealed class ProposalConfiguration : IEntityTypeConfiguration<Proposal>
             .IsUnique()
             .HasFilter("[Status] = N'Draft'");
         builder.HasIndex(proposal => new { proposal.SiteId, proposal.NumberId });
+        builder.HasIndex(proposal => new
+        {
+            proposal.SiteId,
+            proposal.RecipientUserId,
+            proposal.IssuedAt
+        });
 
         builder.HasOne(proposal => proposal.Site)
             .WithMany()

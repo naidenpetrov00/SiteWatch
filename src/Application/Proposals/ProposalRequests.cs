@@ -42,6 +42,36 @@ public sealed record ProposalPdfDownloadQuery(
     Guid ProposalId,
     string UserId) : IRequest<ProposalFileResponse>;
 
+/// <summary>Lists client-visible Proposal revisions addressed to the current user.</summary>
+[Authorize]
+public sealed record ClientProposalListQuery(Guid SiteId)
+    : IRequest<IReadOnlyList<ClientProposalSummaryDto>>;
+
+/// <summary>Loads a client Proposal snapshot and records its first recipient view.</summary>
+[Authorize]
+public sealed record ClientProposalByIdQuery(Guid SiteId, Guid ProposalId)
+    : IRequest<ClientProposalDetailsDto>;
+
+/// <summary>Accepts or rejects the latest issued Proposal revision for an Offer.</summary>
+[Authorize]
+public sealed record RespondToProposalCommand(
+    Guid SiteId,
+    Guid ProposalId,
+    string Decision,
+    string? Comment) : IRequest<ClientProposalDetailsDto>;
+
+/// <summary>Loads recipient PDF metadata before creating temporary access.</summary>
+[Authorize]
+public sealed record ClientProposalPdfInfoQuery(Guid SiteId, Guid ProposalId)
+    : IRequest<ProposalPdfInfoDto>;
+
+/// <summary>Downloads a Proposal PDF for its authenticated recipient.</summary>
+[Authorize]
+public sealed record ClientProposalPdfDownloadQuery(
+    Guid SiteId,
+    Guid ProposalId,
+    string TicketUserId) : IRequest<ProposalFileResponse>;
+
 public sealed class CreateProposalValidator : AbstractValidator<CreateProposalCommand>
 {
     public CreateProposalValidator()
@@ -74,6 +104,22 @@ public sealed class IssueProposalValidator : AbstractValidator<IssueProposalComm
     }
 }
 
+public sealed class RespondToProposalValidator
+    : AbstractValidator<RespondToProposalCommand>
+{
+    public RespondToProposalValidator()
+    {
+        RuleFor(command => command.SiteId).NotEmpty();
+        RuleFor(command => command.ProposalId).NotEmpty();
+        RuleFor(command => command.Decision)
+            .Must(decision => string.Equals(decision, "Accepted", StringComparison.Ordinal)
+                || string.Equals(decision, "Rejected", StringComparison.Ordinal))
+            .WithMessage("Decision must be Accepted or Rejected.");
+        RuleFor(command => command.Comment)
+            .MaximumLength(Domain.Entities.Proposal.MaxResponseCommentLength);
+    }
+}
+
 public sealed class ProposalRequestHandler(IProposalService proposalService) :
     IRequestHandler<CreateProposalCommand, Guid>,
     IRequestHandler<UpdateProposalMetadataCommand>,
@@ -81,7 +127,12 @@ public sealed class ProposalRequestHandler(IProposalService proposalService) :
     IRequestHandler<ProposalByIdQuery, ProposalDetailsDto>,
     IRequestHandler<ProposalHistoryQuery, IReadOnlyList<ProposalSummaryDto>>,
     IRequestHandler<ProposalPdfInfoQuery, ProposalPdfInfoDto>,
-    IRequestHandler<ProposalPdfDownloadQuery, ProposalFileResponse>
+    IRequestHandler<ProposalPdfDownloadQuery, ProposalFileResponse>,
+    IRequestHandler<ClientProposalListQuery, IReadOnlyList<ClientProposalSummaryDto>>,
+    IRequestHandler<ClientProposalByIdQuery, ClientProposalDetailsDto>,
+    IRequestHandler<RespondToProposalCommand, ClientProposalDetailsDto>,
+    IRequestHandler<ClientProposalPdfInfoQuery, ProposalPdfInfoDto>,
+    IRequestHandler<ClientProposalPdfDownloadQuery, ProposalFileResponse>
 {
     public Task<Guid> Handle(
         CreateProposalCommand request,
@@ -120,5 +171,40 @@ public sealed class ProposalRequestHandler(IProposalService proposalService) :
             request.SiteId,
             request.ProposalId,
             request.UserId,
+            cancellationToken);
+
+    public Task<IReadOnlyList<ClientProposalSummaryDto>> Handle(
+        ClientProposalListQuery request,
+        CancellationToken cancellationToken) =>
+        proposalService.GetClientListAsync(request.SiteId, cancellationToken);
+
+    public Task<ClientProposalDetailsDto> Handle(
+        ClientProposalByIdQuery request,
+        CancellationToken cancellationToken) =>
+        proposalService.GetClientByIdAsync(
+            request.SiteId,
+            request.ProposalId,
+            cancellationToken);
+
+    public Task<ClientProposalDetailsDto> Handle(
+        RespondToProposalCommand request,
+        CancellationToken cancellationToken) =>
+        proposalService.RespondAsync(request, cancellationToken);
+
+    public Task<ProposalPdfInfoDto> Handle(
+        ClientProposalPdfInfoQuery request,
+        CancellationToken cancellationToken) =>
+        proposalService.GetClientPdfInfoAsync(
+            request.SiteId,
+            request.ProposalId,
+            cancellationToken);
+
+    public Task<ProposalFileResponse> Handle(
+        ClientProposalPdfDownloadQuery request,
+        CancellationToken cancellationToken) =>
+        proposalService.DownloadClientPdfAsync(
+            request.SiteId,
+            request.ProposalId,
+            request.TicketUserId,
             cancellationToken);
 }
