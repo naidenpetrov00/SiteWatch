@@ -45,6 +45,8 @@ public sealed class Site : BaseAuditableEntity, IHasNumberId
     public SiteMediaPolicy MediaPolicy { get; private set; } = null!;
     public string ManagerId { get; private set; } = null!;
     public ApplicationUser Manager { get; private set; } = null!;
+    public string? PrimaryClientUserId { get; private set; }
+    public ApplicationUser? PrimaryClientUser { get; private set; }
     public DateOnly StartDate { get; private set; }
     public DateOnly? EndDate { get; private set; }
     public SiteStatus Status { get; private set; }
@@ -98,6 +100,44 @@ public sealed class Site : BaseAuditableEntity, IHasNumberId
     public void AddVideo(SiteVideo video) => _videos.Add(video);
     public void RemoveVideo(SiteVideo video) => _videos.Remove(video);
     public void AddUser(ApplicationUser user) => _users.Add(user);
+
+    public void AssignPrimaryClientRecipient(ApplicationUser? user)
+    {
+        PrimaryClientUser = user;
+        PrimaryClientUserId = user?.Id;
+
+        if (user is not null)
+        {
+            _users.Add(user);
+        }
+    }
+
+    public void SynchronizeAccessUsers(
+        IEnumerable<ApplicationUser> users,
+        ApplicationUser manager)
+    {
+        var accessUsers = users.Append(manager).ToList();
+        if (PrimaryClientUser is not null)
+        {
+            accessUsers.Add(PrimaryClientUser);
+        }
+
+        var accessUserIds = accessUsers
+            .Select(user => user.Id)
+            .ToHashSet(StringComparer.Ordinal);
+
+        if (PrimaryClientUserId is not null)
+        {
+            accessUserIds.Add(PrimaryClientUserId);
+        }
+
+        _users.RemoveWhere(user => !accessUserIds.Contains(user.Id));
+
+        foreach (var user in accessUsers)
+        {
+            _users.Add(user);
+        }
+    }
 
     public void AddUserRange(List<ApplicationUser> users)
     {

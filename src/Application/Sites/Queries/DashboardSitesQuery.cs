@@ -28,6 +28,7 @@ public sealed class DashboardSitesQueryHandler(IApplicationDbContext dbContext)
         var result = await dbContext.Sites
             .AsNoTracking()
             .Include(site => site.Manager)
+            .Include(site => site.PrimaryClientUser)
             .Include(site => site.Users)
             .ToPagedResultAsync<Site, Site, DashboardSitesQuery>(
                 request,
@@ -52,6 +53,7 @@ public sealed record DashboardSiteDto(
     string Address,
     string ManagerId,
     string ManagerDisplayName,
+    DashboardSiteUserDto? PrimaryClientUser,
     DateOnly StartDate,
     DateOnly? EndDate,
     string Status,
@@ -65,6 +67,12 @@ public sealed record DashboardSiteDto(
         site.Address.Value,
         site.ManagerId,
         site.Manager?.UserName ?? site.Manager?.Email ?? string.Empty,
+        site.PrimaryClientUser is null
+            ? null
+            : new DashboardSiteUserDto(
+                site.PrimaryClientUser.Id,
+                site.PrimaryClientUser.UserName ?? site.PrimaryClientUser.Email ?? site.PrimaryClientUser.Id,
+                site.PrimaryClientUser.Email),
         site.StartDate,
         site.EndDate,
         site.Status.ToString(),

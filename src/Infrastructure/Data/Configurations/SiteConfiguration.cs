@@ -18,6 +18,12 @@ public class SiteConfiguration : IEntityTypeConfiguration<Site>
             .HasForeignKey(site => site.ManagerId)
             .IsRequired()
             .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(site => site.PrimaryClientUser)
+            .WithMany()
+            .HasForeignKey(site => site.PrimaryClientUserId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(site => site.PrimaryClientUserId);
 
         builder.Property(site => site.Status)
             .HasConversion<string>()

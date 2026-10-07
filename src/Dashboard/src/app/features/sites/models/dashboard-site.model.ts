@@ -13,6 +13,7 @@ export interface DashboardSite {
   address: string;
   managerId: string;
   managerDisplayName: string;
+  primaryClientUser?: DashboardSiteUser | null;
   startDate: string;
   endDate: string | null;
   status: string;

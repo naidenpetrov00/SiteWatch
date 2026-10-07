@@ -23,6 +23,9 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
         var manager = await dbContext.Users
             .SingleOrDefaultAsync(user => user.Id == request.ManagerId, cancellationToken)
             ?? throw new ArgumentException("Site manager was not found.", nameof(request.ManagerId));
+        var primaryClientUser = await GetPrimaryClientUserAsync(
+            request.PrimaryClientUserId,
+            cancellationToken);
         var accessUsers = await GetAccessUsersAsync(request.UserIds, cancellationToken);
 
         var status = ParseStatus(request.Status);
@@ -38,8 +41,8 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
             endDate,
             mediaPolicy);
 
-        site.AddUser(manager);
-        site.AddUserRange(accessUsers);
+        site.AssignPrimaryClientRecipient(primaryClientUser);
+        site.SynchronizeAccessUsers(accessUsers, manager);
 
         dbContext.Sites.Add(site);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -65,6 +68,7 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
     {
         var site = await dbContext.Sites
             .Include(item => item.Users)
+            .Include(item => item.PrimaryClientUser)
             .SingleOrDefaultAsync(item => item.Id == request.Id, cancellationToken);
 
         if (site is null)
@@ -83,6 +87,9 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
         var manager = await dbContext.Users
             .SingleOrDefaultAsync(user => user.Id == request.ManagerId, cancellationToken)
             ?? throw new ArgumentException("Site manager was not found.", nameof(request.ManagerId));
+        var primaryClientUser = await GetPrimaryClientUserAsync(
+            request.PrimaryClientUserId,
+            cancellationToken);
         var accessUsers = await GetAccessUsersAsync(request.UserIds, cancellationToken);
 
         site.UpdateDetails(
@@ -94,9 +101,25 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
             ParseStatus(request.Status),
             preset);
         site.MediaPolicy.AddCategories(request.MediaCategoriesToAdd);
-        site.AddUser(manager);
-        site.AddUserRange(accessUsers);
+        site.AssignPrimaryClientRecipient(primaryClientUser);
+        site.SynchronizeAccessUsers(accessUsers, manager);
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task<ApplicationUser?> GetPrimaryClientUserAsync(
+        string? primaryClientUserId,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(primaryClientUserId))
+        {
+            return null;
+        }
+
+        return await dbContext.Users
+            .SingleOrDefaultAsync(user => user.Id == primaryClientUserId, cancellationToken)
+            ?? throw new ArgumentException(
+                "Primary client recipient was not found.",
+                nameof(primaryClientUserId));
     }
 
     private async Task<List<ApplicationUser>> GetAccessUsersAsync(
