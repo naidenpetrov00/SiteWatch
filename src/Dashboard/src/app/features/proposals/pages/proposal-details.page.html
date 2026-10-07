@@ -1,0 +1,191 @@
+<main class="proposal-page">
+  @if (proposal(); as current) {
+    <nav class="proposal-page__breadcrumbs" aria-label="Proposal navigation">
+      <a routerLink="/manage-sites">Site Catalog</a>
+      <span aria-hidden="true">/</span>
+      <a [routerLink]="['/sites', current.siteId, 'offers']">Site Offers</a>
+      <span aria-hidden="true">/</span>
+      <a [routerLink]="['/sites', current.siteId, 'offers', current.sourceOfferId]">
+        Offer #{{ current.sourceOfferNumberId }}
+      </a>
+    </nav>
+  }
+
+  @if (isLoading()) {
+    <p class="proposal-page__feedback" aria-live="polite">Loading Proposal…</p>
+  } @else if (hasLoadError()) {
+    <p class="proposal-page__feedback proposal-page__feedback--error" role="alert">
+      The Proposal could not be loaded.
+    </p>
+  } @else if (proposal(); as current) {
+    <header class="proposal-page__header">
+      <div>
+        <p class="proposal-page__eyebrow">Proposal</p>
+        <h1>Proposal #{{ current.numberId }}</h1>
+        <p>Revision {{ current.revisionNumber }} · Source Offer #{{ current.sourceOfferNumberId }}</p>
+      </div>
+      <span class="proposal-page__status">{{ current.status }}</span>
+    </header>
+
+    @if (pageMessage()) {
+      <p class="proposal-page__feedback proposal-page__feedback--success" aria-live="polite">
+        {{ pageMessage() }}
+      </p>
+    }
+    @if (pageError()) {
+      <p class="proposal-page__feedback proposal-page__feedback--error" role="alert">
+        {{ pageError() }}
+      </p>
+    }
+
+    @if (current.excludesUnpricedOptionalItems) {
+      <aside class="proposal-page__warning" role="note">
+        This Proposal total excludes {{ current.unpricedOptionalItemCount }} unpriced optional
+        {{ current.unpricedOptionalItemCount === 1 ? 'item' : 'items' }}.
+      </aside>
+    }
+
+    <div class="proposal-page__top-grid">
+      <section class="proposal-page__panel" aria-labelledby="proposal-metadata-heading">
+        <div class="proposal-page__section-heading">
+          <h2 id="proposal-metadata-heading">Proposal Metadata</h2>
+          @if (!isDraft()) {
+            <span>Issued Proposals are immutable.</span>
+          }
+        </div>
+        <form [formGroup]="metadataForm" (ngSubmit)="saveMetadata()">
+          <mat-form-field appearance="outline">
+            <mat-label>Valid Until</mat-label>
+            <input matInput type="date" formControlName="validUntil" />
+            <mat-hint>Required before issue.</mat-hint>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Public Notes</mat-label>
+            <textarea matInput rows="6" maxlength="2000" formControlName="publicNotes"></textarea>
+            <mat-hint align="end">{{ metadataForm.controls.publicNotes.value?.length ?? 0 }}/2000</mat-hint>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Payment Terms</mat-label>
+            <textarea matInput rows="6" maxlength="2000" formControlName="paymentTerms"></textarea>
+            <mat-hint align="end">{{ metadataForm.controls.paymentTerms.value?.length ?? 0 }}/2000</mat-hint>
+          </mat-form-field>
+          <div class="proposal-page__actions">
+            @if (isDraft()) {
+              <button mat-flat-button color="primary" type="submit" [disabled]="metadataForm.invalid || isSaving() || isIssuing()">
+                {{ isSaving() ? 'Saving…' : 'Save Metadata' }}
+              </button>
+              <button mat-stroked-button type="button" [disabled]="isSaving() || isIssuing()" (click)="confirmIssue()">
+                {{ isIssuing() ? 'Issuing…' : 'Issue Proposal' }}
+              </button>
+            } @else {
+              <button mat-flat-button color="primary" type="button" [disabled]="!current.hasPdf" (click)="downloadPdf()">
+                Download PDF
+              </button>
+            }
+          </div>
+        </form>
+      </section>
+
+      <aside class="proposal-page__panel proposal-page__identity" aria-label="Proposal identity">
+        <h2>Summary</h2>
+        <dl>
+          <div><dt>Site</dt><dd>#{{ current.siteNumberId }} · {{ current.siteName }}</dd></div>
+          <div><dt>Address</dt><dd>{{ current.siteAddress }}</dd></div>
+          <div><dt>Recipient</dt><dd>{{ current.recipientDisplayName }}</dd></div>
+          <div><dt>Recipient Email</dt><dd>{{ current.recipientEmail }}</dd></div>
+          <div><dt>Recipient User ID</dt><dd>{{ current.recipientUserId }}</dd></div>
+          <div><dt>Created</dt><dd>{{ formatDateTime(current.created) }}</dd></div>
+          <div><dt>Last Modified</dt><dd>{{ formatDateTime(current.lastModified) }}</dd></div>
+          <div>
+            <dt>Source Offer Finalized</dt>
+            <dd>{{ formatDateTime(current.sourceOfferFinalizedAt) }}</dd>
+          </div>
+          @if (current.validUntil) {
+            <div><dt>Valid Until</dt><dd>{{ formatDate(current.validUntil) }}</dd></div>
+          }
+          @if (current.issuedAt) {
+            <div><dt>Issued</dt><dd>{{ formatDateTime(current.issuedAt) }}</dd></div>
+          }
+          @if (current.issuedBy) {
+            <div><dt>Issued By</dt><dd>{{ current.issuedBy }}</dd></div>
+          }
+        </dl>
+      </aside>
+    </div>
+
+    <section class="proposal-page__panel" aria-labelledby="proposal-activities-heading">
+      <h2 id="proposal-activities-heading">Activities</h2>
+      @for (activity of current.activities; track activity.id) {
+        <article class="proposal-page__snapshot-group">
+          <h3>#{{ activity.activityNumberId }} · {{ activity.name }}</h3>
+          @if (activity.description) { <p>{{ activity.description }}</p> }
+          <div class="proposal-page__table-wrap">
+            <table>
+              <thead><tr><th>Section</th><th>Measurement</th><th>Pricing</th><th>Total</th></tr></thead>
+              <tbody>
+                @for (section of activity.sections; track section.id) {
+                  <tr>
+                    <td>{{ section.name ?? 'Measurement' }}</td>
+                    <td>{{ formatQuantity(section.requestedMeasurement) }} {{ section.measurementUnit }}</td>
+                    <td>
+                      @if (section.pricingMode === 'free') { Free }
+                      @else { {{ section.pricingMode }} · {{ formatMoney(section.priceAmount ?? 0) }} }
+                    </td>
+                    <td>{{ formatMoney(section.calculatedTotal) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </article>
+      }
+    </section>
+
+    <section class="proposal-page__panel" aria-labelledby="proposal-products-heading">
+      <h2 id="proposal-products-heading">Products</h2>
+      <div class="proposal-page__table-wrap">
+        <table>
+          <thead><tr><th>Product</th><th>Quantities</th><th>Selected Price</th><th>Totals</th></tr></thead>
+          <tbody>
+            @for (product of current.products; track product.id) {
+              <tr [class.proposal-page__excluded-row]="product.isOptionalPriceExcluded">
+                <td>#{{ product.productNumberId }} · {{ product.title }}</td>
+                <td>Required {{ formatQuantity(product.requiredQuantity) }}<br />Optional {{ formatQuantity(product.optionalQuantity) }}</td>
+                @if (product.isOptionalPriceExcluded) {
+                  <td colspan="2"><strong>Optional — price not included</strong></td>
+                } @else {
+                  <td>
+                    {{ formatMoney(product.selectedPriceAmount ?? 0) }} / {{ product.selectedPriceBasis }}
+                    @if (product.selectedRetailerDisplayName) { <br />{{ product.selectedRetailerDisplayName }} }
+                  </td>
+                  <td>Required {{ formatMoney(product.requiredTotal ?? 0) }}<br />Optional {{ formatMoney(product.optionalTotal ?? 0) }}</td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="proposal-page__panel proposal-page__totals" aria-labelledby="proposal-totals-heading">
+      <h2 id="proposal-totals-heading">Commercial Summary</h2>
+      <dl>
+        <div><dt>Activities subtotal</dt><dd>{{ formatMoney(current.activitySubtotalBeforeDiscount) }}</dd></div>
+        <div><dt>Activity discount ({{ current.activityDiscountPercentage }}%)</dt><dd>−{{ formatMoney(current.activityDiscountAmount) }}</dd></div>
+        <div><dt>Activities total</dt><dd>{{ formatMoney(current.activityTotalAfterDiscount) }}</dd></div>
+        <div><dt>Products subtotal</dt><dd>{{ formatMoney(current.productSubtotalBeforeDiscount) }}</dd></div>
+        <div><dt>Product discount ({{ current.productDiscountPercentage }}%)</dt><dd>−{{ formatMoney(current.productDiscountAmount) }}</dd></div>
+        <div><dt>Products total</dt><dd>{{ formatMoney(current.productTotalAfterDiscount) }}</dd></div>
+        <div class="proposal-page__grand-total">
+          <dt>
+            Proposal total
+            @if (current.excludesUnpricedOptionalItems) {
+              <span>— excludes unpriced optional items</span>
+            }
+          </dt>
+          <dd>{{ formatMoney(current.total) }}</dd>
+        </div>
+      </dl>
+    </section>
+  }
+</main>

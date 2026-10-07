@@ -18,6 +18,7 @@ using Infrastructure.RetailerListings.Services;
 using Infrastructure.RetailerExtractionProfiles.Services;
 using Infrastructure.RetailerPriceCollections;
 using Infrastructure.Offers.Services;
+using Infrastructure.Proposals;
 using Infrastructure.SeedWork.Options;
 using Infrastructure.Sites.Services;
 using Infrastructure.Storage;
@@ -25,6 +26,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using QuestPDF.Infrastructure;
 
 namespace Infrastructure;
 
@@ -35,6 +37,8 @@ public static class DependencyInjection
         IConfiguration configuration
     )
     {
+        QuestPDF.Settings.License = LicenseType.Community;
+
         services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly())
         );
@@ -93,6 +97,9 @@ public static class DependencyInjection
         services.AddScoped<IActivityRequirementService, ActivityRequirementService>();
         services.AddScoped<IOfferService, OfferService>();
         services.AddScoped<IOfferPricingService, OfferPricingService>();
+        services.AddScoped<ProposalPdfRenderer>();
+        services.AddScoped<ProposalDocumentBlobStorage>();
+        services.AddScoped<IProposalService, ProposalService>();
 
         services
             .AddIdentity<ApplicationUser, IdentityRole>(options => { options.User.RequireUniqueEmail = true; })

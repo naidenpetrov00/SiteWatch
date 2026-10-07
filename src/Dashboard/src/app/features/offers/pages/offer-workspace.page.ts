@@ -13,7 +13,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import {
@@ -30,6 +30,8 @@ import { OfferCommercialSummaryComponent } from '../components/offer-commercial-
 import { OfferSelectedActivitiesComponent } from '../components/offer-selected-activities/offer-selected-activities.component';
 import { OffersService } from '../services/offers.service';
 import { getOfferError } from '../utils/offer-error';
+import { ProposalsService } from '../../proposals/services/proposals.service';
+import { getProposalError } from '../../proposals/utils/proposal-error';
 
 @Component({
   selector: 'app-offer-workspace-page',
@@ -53,6 +55,8 @@ export class OfferWorkspacePage {
   private readonly offersService = inject(OffersService);
   private readonly dialog = inject(MatDialog);
   private readonly formBuilder = inject(FormBuilder);
+  private readonly proposalsService = inject(ProposalsService);
+  private readonly router = inject(Router);
   private configuredOfferId: string | null = null;
 
   readonly siteId = input.required<string>();
@@ -65,6 +69,12 @@ export class OfferWorkspacePage {
   readonly selectedActivities = viewChild(OfferSelectedActivitiesComponent);
   readonly pageMessage = signal<string | null>(null);
   readonly pageError = signal<string | null>(null);
+  readonly proposals = computed(
+    () => this.proposalsService.historyQuery.data() ?? []
+  );
+  readonly hasDraftProposal = computed(() =>
+    this.proposals().some((proposal) => proposal.status === 'Draft')
+  );
   readonly metadataForm = this.formBuilder.group({
     title: ['', [Validators.maxLength(200)]],
     notes: ['', [Validators.maxLength(2000)]]
@@ -73,6 +83,9 @@ export class OfferWorkspacePage {
   constructor() {
     effect(() =>
       this.offersService.configureDetails(this.siteId(), this.offerId())
+    );
+    effect(() =>
+      this.proposalsService.configureHistory(this.siteId(), this.offerId())
     );
     effect(() => {
       const offer = this.offer();
@@ -203,6 +216,64 @@ export class OfferWorkspacePage {
   onActivityAdded(): void {
     this.pageError.set(null);
     this.pageMessage.set('Activity added and product requirements recalculated.');
+  }
+
+  async createProposal(): Promise<void> {
+    const offer = this.offer();
+    if (
+      !offer ||
+      offer.status !== 'Finalized' ||
+      this.hasDraftProposal() ||
+      this.proposalsService.createMutation.isPending()
+    ) {
+      return;
+    }
+
+    this.clearFeedback();
+    try {
+      const created = await this.proposalsService.create(
+        this.siteId(),
+        this.offerId()
+      );
+      await this.router.navigate([
+        '/sites',
+        this.siteId(),
+        'proposals',
+        created.id
+      ]);
+    } catch (error) {
+      this.pageError.set(
+        getProposalError(error, 'The draft Proposal could not be created.')
+      );
+    }
+  }
+
+  async openProposal(proposalId: string): Promise<void> {
+    await this.router.navigate([
+      '/sites',
+      this.siteId(),
+      'proposals',
+      proposalId
+    ]);
+  }
+
+  isLoadingProposals(): boolean {
+    return this.proposalsService.historyQuery.isPending();
+  }
+
+  hasProposalLoadError(): boolean {
+    return this.proposalsService.historyQuery.isError();
+  }
+
+  isCreatingProposal(): boolean {
+    return this.proposalsService.createMutation.isPending();
+  }
+
+  formatMoney(value: number): string {
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: 'EUR'
+    }).format(value);
   }
 
   isLoading(): boolean {

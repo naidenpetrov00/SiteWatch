@@ -208,5 +208,60 @@
         [editable]="isDraft()"
       />
     </section>
+
+    <section class="offer-workspace__panel offer-workspace__proposals" aria-labelledby="offer-proposals-heading">
+      <div class="offer-workspace__section-heading">
+        <div>
+          <p class="offer-workspace__eyebrow">Stage 5</p>
+          <h2 id="offer-proposals-heading">Proposal History</h2>
+        </div>
+        @if (currentOffer.status === 'Finalized' && !hasDraftProposal()) {
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            [disabled]="isCreatingProposal()"
+            (click)="createProposal()"
+          >
+            {{ isCreatingProposal() ? 'Creating…' : (proposals().length === 0 ? 'Create Proposal' : 'Create Revision') }}
+          </button>
+        }
+      </div>
+
+      @if (isLoadingProposals()) {
+        <p class="offer-workspace__feedback" aria-live="polite">Loading Proposal history…</p>
+      } @else if (hasProposalLoadError()) {
+        <p class="offer-workspace__feedback offer-workspace__feedback--error" role="alert">
+          Proposal history could not be loaded.
+        </p>
+      } @else if (proposals().length === 0) {
+        <p class="offer-workspace__readonly-note">
+          @if (currentOffer.status === 'Finalized') {
+            No Proposal revisions have been created from this Offer.
+          } @else {
+            Finalize the Offer before creating a Proposal.
+          }
+        </p>
+      } @else {
+        <div class="offer-workspace__proposal-list">
+          @for (proposal of proposals(); track proposal.id) {
+            <article class="offer-workspace__proposal-row">
+              <div>
+                <strong>Proposal #{{ proposal.numberId }} · Revision {{ proposal.revisionNumber }}</strong>
+                <span>
+                  {{ proposal.status }} · {{ formatMoney(proposal.total) }}
+                  @if (proposal.excludesUnpricedOptionalItems) {
+                    · excludes unpriced optional items
+                  }
+                </span>
+              </div>
+              <button mat-stroked-button type="button" (click)="openProposal(proposal.id)">
+                View
+              </button>
+            </article>
+          }
+        </div>
+      }
+    </section>
   }
 </main>

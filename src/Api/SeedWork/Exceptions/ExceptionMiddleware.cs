@@ -7,6 +7,7 @@ using Application.Retailers;
 using Application.RetailerExtractionProfiles;
 using Application.RetailerPriceCollections;
 using Application.Offers;
+using Application.Proposals;
 using Ardalis.GuardClauses;
 using Application.SeedWork.Exceptions;
 using FluentValidation;
@@ -175,6 +176,19 @@ internal sealed class ExceptionMiddleware(
             {
                 status = StatusCodes.Status409Conflict,
                 title = "Offer conflict",
+                detail = ex.Message,
+                instance = context.Request.Path.Value,
+            }));
+        }
+        catch (ProposalConflictException ex)
+        {
+            logger.LogInformation(ex, "A Proposal operation was rejected due to its lifecycle or snapshot state.");
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            context.Response.ContentType = "application/problem+json";
+            await context.Response.WriteAsync(JsonSerializer.Serialize(new
+            {
+                status = StatusCodes.Status409Conflict,
+                title = "Proposal conflict",
                 detail = ex.Message,
                 instance = context.Request.Path.Value,
             }));

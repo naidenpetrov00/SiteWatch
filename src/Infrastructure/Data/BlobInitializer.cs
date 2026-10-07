@@ -69,7 +69,7 @@ public sealed class BlobInitializer(
 
     private async Task EnsureContainersAsync(CancellationToken cancellationToken)
     {
-        foreach (var containerName in new[] { "images", "videos", "files", "invoices" })
+        foreach (var containerName in new[] { "images", "videos", "files", "invoices", "proposals" })
         {
             await blobServiceClient
                 .GetBlobContainerClient(containerName)
