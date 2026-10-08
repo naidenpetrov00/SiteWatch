@@ -6,6 +6,7 @@ using Domain.Entities;
 using Infrastructure.Cameras.Services;
 using Infrastructure.ActivityCatalog;
 using Infrastructure.Data;
+using Infrastructure.Data.SeedData;
 using Infrastructure.Email;
 using Infrastructure.Invoices.Services;
 using Infrastructure.Issues.Services;
@@ -68,6 +69,9 @@ public static class DependencyInjection
         services.AddScoped<IFilesService, FilesService>();
         services.AddScoped<IVideosService, VideosService>();
         services.AddScoped<ApplicationDbContextInitialiser>();
+        services.AddScoped<ApplicationUserSeedData>();
+        services.AddScoped<PersonSeedData>();
+        services.AddScoped<RetailerSeedData>();
         services.AddScoped<BlobInitializer>();
         services.AddScoped<IBlobService, BlobImagesService>();
         services.AddScoped<IFilesBlobService, BlobFilesService>();
