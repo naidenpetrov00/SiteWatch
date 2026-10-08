@@ -73,6 +73,7 @@ public static class DependencyInjection
         services.AddScoped<PersonSeedData>();
         services.AddScoped<RetailerSeedData>();
         services.AddScoped<RenovationCatalogSeedData>();
+        services.AddScoped<ActivityCatalogSeedData>();
         services.AddScoped<RetailerExtractionProfileSeedData>();
         services.AddScoped<BlobInitializer>();
         services.AddScoped<IBlobService, BlobImagesService>();

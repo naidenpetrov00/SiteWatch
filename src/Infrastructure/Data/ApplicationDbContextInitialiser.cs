@@ -15,6 +15,7 @@ public class ApplicationDbContextInitialiser(
     PersonSeedData personSeedData,
     RetailerSeedData retailerSeedData,
     RenovationCatalogSeedData renovationCatalogSeedData,
+    ActivityCatalogSeedData activityCatalogSeedData,
     RetailerExtractionProfileSeedData retailerExtractionProfileSeedData,
     BlobInitializer blobInitializer,
     ILogger<ApplicationDbContextInitialiser> logger
@@ -494,6 +495,7 @@ public class ApplicationDbContextInitialiser(
             var persons = await personSeedData.SeedAsync();
             await retailerSeedData.SeedAsync(persons);
             await renovationCatalogSeedData.SeedAsync();
+            await activityCatalogSeedData.SeedAsync();
             await retailerExtractionProfileSeedData.SeedAsync(persons);
             var invoiceCount = blobInitializer.GetRequiredSeedInvoiceCount();
             await AddInvoices(persons, invoiceCount);

@@ -240,6 +240,23 @@ public sealed class RenovationCatalogSeedData(
             20.45m),
         new(
             "Praktiker",
+            "IZIDA Romani Beige Porcelain Tile, 30.3 x 60.6 cm, 1.84 m2",
+            "First-quality beige porcelain tile for bathroom walls and floors, supplied as a 1.84 m2 pack of ten tiles.",
+            "IZIDA",
+            "Romani Beige 30.3 x 60.6 cm",
+            1.84m,
+            ProductPackageUnit.SquareMeter,
+            ProductCategory.BuildingConstruction,
+            ProductSearchConfiguration.Create(
+                "IZIDA ROMANI BEIGE гранитогрес 30.3x60.6 1.84 m2",
+                ["IZIDA Romani Beige porcelain tile 30.3 x 60.6 cm"],
+                ["IZIDA", "ROMANI", "1.84"],
+                ["декор", "мозайка"]),
+            "https://praktiker.bg/bg/Granitogres/GRANITOGRES-IZIDA-ROMANI-BEIGE-30-3X60-6-CM/p/228966",
+            "228966",
+            26.33m),
+        new(
+            "Praktiker",
             "Ceresit CE 40 Jasmine Grout, 5 kg",
             "Flexible water-repellent grout for 1-8 mm joints in interior and exterior tile coverings.",
             "Ceresit",
