@@ -11,7 +11,7 @@ export type ClientProposalSummary = {
   respondedAt: string | null;
   responseComment: string | null;
   total: number;
-  currencyCode: "EUR";
+  currencyCode: string;
   siteName: string;
   excludesUnpricedOptionalItems: boolean;
   canRespond: boolean;
@@ -20,36 +20,49 @@ export type ClientProposalSummary = {
 
 export type ProposalActivitySection = {
   id: string;
+  sourceOfferActivitySectionId: string;
   name: string | null;
+  basisQuantity: number;
   requestedMeasurement: number;
   measurementUnit: string;
   pricingMode: string;
   priceAmount: number | null;
   calculatedTotal: number;
+  sortOrder: number;
 };
 
 export type ProposalActivity = {
   id: string;
+  sourceOfferActivityId: string;
   activityNumberId: number;
   name: string;
   description: string | null;
+  sortOrder: number;
   sections: readonly ProposalActivitySection[];
 };
 
 export type ProposalProduct = {
   id: string;
+  sourceOfferProductLineId: string;
+  productId: string;
   productNumberId: number;
   title: string;
+  category: string;
   brand: string | null;
   model: string | null;
+  packageQuantity: number | null;
+  packageUnit: string | null;
   requiredQuantity: number;
   optionalQuantity: number;
+  selectedRetailerId: string | null;
   selectedRetailerDisplayName: string | null;
   selectedPriceAmount: number | null;
+  selectedPriceCurrencyCode: string | null;
   selectedPriceBasis: string | null;
   requiredTotal: number | null;
   optionalTotal: number | null;
   isOptionalPriceExcluded: boolean;
+  sortOrder: number;
 };
 
 export type ClientProposalDetails = ClientProposalSummary & {
