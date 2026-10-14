@@ -12,6 +12,8 @@ public class ApplicationDbContextInitialiser(
     ApplicationDbContext dbContext,
     UserManager<ApplicationUser> userManager,
     ApplicationUserSeedData applicationUserSeedData,
+    Atelier48VSiteSeedData atelier48VSiteSeedData,
+    Atelier48VMediaSeedData atelier48VMediaSeedData,
     PersonSeedData personSeedData,
     RetailerSeedData retailerSeedData,
     RenovationCatalogSeedData renovationCatalogSeedData,
@@ -32,7 +34,7 @@ public class ApplicationDbContextInitialiser(
     private static readonly string[] SeedUserEmails =
     [
         ApplicationUserSeedData.AdministratorEmail,
-        "naidenpetrov00@gmail.com",
+        ApplicationUserSeedData.ClientEmail,
     ];
 
     private const string BulkSeedEmailDomain = "sitewatch.local";
@@ -489,6 +491,7 @@ public class ApplicationDbContextInitialiser(
 
             var users = await applicationUserSeedData.SeedAsync();
             await AddSites(users);
+            await atelier48VSiteSeedData.SeedAsync(users);
             await EnsureThirdSeedSiteAccessAsync(users);
             await AddCameras();
             await AddIssues();
@@ -501,6 +504,7 @@ public class ApplicationDbContextInitialiser(
             await AddInvoices(persons, invoiceCount);
             await AddInvoiceSitePayments(invoiceCount);
             await blobInitializer.InitializeAsync();
+            await atelier48VMediaSeedData.SeedAsync();
 
             logger.LogInformation("Database initialization completed successfully.");
         }

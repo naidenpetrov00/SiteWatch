@@ -70,6 +70,8 @@ public static class DependencyInjection
         services.AddScoped<IVideosService, VideosService>();
         services.AddScoped<ApplicationDbContextInitialiser>();
         services.AddScoped<ApplicationUserSeedData>();
+        services.AddScoped<Atelier48VSiteSeedData>();
+        services.AddScoped<Atelier48VMediaSeedData>();
         services.AddScoped<PersonSeedData>();
         services.AddScoped<RetailerSeedData>();
         services.AddScoped<RenovationCatalogSeedData>();

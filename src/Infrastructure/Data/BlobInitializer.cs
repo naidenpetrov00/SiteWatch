@@ -205,7 +205,8 @@ public sealed class BlobInitializer(
                 : "application/octet-stream";
 
             foreach (var site in sites)
-            foreach (var documentType in Enum.GetValues<FileDocumentType>())
+            foreach (var documentType in Enum.GetValues<FileDocumentType>()
+                         .Where(value => value != FileDocumentType.InteriorDesign))
             {
                 try
                 {

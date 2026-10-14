@@ -12,7 +12,7 @@ public sealed class ApplicationUserSeedData(
     ILogger<ApplicationUserSeedData> logger)
 {
     public const string AdministratorEmail = "naiden.petrov.31.12.00@gmail.com";
-    private const string ClientEmail = "naidenpetrov00@gmail.com";
+    public const string ClientEmail = "naidenpetrov00@gmail.com";
     private const string DemoEmailDomain = "sitewatch.local";
     private const string DemoPassword = "Test@123";
     private const int GenericUserCount = 8;

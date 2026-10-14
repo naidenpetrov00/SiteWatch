@@ -39,5 +39,9 @@
         <None Update="Data\SeedAssets\**\*">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+        <None Include="..\..\doc\Site\Ателие 48В\**\*"
+              Link="Data\SeedAssets\Sites\Ателие 48В\%(RecursiveDir)%(Filename)%(Extension)">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 </Project>
