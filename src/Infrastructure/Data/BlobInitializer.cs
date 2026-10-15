@@ -69,7 +69,7 @@ public sealed class BlobInitializer(
 
     private async Task EnsureContainersAsync(CancellationToken cancellationToken)
     {
-        foreach (var containerName in new[] { "images", "videos", "files", "invoices" })
+        foreach (var containerName in new[] { "images", "videos", "files", "invoices", "proposals" })
         {
             await blobServiceClient
                 .GetBlobContainerClient(containerName)
@@ -205,7 +205,8 @@ public sealed class BlobInitializer(
                 : "application/octet-stream";
 
             foreach (var site in sites)
-            foreach (var documentType in Enum.GetValues<FileDocumentType>())
+            foreach (var documentType in Enum.GetValues<FileDocumentType>()
+                         .Where(value => value != FileDocumentType.InteriorDesign))
             {
                 try
                 {

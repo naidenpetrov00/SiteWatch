@@ -15,8 +15,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 interface ISignInFormForm {}
 
 const defaultValues: SignInInput = {
-  email: "naiden.petrov.31.12.00@gmail.com",
-  password: "Test@123",
+  email: "",
+  password: "",
 };
 const SignInForm = ({}: ISignInFormForm) => {
   const colorPalette = useColorPalette();

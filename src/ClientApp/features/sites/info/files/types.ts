@@ -8,6 +8,7 @@ export const FILE_DOCUMENT_TYPES = [
   "CertificateOrComplianceDocument",
   "InspectionOrServiceReport",
   "PermitOrApproval",
+  "InteriorDesign",
   "Other",
 ] as const;
 
@@ -23,6 +24,7 @@ export const FILE_DOCUMENT_TYPE_LABELS: Record<FileDocumentType, string> = {
   CertificateOrComplianceDocument: "Certificate / Compliance document",
   InspectionOrServiceReport: "Inspection / Service report",
   PermitOrApproval: "Permit / Approval",
+  InteriorDesign: "Interior design",
   Other: "Other",
 };
 

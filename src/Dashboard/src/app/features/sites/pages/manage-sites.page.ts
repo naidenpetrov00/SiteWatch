@@ -49,6 +49,12 @@ const SITE_COLUMNS: readonly DataTableColumn<DashboardSite>[] = [
     label: 'Site Manager'
   },
   {
+    key: 'primaryClientUser',
+    label: 'Primary client recipient',
+    valueAccessor: (site) => site.primaryClientUser?.displayName ?? '',
+    displayFormatter: (value) => typeof value === 'string' && value.length > 0 ? value : '—'
+  },
+  {
     key: 'startDate',
     label: 'Start Date'
   },

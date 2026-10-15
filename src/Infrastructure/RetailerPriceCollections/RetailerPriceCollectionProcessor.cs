@@ -163,11 +163,13 @@ public sealed class RetailerPriceCollectionProcessor(
     }
 
     private Task<bool> HasLeadershipAsync(Guid leaderId, CancellationToken cancellationToken) =>
-        dbContext.RetailerPriceCollectionWorkerLeases.AnyAsync(
-            lease => lease.Id == RetailerPriceCollectionWorkerLease.SingletonId
-                && lease.OwnerId == leaderId
-                && lease.LeaseExpiresAt > DateTimeOffset.UtcNow,
-            cancellationToken);
+        dbContext.RetailerPriceCollectionWorkerLeases
+            .Where(
+                lease => lease.Id == RetailerPriceCollectionWorkerLease.SingletonId
+                    && lease.OwnerId == leaderId
+                    && lease.LeaseExpiresAt > DateTimeOffset.UtcNow)
+            .TagWith("SiteWatch.RetailerPriceCollection.Polling.LeadershipCheck")
+            .AnyAsync(cancellationToken);
 
     private async Task<ClaimedItem?> TryClaimAsync(CancellationToken cancellationToken)
     {
@@ -184,6 +186,7 @@ public sealed class RetailerPriceCollectionProcessor(
                             && candidate.LeaseExpiresAt <= now))
                     && (candidate.Run.Status == RetailerPriceCollectionRunStatus.Queued
                         || candidate.Run.Status == RetailerPriceCollectionRunStatus.Running))
+                .TagWith("SiteWatch.RetailerPriceCollection.Polling.NextItemProbe")
                 .OrderBy(candidate => candidate.Run.RequestedAt)
                 .ThenBy(candidate => candidate.Id)
                 .FirstOrDefaultAsync(cancellationToken);

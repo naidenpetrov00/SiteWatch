@@ -29,6 +29,12 @@ public static class DependencyInjection
         builder.Services.AddSingleton<
             IIssueAttachmentAccessTicketService,
             IssueAttachmentAccessTicketService>();
+        builder.Services.AddSingleton<
+            IProposalPdfAccessTicketService,
+            ProposalPdfAccessTicketService>();
+        builder.Services.AddSingleton<
+            IClientProposalPdfAccessTicketService,
+            ClientProposalPdfAccessTicketService>();
         builder.Services.AddAutoMapper(cfg => { }, Assembly.GetExecutingAssembly());
         builder.Services.AddCors(opt =>
         {

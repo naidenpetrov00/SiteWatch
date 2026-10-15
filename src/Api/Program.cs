@@ -1,4 +1,5 @@
 using Api;
+using Api.Logging;
 using Api.SeedWork.Extensions;
 using Application;
 using DotNetEnv;
@@ -6,6 +7,8 @@ using Infrastructure;
 using Infrastructure.SeedWork.Extension;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.FilterRetailerPriceCollectionPollingFromConsole();
 
 Env.Load();
 

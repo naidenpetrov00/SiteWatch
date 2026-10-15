@@ -55,6 +55,16 @@ public sealed record ClearOfferProductPriceCommand(
     Guid OfferId,
     Guid OfferProductLineId) : IRequest;
 
+/// <summary>Replaces both category-wide percentage discounts on a draft Offer.</summary>
+[Authorize(Roles = UserRoles.Administrator)]
+public sealed record UpdateOfferDiscountsCommand : IRequest
+{
+    public Guid SiteId { get; set; }
+    public Guid OfferId { get; set; }
+    public decimal ActivityDiscountPercentage { get; init; }
+    public decimal ProductDiscountPercentage { get; init; }
+}
+
 public sealed class AddOfferRetailerValidator : AbstractValidator<AddOfferRetailerCommand>
 {
     public AddOfferRetailerValidator()
@@ -142,6 +152,22 @@ public sealed class ClearOfferProductPriceValidator
     }
 }
 
+public sealed class UpdateOfferDiscountsValidator
+    : AbstractValidator<UpdateOfferDiscountsCommand>
+{
+    public UpdateOfferDiscountsValidator()
+    {
+        RuleFor(command => command.SiteId).NotEmpty();
+        RuleFor(command => command.OfferId).NotEmpty();
+        RuleFor(command => command.ActivityDiscountPercentage)
+            .InclusiveBetween(0m, Offer.MaximumDiscountPercentage)
+            .PrecisionScale(5, 2, false);
+        RuleFor(command => command.ProductDiscountPercentage)
+            .InclusiveBetween(0m, Offer.MaximumDiscountPercentage)
+            .PrecisionScale(5, 2, false);
+    }
+}
+
 public sealed class AddOfferRetailerHandler(IOfferPricingService service)
     : IRequestHandler<AddOfferRetailerCommand, OfferPricingMatrixDto>
 {
@@ -191,4 +217,13 @@ public sealed class ClearOfferProductPriceHandler(IOfferPricingService service)
             request.OfferId,
             request.OfferProductLineId,
             cancellationToken);
+}
+
+public sealed class UpdateOfferDiscountsHandler(IOfferPricingService service)
+    : IRequestHandler<UpdateOfferDiscountsCommand>
+{
+    public Task Handle(
+        UpdateOfferDiscountsCommand request,
+        CancellationToken cancellationToken) =>
+        service.UpdateDiscountsAsync(request, cancellationToken);
 }

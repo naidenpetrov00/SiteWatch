@@ -8,6 +8,7 @@ public sealed class Offer : BaseAuditableEntity, IHasNumberId, IAgregateRoot
 {
     public const int MaxTitleLength = 200;
     public const int MaxNotesLength = 2000;
+    public const decimal MaximumDiscountPercentage = 100m;
 
     private Offer()
     {
@@ -23,6 +24,8 @@ public sealed class Offer : BaseAuditableEntity, IHasNumberId, IAgregateRoot
     public string? Title { get; private set; }
     public string? Notes { get; private set; }
     public OfferStatus Status { get; private set; }
+    public decimal ActivityDiscountPercentage { get; private set; }
+    public decimal ProductDiscountPercentage { get; private set; }
     public DateTimeOffset? FinalizedAt { get; private set; }
     public string? FinalizedBy { get; private set; }
     public byte[] RowVersion { get; private set; } = [];
@@ -125,6 +128,45 @@ public sealed class Offer : BaseAuditableEntity, IHasNumberId, IAgregateRoot
 
             section.UpdateRequestedMeasurement(requestedMeasurement);
         }
+    }
+
+    public void UpdateActivitySectionPricing(
+        OfferActivity activity,
+        IReadOnlyDictionary<Guid, (ActivityPricingMode? PricingMode, decimal? PriceAmount)> pricing)
+    {
+        EnsureDraft();
+        Guard.Against.Null(activity);
+        Guard.Against.Null(pricing);
+        if (!_activities.Contains(activity))
+        {
+            throw new InvalidOperationException("The activity snapshot does not belong to this offer.");
+        }
+
+        if (pricing.Count != activity.Sections.Count
+            || activity.Sections.Any(section => !pricing.ContainsKey(section.Id)))
+        {
+            throw new InvalidOperationException(
+                "Every activity section requires exactly one pricing entry.");
+        }
+
+        foreach (var section in activity.Sections)
+        {
+            var value = pricing[section.Id];
+            section.UpdatePricing(value.PricingMode, value.PriceAmount);
+        }
+    }
+
+    public void UpdateDiscounts(
+        decimal activityDiscountPercentage,
+        decimal productDiscountPercentage)
+    {
+        EnsureDraft();
+        ActivityDiscountPercentage = ValidateDiscount(
+            activityDiscountPercentage,
+            nameof(activityDiscountPercentage));
+        ProductDiscountPercentage = ValidateDiscount(
+            productDiscountPercentage,
+            nameof(productDiscountPercentage));
     }
 
     public void AddProductLine(OfferProductLine productLine)
@@ -258,5 +300,25 @@ public sealed class Offer : BaseAuditableEntity, IHasNumberId, IAgregateRoot
         }
 
         return normalized;
+    }
+
+    private static decimal ValidateDiscount(decimal value, string parameterName)
+    {
+        if (value < 0m || value > MaximumDiscountPercentage)
+        {
+            throw new ArgumentOutOfRangeException(
+                parameterName,
+                value,
+                "A discount percentage must be from 0 through 100.");
+        }
+
+        if (decimal.Round(value, 2) != value)
+        {
+            throw new ArgumentException(
+                "A discount percentage cannot have more than two decimal places.",
+                parameterName);
+        }
+
+        return value;
     }
 }

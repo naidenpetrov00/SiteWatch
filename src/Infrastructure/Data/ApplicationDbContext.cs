@@ -53,6 +53,12 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
         Set<OfferRetailerComparison>();
     public DbSet<OfferProductPriceSelection> OfferProductPriceSelections =>
         Set<OfferProductPriceSelection>();
+    public DbSet<Proposal> Proposals => Set<Proposal>();
+    public DbSet<ProposalActivity> ProposalActivities => Set<ProposalActivity>();
+    public DbSet<ProposalActivitySection> ProposalActivitySections =>
+        Set<ProposalActivitySection>();
+    public DbSet<ProposalProductLine> ProposalProductLines => Set<ProposalProductLine>();
+    public DbSet<ProposalDocument> ProposalDocuments => Set<ProposalDocument>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

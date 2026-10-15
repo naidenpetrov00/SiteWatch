@@ -1,5 +1,4 @@
-﻿using Application.SeedWork.Security;
-using Domain.Entities;
+﻿using Domain.Entities;
 using Domain.SeedWork.Enums;
 using Domain.ValueObjects;
 using Microsoft.AspNetCore.Identity;
@@ -12,6 +11,14 @@ namespace Infrastructure.Data;
 public class ApplicationDbContextInitialiser(
     ApplicationDbContext dbContext,
     UserManager<ApplicationUser> userManager,
+    ApplicationUserSeedData applicationUserSeedData,
+    Atelier48VSiteSeedData atelier48VSiteSeedData,
+    Atelier48VMediaSeedData atelier48VMediaSeedData,
+    PersonSeedData personSeedData,
+    RetailerSeedData retailerSeedData,
+    RenovationCatalogSeedData renovationCatalogSeedData,
+    ActivityCatalogSeedData activityCatalogSeedData,
+    RetailerExtractionProfileSeedData retailerExtractionProfileSeedData,
     BlobInitializer blobInitializer,
     ILogger<ApplicationDbContextInitialiser> logger
 )
@@ -26,112 +33,35 @@ public class ApplicationDbContextInitialiser(
 
     private static readonly string[] SeedUserEmails =
     [
-        "naiden.petrov.31.12.00@gmail.com",
-        "naidenpetrov00@gmail.com",
+        ApplicationUserSeedData.AdministratorEmail,
+        ApplicationUserSeedData.ClientEmail,
     ];
 
     private const string BulkSeedEmailDomain = "sitewatch.local";
-    private const int BulkSeedUserCount = 100;
-
-    private async Task<List<ApplicationUser>> AddUsers()
-    {
-        var existingUsers = await userManager.Users.ToListAsync();
-        if (existingUsers.Count > 0)
-        {
-            logger.LogInformation("User seeding skipped: users already exist.");
-            return existingUsers;
-        }
-
-        var now = DateTimeOffset.UtcNow;
-        var users = new List<ApplicationUser>();
-        var claims = new List<IdentityUserClaim<string>>();
-
-        void AddSeedUser(ApplicationUser user, string role)
-        {
-            user.NormalizedUserName = userManager.NormalizeName(user.UserName);
-            user.NormalizedEmail = userManager.NormalizeEmail(user.Email);
-            user.PasswordHash = userManager.PasswordHasher.HashPassword(user, "Test@123");
-
-            users.Add(user);
-            claims.Add(
-                new IdentityUserClaim<string>
-                {
-                    UserId = user.Id,
-                    ClaimType = UserClaimTypes.UserType,
-                    ClaimValue = role,
-                }
-            );
-        }
-
-        AddSeedUser(
-            new ApplicationUser
-            {
-                UserName = "Test.2010",
-                Email = "naiden.petrov.31.12.00@gmail.com",
-                EmailConfirmed = true,
-                PhoneNumber = "+359888000001",
-                PhoneNumberConfirmed = true,
-                LastLoginAt = now.AddDays(-1),
-            },
-            UserRoles.Administrator
-        );
-        AddSeedUser(
-            new ApplicationUser
-            {
-                UserName = "Test2.2010",
-                Email = "naidenpetrov00@gmail.com",
-                EmailConfirmed = true,
-                PhoneNumber = "+359888000002",
-                PhoneNumberConfirmed = true,
-                LastLoginAt = now.AddHours(-4),
-            },
-            UserRoles.Administrator
-        );
-
-        for (var i = 1; i <= BulkSeedUserCount; i++)
-        {
-            AddSeedUser(
-                new ApplicationUser
-                {
-                    UserName = $"user{i:0000}",
-                    Email = $"user{i:0000}@{BulkSeedEmailDomain}",
-                    EmailConfirmed = i % 2 == 0,
-                    PhoneNumber = $"+359888{i:000000}",
-                    PhoneNumberConfirmed = i % 3 == 0,
-                    LastLoginAt = i % 5 == 0 ? now.AddDays(-(i % 30)) : null,
-                },
-                UserRoles.Client
-            );
-        }
-
-        await dbContext.Users.AddRangeAsync(users);
-        await dbContext.UserClaims.AddRangeAsync(claims);
-        await dbContext.SaveChangesAsync();
-
-        logger.LogInformation("Seeded {UserCount} users.", users.Count);
-        return users;
-    }
-
     private async Task AddSites(List<ApplicationUser> users)
     {
         if (users.Count == 0 || await dbContext.Sites.AnyAsync())
             return;
 
+        var administrator = users.Single(user =>
+            string.Equals(
+                user.Email,
+                ApplicationUserSeedData.AdministratorEmail,
+                StringComparison.OrdinalIgnoreCase));
         var startDate = DateOnly.FromDateTime(DateTime.UtcNow);
         var now = DateTimeOffset.UtcNow;
-        var secondaryManager = users[Math.Min(1, users.Count - 1)];
         var sites = new List<Site>
         {
             new(
                 "Central Office",
                 "Vitosha 17",
-                users[0].Id,
+                administrator.Id,
                 startDate,
                 mediaPolicy: SiteMediaPolicy.FromPreset(MediaPolicyPreset.SiteMaintenance)),
             new(
                 "Vitosha Apartment Renovation",
                 "Vitosha 17",
-                users[0].Id,
+                administrator.Id,
                 startDate,
                 mediaPolicy: SiteMediaPolicy.FromPreset(MediaPolicyPreset.ApartmentRenovation))
             {
@@ -143,13 +73,13 @@ public class ApplicationDbContextInitialiser(
             new(
                 "Regional Office North",
                 "Dondukov 11",
-                secondaryManager.Id,
+                administrator.Id,
                 startDate,
                 mediaPolicy: SiteMediaPolicy.FromPreset(MediaPolicyPreset.HouseBuild)),
             new(
                 "Dondukov House Build",
                 "Dondukov 11",
-                secondaryManager.Id,
+                administrator.Id,
                 startDate,
                 mediaPolicy: SiteMediaPolicy.FromPreset(MediaPolicyPreset.HouseBuild))
             {
@@ -161,13 +91,13 @@ public class ApplicationDbContextInitialiser(
             new(
                 "Regional Office South",
                 "Kestenova Gora 24",
-                users[0].Id,
+                administrator.Id,
                 startDate,
                 mediaPolicy: SiteMediaPolicy.FromPreset(MediaPolicyPreset.CommercialBuild)),
             new(
                 "Kestenova Commercial Build",
                 "Kestenova Gora 24",
-                users[0].Id,
+                administrator.Id,
                 startDate,
                 mediaPolicy: SiteMediaPolicy.FromPreset(MediaPolicyPreset.CommercialBuild))
             {
@@ -179,10 +109,8 @@ public class ApplicationDbContextInitialiser(
         };
         foreach (var site in sites)
         {
-            var manager = users.Single(user => user.Id == site.ManagerId);
-            site.AddUser(manager);
+            site.AddUser(administrator);
         }
-        sites[2].AddUser(secondaryManager);
         sites[2].AddUserRange(users);
 
         await dbContext.Sites.AddRangeAsync(sites);
@@ -192,12 +120,15 @@ public class ApplicationDbContextInitialiser(
     private async Task EnsureThirdSeedSiteAccessAsync(List<ApplicationUser> users)
     {
         var firstAdministrator = users.FirstOrDefault(user =>
-            string.Equals(user.Email, SeedUserEmails[0], StringComparison.OrdinalIgnoreCase));
+            string.Equals(
+                user.Email,
+                ApplicationUserSeedData.AdministratorEmail,
+                StringComparison.OrdinalIgnoreCase));
         if (firstAdministrator is null)
         {
             logger.LogWarning(
                 "Third seeded site access was not added: seeded administrator {Email} was not found.",
-                SeedUserEmails[0]);
+                ApplicationUserSeedData.AdministratorEmail);
             return;
         }
 
@@ -418,246 +349,6 @@ public class ApplicationDbContextInitialiser(
         logger.LogInformation("Seeded {IssueCount} issues.", issues.Count);
     }
 
-    private async Task AddProducts()
-    {
-        if (await dbContext.Products.AnyAsync())
-        {
-            logger.LogInformation("Product seeding skipped: products already exist.");
-            return;
-        }
-
-        var products = new List<Product>
-        {
-            Product.Create(
-                "Cordless Combi Drill",
-                "Brushless 18 V cordless drill/driver for drilling and screwdriving.",
-                "Bosch Professional",
-                "GSB 18V-55",
-                1,
-                ProductPackageUnit.Piece,
-                ProductCategory.ToolsEquipment,
-                ProductStatus.Active,
-                ProductSearchConfiguration.Create(
-                    null,
-                    ["Bosch GSB 18V-55 drill", "GSB 18V-55 cordless drill"],
-                    ["18V", "brushless"],
-                    ["used", "spare parts"])),
-            Product.Create(
-                "Gypsum Plaster",
-                "Premixed gypsum plaster for interior walls and ceilings.",
-                "Knauf",
-                "Rotband",
-                30,
-                ProductPackageUnit.Kilogram,
-                ProductCategory.BuildingConstruction,
-                ProductStatus.Active,
-                ProductSearchConfiguration.Create(
-                    "Knauf Rotband gypsum plaster 30 kg",
-                    ["Rotband plaster 30kg"],
-                    ["Knauf", "30 kg"],
-                    ["5 kg", "10 kg"])),
-            Product.Create(
-                "Lever Connector",
-                "Three-conductor compact splicing connector with operating levers.",
-                "WAGO",
-                "221-413",
-                50,
-                ProductPackageUnit.Piece,
-                ProductCategory.ElectricalLighting,
-                ProductStatus.Active,
-                ProductSearchConfiguration.Create(
-                    null,
-                    ["WAGO 221-413 box 50", "three wire lever connector"],
-                    ["221-413", "50"],
-                    ["221-412", "221-415"])),
-            Product.Create(
-                "Tile Adhesive",
-                "Cement-based adhesive for ceramic tiles in interior and exterior applications.",
-                "Ceresit",
-                "CM 11 Plus",
-                25,
-                ProductPackageUnit.Kilogram,
-                ProductCategory.BuildingConstruction,
-                ProductStatus.Unavailable,
-                ProductSearchConfiguration.Create(
-                    null,
-                    ["Ceresit CM11 Plus 25 kg"],
-                    ["CM 11 Plus", "25 kg"],
-                    ["5 kg"])),
-            Product.Create(
-                "LED Floodlight",
-                "Outdoor LED floodlight for area and facade illumination.",
-                "Philips",
-                "BVP125 LED80-4S/740",
-                1,
-                ProductPackageUnit.Piece,
-                ProductCategory.ElectricalLighting,
-                ProductStatus.Discontinued,
-                ProductSearchConfiguration.Create(
-                    null,
-                    ["Philips BVP125 LED80 floodlight"],
-                    ["BVP125", "740"],
-                    ["replacement driver"])),
-        };
-
-        var now = DateTimeOffset.UtcNow;
-        foreach (var product in products)
-        {
-            product.Created = now;
-            product.CreatedBy = SeededBy;
-            product.LastModified = now;
-            product.LastModifiedBy = SeededBy;
-        }
-
-        await dbContext.Products.AddRangeAsync(products);
-        await dbContext.SaveChangesAsync();
-        logger.LogInformation("Seeded {ProductCount} products.", products.Count);
-    }
-
-    private async Task<List<Person>> AddPersons()
-    {
-        if (await dbContext.Persons.AnyAsync())
-        {
-            logger.LogInformation("Person seeding skipped: persons already exist.");
-            return await dbContext.Persons.ToListAsync();
-        }
-
-        var persons = PersonSeedData.Create();
-
-        var addresses = new[]
-        {
-            (AddressLine: "Vitosha Boulevard 1", City: "Sofia", PostalCode: "1000"),
-            (AddressLine: "Tsarigradsko Shose 115", City: "Sofia", PostalCode: "1784"),
-            (AddressLine: "Dondukov 11", City: "Sofia", PostalCode: "1000"),
-        };
-
-        var now = DateTimeOffset.UtcNow;
-        for (var i = 0; i < persons.Count && i < addresses.Length; i++)
-        {
-            var addressData = addresses[i];
-            var address = PersonAddress.Create(
-                persons[i].Id,
-                addressData.AddressLine,
-                addressData.City,
-                addressData.PostalCode,
-                "Bulgaria",
-                isPrimary: true,
-                isActive: true
-            );
-            address.Created = now;
-            address.CreatedBy = "System";
-            address.LastModified = now;
-            address.LastModifiedBy = "System";
-            persons[i].AddAddress(address);
-        }
-
-        var ibans = new[]
-        {
-            "BG80BNBG96611020345678",
-            "BG18RZBB91550123456789",
-            "BG03UNCR70001512345678",
-        };
-
-        for (var i = 0; i < persons.Count && i < ibans.Length; i++)
-        {
-            var bankAccount = PersonBankAccount.Create(
-                persons[i].Id,
-                ibans[i],
-                isPrimary: true,
-                isActive: true
-            );
-            bankAccount.Created = now;
-            bankAccount.CreatedBy = "System";
-            bankAccount.LastModified = now;
-            bankAccount.LastModifiedBy = "System";
-            persons[i].AddBankAccount(bankAccount);
-        }
-
-        await dbContext.Persons.AddRangeAsync(persons);
-        await dbContext.SaveChangesAsync();
-        logger.LogInformation("Seeded {PersonCount} persons.", persons.Count);
-
-        return persons;
-    }
-
-    private async Task AddRetailers(IReadOnlyCollection<Person> persons)
-    {
-        var companyPerson = persons.FirstOrDefault(person =>
-            person.Type == PersonType.Company
-            && string.Equals(
-                person.CompanyName,
-                "SiteWatch Services",
-                StringComparison.OrdinalIgnoreCase));
-        if (companyPerson is null)
-        {
-            logger.LogWarning(
-                "Retailer seeding skipped: company Person 'SiteWatch Services' was not found.");
-            return;
-        }
-
-        var existingNameValues = await dbContext.Retailers
-            .AsNoTracking()
-            .Select(retailer => retailer.NormalizedName)
-            .ToListAsync();
-        var existingNames = existingNameValues.ToHashSet(StringComparer.Ordinal);
-        var definitions = new[]
-        {
-            (
-                DisplayName: "SiteWatch Store",
-                BaseWebsiteUrl: "https://store.sitewatch.example",
-                Notes: "General SiteWatch storefront.",
-                IsActive: true),
-            (
-                DisplayName: "SiteWatch Pro",
-                BaseWebsiteUrl: "https://pro.sitewatch.example",
-                Notes: "Commercial storefront for professional customers.",
-                IsActive: true),
-            (
-                DisplayName: "SiteWatch Outlet",
-                BaseWebsiteUrl: "https://outlet.sitewatch.example",
-                Notes: "Inactive sample storefront retained for administration scenarios.",
-                IsActive: false),
-        };
-
-        var now = DateTimeOffset.UtcNow;
-        var retailers = new List<Retailer>();
-        foreach (var definition in definitions)
-        {
-            var retailer = Retailer.Create(
-                definition.DisplayName,
-                companyPerson,
-                definition.BaseWebsiteUrl,
-                definition.Notes);
-            if (existingNames.Contains(retailer.NormalizedName))
-            {
-                continue;
-            }
-
-            if (!definition.IsActive)
-            {
-                retailer.Deactivate();
-            }
-
-            retailer.Created = now;
-            retailer.CreatedBy = SeededBy;
-            retailer.LastModified = now;
-            retailer.LastModifiedBy = SeededBy;
-            retailers.Add(retailer);
-            existingNames.Add(retailer.NormalizedName);
-        }
-
-        if (retailers.Count == 0)
-        {
-            logger.LogInformation(
-                "Retailer seeding skipped: all seeded retailer names already exist.");
-            return;
-        }
-
-        await dbContext.Retailers.AddRangeAsync(retailers);
-        await dbContext.SaveChangesAsync();
-        logger.LogInformation("Seeded {RetailerCount} retailers.", retailers.Count);
-    }
-
     private async Task AddInvoices(List<Person> persons, int invoiceCount)
     {
         if (persons.Count < 3)
@@ -798,18 +489,22 @@ public class ApplicationDbContextInitialiser(
             await dbContext.Database.MigrateAsync();
             logger.LogInformation("Applied pending migrations.");
 
-            var users = await AddUsers();
+            var users = await applicationUserSeedData.SeedAsync();
             await AddSites(users);
+            await atelier48VSiteSeedData.SeedAsync(users);
             await EnsureThirdSeedSiteAccessAsync(users);
             await AddCameras();
             await AddIssues();
-            await AddProducts();
-            var persons = await AddPersons();
-            await AddRetailers(persons);
+            var persons = await personSeedData.SeedAsync();
+            await retailerSeedData.SeedAsync(persons);
+            await renovationCatalogSeedData.SeedAsync();
+            await activityCatalogSeedData.SeedAsync();
+            await retailerExtractionProfileSeedData.SeedAsync(persons);
             var invoiceCount = blobInitializer.GetRequiredSeedInvoiceCount();
             await AddInvoices(persons, invoiceCount);
             await AddInvoiceSitePayments(invoiceCount);
             await blobInitializer.InitializeAsync();
+            await atelier48VMediaSeedData.SeedAsync();
 
             logger.LogInformation("Database initialization completed successfully.");
         }

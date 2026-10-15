@@ -9,5 +9,6 @@ public enum FileDocumentType
     CertificateOrComplianceDocument,
     InspectionOrServiceReport,
     PermitOrApproval,
+    InteriorDesign,
     Other
 }

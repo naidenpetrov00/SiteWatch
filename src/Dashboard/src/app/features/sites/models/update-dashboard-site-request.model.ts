@@ -5,6 +5,7 @@ export interface UpdateDashboardSiteRequest {
   name: string;
   address: string;
   managerId: string;
+  primaryClientUserId?: string | null;
   userIds?: readonly string[];
   startDate: string;
   endDate: string | null;
