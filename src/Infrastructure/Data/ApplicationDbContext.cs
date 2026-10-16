@@ -53,6 +53,9 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
         Set<OfferRetailerComparison>();
     public DbSet<OfferProductPriceSelection> OfferProductPriceSelections =>
         Set<OfferProductPriceSelection>();
+    public DbSet<AssetCatalogItem> AssetCatalogItems => Set<AssetCatalogItem>();
+    public DbSet<Asset> Assets => Set<Asset>();
+    public DbSet<AssetEvent> AssetEvents => Set<AssetEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -61,10 +64,39 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
     }
 
-    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        EnsureAssetHistoryIsAppendOnly();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
+        SaveChangesAsync(true, cancellationToken);
+
+    public override async Task<int> SaveChangesAsync(
+        bool acceptAllChangesOnSuccess,
+        CancellationToken cancellationToken = default)
     {
         await mediator.DispatchDomainEventsAsync(this);
+        EnsureAssetHistoryIsAppendOnly();
 
-        return await base.SaveChangesAsync(cancellationToken);
+        return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    private void EnsureAssetHistoryIsAppendOnly()
+    {
+        ChangeTracker.DetectChanges();
+
+        if (ChangeTracker.Entries<Asset>().Any(entry => entry.State == EntityState.Deleted))
+        {
+            throw new InvalidOperationException("Assets cannot be hard-deleted.");
+        }
+
+        if (ChangeTracker.Entries<AssetEvent>().Any(entry =>
+                entry.State is EntityState.Modified or EntityState.Deleted))
+        {
+            throw new InvalidOperationException(
+                "Persisted asset history cannot be changed or deleted.");
+        }
     }
 }
