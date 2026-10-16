@@ -56,6 +56,12 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<AssetCatalogItem> AssetCatalogItems => Set<AssetCatalogItem>();
     public DbSet<Asset> Assets => Set<Asset>();
     public DbSet<AssetEvent> AssetEvents => Set<AssetEvent>();
+    public DbSet<Proposal> Proposals => Set<Proposal>();
+    public DbSet<ProposalActivity> ProposalActivities => Set<ProposalActivity>();
+    public DbSet<ProposalActivitySection> ProposalActivitySections =>
+        Set<ProposalActivitySection>();
+    public DbSet<ProposalProductLine> ProposalProductLines => Set<ProposalProductLine>();
+    public DbSet<ProposalDocument> ProposalDocuments => Set<ProposalDocument>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

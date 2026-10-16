@@ -6,6 +6,7 @@ using Domain.Entities;
 using Infrastructure.Cameras.Services;
 using Infrastructure.ActivityCatalog;
 using Infrastructure.Data;
+using Infrastructure.Data.SeedData;
 using Infrastructure.Email;
 using Infrastructure.Invoices.Services;
 using Infrastructure.Issues.Services;
@@ -18,6 +19,7 @@ using Infrastructure.RetailerListings.Services;
 using Infrastructure.RetailerExtractionProfiles.Services;
 using Infrastructure.RetailerPriceCollections;
 using Infrastructure.Offers.Services;
+using Infrastructure.Proposals;
 using Infrastructure.SeedWork.Options;
 using Infrastructure.Sites.Services;
 using Infrastructure.Storage;
@@ -25,6 +27,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using QuestPDF.Infrastructure;
 
 namespace Infrastructure;
 
@@ -35,6 +38,8 @@ public static class DependencyInjection
         IConfiguration configuration
     )
     {
+        QuestPDF.Settings.License = LicenseType.Community;
+
         services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly())
         );
@@ -64,6 +69,14 @@ public static class DependencyInjection
         services.AddScoped<IFilesService, FilesService>();
         services.AddScoped<IVideosService, VideosService>();
         services.AddScoped<ApplicationDbContextInitialiser>();
+        services.AddScoped<ApplicationUserSeedData>();
+        services.AddScoped<Atelier48VSiteSeedData>();
+        services.AddScoped<Atelier48VMediaSeedData>();
+        services.AddScoped<PersonSeedData>();
+        services.AddScoped<RetailerSeedData>();
+        services.AddScoped<RenovationCatalogSeedData>();
+        services.AddScoped<ActivityCatalogSeedData>();
+        services.AddScoped<RetailerExtractionProfileSeedData>();
         services.AddScoped<BlobInitializer>();
         services.AddScoped<IBlobService, BlobImagesService>();
         services.AddScoped<IFilesBlobService, BlobFilesService>();
@@ -93,6 +106,9 @@ public static class DependencyInjection
         services.AddScoped<IActivityRequirementService, ActivityRequirementService>();
         services.AddScoped<IOfferService, OfferService>();
         services.AddScoped<IOfferPricingService, OfferPricingService>();
+        services.AddScoped<ProposalPdfRenderer>();
+        services.AddScoped<ProposalDocumentBlobStorage>();
+        services.AddScoped<IProposalService, ProposalService>();
 
         services
             .AddIdentity<ApplicationUser, IdentityRole>(options => { options.User.RequireUniqueEmail = true; })

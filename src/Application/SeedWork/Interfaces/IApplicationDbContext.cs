@@ -37,6 +37,11 @@ public interface IApplicationDbContext
     DbSet<AssetCatalogItem> AssetCatalogItems { get; }
     DbSet<Asset> Assets { get; }
     DbSet<AssetEvent> AssetEvents { get; }
+    DbSet<Proposal> Proposals { get; }
+    DbSet<ProposalActivity> ProposalActivities { get; }
+    DbSet<ProposalActivitySection> ProposalActivitySections { get; }
+    DbSet<ProposalProductLine> ProposalProductLines { get; }
+    DbSet<ProposalDocument> ProposalDocuments { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

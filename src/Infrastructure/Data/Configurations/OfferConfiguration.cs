@@ -8,7 +8,17 @@ public sealed class OfferConfiguration : IEntityTypeConfiguration<Offer>
 {
     public void Configure(EntityTypeBuilder<Offer> builder)
     {
-        builder.ToTable("Offers");
+        builder.ToTable(
+            "Offers",
+            table =>
+            {
+                table.HasCheckConstraint(
+                    "CK_Offers_ActivityDiscountPercentage",
+                    "[ActivityDiscountPercentage] >= 0 AND [ActivityDiscountPercentage] <= 100");
+                table.HasCheckConstraint(
+                    "CK_Offers_ProductDiscountPercentage",
+                    "[ProductDiscountPercentage] >= 0 AND [ProductDiscountPercentage] <= 100");
+            });
 
         builder.Property(offer => offer.NumberId)
             .ValueGeneratedOnAdd()
@@ -21,6 +31,14 @@ public sealed class OfferConfiguration : IEntityTypeConfiguration<Offer>
         builder.Property(offer => offer.Status)
             .HasConversion<string>()
             .HasMaxLength(32)
+            .IsRequired();
+        builder.Property(offer => offer.ActivityDiscountPercentage)
+            .HasPrecision(5, 2)
+            .HasDefaultValue(0m)
+            .IsRequired();
+        builder.Property(offer => offer.ProductDiscountPercentage)
+            .HasPrecision(5, 2)
+            .HasDefaultValue(0m)
             .IsRequired();
 
         builder.Property(offer => offer.FinalizedBy)

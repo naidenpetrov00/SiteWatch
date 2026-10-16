@@ -51,4 +51,13 @@ export const paths = {
         attachmentAccess: (issueId: string, attachmentId: string) =>
             `/issues/${issueId}/attachments/${attachmentId}/access`,
     },
+    proposals: {
+        getBySiteId: (siteId: string) => `/client/sites/${siteId}/proposals`,
+        getById: (siteId: string, proposalId: string) =>
+            `/client/sites/${siteId}/proposals/${proposalId}`,
+        respond: (siteId: string, proposalId: string) =>
+            `/client/sites/${siteId}/proposals/${proposalId}/response`,
+        getPdfAccess: (siteId: string, proposalId: string) =>
+            `/client/sites/${siteId}/proposals/${proposalId}/pdf-access`,
+    },
 };

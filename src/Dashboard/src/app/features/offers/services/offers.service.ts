@@ -31,6 +31,8 @@ import {
   SiteOffersResponse,
   StartOfferOnlinePriceCollectionRequest,
   UpdateOfferActivityMeasurementsRequest,
+  UpdateOfferActivitySectionPricingRequest,
+  UpdateOfferDiscountsRequest,
   UpdateOfferMetadataRequest
 } from '../models/offer.models';
 import {
@@ -350,6 +352,47 @@ export class OffersService {
       this.invalidateOfferWorkspace(request.siteId, request.offerId)
   }));
 
+  readonly updateActivityPricingMutation = injectMutation<
+    void,
+    Error,
+    UpdateOfferActivitySectionPricingRequest
+  >(() => ({
+    mutationKey: ['offers', 'activity', 'pricing'],
+    mutationFn: ({ siteId, offerId, offerActivityId, sectionPricing }) =>
+      firstValueFrom(
+        this.http.put<void>(
+          buildApiUrl(
+            `/sites/${siteId}/offers/${offerId}/activities/${offerActivityId}/section-pricing`
+          ),
+          { sectionPricing }
+        )
+      ),
+    onSuccess: async (_, request) =>
+      this.invalidateOfferWorkspace(request.siteId, request.offerId)
+  }));
+
+  readonly updateDiscountsMutation = injectMutation<
+    void,
+    Error,
+    UpdateOfferDiscountsRequest
+  >(() => ({
+    mutationKey: ['offers', 'discounts', 'update'],
+    mutationFn: ({
+      siteId,
+      offerId,
+      activityDiscountPercentage,
+      productDiscountPercentage
+    }) =>
+      firstValueFrom(
+        this.http.put<void>(
+          buildApiUrl(`/sites/${siteId}/offers/${offerId}/discounts`),
+          { activityDiscountPercentage, productDiscountPercentage }
+        )
+      ),
+    onSuccess: async (_, request) =>
+      this.invalidateOfferWorkspace(request.siteId, request.offerId)
+  }));
+
   readonly addPricingRetailerMutation = injectMutation<
     OfferPricingMatrix,
     Error,
@@ -596,6 +639,16 @@ export class OffersService {
     request: UpdateOfferActivityMeasurementsRequest
   ): Promise<void> {
     return this.updateMeasurementsMutation.mutateAsync(request);
+  }
+
+  updateActivitySectionPricing(
+    request: UpdateOfferActivitySectionPricingRequest
+  ): Promise<void> {
+    return this.updateActivityPricingMutation.mutateAsync(request);
+  }
+
+  updateDiscounts(request: UpdateOfferDiscountsRequest): Promise<void> {
+    return this.updateDiscountsMutation.mutateAsync(request);
   }
 
   addPricingRetailer(

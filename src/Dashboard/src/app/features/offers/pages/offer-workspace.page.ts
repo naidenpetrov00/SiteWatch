@@ -13,7 +13,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import {
@@ -26,9 +26,12 @@ import {
   OfferFinalizeConfirmDialogData
 } from '../components/offer-finalize-confirm-dialog/offer-finalize-confirm-dialog.component';
 import { OfferPricingMatrixComponent } from '../components/offer-pricing-matrix/offer-pricing-matrix.component';
+import { OfferCommercialSummaryComponent } from '../components/offer-commercial-summary/offer-commercial-summary.component';
 import { OfferSelectedActivitiesComponent } from '../components/offer-selected-activities/offer-selected-activities.component';
 import { OffersService } from '../services/offers.service';
 import { getOfferError } from '../utils/offer-error';
+import { ProposalsService } from '../../proposals/services/proposals.service';
+import { getProposalError } from '../../proposals/utils/proposal-error';
 
 @Component({
   selector: 'app-offer-workspace-page',
@@ -38,6 +41,7 @@ import { getOfferError } from '../utils/offer-error';
     MatFormFieldModule,
     MatInputModule,
     OfferActivityBrowserComponent,
+    OfferCommercialSummaryComponent,
     OfferPricingMatrixComponent,
     OfferSelectedActivitiesComponent,
     ReactiveFormsModule,
@@ -51,16 +55,30 @@ export class OfferWorkspacePage {
   private readonly offersService = inject(OffersService);
   private readonly dialog = inject(MatDialog);
   private readonly formBuilder = inject(FormBuilder);
+  private readonly proposalsService = inject(ProposalsService);
+  private readonly router = inject(Router);
   private configuredOfferId: string | null = null;
 
   readonly siteId = input.required<string>();
   readonly offerId = input.required<string>();
   readonly offer = computed(() => this.offersService.offerDetailsQuery.data());
+  readonly pricing = computed(() => this.offersService.pricingMatrixQuery.data());
   readonly isDraft = computed(() => this.offer()?.status === 'Draft');
   readonly pricingMatrix = viewChild(OfferPricingMatrixComponent);
+  readonly commercialSummary = viewChild(OfferCommercialSummaryComponent);
   readonly selectedActivities = viewChild(OfferSelectedActivitiesComponent);
   readonly pageMessage = signal<string | null>(null);
   readonly pageError = signal<string | null>(null);
+  readonly proposals = computed(
+    () => this.proposalsService.historyQuery.data() ?? []
+  );
+  readonly hasDraftProposal = computed(() =>
+    this.proposals().some((proposal) => proposal.status === 'Draft')
+  );
+  readonly latestProposal = computed(() => this.proposals()[0] ?? null);
+  readonly canCreateProposal = computed(() =>
+    !this.hasDraftProposal() && this.latestProposal()?.status !== 'Accepted'
+  );
   readonly metadataForm = this.formBuilder.group({
     title: ['', [Validators.maxLength(200)]],
     notes: ['', [Validators.maxLength(2000)]]
@@ -69,6 +87,9 @@ export class OfferWorkspacePage {
   constructor() {
     effect(() =>
       this.offersService.configureDetails(this.siteId(), this.offerId())
+    );
+    effect(() =>
+      this.proposalsService.configureHistory(this.siteId(), this.offerId())
     );
     effect(() => {
       const offer = this.offer();
@@ -131,12 +152,14 @@ export class OfferWorkspacePage {
     }
 
     if (this.metadataForm.dirty || this.pricingMatrix()?.hasUnsavedEdits() ||
+        this.commercialSummary()?.hasUnsavedEdits() ||
         this.selectedActivities()?.hasUnsavedEdits()) {
       this.pageError.set('Save or cancel unsaved Offer edits before finalizing.');
       return;
     }
     if (this.isSaving() || this.isArchiving() ||
         this.pricingMatrix()?.isMutating() ||
+        this.commercialSummary()?.isMutating() ||
         this.selectedActivities()?.isMutating() ||
         this.offersService.addActivityMutation.isPending()) {
       this.pageError.set('Wait for the current Offer change to finish before finalizing.');
@@ -197,6 +220,64 @@ export class OfferWorkspacePage {
   onActivityAdded(): void {
     this.pageError.set(null);
     this.pageMessage.set('Activity added and product requirements recalculated.');
+  }
+
+  async createProposal(): Promise<void> {
+    const offer = this.offer();
+    if (
+      !offer ||
+      offer.status !== 'Finalized' ||
+      !this.canCreateProposal() ||
+      this.proposalsService.createMutation.isPending()
+    ) {
+      return;
+    }
+
+    this.clearFeedback();
+    try {
+      const created = await this.proposalsService.create(
+        this.siteId(),
+        this.offerId()
+      );
+      await this.router.navigate([
+        '/sites',
+        this.siteId(),
+        'proposals',
+        created.id
+      ]);
+    } catch (error) {
+      this.pageError.set(
+        getProposalError(error, 'The draft Proposal could not be created.')
+      );
+    }
+  }
+
+  async openProposal(proposalId: string): Promise<void> {
+    await this.router.navigate([
+      '/sites',
+      this.siteId(),
+      'proposals',
+      proposalId
+    ]);
+  }
+
+  isLoadingProposals(): boolean {
+    return this.proposalsService.historyQuery.isPending();
+  }
+
+  hasProposalLoadError(): boolean {
+    return this.proposalsService.historyQuery.isError();
+  }
+
+  isCreatingProposal(): boolean {
+    return this.proposalsService.createMutation.isPending();
+  }
+
+  formatMoney(value: number): string {
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: 'EUR'
+    }).format(value);
   }
 
   isLoading(): boolean {

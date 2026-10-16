@@ -14,6 +14,7 @@
   } @else if (readiness(); as current) {
     <dl class="offer-finalize__summary">
       <div><dt>Selected activities</dt><dd>{{ current.selectedActivityCount }}</dd></div>
+      <div><dt>Activity sections priced or free</dt><dd>{{ current.activitySectionsWithPricing }} / {{ current.activitySectionCount }}</dd></div>
       <div><dt>Products with required quantities</dt><dd>{{ current.requiredProductCount }}</dd></div>
       <div><dt>Required products with selected prices</dt><dd>{{ current.requiredProductsWithSelectedPrices }}</dd></div>
       <div><dt>Required products missing prices</dt><dd>{{ current.requiredProductsMissingSelectedPrices.length }}</dd></div>
@@ -28,6 +29,9 @@
       </div>
       <div><dt>Selected prices with newer observations</dt><dd>{{ current.selectedPricesWithNewerObservations.length }}</dd></div>
       <div><dt>Online price collections still running</dt><dd>{{ current.unfinishedOnlinePriceCollectionRunCount }}</dd></div>
+      <div><dt>Activity total after discount</dt><dd>{{ formatCurrency(current.commercialTotals.activityTotalAfterDiscount) }}</dd></div>
+      <div><dt>Product total after discount</dt><dd>{{ formatCurrency(current.commercialTotals.productTotalAfterDiscount) }}</dd></div>
+      <div><dt>Combined Offer total</dt><dd>{{ formatCurrency(current.commercialTotals.combinedOfferTotal) }}</dd></div>
     </dl>
 
     @if (current.blockingReasons.length > 0) {

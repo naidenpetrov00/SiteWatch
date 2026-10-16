@@ -27,5 +27,7 @@ public interface IOfferPricingService
         Guid offerId,
         Guid offerProductLineId,
         CancellationToken cancellationToken);
+    Task UpdateDiscountsAsync(
+        UpdateOfferDiscountsCommand request,
+        CancellationToken cancellationToken);
 }
-
