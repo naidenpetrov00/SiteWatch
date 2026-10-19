@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -31,6 +32,13 @@ export interface AssetActionDialogData {
   kind: AssetActionKind;
   title: string;
   accepted?: boolean;
+}
+
+interface ConflictComparisonRow {
+  label: string;
+  draft: string;
+  server: string;
+  changed: boolean;
 }
 
 @Component({
@@ -126,10 +134,54 @@ export interface AssetActionDialogData {
           </mat-form-field>
         }
         @if (conflict()) {
-          <p class="conflict" role="alert">
-            The record changed. Your input is preserved and current state has been refreshed.
-            Review it, then confirm again.
-          </p>
+          <section class="conflict-review" role="alert" aria-live="assertive">
+            <h3>Review the concurrent changes</h3>
+            @if (refreshedAsset()) {
+              <p>
+                Your first save was not applied. Your draft remains in the form above. Compare
+                it with the latest server values; differing fields are highlighted. Reconfirm
+                explicitly to submit the draft with the refreshed concurrency token.
+              </p>
+              <div class="comparison-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th scope="col">Field</th>
+                      <th scope="col">Your draft</th>
+                      <th scope="col">Latest server value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of conflictRows(); track row.label) {
+                      <tr [class.changed]="row.changed">
+                        <th scope="row">
+                          {{ row.label }}
+                          @if (row.changed) {
+                            <span class="changed-label">Differs</span>
+                          }
+                        </th>
+                        <td>{{ row.draft }}</td>
+                        <td>{{ row.server }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              <p>
+                Your first save was not applied and your draft is preserved, but the latest
+                server values could not be loaded.
+              </p>
+              <button
+                mat-stroked-button
+                type="button"
+                (click)="refreshConflict()"
+                [disabled]="saving()"
+              >
+                Retry refresh
+              </button>
+            }
+          </section>
         }
         @if (error()) {
           <p class="error" role="alert">{{ error() }}</p>
@@ -138,8 +190,12 @@ export interface AssetActionDialogData {
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close>Cancel</button>
-      <button mat-flat-button (click)="confirm()" [disabled]="saving() || form.invalid">
-        Confirm
+      <button
+        mat-flat-button
+        (click)="confirm()"
+        [disabled]="saving() || form.invalid || (conflict() && !refreshedAsset())"
+      >
+        {{ conflict() ? 'Reconfirm draft' : 'Confirm' }}
       </button>
     </mat-dialog-actions>
   `,
@@ -150,8 +206,39 @@ export interface AssetActionDialogData {
       min-width: min(32rem, 75vw);
       padding-top: 0.5rem;
     }
-    .conflict {
-      color: var(--mat-sys-tertiary);
+    .conflict-review {
+      border: 1px solid var(--mat-sys-tertiary);
+      border-radius: 0.75rem;
+      padding: 1rem;
+    }
+    .conflict-review h3 {
+      margin-top: 0;
+    }
+    .comparison-scroll {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th,
+    td {
+      padding: 0.5rem;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid var(--mat-sys-outline-variant);
+      white-space: pre-wrap;
+    }
+    tr.changed {
+      background: var(--mat-sys-tertiary-container);
+      color: var(--mat-sys-on-tertiary-container);
+    }
+    .changed-label {
+      display: inline-block;
+      margin-left: 0.35rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
     }
     .error {
       color: var(--mat-sys-error);
@@ -206,6 +293,73 @@ export class AssetActionDialogComponent {
     reason: new FormControl('', { nonNullable: true, validators: Validators.maxLength(2000) }),
     note: new FormControl('', { nonNullable: true, validators: Validators.maxLength(2000) })
   });
+  private readonly draft = toSignal(this.form.valueChanges, {
+    initialValue: this.form.getRawValue()
+  });
+  readonly refreshedAsset = signal<AssetDetails | null>(null);
+  readonly conflictRows = computed<readonly ConflictComparisonRow[]>(() => {
+    const server = this.refreshedAsset();
+    if (!server) {
+      return [];
+    }
+
+    const draft = this.draft();
+    const original = this.data.asset;
+    const siteId = this.data.kind === 'site' ? draft.siteId : original.siteId;
+    const workerId = this.data.kind === 'responsibility'
+      ? draft.responsibleWorkerId || null
+      : original.responsibleWorkerId;
+    const operationalStatus = this.data.kind === 'missing'
+      ? 'Missing'
+      : this.data.kind === 'retirement'
+        ? 'Retired'
+        : draft.operationalStatus;
+    const reviewStatus = this.data.kind === 'registration-review'
+      ? (this.data.accepted === true ? 'Active' : 'Rejected')
+      : original.reviewStatus;
+
+    return [
+      this.comparison('Classification', draft.classification, server.classification),
+      this.comparison('Name', draft.name, server.name),
+      this.comparison('Manufacturer', draft.manufacturer || null, server.manufacturer),
+      this.comparison('Model', draft.model || null, server.model),
+      this.comparison('Description', draft.description || null, server.description),
+      this.comparison(
+        'Manufacturer serial number',
+        draft.manufacturerSerialNumber || null,
+        server.manufacturerSerialNumber
+      ),
+      this.comparison(
+        'Site',
+        siteId,
+        server.siteId,
+        siteId === original.siteId ? original.siteName : siteId,
+        server.siteName
+      ),
+      this.comparison(
+        'Responsible worker',
+        workerId,
+        server.responsibleWorkerId,
+        workerId === original.responsibleWorkerId
+          ? original.responsibleWorkerDisplayName
+          : workerId,
+        server.responsibleWorkerDisplayName
+      ),
+      this.comparison('Condition', draft.condition, server.condition),
+      this.comparison('Operational status', operationalStatus, server.operationalStatus),
+      this.comparison('Registration state', reviewStatus, server.reviewStatus),
+      this.data.kind === 'qr-identifier'
+        ? this.comparison(
+            'QR identifier',
+            'Generate a new identifier',
+            server.qrIdentifier,
+            'Generate a new identifier',
+            server.qrIdentifier,
+            true
+          )
+        : this.comparison('QR identifier', original.qrIdentifier, server.qrIdentifier)
+    ];
+  });
 
   async confirm(): Promise<void> {
     if (this.data.kind === 'responsibility' && !this.form.controls.reason.value.trim()) {
@@ -213,10 +367,18 @@ export class AssetActionDialogComponent {
       return;
     }
 
+    const refreshedAsset = this.refreshedAsset();
+    if (this.conflict() && !refreshedAsset) {
+      this.error.set('Refresh the latest server values before reconfirming this draft.');
+      return;
+    }
+
     this.saving.set(true);
     this.error.set('');
     try {
       const value = this.form.getRawValue();
+      const concurrencyToken = refreshedAsset?.concurrencyToken
+        ?? this.data.asset.concurrencyToken;
       let updated: AssetDetails;
       if (this.data.kind === 'details') {
         updated = await this.service.updateDetails(this.data.asset.id, {
@@ -226,12 +388,12 @@ export class AssetActionDialogComponent {
           model: value.model || null,
           description: value.description || null,
           manufacturerSerialNumber: value.manufacturerSerialNumber || null,
-          concurrencyToken: this.data.asset.concurrencyToken,
+          concurrencyToken,
           note: value.note || null
         });
       } else {
         const body: AssetActionRequest = {
-          concurrencyToken: this.data.asset.concurrencyToken,
+          concurrencyToken,
           note: value.note || null
         };
         if (this.data.kind === 'registration-review') {
@@ -258,13 +420,48 @@ export class AssetActionDialogComponent {
     } catch (error) {
       if (this.service.isConcurrencyConflict(error)) {
         this.conflict.set(true);
-        await this.service.invalidate(this.data.asset.id);
-        this.data.asset = await this.service.getAsset(this.data.asset.id);
+        await this.refreshConflict();
       } else {
         this.error.set('The action was rejected. Review the current state and supplied values.');
       }
     } finally {
       this.saving.set(false);
     }
+  }
+
+  async refreshConflict(): Promise<void> {
+    this.saving.set(true);
+    this.error.set('');
+    this.refreshedAsset.set(null);
+    try {
+      await this.service.invalidate(this.data.asset.id);
+      this.refreshedAsset.set(await this.service.getAsset(this.data.asset.id));
+    } catch {
+      this.error.set(
+        'The record changed, but its latest values could not be loaded. Your draft is preserved.'
+      );
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  private comparison(
+    label: string,
+    draftValue: unknown,
+    serverValue: unknown,
+    draftDisplay: unknown = draftValue,
+    serverDisplay: unknown = serverValue,
+    forceChanged = false
+  ): ConflictComparisonRow {
+    return {
+      label,
+      draft: this.displayValue(draftDisplay),
+      server: this.displayValue(serverDisplay),
+      changed: forceChanged || draftValue !== serverValue
+    };
+  }
+
+  private displayValue(value: unknown): string {
+    return value === null || value === undefined || value === '' ? '—' : String(value);
   }
 }
