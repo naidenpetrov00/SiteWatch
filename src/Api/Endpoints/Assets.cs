@@ -19,9 +19,8 @@ public sealed class Assets : EndpointGroupBase
         group.MapGet("/{id:guid}", Get).WithName("GetAsset").WithSummary("Get tracked asset details").Produces<AssetDto>().Produces(StatusCodes.Status404NotFound);
         group.MapGet("/{id:guid}/events", Events).WithName("GetAssetEvents").WithSummary("Get chronological asset history").Produces<PagedResult<AssetEventDto>>();
         group.MapPost(string.Empty, Register).WithName("RegisterAssets").WithSummary("Atomically register one to fifty active assets").Produces<IReadOnlyList<RegisteredAssetDto>>(StatusCodes.Status201Created).ProducesValidationProblem();
+        group.MapPut("/{id:guid}/details", UpdateDetails).WithName("UpdateAssetDetails").WithSummary("Update audited asset details").Produces<AssetDto>().ProducesValidationProblem().Produces(StatusCodes.Status404NotFound).Produces(StatusCodes.Status409Conflict);
         MapAction<ReviewAssetRegistrationCommand>(group, "/{id:guid}/registration-review", "ReviewAssetRegistration", ReviewRegistration);
-        MapAction<CorrectAssetCatalogCommand>(group, "/{id:guid}/catalog-association", "CorrectAssetCatalogAssociation", CorrectCatalog);
-        MapAction<CorrectAssetSerialCommand>(group, "/{id:guid}/manufacturer-serial-number", "CorrectAssetManufacturerSerial", CorrectSerial);
         MapAction<RelocateAssetCommand>(group, "/{id:guid}/site", "RelocateAsset", Relocate);
         MapAction<ChangeAssetConditionCommand>(group, "/{id:guid}/condition", "ChangeAssetCondition", ChangeCondition);
         MapAction<ChangeAssetOperationalStatusCommand>(group, "/{id:guid}/operational-status", "ChangeAssetOperationalStatus", ChangeStatus);
@@ -48,8 +47,7 @@ public sealed class Assets : EndpointGroupBase
         return TypedResults.Created($"/assets/{result[0].Id}", result);
     }
     private static Task<Ok<AssetDto>> ReviewRegistration(IMediator m, Guid id, ReviewAssetRegistrationCommand c, CancellationToken ct) => Send(m, c with { Id = id }, ct);
-    private static Task<Ok<AssetDto>> CorrectCatalog(IMediator m, Guid id, CorrectAssetCatalogCommand c, CancellationToken ct) => Send(m, c with { Id = id }, ct);
-    private static Task<Ok<AssetDto>> CorrectSerial(IMediator m, Guid id, CorrectAssetSerialCommand c, CancellationToken ct) => Send(m, c with { Id = id }, ct);
+    private static Task<Ok<AssetDto>> UpdateDetails(IMediator m, Guid id, UpdateAssetDetailsCommand c, CancellationToken ct) => Send(m, c with { Id = id }, ct);
     private static Task<Ok<AssetDto>> Relocate(IMediator m, Guid id, RelocateAssetCommand c, CancellationToken ct) => Send(m, c with { Id = id }, ct);
     private static Task<Ok<AssetDto>> ChangeCondition(IMediator m, Guid id, ChangeAssetConditionCommand c, CancellationToken ct) => Send(m, c with { Id = id }, ct);
     private static Task<Ok<AssetDto>> ChangeStatus(IMediator m, Guid id, ChangeAssetOperationalStatusCommand c, CancellationToken ct) => Send(m, c with { Id = id }, ct);

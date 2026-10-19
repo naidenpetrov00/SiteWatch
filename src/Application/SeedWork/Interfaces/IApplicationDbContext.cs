@@ -35,7 +35,6 @@ public interface IApplicationDbContext
     DbSet<OfferProductLine> OfferProductLines { get; }
     DbSet<OfferRetailerComparison> OfferRetailerComparisons { get; }
     DbSet<OfferProductPriceSelection> OfferProductPriceSelections { get; }
-    DbSet<AssetCatalogItem> AssetCatalogItems { get; }
     DbSet<Asset> Assets { get; }
     DbSet<AssetEvent> AssetEvents { get; }
     DbSet<Proposal> Proposals { get; }

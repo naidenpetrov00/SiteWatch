@@ -8,8 +8,6 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
     <section class="asset-shell">
       <header><p>Administration</p><h1>Asset Tracking</h1></header>
       <nav aria-label="Asset tracking navigation">
-        <a routerLink="catalog" routerLinkActive="active">Catalog</a>
-        <a routerLink="catalog/pending" routerLinkActive="active">Pending Catalog Reviews</a>
         <a routerLink="assets" routerLinkActive="active">Assets</a>
         <a routerLink="assets/pending" routerLinkActive="active">Pending Registrations</a>
         <a routerLink="register" routerLinkActive="active">Register Assets</a>

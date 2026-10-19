@@ -1,6 +1,6 @@
 namespace Domain.SeedWork.Enums;
 
-public enum AssetCatalogClassification
+public enum AssetClassification
 {
     Machine,
     Tool
@@ -46,7 +46,6 @@ public enum AssetEventType
     HandoverAccepted,
     HandoverRejected,
     AdministrativeReassignment,
-    CatalogAssociationCorrected,
-    ManufacturerSerialCorrected,
+    AssetDetailsUpdated,
     QrIdentifierRotated
 }

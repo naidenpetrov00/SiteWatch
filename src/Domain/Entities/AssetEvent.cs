@@ -4,7 +4,11 @@ using Domain.SeedWork.Enums;
 namespace Domain.Entities;
 
 internal sealed record AssetStateSnapshot(
-    Guid CatalogItemId,
+    AssetClassification Classification,
+    string Name,
+    string? Manufacturer,
+    string? Model,
+    string? Description,
     Guid QrIdentifier,
     string? ManufacturerSerialNumber,
     Guid SiteId,
@@ -32,7 +36,11 @@ public sealed class AssetEvent : BaseEntity
     public DateTimeOffset OccurredAt { get; private set; }
     public string? Note { get; private set; }
 
-    public Guid? PreviousCatalogItemId { get; private set; }
+    public AssetClassification? PreviousClassification { get; private set; }
+    public string? PreviousName { get; private set; }
+    public string? PreviousManufacturer { get; private set; }
+    public string? PreviousModel { get; private set; }
+    public string? PreviousDescription { get; private set; }
     public Guid? PreviousQrIdentifier { get; private set; }
     public string? PreviousManufacturerSerialNumber { get; private set; }
     public Guid? PreviousSiteId { get; private set; }
@@ -43,7 +51,11 @@ public sealed class AssetEvent : BaseEntity
     public AssetOperationalStatus? PreviousPreHandoverOperationalStatus { get; private set; }
     public AssetReviewStatus? PreviousReviewStatus { get; private set; }
 
-    public Guid ResultingCatalogItemId { get; private set; }
+    public AssetClassification ResultingClassification { get; private set; }
+    public string ResultingName { get; private set; } = string.Empty;
+    public string? ResultingManufacturer { get; private set; }
+    public string? ResultingModel { get; private set; }
+    public string? ResultingDescription { get; private set; }
     public Guid ResultingQrIdentifier { get; private set; }
     public string? ResultingManufacturerSerialNumber { get; private set; }
     public Guid ResultingSiteId { get; private set; }
@@ -110,7 +122,11 @@ public sealed class AssetEvent : BaseEntity
 
     private void SetPreviousState(AssetStateSnapshot state)
     {
-        PreviousCatalogItemId = state.CatalogItemId;
+        PreviousClassification = state.Classification;
+        PreviousName = state.Name;
+        PreviousManufacturer = state.Manufacturer;
+        PreviousModel = state.Model;
+        PreviousDescription = state.Description;
         PreviousQrIdentifier = state.QrIdentifier;
         PreviousManufacturerSerialNumber = state.ManufacturerSerialNumber;
         PreviousSiteId = state.SiteId;
@@ -124,7 +140,11 @@ public sealed class AssetEvent : BaseEntity
 
     private void SetResultingState(AssetStateSnapshot state)
     {
-        ResultingCatalogItemId = state.CatalogItemId;
+        ResultingClassification = state.Classification;
+        ResultingName = state.Name;
+        ResultingManufacturer = state.Manufacturer;
+        ResultingModel = state.Model;
+        ResultingDescription = state.Description;
         ResultingQrIdentifier = state.QrIdentifier;
         ResultingManufacturerSerialNumber = state.ManufacturerSerialNumber;
         ResultingSiteId = state.SiteId;

@@ -3,12 +3,15 @@ import { ActivatedRoute } from '@angular/router';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { DataTableComponent } from '../../../shared/data-table/data-table.component';
 import { DataTableColumn, DataTableState } from '../../../shared/data-table/data-table.types';
-import { ASSET_CONDITIONS, AssetListItem, REGISTRATION_STATUSES, REVIEW_STATUSES } from '../models/asset-tracking.models';
+import { ASSET_CLASSIFICATIONS, ASSET_CONDITIONS, AssetListItem, REGISTRATION_STATUSES, REVIEW_STATUSES } from '../models/asset-tracking.models';
 import { AssetTrackingService } from '../services/asset-tracking.service';
 
 const COLUMNS: readonly DataTableColumn<AssetListItem>[] = [
-  { key: 'assetCode', label: 'Asset Code', sortable: true, cellType: 'internal-link', linkRouteAccessor: (row) => ['/asset-tracking/assets', row.id], filter: { kind: 'text', placeholder: 'Code, QR, serial, catalog, site or worker' } },
-  { key: 'catalogName', label: 'Catalog', sortable: true }, { key: 'classification', label: 'Class' },
+  { key: 'assetCode', label: 'Asset Code', sortable: true, cellType: 'internal-link', linkRouteAccessor: (row) => ['/asset-tracking/assets', row.id], filter: { kind: 'text', placeholder: 'Code, QR, name, serial, site or worker' } },
+  { key: 'name', label: 'Name', sortable: true, filter: { kind: 'text', placeholder: 'Name' } },
+  { key: 'classification', label: 'Class', sortable: true, filter: { kind: 'select', options: ASSET_CLASSIFICATIONS.map((x) => ({label:x,value:x})) } },
+  { key: 'manufacturer', label: 'Manufacturer', sortable: true, filter: { kind: 'text', placeholder: 'Manufacturer' } },
+  { key: 'model', label: 'Model', sortable: true, filter: { kind: 'text', placeholder: 'Model' } },
   { key: 'siteName', label: 'Site', sortable: true }, { key: 'responsibleWorkerDisplayName', label: 'Responsible Worker' },
   { key: 'condition', label: 'Condition', sortable: true, filter: { kind: 'select', options: ASSET_CONDITIONS.map((x) => ({label:x,value:x})) } },
   { key: 'operationalStatus', label: 'Status', sortable: true, filter: { kind: 'select', options: [...REGISTRATION_STATUSES, 'InTransfer', 'Missing', 'Retired'].map((x) => ({label:x,value:x})) } },

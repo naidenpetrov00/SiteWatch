@@ -36,6 +36,19 @@ public sealed class AssetConfiguration : IEntityTypeConfiguration<Asset>
             .HasDefaultValueSql("NEXT VALUE FOR [dbo].[AssetNumberIds]")
             .IsRequired();
         builder.Property(asset => asset.QrIdentifier).IsRequired();
+        builder.Property(asset => asset.Classification)
+            .HasConversion<string>()
+            .HasMaxLength(16)
+            .IsRequired();
+        builder.Property(asset => asset.Name)
+            .HasMaxLength(Asset.MaxNameLength)
+            .IsRequired();
+        builder.Property(asset => asset.Manufacturer)
+            .HasMaxLength(Asset.MaxManufacturerLength);
+        builder.Property(asset => asset.Model)
+            .HasMaxLength(Asset.MaxModelLength);
+        builder.Property(asset => asset.Description)
+            .HasMaxLength(Asset.MaxDescriptionLength);
         builder.Property(asset => asset.ManufacturerSerialNumber)
             .HasMaxLength(Asset.MaxManufacturerSerialNumberLength);
         builder.Property(asset => asset.ResponsibleWorkerId).HasMaxLength(450);
@@ -60,7 +73,16 @@ public sealed class AssetConfiguration : IEntityTypeConfiguration<Asset>
 
         builder.HasIndex(asset => asset.NumberId).IsUnique();
         builder.HasIndex(asset => asset.QrIdentifier).IsUnique();
-        builder.HasIndex(asset => asset.CatalogItemId);
+        builder.HasIndex(asset => asset.Classification);
+        builder.HasIndex(asset => asset.Name);
+        builder.HasIndex(asset => new
+        {
+            asset.Classification,
+            asset.Name,
+            asset.NumberId
+        });
+        builder.HasIndex(asset => asset.Manufacturer);
+        builder.HasIndex(asset => asset.Model);
         builder.HasIndex(asset => asset.SiteId);
         builder.HasIndex(asset => asset.ResponsibleWorkerId);
         builder.HasIndex(asset => asset.ManufacturerSerialNumber);
@@ -74,10 +96,6 @@ public sealed class AssetConfiguration : IEntityTypeConfiguration<Asset>
             asset.NumberId
         });
 
-        builder.HasOne(asset => asset.CatalogItem)
-            .WithMany(item => item.Assets)
-            .HasForeignKey(asset => asset.CatalogItemId)
-            .OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(asset => asset.Site)
             .WithMany()
             .HasForeignKey(asset => asset.SiteId)

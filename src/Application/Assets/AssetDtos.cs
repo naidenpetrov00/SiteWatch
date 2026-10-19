@@ -2,69 +2,16 @@ using Domain.Entities;
 
 namespace Application.Assets;
 
-public sealed record AssetCatalogItemListDto(
-    Guid Id,
-    string Classification,
-    string Name,
-    string? Manufacturer,
-    string? Model,
-    string ReviewStatus,
-    DateTimeOffset Created,
-    DateTimeOffset LastModified);
-
-public sealed record AssetCatalogItemLookupDto(
-    Guid Id,
-    string Classification,
-    string Name,
-    string? Manufacturer,
-    string? Model);
-
-public sealed record AssetCatalogItemDto(
-    Guid Id,
-    string Classification,
-    string Name,
-    string? Manufacturer,
-    string? Model,
-    string? Description,
-    string ReviewStatus,
-    string? ReviewedById,
-    string? ReviewedByDisplayName,
-    DateTimeOffset? ReviewedAt,
-    string? RejectionReason,
-    DateTimeOffset Created,
-    string? CreatedBy,
-    DateTimeOffset LastModified,
-    string? LastModifiedBy,
-    string ConcurrencyToken)
-{
-    public static AssetCatalogItemDto From(AssetCatalogItem item) => new(
-        item.Id,
-        item.Classification.ToString(),
-        item.Name,
-        item.Manufacturer,
-        item.Model,
-        item.Description,
-        item.ReviewStatus.ToString(),
-        item.ReviewedById,
-        AssetMapping.DisplayName(item.ReviewedBy),
-        item.ReviewedAt,
-        item.RejectionReason,
-        item.Created,
-        item.CreatedBy,
-        item.LastModified,
-        item.LastModifiedBy,
-        Convert.ToBase64String(item.RowVersion));
-}
-
 public sealed record AssetListDto(
     Guid Id,
     int NumberId,
     string AssetCode,
     string QrIdentifier,
-    string? ManufacturerSerialNumber,
-    Guid CatalogItemId,
-    string CatalogName,
     string Classification,
+    string Name,
+    string? Manufacturer,
+    string? Model,
+    string? ManufacturerSerialNumber,
     Guid SiteId,
     string SiteName,
     string? ResponsibleWorkerId,
@@ -79,11 +26,11 @@ public sealed record AssetDto(
     int NumberId,
     string AssetCode,
     string QrIdentifier,
-    Guid CatalogItemId,
-    string CatalogName,
     string Classification,
+    string Name,
     string? Manufacturer,
     string? Model,
+    string? Description,
     string? ManufacturerSerialNumber,
     Guid SiteId,
     string SiteName,
@@ -107,11 +54,11 @@ public sealed record AssetDto(
         asset.NumberId,
         asset.AssetCode ?? string.Empty,
         asset.QrIdentifier.ToString(),
-        asset.CatalogItemId,
-        asset.CatalogItem.Name,
-        asset.CatalogItem.Classification.ToString(),
-        asset.CatalogItem.Manufacturer,
-        asset.CatalogItem.Model,
+        asset.Classification.ToString(),
+        asset.Name,
+        asset.Manufacturer,
+        asset.Model,
+        asset.Description,
         asset.ManufacturerSerialNumber,
         asset.SiteId,
         asset.Site.Name.Value,
@@ -139,8 +86,11 @@ public sealed record RegisteredAssetDto(
     string ConcurrencyToken);
 
 public sealed record AssetEventSnapshotDto(
-    Guid CatalogItemId,
-    string? CatalogItemName,
+    string Classification,
+    string Name,
+    string? Manufacturer,
+    string? Model,
+    string? Description,
     string QrIdentifier,
     string? ManufacturerSerialNumber,
     Guid SiteId,

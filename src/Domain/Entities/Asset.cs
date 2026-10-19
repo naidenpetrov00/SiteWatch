@@ -5,6 +5,10 @@ namespace Domain.Entities;
 
 public sealed class Asset : BaseAuditableEntity, IHasNumberId, IAgregateRoot
 {
+    public const int MaxNameLength = 200;
+    public const int MaxManufacturerLength = 100;
+    public const int MaxModelLength = 100;
+    public const int MaxDescriptionLength = 2000;
     public const int MaxManufacturerSerialNumberLength = 100;
 
     private readonly List<AssetEvent> _assetEvents = [];
@@ -19,8 +23,11 @@ public sealed class Asset : BaseAuditableEntity, IHasNumberId, IAgregateRoot
         NumberId > 0 ? $"AST-{NumberId:D6}" : null;
 
     public Guid QrIdentifier { get; private set; }
-    public Guid CatalogItemId { get; private set; }
-    public AssetCatalogItem CatalogItem { get; private set; } = null!;
+    public AssetClassification Classification { get; private set; }
+    public string Name { get; private set; } = string.Empty;
+    public string? Manufacturer { get; private set; }
+    public string? Model { get; private set; }
+    public string? Description { get; private set; }
     public string? ManufacturerSerialNumber { get; private set; }
     public Guid SiteId { get; private set; }
     public Site Site { get; private set; } = null!;
@@ -37,7 +44,11 @@ public sealed class Asset : BaseAuditableEntity, IHasNumberId, IAgregateRoot
     public IReadOnlyCollection<AssetEvent> AssetEvents => _assetEvents;
 
     public static Asset RegisterActive(
-        AssetCatalogItem catalogItem,
+        AssetClassification classification,
+        string name,
+        string? manufacturer,
+        string? model,
+        string? description,
         Site site,
         ApplicationUser? responsibleWorker,
         string? manufacturerSerialNumber,
@@ -47,16 +58,12 @@ public sealed class Asset : BaseAuditableEntity, IHasNumberId, IAgregateRoot
         DateTimeOffset occurredAt,
         string? note = null)
     {
-        ArgumentNullException.ThrowIfNull(catalogItem);
-        if (catalogItem.ReviewStatus != AssetReviewStatus.Active)
-        {
-            throw new ArgumentException(
-                "An active asset requires an active catalog item.",
-                nameof(catalogItem));
-        }
-
         return Register(
-            catalogItem,
+            classification,
+            name,
+            manufacturer,
+            model,
+            description,
             site,
             responsibleWorker,
             manufacturerSerialNumber,
@@ -69,7 +76,11 @@ public sealed class Asset : BaseAuditableEntity, IHasNumberId, IAgregateRoot
     }
 
     public static Asset RegisterPendingReview(
-        AssetCatalogItem catalogItem,
+        AssetClassification classification,
+        string name,
+        string? manufacturer,
+        string? model,
+        string? description,
         Site site,
         ApplicationUser? responsibleWorker,
         string? manufacturerSerialNumber,
@@ -79,16 +90,12 @@ public sealed class Asset : BaseAuditableEntity, IHasNumberId, IAgregateRoot
         DateTimeOffset occurredAt,
         string? note = null)
     {
-        ArgumentNullException.ThrowIfNull(catalogItem);
-        if (catalogItem.ReviewStatus == AssetReviewStatus.Rejected)
-        {
-            throw new ArgumentException(
-                "A rejected catalog item cannot receive an asset.",
-                nameof(catalogItem));
-        }
-
         return Register(
-            catalogItem,
+            classification,
+            name,
+            manufacturer,
+            model,
+            description,
             site,
             responsibleWorker,
             manufacturerSerialNumber,
@@ -107,11 +114,6 @@ public sealed class Asset : BaseAuditableEntity, IHasNumberId, IAgregateRoot
     {
         ValidateEventContext(actor, occurredAt, note);
         EnsurePendingReview();
-        if (CatalogItem.ReviewStatus != AssetReviewStatus.Active)
-        {
-            throw new InvalidOperationException(
-                "The catalog item must be active before the asset can be activated.");
-        }
 
         var previousState = CaptureState();
         ReviewStatus = AssetReviewStatus.Active;
@@ -367,40 +369,12 @@ public sealed class Asset : BaseAuditableEntity, IHasNumberId, IAgregateRoot
             reason);
     }
 
-    public void CorrectCatalogAssociation(
-        AssetCatalogItem catalogItem,
-        ApplicationUser actor,
-        DateTimeOffset occurredAt,
-        string? note = null)
-    {
-        ValidateEventContext(actor, occurredAt, note);
-        EnsureRegistrationNotRejected();
-        ArgumentNullException.ThrowIfNull(catalogItem);
-        if (catalogItem.Id == CatalogItemId)
-        {
-            throw new InvalidOperationException("The requested catalog item is already assigned.");
-        }
-        if (catalogItem.ReviewStatus == AssetReviewStatus.Rejected
-            || (ReviewStatus == AssetReviewStatus.Active
-                && catalogItem.ReviewStatus != AssetReviewStatus.Active))
-        {
-            throw new ArgumentException(
-                "The catalog item is not valid for the asset's review state.",
-                nameof(catalogItem));
-        }
-
-        var previousState = CaptureState();
-        CatalogItem = catalogItem;
-        CatalogItemId = catalogItem.Id;
-        AppendEvent(
-            AssetEventType.CatalogAssociationCorrected,
-            actor,
-            occurredAt,
-            previousState,
-            note);
-    }
-
-    public void CorrectManufacturerSerialNumber(
+    public void UpdateDetails(
+        AssetClassification classification,
+        string name,
+        string? manufacturer,
+        string? model,
+        string? description,
         string? manufacturerSerialNumber,
         ApplicationUser actor,
         DateTimeOffset occurredAt,
@@ -408,19 +382,41 @@ public sealed class Asset : BaseAuditableEntity, IHasNumberId, IAgregateRoot
     {
         ValidateEventContext(actor, occurredAt, note);
         EnsureRegistrationNotRejected();
+        EnsureDefined(classification, nameof(classification));
+        var normalizedName = NormalizeRequired(name, MaxNameLength, nameof(name));
+        var normalizedManufacturer = NormalizeOptional(
+            manufacturer,
+            MaxManufacturerLength,
+            nameof(manufacturer));
+        var normalizedModel = NormalizeOptional(model, MaxModelLength, nameof(model));
+        var normalizedDescription = NormalizeOptional(
+            description,
+            MaxDescriptionLength,
+            nameof(description),
+            collapseWhitespace: false);
         var normalizedSerialNumber = NormalizeSerialNumber(manufacturerSerialNumber);
-        if (string.Equals(
+        if (classification == Classification
+            && string.Equals(normalizedName, Name, StringComparison.Ordinal)
+            && string.Equals(normalizedManufacturer, Manufacturer, StringComparison.Ordinal)
+            && string.Equals(normalizedModel, Model, StringComparison.Ordinal)
+            && string.Equals(normalizedDescription, Description, StringComparison.Ordinal)
+            && string.Equals(
                 normalizedSerialNumber,
                 ManufacturerSerialNumber,
                 StringComparison.Ordinal))
         {
-            throw new InvalidOperationException("The requested serial number is already current.");
+            throw new InvalidOperationException("The requested asset details are already current.");
         }
 
         var previousState = CaptureState();
+        Classification = classification;
+        Name = normalizedName;
+        Manufacturer = normalizedManufacturer;
+        Model = normalizedModel;
+        Description = normalizedDescription;
         ManufacturerSerialNumber = normalizedSerialNumber;
         AppendEvent(
-            AssetEventType.ManufacturerSerialCorrected,
+            AssetEventType.AssetDetailsUpdated,
             actor,
             occurredAt,
             previousState,
@@ -445,7 +441,11 @@ public sealed class Asset : BaseAuditableEntity, IHasNumberId, IAgregateRoot
     }
 
     private static Asset Register(
-        AssetCatalogItem catalogItem,
+        AssetClassification classification,
+        string name,
+        string? manufacturer,
+        string? model,
+        string? description,
         Site site,
         ApplicationUser? responsibleWorker,
         string? manufacturerSerialNumber,
@@ -456,9 +456,9 @@ public sealed class Asset : BaseAuditableEntity, IHasNumberId, IAgregateRoot
         DateTimeOffset occurredAt,
         string? note)
     {
-        ArgumentNullException.ThrowIfNull(catalogItem);
         ArgumentNullException.ThrowIfNull(site);
         ValidateEventContext(actor, occurredAt, note);
+        EnsureDefined(classification, nameof(classification));
         EnsureDefined(condition, nameof(condition));
         EnsureValidInitialOperationalStatus(operationalStatus);
 
@@ -466,8 +466,18 @@ public sealed class Asset : BaseAuditableEntity, IHasNumberId, IAgregateRoot
         {
             Id = Guid.NewGuid(),
             QrIdentifier = Guid.NewGuid(),
-            CatalogItem = catalogItem,
-            CatalogItemId = catalogItem.Id,
+            Classification = classification,
+            Name = NormalizeRequired(name, MaxNameLength, nameof(name)),
+            Manufacturer = NormalizeOptional(
+                manufacturer,
+                MaxManufacturerLength,
+                nameof(manufacturer)),
+            Model = NormalizeOptional(model, MaxModelLength, nameof(model)),
+            Description = NormalizeOptional(
+                description,
+                MaxDescriptionLength,
+                nameof(description),
+                collapseWhitespace: false),
             ManufacturerSerialNumber = NormalizeSerialNumber(manufacturerSerialNumber),
             Site = site,
             SiteId = site.Id,
@@ -502,7 +512,11 @@ public sealed class Asset : BaseAuditableEntity, IHasNumberId, IAgregateRoot
 
     private AssetStateSnapshot CaptureState() =>
         new(
-            CatalogItemId,
+            Classification,
+            Name,
+            Manufacturer,
+            Model,
+            Description,
             QrIdentifier,
             ManufacturerSerialNumber,
             SiteId,
@@ -621,6 +635,44 @@ public sealed class Asset : BaseAuditableEntity, IHasNumberId, IAgregateRoot
                 nameof(manufacturerSerialNumber),
                 normalized.Length,
                 $"A manufacturer serial number cannot exceed {MaxManufacturerSerialNumberLength} characters.");
+        }
+
+        return normalized;
+    }
+
+    private static string NormalizeRequired(
+        string value,
+        int maxLength,
+        string parameterName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(value, parameterName);
+        return Normalize(value, maxLength, parameterName, collapseWhitespace: true);
+    }
+
+    private static string? NormalizeOptional(
+        string? value,
+        int maxLength,
+        string parameterName,
+        bool collapseWhitespace = true) =>
+        string.IsNullOrWhiteSpace(value)
+            ? null
+            : Normalize(value, maxLength, parameterName, collapseWhitespace);
+
+    private static string Normalize(
+        string value,
+        int maxLength,
+        string parameterName,
+        bool collapseWhitespace)
+    {
+        var normalized = collapseWhitespace
+            ? string.Join(" ", value.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))
+            : value.Trim();
+        if (normalized.Length > maxLength)
+        {
+            throw new ArgumentOutOfRangeException(
+                parameterName,
+                normalized.Length,
+                $"The value cannot exceed {maxLength} characters.");
         }
 
         return normalized;

@@ -54,7 +54,6 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
         Set<OfferRetailerComparison>();
     public DbSet<OfferProductPriceSelection> OfferProductPriceSelections =>
         Set<OfferProductPriceSelection>();
-    public DbSet<AssetCatalogItem> AssetCatalogItems => Set<AssetCatalogItem>();
     public DbSet<Asset> Assets => Set<Asset>();
     public DbSet<AssetEvent> AssetEvents => Set<AssetEvent>();
     public DbSet<Proposal> Proposals => Set<Proposal>();

@@ -7,7 +7,7 @@ import { buildApiUrl } from '../../../core/api/api-url';
 import { DataTableState } from '../../../shared/data-table/data-table.types';
 import { DashboardSitesService } from '../../sites/services/dashboard-sites.service';
 import { DashboardUsersService } from '../../users/services/dashboard-users.service';
-import { AssetActionRequest, AssetDetails, AssetEvent, AssetListItem, CatalogDetails, CatalogDetailsRequest, CatalogListItem, CatalogLookup, PagedResponse, RegisterAssetsRequest, RegisteredAsset, SiteLookup, UserLookup } from '../models/asset-tracking.models';
+import { AssetActionRequest, AssetDetails, AssetDetailsRequest, AssetEvent, AssetListItem, PagedResponse, RegisterAssetsRequest, RegisteredAsset, SiteLookup, UserLookup } from '../models/asset-tracking.models';
 
 @Injectable({ providedIn: 'root' })
 export class AssetTrackingService {
@@ -16,22 +16,11 @@ export class AssetTrackingService {
   private readonly sites = inject(DashboardSitesService);
   private readonly users = inject(DashboardUsersService);
 
-  getCatalog(state: DataTableState<CatalogListItem>, reviewStatus?: string): Promise<PagedResponse<CatalogListItem>> {
-    return firstValueFrom(this.http.get<PagedResponse<CatalogListItem>>(buildApiUrl('/asset-catalog-items'), { params: this.tableParams(state, reviewStatus ? { reviewStatus } : {}, 'name') }));
-  }
-  searchCatalog(searchTerm: string): Promise<readonly CatalogLookup[]> {
-    if (!searchTerm.trim()) return Promise.resolve([]);
-    return firstValueFrom(this.http.get<readonly CatalogLookup[]>(buildApiUrl('/asset-catalog-items/search'), { params: new HttpParams().set('searchTerm', searchTerm.trim()) }));
-  }
-  getCatalogItem(id: string): Promise<CatalogDetails> { return firstValueFrom(this.http.get<CatalogDetails>(buildApiUrl(`/asset-catalog-items/${id}`))); }
-  createCatalogItem(request: CatalogDetailsRequest): Promise<CatalogDetails> { return firstValueFrom(this.http.post<CatalogDetails>(buildApiUrl('/asset-catalog-items'), request)); }
-  updateCatalogItem(id: string, request: CatalogDetailsRequest & { concurrencyToken: string }): Promise<CatalogDetails> { return firstValueFrom(this.http.put<CatalogDetails>(buildApiUrl(`/asset-catalog-items/${id}`), request)); }
-  reviewCatalogItem(id: string, accepted: boolean, rejectionReason: string | null, concurrencyToken: string): Promise<CatalogDetails> { return firstValueFrom(this.http.patch<CatalogDetails>(buildApiUrl(`/asset-catalog-items/${id}/review`), { accepted, rejectionReason, concurrencyToken })); }
-
   getAssets(state: DataTableState<AssetListItem>, reviewStatus?: string): Promise<PagedResponse<AssetListItem>> { return firstValueFrom(this.http.get<PagedResponse<AssetListItem>>(buildApiUrl('/assets'), { params: this.tableParams(state, reviewStatus ? { reviewStatus } : {}, 'assetCode') })); }
   getAsset(id: string): Promise<AssetDetails> { return firstValueFrom(this.http.get<AssetDetails>(buildApiUrl(`/assets/${id}`))); }
   getEvents(id: string): Promise<PagedResponse<AssetEvent>> { return firstValueFrom(this.http.get<PagedResponse<AssetEvent>>(buildApiUrl(`/assets/${id}/events`), { params: new HttpParams().set('pageSize', 100) })); }
   register(request: RegisterAssetsRequest): Promise<readonly RegisteredAsset[]> { return firstValueFrom(this.http.post<readonly RegisteredAsset[]>(buildApiUrl('/assets'), request)); }
+  updateDetails(id: string, request: AssetDetailsRequest): Promise<AssetDetails> { return firstValueFrom(this.http.put<AssetDetails>(buildApiUrl(`/assets/${id}/details`), request)); }
   mutate(id: string, action: string, request: AssetActionRequest): Promise<AssetDetails> { return firstValueFrom(this.http.patch<AssetDetails>(buildApiUrl(`/assets/${id}/${action}`), request)); }
 
   searchSites(term: string): Promise<readonly SiteLookup[]> { return this.sites.searchSites(term); }

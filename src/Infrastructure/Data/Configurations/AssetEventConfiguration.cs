@@ -52,6 +52,17 @@ public sealed class AssetEventConfiguration : IEntityTypeConfiguration<AssetEven
 
     private static void ConfigurePreviousState(EntityTypeBuilder<AssetEvent> builder)
     {
+        builder.Property(assetEvent => assetEvent.PreviousClassification)
+            .HasConversion<string>()
+            .HasMaxLength(16);
+        builder.Property(assetEvent => assetEvent.PreviousName)
+            .HasMaxLength(Asset.MaxNameLength);
+        builder.Property(assetEvent => assetEvent.PreviousManufacturer)
+            .HasMaxLength(Asset.MaxManufacturerLength);
+        builder.Property(assetEvent => assetEvent.PreviousModel)
+            .HasMaxLength(Asset.MaxModelLength);
+        builder.Property(assetEvent => assetEvent.PreviousDescription)
+            .HasMaxLength(Asset.MaxDescriptionLength);
         builder.Property(assetEvent => assetEvent.PreviousManufacturerSerialNumber)
             .HasMaxLength(Asset.MaxManufacturerSerialNumberLength);
         builder.Property(assetEvent => assetEvent.PreviousResponsibleWorkerId).HasMaxLength(450);
@@ -73,7 +84,19 @@ public sealed class AssetEventConfiguration : IEntityTypeConfiguration<AssetEven
 
     private static void ConfigureResultingState(EntityTypeBuilder<AssetEvent> builder)
     {
-        builder.Property(assetEvent => assetEvent.ResultingCatalogItemId).IsRequired();
+        builder.Property(assetEvent => assetEvent.ResultingClassification)
+            .HasConversion<string>()
+            .HasMaxLength(16)
+            .IsRequired();
+        builder.Property(assetEvent => assetEvent.ResultingName)
+            .HasMaxLength(Asset.MaxNameLength)
+            .IsRequired();
+        builder.Property(assetEvent => assetEvent.ResultingManufacturer)
+            .HasMaxLength(Asset.MaxManufacturerLength);
+        builder.Property(assetEvent => assetEvent.ResultingModel)
+            .HasMaxLength(Asset.MaxModelLength);
+        builder.Property(assetEvent => assetEvent.ResultingDescription)
+            .HasMaxLength(Asset.MaxDescriptionLength);
         builder.Property(assetEvent => assetEvent.ResultingQrIdentifier).IsRequired();
         builder.Property(assetEvent => assetEvent.ResultingManufacturerSerialNumber)
             .HasMaxLength(Asset.MaxManufacturerSerialNumberLength);
@@ -100,14 +123,6 @@ public sealed class AssetEventConfiguration : IEntityTypeConfiguration<AssetEven
 
     private static void ConfigureSnapshotRelationships(EntityTypeBuilder<AssetEvent> builder)
     {
-        builder.HasOne<AssetCatalogItem>()
-            .WithMany()
-            .HasForeignKey(assetEvent => assetEvent.PreviousCatalogItemId)
-            .OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<AssetCatalogItem>()
-            .WithMany()
-            .HasForeignKey(assetEvent => assetEvent.ResultingCatalogItemId)
-            .OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Site>()
             .WithMany()
             .HasForeignKey(assetEvent => assetEvent.PreviousSiteId)
