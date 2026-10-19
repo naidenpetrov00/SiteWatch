@@ -1,0 +1,27 @@
+import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { ActivatedRoute } from '@angular/router';
+import { injectQuery } from '@tanstack/angular-query-experimental';
+import { ASSET_CLASSIFICATIONS } from '../models/asset-tracking.models';
+import { AssetTrackingService } from '../services/asset-tracking.service';
+
+@Component({selector:'app-catalog-detail-page',imports:[ReactiveFormsModule,MatButtonModule,MatFormFieldModule,MatInputModule,MatSelectModule],template:`
+<main class="tracking-page"><header><div><h2>Catalog Details</h2><p>Review metadata, audit values and edit permitted details.</p></div></header>
+@if(query.isPending()){<p role="status">Loading catalog item…</p>} @if(query.isError()){<p class="error" role="alert">{{service.errorMessage(query.error(), 'The catalog item')}}</p>}
+@if(query.data();as item){
+<section class="card details-grid"><dl><dt>Review state</dt><dd>{{item.reviewStatus}}</dd><dt>Reviewed by</dt><dd>{{item.reviewedByDisplayName||'—'}}</dd><dt>Reviewed at</dt><dd>{{item.reviewedAt||'—'}}</dd><dt>Rejection reason</dt><dd>{{item.rejectionReason||'—'}}</dd></dl><dl><dt>Created</dt><dd>{{item.created}}</dd><dt>Created by</dt><dd>{{item.createdBy||'—'}}</dd><dt>Last modified</dt><dd>{{item.lastModified}}</dd><dt>Concurrency token</dt><dd>{{item.concurrencyToken}}</dd></dl></section>
+<form class="card form-grid" [formGroup]="form" (ngSubmit)="save()"><h3>Catalog information</h3><mat-form-field><mat-label>Classification</mat-label><mat-select formControlName="classification">@for(v of classifications;track v){<mat-option [value]="v">{{v}}</mat-option>}</mat-select></mat-form-field><mat-form-field><mat-label>Name</mat-label><input matInput formControlName="name" /></mat-form-field><mat-form-field><mat-label>Manufacturer</mat-label><input matInput formControlName="manufacturer" /></mat-form-field><mat-form-field><mat-label>Model</mat-label><input matInput formControlName="model" /></mat-form-field><mat-form-field class="wide"><mat-label>Description</mat-label><textarea matInput formControlName="description"></textarea></mat-form-field><div class="wide actions"><button mat-flat-button type="submit" [disabled]="form.invalid||saving()||item.reviewStatus==='Rejected'">Save details</button>@if(item.reviewStatus==='PendingReview'){<button mat-flat-button type="button" (click)="review(true)">Accept</button><button mat-stroked-button type="button" (click)="review(false)">Reject</button>}</div>@if(message()){<p class="wide" [class.error]="failed()" role="status">{{message()}}</p>}</form>
+}</main>`,styleUrl:'../asset-tracking.css',changeDetection:ChangeDetectionStrategy.OnPush})
+export class CatalogDetailPage{
+ private readonly route=inject(ActivatedRoute);readonly service=inject(AssetTrackingService);readonly id=this.route.snapshot.paramMap.get('id')!;readonly classifications=ASSET_CLASSIFICATIONS;readonly saving=signal(false);readonly failed=signal(false);readonly message=signal('');
+ readonly query=injectQuery(()=>({queryKey:['asset-tracking','catalog-item',this.id] as const,queryFn:()=>this.service.getCatalogItem(this.id)}));
+ readonly form=new FormGroup({classification:new FormControl<'Machine'|'Tool'>('Machine',{nonNullable:true,validators:Validators.required}),name:new FormControl('',{nonNullable:true,validators:[Validators.required,Validators.maxLength(200)]}),manufacturer:new FormControl(''),model:new FormControl(''),description:new FormControl('')});
+ constructor(){effect(()=>{const item=this.query.data();if(item&&!this.form.dirty)this.form.setValue({classification:item.classification,name:item.name,manufacturer:item.manufacturer??'',model:item.model??'',description:item.description??''});});}
+ async save():Promise<void>{const item=this.query.data();if(!item||this.form.invalid)return;this.saving.set(true);this.failed.set(false);try{const v=this.form.getRawValue();await this.service.updateCatalogItem(this.id,{...v,manufacturer:v.manufacturer||null,model:v.model||null,description:v.description||null,concurrencyToken:item.concurrencyToken});this.form.markAsPristine();await this.service.invalidate();this.message.set('Catalog details saved.');}catch(e){await this.handleError(e);}finally{this.saving.set(false);}}
+ async review(accepted:boolean):Promise<void>{const item=this.query.data();if(!item)return;const reason=accepted?null:(globalThis.prompt('Optional rejection reason')||null);this.saving.set(true);try{await this.service.reviewCatalogItem(this.id,accepted,reason,item.concurrencyToken);await this.service.invalidate();this.message.set(accepted?'Catalog item accepted.':'Catalog item rejected.');}catch(e){await this.handleError(e);}finally{this.saving.set(false);}}
+ private async handleError(error:unknown):Promise<void>{this.failed.set(true);if(this.service.isConcurrencyConflict(error)){this.message.set('This record changed. Your input is preserved; review the refreshed values and confirm again.');await this.service.invalidate();await this.query.refetch();}else this.message.set('The operation failed. Review validation, state and permissions.');}
+}

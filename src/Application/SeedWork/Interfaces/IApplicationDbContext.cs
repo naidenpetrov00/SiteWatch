@@ -5,6 +5,7 @@ namespace Application.SeedWork.Interfaces;
 
 public interface IApplicationDbContext
 {
+    DbSet<ApplicationUser> Users { get; }
     DbSet<Site> Sites { get; }
     DbSet<SiteImage> SiteImages { get; }
     DbSet<SiteFile> SiteFiles { get; }

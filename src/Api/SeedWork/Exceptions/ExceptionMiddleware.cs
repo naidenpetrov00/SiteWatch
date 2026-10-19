@@ -8,6 +8,7 @@ using Application.RetailerExtractionProfiles;
 using Application.RetailerPriceCollections;
 using Application.Offers;
 using Application.Proposals;
+using Application.Assets;
 using Ardalis.GuardClauses;
 using Application.SeedWork.Exceptions;
 using FluentValidation;
@@ -53,6 +54,34 @@ internal sealed class ExceptionMiddleware(
                 data = ex.Data,
             };
             await context.Response.WriteAsync(JsonSerializer.Serialize(payload));
+        }
+        catch (AssetInvalidTransitionException ex)
+        {
+            logger.LogInformation(ex, "An asset operation was rejected by its lifecycle rules.");
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            context.Response.ContentType = "application/problem+json";
+            await context.Response.WriteAsync(JsonSerializer.Serialize(new
+            {
+                status = StatusCodes.Status409Conflict,
+                title = "Asset transition conflict",
+                detail = ex.Message,
+                code = "asset_invalid_transition",
+                instance = context.Request.Path.Value,
+            }));
+        }
+        catch (AssetConcurrencyConflictException ex)
+        {
+            logger.LogInformation(ex, "An asset operation used a stale concurrency token.");
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            context.Response.ContentType = "application/problem+json";
+            await context.Response.WriteAsync(JsonSerializer.Serialize(new
+            {
+                status = StatusCodes.Status409Conflict,
+                title = "Asset concurrency conflict",
+                detail = ex.Message,
+                code = "asset_concurrency_conflict",
+                instance = context.Request.Path.Value,
+            }));
         }
         catch (ActivityCatalogConflictException ex)
         {

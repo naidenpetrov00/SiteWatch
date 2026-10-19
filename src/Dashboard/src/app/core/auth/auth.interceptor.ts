@@ -3,6 +3,7 @@ import {
   HttpInterceptorFn
 } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 
 import { AuthSessionService } from './services/auth-session.service';
@@ -14,6 +15,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   const authSession = inject(AuthSessionService);
+  const router = inject(Router, { optional: true });
   const token = authSession.accessToken();
   const request = token
     ? req.clone({
@@ -25,11 +27,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(request).pipe(
     catchError((error: unknown) => {
-      if (
-        error instanceof HttpErrorResponse &&
-        (error.status === 401 || error.status === 403)
-      ) {
+      if (error instanceof HttpErrorResponse && error.status === 401) {
         authSession.clearSession();
+        void router?.navigateByUrl('/sign-in');
       }
 
       return throwError(() => error);

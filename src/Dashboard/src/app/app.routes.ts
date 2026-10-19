@@ -157,6 +157,13 @@ export const routes: Routes = [
           )
       },
       {
+        path: 'asset-tracking',
+        loadChildren: () =>
+          import('./features/asset-tracking/asset-tracking.routes').then(
+            (m) => m.ASSET_TRACKING_ROUTES
+          )
+      },
+      {
         path: 'manage-cameras',
         title: 'Manage Cameras',
         loadComponent: () =>

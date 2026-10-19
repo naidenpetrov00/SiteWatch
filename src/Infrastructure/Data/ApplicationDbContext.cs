@@ -11,6 +11,7 @@ namespace Infrastructure.Data;
 public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IMediator mediator)
     : IdentityDbContext<ApplicationUser>(options), IApplicationDbContext
 {
+    public new DbSet<ApplicationUser> Users => Set<ApplicationUser>();
     public DbSet<Site> Sites => Set<Site>();
     public DbSet<SiteImage> SiteImages => Set<SiteImage>();
     public DbSet<SiteFile> SiteFiles => Set<SiteFile>();
