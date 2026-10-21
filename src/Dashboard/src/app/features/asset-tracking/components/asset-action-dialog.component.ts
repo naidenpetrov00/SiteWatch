@@ -1,18 +1,33 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal
+} from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  MatAutocompleteModule,
+  MatAutocompleteSelectedEvent
+} from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import {
   ASSET_CLASSIFICATIONS,
   ASSET_CONDITIONS,
   AssetActionRequest,
   AssetClassification,
   AssetDetails,
-  REGISTRATION_STATUSES
+  REGISTRATION_STATUSES,
+  SiteLookup,
+  UserLookup
 } from '../models/asset-tracking.models';
 import { AssetTrackingService } from '../services/asset-tracking.service';
 
@@ -45,8 +60,10 @@ interface ConflictComparisonRow {
   selector: 'app-asset-action-dialog',
   imports: [
     ReactiveFormsModule,
+    MatAutocompleteModule,
     MatDialogModule,
     MatButtonModule,
+    MatCheckboxModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule
@@ -86,10 +103,43 @@ interface ConflictComparisonRow {
           </mat-form-field>
         }
         @if (data.kind === 'site') {
+          <section class="selection-summary" aria-label="Current asset Site">
+            <span>Current Site</span>
+            <strong>{{ currentAsset().siteName }}</strong>
+          </section>
           <mat-form-field>
-            <mat-label>Site ID</mat-label>
-            <input matInput formControlName="siteId" />
+            <mat-label>Search destination Site</mat-label>
+            <input
+              matInput
+              [formControl]="siteSearchControl"
+              [matAutocomplete]="siteAuto"
+              (input)="onSiteSearchInput($event)"
+            />
+            <mat-autocomplete
+              #siteAuto="matAutocomplete"
+              [displayWith]="displaySite"
+              [requireSelection]="true"
+              (optionSelected)="selectSite($event)"
+            >
+              @for (site of siteResults(); track site.id) {
+                <mat-option [value]="site">
+                  <span>{{ site.name }} · #{{ site.numberId }}</span>
+                  <small>{{ site.address }}</small>
+                </mat-option>
+              }
+            </mat-autocomplete>
+            <mat-hint>Select a different Site from the search results.</mat-hint>
           </mat-form-field>
+          @if (siteSearching()) {
+            <p class="lookup-status" role="status">Searching Sites…</p>
+          } @else if (siteSearchError()) {
+            <p class="lookup-status error" role="alert">
+              {{ siteSearchError() }}
+              <button mat-button type="button" (click)="retrySiteSearch()">Retry</button>
+            </p>
+          } @else if (siteSearchAttempted() && siteResults().length === 0 && !selectedSite()) {
+            <p class="lookup-status" role="status">No other Sites match this search.</p>
+          }
         }
         @if (data.kind === 'condition') {
           <mat-form-field>
@@ -112,10 +162,64 @@ interface ConflictComparisonRow {
           </mat-form-field>
         }
         @if (data.kind === 'responsibility') {
+          <section class="selection-summary" aria-label="Current asset responsibility">
+            <span>Current responsibility</span>
+            <strong>{{ currentAsset().responsibleWorkerDisplayName || 'Unassigned' }}</strong>
+            @if (currentAsset().pendingHandoverRecipientDisplayName) {
+              <small>
+                Pending handover to {{ currentAsset().pendingHandoverRecipientDisplayName }}.
+                Reassignment will cancel it.
+              </small>
+            }
+          </section>
           <mat-form-field>
-            <mat-label>Worker ID (empty removes)</mat-label>
-            <input matInput formControlName="responsibleWorkerId" />
+            <mat-label>Search responsible Worker</mat-label>
+            <input
+              matInput
+              [formControl]="workerSearchControl"
+              [matAutocomplete]="workerAuto"
+              (input)="onWorkerSearchInput($event)"
+            />
+            <mat-autocomplete
+              #workerAuto="matAutocomplete"
+              [displayWith]="displayWorker"
+              [requireSelection]="true"
+              (optionSelected)="selectWorker($event)"
+            >
+              @for (worker of workerResults(); track worker.id) {
+                <mat-option [value]="worker">
+                  <span>{{ worker.displayName }}</span>
+                  @if (worker.email) {
+                    <small>{{ worker.email }}</small>
+                  }
+                </mat-option>
+              }
+            </mat-autocomplete>
+            <mat-hint>Select a Worker from the search results.</mat-hint>
           </mat-form-field>
+          @if (workerSearching()) {
+            <p class="lookup-status" role="status">Searching Workers…</p>
+          } @else if (workerSearchError()) {
+            <p class="lookup-status error" role="alert">
+              {{ workerSearchError() }}
+              <button mat-button type="button" (click)="retryWorkerSearch()">Retry</button>
+            </p>
+          } @else if (
+            workerSearchAttempted()
+            && workerResults().length === 0
+            && !selectedWorker()
+            && !leaveUnassigned()
+          ) {
+            <p class="lookup-status" role="status">No eligible Workers match this search.</p>
+          }
+          @if (canLeaveUnassigned()) {
+            <mat-checkbox
+              [checked]="leaveUnassigned()"
+              (change)="setLeaveUnassigned($event.checked)"
+            >
+              Leave unassigned
+            </mat-checkbox>
+          }
           <mat-form-field>
             <mat-label>Reason (required)</mat-label>
             <textarea matInput formControlName="reason"></textarea>
@@ -193,7 +297,12 @@ interface ConflictComparisonRow {
       <button
         mat-flat-button
         (click)="confirm()"
-        [disabled]="saving() || form.invalid || (conflict() && !refreshedAsset())"
+        [disabled]="
+          saving()
+          || form.invalid
+          || !actionSelectionValid()
+          || (conflict() && !refreshedAsset())
+        "
       >
         {{ conflict() ? 'Reconfirm draft' : 'Confirm' }}
       </button>
@@ -205,6 +314,26 @@ interface ConflictComparisonRow {
       gap: 0.5rem;
       min-width: min(32rem, 75vw);
       padding-top: 0.5rem;
+    }
+    .selection-summary {
+      display: grid;
+      gap: 0.2rem;
+      padding: 0.75rem;
+      border: 1px solid var(--mat-sys-outline-variant);
+      border-radius: 0.75rem;
+    }
+    .selection-summary span,
+    .selection-summary small,
+    mat-option small {
+      color: var(--mat-sys-on-surface-variant);
+    }
+    mat-option span,
+    mat-option small {
+      display: block;
+    }
+    .lookup-status {
+      margin: -0.25rem 0 0.5rem;
+      color: var(--mat-sys-on-surface-variant);
     }
     .conflict-review {
       border: 1px solid var(--mat-sys-tertiary);
@@ -250,6 +379,11 @@ export class AssetActionDialogComponent {
   readonly data = inject<AssetActionDialogData>(MAT_DIALOG_DATA);
   private readonly ref = inject(MatDialogRef<AssetActionDialogComponent>);
   private readonly service = inject(AssetTrackingService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly siteSearchTerms = new Subject<string>();
+  private readonly workerSearchTerms = new Subject<string>();
+  private siteSearchRevision = 0;
+  private workerSearchRevision = 0;
 
   readonly classifications = ASSET_CLASSIFICATIONS;
   readonly conditions = ASSET_CONDITIONS;
@@ -257,6 +391,19 @@ export class AssetActionDialogComponent {
   readonly saving = signal(false);
   readonly conflict = signal(false);
   readonly error = signal('');
+  readonly siteResults = signal<readonly SiteLookup[]>([]);
+  readonly workerResults = signal<readonly UserLookup[]>([]);
+  readonly siteSearching = signal(false);
+  readonly workerSearching = signal(false);
+  readonly siteSearchAttempted = signal(false);
+  readonly workerSearchAttempted = signal(false);
+  readonly siteSearchError = signal('');
+  readonly workerSearchError = signal('');
+  readonly selectedSite = signal<SiteLookup | null>(null);
+  readonly selectedWorker = signal<UserLookup | null>(null);
+  readonly leaveUnassigned = signal(false);
+  readonly siteSearchControl = new FormControl<string | SiteLookup | null>('');
+  readonly workerSearchControl = new FormControl<string | UserLookup | null>('');
   readonly form = new FormGroup({
     classification: new FormControl<AssetClassification>(this.data.asset.classification, {
       nonNullable: true,
@@ -282,14 +429,15 @@ export class AssetActionDialogComponent {
       this.data.asset.manufacturerSerialNumber ?? '',
       { nonNullable: true, validators: Validators.maxLength(100) }
     ),
-    siteId: new FormControl('', { nonNullable: true }),
+    siteId: new FormControl('', {
+      nonNullable: true,
+      validators: this.data.kind === 'site' ? Validators.required : []
+    }),
     condition: new FormControl(this.data.asset.condition, { nonNullable: true }),
     operationalStatus: new FormControl(this.data.asset.operationalStatus, {
       nonNullable: true
     }),
-    responsibleWorkerId: new FormControl(this.data.asset.responsibleWorkerId ?? '', {
-      nonNullable: true
-    }),
+    responsibleWorkerId: new FormControl('', { nonNullable: true }),
     reason: new FormControl('', { nonNullable: true, validators: Validators.maxLength(2000) }),
     note: new FormControl('', { nonNullable: true, validators: Validators.maxLength(2000) })
   });
@@ -297,6 +445,38 @@ export class AssetActionDialogComponent {
     initialValue: this.form.getRawValue()
   });
   readonly refreshedAsset = signal<AssetDetails | null>(null);
+  readonly currentAsset = computed(() => this.refreshedAsset() ?? this.data.asset);
+  readonly canLeaveUnassigned = computed(() =>
+    Boolean(
+      this.currentAsset().responsibleWorkerId
+      || this.currentAsset().pendingHandoverRecipientId
+    )
+  );
+  readonly actionSelectionValid = computed(() => {
+    if (this.data.kind === 'site') {
+      const selectedSite = this.selectedSite();
+      return selectedSite !== null && selectedSite.id !== this.currentAsset().siteId;
+    }
+
+    if (this.data.kind !== 'responsibility') {
+      return true;
+    }
+
+    if (this.leaveUnassigned()) {
+      return this.canLeaveUnassigned();
+    }
+
+    const selectedWorker = this.selectedWorker();
+    return selectedWorker !== null
+      && (
+        selectedWorker.id !== this.currentAsset().responsibleWorkerId
+        || this.currentAsset().pendingHandoverRecipientId !== null
+      );
+  });
+  readonly displaySite = (value: string | SiteLookup | null): string =>
+    typeof value === 'string' ? value : value?.name ?? '';
+  readonly displayWorker = (value: string | UserLookup | null): string =>
+    typeof value === 'string' ? value : value?.displayName ?? '';
   readonly conflictRows = computed<readonly ConflictComparisonRow[]>(() => {
     const server = this.refreshedAsset();
     if (!server) {
@@ -305,9 +485,11 @@ export class AssetActionDialogComponent {
 
     const draft = this.draft();
     const original = this.data.asset;
-    const siteId = this.data.kind === 'site' ? draft.siteId : original.siteId;
+    const selectedSite = this.selectedSite();
+    const selectedWorker = this.selectedWorker();
+    const siteId = this.data.kind === 'site' ? selectedSite?.id ?? '' : original.siteId;
     const workerId = this.data.kind === 'responsibility'
-      ? draft.responsibleWorkerId || null
+      ? (this.leaveUnassigned() ? null : selectedWorker?.id ?? null)
       : original.responsibleWorkerId;
     const operationalStatus = this.data.kind === 'missing'
       ? 'Missing'
@@ -333,16 +515,20 @@ export class AssetActionDialogComponent {
         'Site',
         siteId,
         server.siteId,
-        siteId === original.siteId ? original.siteName : siteId,
+        this.data.kind === 'site'
+          ? (selectedSite ? this.siteDisplayLabel(selectedSite) : null)
+          : original.siteName,
         server.siteName
       ),
       this.comparison(
         'Responsible worker',
         workerId,
         server.responsibleWorkerId,
-        workerId === original.responsibleWorkerId
-          ? original.responsibleWorkerDisplayName
-          : workerId,
+        this.data.kind === 'responsibility'
+          ? this.leaveUnassigned()
+            ? 'Unassigned'
+            : (selectedWorker ? this.workerDisplayLabel(selectedWorker) : null)
+          : original.responsibleWorkerDisplayName,
         server.responsibleWorkerDisplayName
       ),
       this.comparison('Condition', draft.condition, server.condition),
@@ -361,7 +547,119 @@ export class AssetActionDialogComponent {
     ];
   });
 
+  constructor() {
+    this.siteSearchTerms
+      .pipe(
+        debounceTime(250),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((value) => void this.searchSites(value));
+
+    this.workerSearchTerms
+      .pipe(
+        debounceTime(250),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((value) => void this.searchWorkers(value));
+  }
+
+  onSiteSearchInput(event: Event): void {
+    const searchTerm = (event.target as HTMLInputElement).value;
+    this.siteSearchRevision += 1;
+    this.siteResults.set([]);
+    this.siteSearchAttempted.set(false);
+    this.siteSearchError.set('');
+    this.siteSearching.set(false);
+    this.selectedSite.set(null);
+    this.form.controls.siteId.setValue('', { emitEvent: false });
+    this.siteSearchTerms.next(searchTerm);
+  }
+
+  onWorkerSearchInput(event: Event): void {
+    const searchTerm = (event.target as HTMLInputElement).value;
+    this.workerSearchRevision += 1;
+    this.workerResults.set([]);
+    this.workerSearchAttempted.set(false);
+    this.workerSearchError.set('');
+    this.workerSearching.set(false);
+    this.selectedWorker.set(null);
+    this.form.controls.responsibleWorkerId.setValue('', { emitEvent: false });
+    this.leaveUnassigned.set(false);
+    this.workerSearchTerms.next(searchTerm);
+  }
+
+  selectSite(event: MatAutocompleteSelectedEvent): void {
+    const site = event.option.value as SiteLookup;
+    this.siteSearchRevision += 1;
+    this.siteResults.set([]);
+    this.siteSearchAttempted.set(false);
+    this.siteSearchError.set('');
+    this.selectedSite.set(site);
+    this.form.controls.siteId.setValue(site.id, { emitEvent: false });
+  }
+
+  selectWorker(event: MatAutocompleteSelectedEvent): void {
+    const worker = event.option.value as UserLookup;
+    this.workerSearchRevision += 1;
+    this.workerResults.set([]);
+    this.workerSearchAttempted.set(false);
+    this.workerSearchError.set('');
+    this.leaveUnassigned.set(false);
+    this.selectedWorker.set(worker);
+    this.form.controls.responsibleWorkerId.setValue(worker.id, { emitEvent: false });
+  }
+
+  setLeaveUnassigned(leaveUnassigned: boolean): void {
+    this.leaveUnassigned.set(leaveUnassigned);
+    if (!leaveUnassigned) {
+      this.workerSearchControl.enable({ emitEvent: false });
+      return;
+    }
+
+    this.workerSearchRevision += 1;
+    this.workerResults.set([]);
+    this.workerSearchAttempted.set(false);
+    this.workerSearchError.set('');
+    this.workerSearching.set(false);
+    this.selectedWorker.set(null);
+    this.workerSearchControl.setValue('', { emitEvent: false });
+    this.workerSearchControl.disable({ emitEvent: false });
+    this.form.controls.responsibleWorkerId.setValue('', { emitEvent: false });
+  }
+
+  retrySiteSearch(): void {
+    const value = this.siteSearchControl.value;
+    if (typeof value === 'string') {
+      void this.searchSites(value);
+    }
+  }
+
+  retryWorkerSearch(): void {
+    const value = this.workerSearchControl.value;
+    if (typeof value === 'string') {
+      void this.searchWorkers(value);
+    }
+  }
+
   async confirm(): Promise<void> {
+    if (this.saving()) {
+      return;
+    }
+
+    if (this.form.invalid || !this.actionSelectionValid()) {
+      this.form.markAllAsTouched();
+      if (this.data.kind === 'site') {
+        this.siteSearchControl.markAsTouched();
+        this.error.set('Select a different Site from the search results.');
+      } else if (this.data.kind === 'responsibility') {
+        this.workerSearchControl.markAsTouched();
+        this.error.set('Select a different Worker or explicitly leave the asset unassigned.');
+      }
+      return;
+    }
+
     if (this.data.kind === 'responsibility' && !this.form.controls.reason.value.trim()) {
       this.error.set('A responsibility change requires a reason.');
       return;
@@ -400,7 +698,7 @@ export class AssetActionDialogComponent {
           body['accepted'] = this.data.accepted === true;
         }
         if (this.data.kind === 'site') {
-          body['siteId'] = value.siteId;
+          body['siteId'] = this.selectedSite()!.id;
         }
         if (this.data.kind === 'condition') {
           body['condition'] = value.condition;
@@ -409,7 +707,9 @@ export class AssetActionDialogComponent {
           body['operationalStatus'] = value.operationalStatus;
         }
         if (this.data.kind === 'responsibility') {
-          body['responsibleWorkerId'] = value.responsibleWorkerId || null;
+          body['responsibleWorkerId'] = this.leaveUnassigned()
+            ? null
+            : this.selectedWorker()!.id;
           body['reason'] = value.reason;
         }
         updated = await this.service.mutate(this.data.asset.id, this.data.kind, body);
@@ -443,6 +743,79 @@ export class AssetActionDialogComponent {
     } finally {
       this.saving.set(false);
     }
+  }
+
+  private async searchSites(rawSearchTerm: string): Promise<void> {
+    const searchTerm = rawSearchTerm.trim();
+    const revision = ++this.siteSearchRevision;
+    this.siteResults.set([]);
+    this.siteSearchError.set('');
+    this.siteSearchAttempted.set(searchTerm.length > 0);
+    this.siteSearching.set(searchTerm.length > 0);
+    if (!searchTerm) {
+      return;
+    }
+
+    try {
+      const sites = await this.service.searchSites(searchTerm);
+      if (revision !== this.siteSearchRevision) {
+        return;
+      }
+
+      const currentSiteId = this.currentAsset().siteId;
+      this.siteResults.set(sites.filter((site) => site.id !== currentSiteId));
+    } catch {
+      if (revision === this.siteSearchRevision) {
+        this.siteSearchError.set('Sites could not be searched.');
+      }
+    } finally {
+      if (revision === this.siteSearchRevision) {
+        this.siteSearching.set(false);
+      }
+    }
+  }
+
+  private async searchWorkers(rawSearchTerm: string): Promise<void> {
+    const searchTerm = rawSearchTerm.trim();
+    const revision = ++this.workerSearchRevision;
+    this.workerResults.set([]);
+    this.workerSearchError.set('');
+    this.workerSearchAttempted.set(searchTerm.length > 0);
+    this.workerSearching.set(searchTerm.length > 0);
+    if (!searchTerm) {
+      return;
+    }
+
+    try {
+      const workers = await this.service.searchWorkers(searchTerm);
+      if (revision !== this.workerSearchRevision) {
+        return;
+      }
+
+      const current = this.currentAsset();
+      this.workerResults.set(workers.filter((worker) =>
+        current.pendingHandoverRecipientId !== null
+        || worker.id !== current.responsibleWorkerId
+      ));
+    } catch {
+      if (revision === this.workerSearchRevision) {
+        this.workerSearchError.set('Workers could not be searched.');
+      }
+    } finally {
+      if (revision === this.workerSearchRevision) {
+        this.workerSearching.set(false);
+      }
+    }
+  }
+
+  private siteDisplayLabel(site: SiteLookup): string {
+    return `${site.name} · #${site.numberId} · ${site.address}`;
+  }
+
+  private workerDisplayLabel(worker: UserLookup): string {
+    return worker.email
+      ? `${worker.displayName} · ${worker.email}`
+      : worker.displayName;
   }
 
   private comparison(

@@ -15,9 +15,7 @@ public sealed class MobileAssetsValidator : AbstractValidator<MobileAssetsQuery>
 {
     public MobileAssetsValidator()
     {
-        RuleFor(x => x.Search).Must(value => !string.IsNullOrWhiteSpace(value))
-            .WithMessage("Search is required.")
-            .MaximumLength(200);
+        RuleFor(x => x.Search).MaximumLength(200);
         RuleFor(x => x.PageIndex).GreaterThanOrEqualTo(0);
         RuleFor(x => x.PageSize).InclusiveBetween(1, 20);
     }

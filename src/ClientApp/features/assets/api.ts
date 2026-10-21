@@ -26,8 +26,8 @@ export const mobileAssetKeys = {
   all: ["mobile-assets"] as const,
   details: (id: string) => ["mobile-assets", "details", id] as const,
   registration: (id: string) => ["mobile-assets", "registration", id] as const,
-  search: (search: string, pageIndex: number) =>
-    ["mobile-assets", "search", search, pageIndex] as const,
+  search: (search: string, assignedToCurrentUser: boolean, pageIndex: number) =>
+    ["mobile-assets", "search", search, assignedToCurrentUser, pageIndex] as const,
   sites: (search: string) => ["mobile-assets", "sites", search] as const,
 };
 
@@ -42,13 +42,14 @@ const discoverAssetByQr = async (qrIdentifier: string, accessToken: string) => {
 
 const searchAssets = async (
   search: string,
+  assignedToCurrentUser: boolean,
   pageIndex: number,
   accessToken: string,
   signal: AbortSignal,
 ) => {
   const response = await api.get(paths.mobileAssets.search, {
     headers: authorizationHeaders(accessToken),
-    params: { search, pageIndex, pageSize: 20 },
+    params: { search, assignedToCurrentUser, pageIndex, pageSize: 20 },
     signal,
   });
   return response as unknown as PagedResponse<MobileAssetListItem>;
@@ -105,14 +106,18 @@ export const useDiscoverAssetByQr = () => {
   });
 };
 
-export const useSearchMobileAssets = (search: string, pageIndex: number) => {
+export const useSearchMobileAssets = (
+  search: string,
+  assignedToCurrentUser: boolean,
+  pageIndex: number,
+) => {
   const { accessToken } = useAuth();
 
   return useQuery({
-    queryKey: mobileAssetKeys.search(search, pageIndex),
+    queryKey: mobileAssetKeys.search(search, assignedToCurrentUser, pageIndex),
     queryFn: ({ signal }) =>
-      searchAssets(search, pageIndex, requireToken(accessToken), signal),
-    enabled: Boolean(accessToken && search.trim()),
+      searchAssets(search, assignedToCurrentUser, pageIndex, requireToken(accessToken), signal),
+    enabled: Boolean(accessToken),
   });
 };
 

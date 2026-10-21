@@ -18,6 +18,7 @@ type FloatingTab = {
 
 type FloatingTabsProps = {
   headerTintColor?: boolean;
+  hideTabBar?: boolean;
   tabs: readonly FloatingTab[];
 };
 
@@ -28,12 +29,12 @@ const FloatingTabBackground = () => {
   return <BlurView intensity={100} style={StyleSheet.absoluteFill} tint={colorScheme ?? "light"}><View style={[StyleSheet.absoluteFill, { backgroundColor: `${colorPalette.background}33` }]} /></BlurView>;
 };
 
-const FloatingTabs = ({ headerTintColor = false, tabs }: FloatingTabsProps) => {
+const FloatingTabs = ({ headerTintColor = false, hideTabBar = false, tabs }: FloatingTabsProps) => {
   const colorPalette = useColorPalette();
 
   if (Platform.OS === "ios") {
     return <NativeTabs backgroundColor="transparent" badgeTextColor={colorPalette.primary} blurEffect="systemThickMaterial" disableTransparentOnScrollEdge iconColor={colorPalette.primary} shadowColor="transparent">
-      {tabs.map((tab) => <NativeTabs.Trigger hidden={tab.hidden} key={tab.name} name={tab.name}><Icon sf={tab.iosIcon} /><Label>{tab.label}</Label></NativeTabs.Trigger>)}
+      {tabs.map((tab) => <NativeTabs.Trigger hidden={hideTabBar || tab.hidden} key={tab.name} name={tab.name}><Icon sf={tab.iosIcon} /><Label>{tab.label}</Label></NativeTabs.Trigger>)}
     </NativeTabs>;
   }
 
@@ -43,7 +44,9 @@ const FloatingTabs = ({ headerTintColor = false, tabs }: FloatingTabsProps) => {
     tabBarActiveTintColor: colorPalette.tabIconSelected,
     tabBarBackground: FloatingTabBackground,
     tabBarInactiveTintColor: colorPalette.tabIconDefault,
-    tabBarStyle: { backgroundColor: "transparent", borderTopWidth: 0, elevation: 0, position: "absolute" },
+    tabBarStyle: hideTabBar
+      ? { display: "none" }
+      : { backgroundColor: "transparent", borderTopWidth: 0, elevation: 0, position: "absolute" },
   }}>
     {tabs.map((tab) => <Tabs.Screen key={tab.name} name={tab.name} options={{ href: tab.hidden ? null : undefined, title: tab.label, tabBarIcon: ({ color, focused }) => <Ionicons color={color} name={focused ? tab.androidIcon.selected : tab.androidIcon.unselected} size={20} /> }} />)}
   </Tabs>;

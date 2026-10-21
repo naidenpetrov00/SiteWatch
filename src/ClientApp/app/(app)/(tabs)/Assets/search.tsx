@@ -1,3 +1,5 @@
-import AssetSearchScreen from "@/features/assets/screens/AssetSearchScreen";
+import { Redirect } from "expo-router";
 
-export default AssetSearchScreen;
+export default function AssetSearchRedirect() {
+  return <Redirect href="/Assets" />;
+}

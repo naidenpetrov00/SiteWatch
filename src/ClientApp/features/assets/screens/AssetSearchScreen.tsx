@@ -67,7 +67,7 @@ export default function AssetSearchScreen() {
   const [input, setInput] = useState("");
   const [search, setSearch] = useState("");
   const [pageIndex, setPageIndex] = useState(0);
-  const query = useSearchMobileAssets(search, pageIndex);
+  const query = useSearchMobileAssets(search, false, pageIndex);
 
   const submit = useCallback(() => {
     const normalized = input.trim();

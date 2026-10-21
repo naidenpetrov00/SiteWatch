@@ -22,6 +22,7 @@ public sealed record MobileAssetByQrQuery : IRequest<MobileAssetDto>
 public sealed record MobileAssetsQuery : IRequest<PagedResult<MobileAssetListDto>>
 {
     public string Search { get; init; } = string.Empty;
+    public bool AssignedToCurrentUser { get; init; }
     public int PageIndex { get; init; }
     public int PageSize { get; init; } = 20;
 }
@@ -68,6 +69,11 @@ public sealed class MobileAssetsHandler(IApplicationDbContext db, IUser currentU
     {
         var userId = MobileAssetAccess.GetCurrentUserId(currentUser);
         var source = MobileAssetAccess.ActiveAssets(db, userId);
+        if (request.AssignedToCurrentUser)
+        {
+            source = source.Where(x => x.ResponsibleWorkerId == userId);
+        }
+
         var total = await source.CountAsync(ct);
         var search = request.Search.Trim();
         var assetCodeNumberId = 0;
@@ -85,15 +91,18 @@ public sealed class MobileAssetsHandler(IApplicationDbContext db, IUser currentU
             out var numberId) && numberId > 0;
         var exactNumberId = hasAssetCode ? assetCodeNumberId : numberId;
 
-        source = hasAssetCode
-            ? source.Where(x => x.NumberId == exactNumberId)
-            : source.Where(x =>
-                (hasNumber && x.NumberId == exactNumberId)
-                || x.Name.Contains(search)
-                || (x.Manufacturer != null && x.Manufacturer.Contains(search))
-                || (x.Model != null && x.Model.Contains(search))
-                || (x.ManufacturerSerialNumber != null
-                    && x.ManufacturerSerialNumber.Contains(search)));
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            source = hasAssetCode
+                ? source.Where(x => x.NumberId == exactNumberId)
+                : source.Where(x =>
+                    (hasNumber && x.NumberId == exactNumberId)
+                    || x.Name.Contains(search)
+                    || (x.Manufacturer != null && x.Manufacturer.Contains(search))
+                    || (x.Model != null && x.Model.Contains(search))
+                    || (x.ManufacturerSerialNumber != null
+                        && x.ManufacturerSerialNumber.Contains(search)));
+        }
 
         var filtered = await source.CountAsync(ct);
         var offset = (long)request.PageIndex * request.PageSize;

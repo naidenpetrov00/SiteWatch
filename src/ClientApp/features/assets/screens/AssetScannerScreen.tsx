@@ -4,7 +4,9 @@ import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  AppState,
   Linking,
+  Platform,
   Pressable,
   Text,
   View,
@@ -19,7 +21,7 @@ export default function AssetScannerScreen() {
   const colors = useColorPalette();
   const router = useRouter();
   const isFocused = useIsFocused();
-  const [permission, requestPermission] = useCameraPermissions();
+  const [permission, requestPermission, getPermission] = useCameraPermissions();
   const discovery = useDiscoverAssetByQr();
   const [cameraAvailable, setCameraAvailable] = useState<boolean | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
@@ -34,19 +36,27 @@ export default function AssetScannerScreen() {
 
   useEffect(() => {
     mountedRef.current = true;
+
+    if (Platform.OS !== "web") {
+      setCameraAvailable(true);
+      return () => {
+        mountedRef.current = false;
+      };
+    }
+
     void CameraView.isAvailableAsync()
       .then((available) => {
         if (mountedRef.current) {
           setCameraAvailable(available);
           if (!available) {
-            setMessage("A camera is not available on this device. Search for the asset manually.");
+            setMessage("A camera is not available on this device. Browse assets instead.");
           }
         }
       })
       .catch(() => {
         if (mountedRef.current) {
           setCameraAvailable(false);
-          setMessage("Camera availability could not be determined. Search for the asset manually.");
+          setMessage("Camera availability could not be determined. Browse assets instead.");
         }
       });
 
@@ -62,11 +72,54 @@ export default function AssetScannerScreen() {
     discovery.reset();
   }, [discovery]);
 
+  const refreshPermission = useCallback(async () => {
+    try {
+      const nextPermission = await getPermission();
+      if (!mountedRef.current) return;
+
+      if (nextPermission.granted) {
+        if (cameraAvailable === false) {
+          setCameraActive(false);
+          setMessage("A camera is not available on this device. Browse assets instead.");
+          return;
+        }
+
+        if (!permission?.granted) {
+          setMessage(null);
+        }
+        setCameraActive(true);
+      } else {
+        setCameraActive(false);
+      }
+    } catch {
+      if (mountedRef.current) {
+        setCameraActive(false);
+        setMessage("Camera permission could not be checked. Try again or browse assets.");
+      }
+    }
+  }, [cameraAvailable, getPermission, permission?.granted]);
+
+  useEffect(() => {
+    if (isFocused) {
+      void refreshPermission();
+    }
+  }, [isFocused, refreshPermission]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active" && focusedRef.current) {
+        void refreshPermission();
+      }
+    });
+
+    return () => subscription.remove();
+  }, [refreshPermission]);
+
   const startCamera = useCallback(async () => {
     if (permissionRequestPending) return;
     setMessage(null);
     if (cameraAvailable === false) {
-      setMessage("A camera is not available on this device. Search for the asset manually.");
+      setMessage("A camera is not available on this device. Browse assets instead.");
       return;
     }
 
@@ -77,7 +130,7 @@ export default function AssetScannerScreen() {
     }
 
     if (permission && !permission.canAskAgain) {
-      setMessage("Camera access is disabled. Enable it in Settings or search manually.");
+      setMessage("Camera access is disabled. Enable it in Settings or browse assets.");
       return;
     }
 
@@ -93,12 +146,12 @@ export default function AssetScannerScreen() {
 
       setMessage(
         nextPermission.canAskAgain
-          ? "Camera permission was denied. You can retry or search manually."
-          : "Camera access is disabled. Enable it in Settings or search manually.",
+          ? "Camera permission was denied. You can retry or browse assets."
+          : "Camera access is disabled. Enable it in Settings or browse assets.",
       );
     } catch {
       if (mountedRef.current) {
-        setMessage("Camera permission could not be requested. Try again or search manually.");
+        setMessage("Camera permission could not be requested. Try again or browse assets.");
       }
     } finally {
       if (mountedRef.current) setPermissionRequestPending(false);
@@ -152,7 +205,7 @@ export default function AssetScannerScreen() {
           onBarcodeScanned={scanLocked ? undefined : handleBarcodeScanned}
           onMountError={() => {
             setCameraActive(false);
-            setMessage("The camera could not be started. Try again or search manually.");
+            setMessage("The camera could not be started. Try again or browse assets.");
           }}
           style={assetStyles.camera}
         >
@@ -178,13 +231,13 @@ export default function AssetScannerScreen() {
             ) : null}
             <Pressable
               accessibilityRole="button"
-              onPress={() => router.push("/Assets/search")}
+              onPress={() => router.replace("/Assets")}
               style={({ pressed }) => [
                 assetStyles.button,
                 { backgroundColor: colors.secondary, opacity: pressed ? 0.78 : 1 },
               ]}
             >
-              <Text style={[assetStyles.buttonText, { color: colors.background }]}>Search manually</Text>
+              <Text style={[assetStyles.buttonText, { color: colors.background }]}>Browse assets</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
@@ -206,7 +259,7 @@ export default function AssetScannerScreen() {
     <View style={[assetStyles.centerState, { backgroundColor: colors.background }]}>
       <Text style={[assetStyles.title, { color: colors.text }]}>Scan an asset</Text>
       <Text style={[assetStyles.centerText, { color: colors.secondary }]}>
-        Camera access is requested only when you start scanning. You can search manually at any time.
+        Camera access is requested only when you start scanning. You can browse assets at any time.
       </Text>
       {message ? (
         <Text accessibilityRole="alert" style={[assetStyles.centerText, { color: colors.text }]}>{message}</Text>
@@ -249,13 +302,13 @@ export default function AssetScannerScreen() {
         ) : null}
         <Pressable
           accessibilityRole="button"
-          onPress={() => router.push("/Assets/search")}
+          onPress={() => router.replace("/Assets")}
           style={({ pressed }) => [
             assetStyles.button,
             { backgroundColor: colors.secondary, opacity: pressed ? 0.78 : 1 },
           ]}
         >
-          <Text style={[assetStyles.buttonText, { color: colors.background }]}>Search manually</Text>
+          <Text style={[assetStyles.buttonText, { color: colors.background }]}>Browse assets</Text>
         </Pressable>
       </View>
     </View>

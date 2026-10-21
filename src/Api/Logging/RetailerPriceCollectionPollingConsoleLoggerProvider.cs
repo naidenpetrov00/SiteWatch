@@ -12,6 +12,10 @@ internal static class RetailerPriceCollectionPollingConsoleLoggingExtensions
         "SiteWatch.RetailerPriceCollection.Polling.LeadershipCheck";
     private const string NextItemProbeTag =
         "SiteWatch.RetailerPriceCollection.Polling.NextItemProbe";
+    private const string LeadershipRenewalTag =
+        "SiteWatch.RetailerPriceCollection.Polling.LeadershipRenewal";
+    private const string LeadershipReleaseTag =
+        "SiteWatch.RetailerPriceCollection.Polling.LeadershipRelease";
 
     public static IServiceCollection FilterRetailerPriceCollectionPollingFromConsole(
         this IServiceCollection services)
@@ -62,7 +66,9 @@ internal static class RetailerPriceCollectionPollingConsoleLoggingExtensions
                 {
                     var message = formatter(state, exception);
                     if (message.Contains(LeadershipCheckTag, StringComparison.Ordinal)
-                        || message.Contains(NextItemProbeTag, StringComparison.Ordinal))
+                        || message.Contains(NextItemProbeTag, StringComparison.Ordinal)
+                        || message.Contains(LeadershipRenewalTag, StringComparison.Ordinal)
+                        || message.Contains(LeadershipReleaseTag, StringComparison.Ordinal))
                     {
                         return;
                     }

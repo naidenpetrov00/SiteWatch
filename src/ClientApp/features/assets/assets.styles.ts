@@ -47,6 +47,27 @@ const assetStyles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "700",
   },
+  qrSection: {
+    alignItems: "center",
+    borderCurve: "continuous",
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 10,
+    padding: 16,
+  },
+  qrCodeFrame: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderCurve: "continuous",
+    borderRadius: 12,
+    justifyContent: "center",
+    padding: 16,
+  },
+  qrIdentifier: {
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: "center",
+  },
   field: {
     gap: 6,
   },
@@ -143,6 +164,11 @@ const assetStyles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     paddingTop: 12,
+  },
+  emptyListState: {
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 24,
   },
   centerState: {
     alignItems: "center",

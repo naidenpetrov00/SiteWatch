@@ -408,11 +408,27 @@ internal static class AssetCommandSupport
         var actor = await GetActorAsync(db, currentUser, ct);
         var asset = await AssetQuerySupport.LoadAssetAsync(db, request.Id, true, ct);
         EnsureConcurrency(asset.RowVersion, request.ConcurrencyToken);
+        var previousHistorySequence = asset.HistorySequence;
         var now = DateTimeOffset.UtcNow;
         RunTransition(() => operation(asset, actor, now));
+        TrackAppendedEvents(db, asset, previousHistorySequence);
         SetModifiedAudit(asset, actor.Id, now);
         await SaveAsync(db, ct);
         return AssetDto.From(asset);
+    }
+
+    private static void TrackAppendedEvents(
+        IApplicationDbContext db,
+        Asset asset,
+        long previousHistorySequence)
+    {
+        var appendedEvents = asset.AssetEvents
+            .Where(assetEvent => assetEvent.SequenceNumber > previousHistorySequence)
+            .ToArray();
+        if (appendedEvents.Length > 0)
+        {
+            db.AssetEvents.AddRange(appendedEvents);
+        }
     }
 
     internal static void RunTransition(Action action)

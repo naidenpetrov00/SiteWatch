@@ -1,0 +1,9 @@
+done 1.Relocate and change responsibility should show name or some info and be able to change it by input search and auto fill
+
+done2. on Step 5 the expected result says we should see qr code but there is no such a things everything other is okay
+
+done 3.I have given permission for the camera but it still doesnt show me the scan qr code it shows me try manually
+
+done 4. Maybe we should remove search manually and make assets list that loads the assets worker. And we should allow worker to be able to change location and assign to another worker.
+
+

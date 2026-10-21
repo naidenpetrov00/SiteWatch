@@ -2,6 +2,7 @@ import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 
 import AssetDetailRows from "../components/AssetDetailRows";
 import AssetErrorState from "../components/AssetErrorState";
+import AssetQrCode from "../components/AssetQrCode";
 import { getAssetApiError, useMobileAsset } from "../api";
 import assetStyles from "../assets.styles";
 import { useColorPalette } from "@/hooks/useColorPalette";
@@ -37,6 +38,7 @@ export default function AssetDetailsScreen({ assetId }: { assetId: string }) {
           {asset.assetCode} · {asset.classification}
         </Text>
       </View>
+      <AssetQrCode qrIdentifier={asset.qrIdentifier} />
       <View style={[assetStyles.section, { borderColor: colors.secondary }]}>
         <AssetDetailRows details={[
           { label: "Site", value: asset.siteName },
@@ -47,7 +49,6 @@ export default function AssetDetailsScreen({ assetId }: { assetId: string }) {
           { label: "Operational status", value: asset.operationalStatus },
           { label: "Responsible assignee", value: asset.responsibleAssigneeDisplayName },
           { label: "Description", value: asset.description },
-          { label: "QR identifier", value: asset.qrIdentifier },
         ]} />
       </View>
     </ScrollView>

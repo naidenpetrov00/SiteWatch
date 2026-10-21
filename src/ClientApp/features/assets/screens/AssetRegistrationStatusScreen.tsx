@@ -5,6 +5,7 @@ import { getAssetApiError, useMobileAssetRegistration } from "../api";
 import assetStyles from "../assets.styles";
 import AssetDetailRows from "../components/AssetDetailRows";
 import AssetErrorState from "../components/AssetErrorState";
+import AssetQrCode from "../components/AssetQrCode";
 import { useColorPalette } from "@/hooks/useColorPalette";
 
 export default function AssetRegistrationStatusScreen({ assetId }: { assetId: string }) {
@@ -56,6 +57,12 @@ export default function AssetRegistrationStatusScreen({ assetId }: { assetId: st
         </Text>
       </View>
       <Text accessibilityRole="summary" style={[assetStyles.subtitle, { color: colors.text }]}>{statusMessage}</Text>
+      <AssetQrCode
+        qrIdentifier={registration.qrIdentifier}
+        unavailableMessage={registration.reviewStatus === "PendingReview"
+          ? "This QR code will work in asset discovery after an administrator approves the registration."
+          : undefined}
+      />
       <View style={[assetStyles.section, { borderColor: colors.secondary }]}>
         <AssetDetailRows details={[
           { label: "Site", value: registration.siteName },
@@ -66,7 +73,6 @@ export default function AssetRegistrationStatusScreen({ assetId }: { assetId: st
           { label: "Condition", value: registration.condition },
           { label: "Operational status", value: registration.operationalStatus },
           { label: "Description", value: registration.description },
-          { label: "QR identifier", value: registration.qrIdentifier },
         ]} />
       </View>
       <View style={assetStyles.buttonRow}>

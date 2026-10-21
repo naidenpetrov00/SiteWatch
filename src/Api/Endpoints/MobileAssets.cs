@@ -28,7 +28,7 @@ public sealed class MobileAssets : EndpointGroupBase
             .Produces(StatusCodes.Status404NotFound);
         group.MapGet("/search", Search)
             .WithName("SearchMobileAssets")
-            .WithSummary("Search accessible active assets")
+            .WithSummary("Browse or search accessible active assets")
             .Produces<PagedResult<MobileAssetListDto>>()
             .ProducesValidationProblem();
         group.MapGet("/sites", Sites)
