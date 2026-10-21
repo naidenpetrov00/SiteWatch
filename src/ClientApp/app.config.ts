@@ -40,6 +40,12 @@ export default {
           microphonePermission: "Allow SiteWatch to use the microphone when recording issue videos.",
         },
       ],
+      [
+        "expo-camera",
+        {
+          cameraPermission: "Allow SiteWatch to use the camera to scan asset QR codes.",
+        },
+      ],
       "expo-video",
       [
         "expo-screen-orientation",

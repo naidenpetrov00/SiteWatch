@@ -431,6 +431,22 @@ internal static class AssetCommandSupport
         }
     }
 
+    internal static T RunTransition<T>(Func<T> action)
+    {
+        try
+        {
+            return action();
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new AssetInvalidTransitionException(ex.Message, ex);
+        }
+        catch (ArgumentException ex)
+        {
+            throw new AssetInvalidTransitionException(ex.Message, ex);
+        }
+    }
+
     internal static void EnsureConcurrency(byte[] current, string token)
     {
         byte[] supplied;

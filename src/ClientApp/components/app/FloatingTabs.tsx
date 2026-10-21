@@ -10,6 +10,7 @@ import { useColorPalette } from "@/hooks/useColorPalette";
 
 type FloatingTab = {
   androidIcon: { selected: ComponentProps<typeof Ionicons>["name"]; unselected: ComponentProps<typeof Ionicons>["name"] };
+  hidden?: boolean;
   iosIcon: SFSymbol;
   label: string;
   name: string;
@@ -32,7 +33,7 @@ const FloatingTabs = ({ headerTintColor = false, tabs }: FloatingTabsProps) => {
 
   if (Platform.OS === "ios") {
     return <NativeTabs backgroundColor="transparent" badgeTextColor={colorPalette.primary} blurEffect="systemThickMaterial" disableTransparentOnScrollEdge iconColor={colorPalette.primary} shadowColor="transparent">
-      {tabs.map((tab) => <NativeTabs.Trigger key={tab.name} name={tab.name}><Icon sf={tab.iosIcon} /><Label>{tab.label}</Label></NativeTabs.Trigger>)}
+      {tabs.map((tab) => <NativeTabs.Trigger hidden={tab.hidden} key={tab.name} name={tab.name}><Icon sf={tab.iosIcon} /><Label>{tab.label}</Label></NativeTabs.Trigger>)}
     </NativeTabs>;
   }
 
@@ -44,7 +45,7 @@ const FloatingTabs = ({ headerTintColor = false, tabs }: FloatingTabsProps) => {
     tabBarInactiveTintColor: colorPalette.tabIconDefault,
     tabBarStyle: { backgroundColor: "transparent", borderTopWidth: 0, elevation: 0, position: "absolute" },
   }}>
-    {tabs.map((tab) => <Tabs.Screen key={tab.name} name={tab.name} options={{ title: tab.label, tabBarIcon: ({ color, focused }) => <Ionicons color={color} name={focused ? tab.androidIcon.selected : tab.androidIcon.unselected} size={20} /> }} />)}
+    {tabs.map((tab) => <Tabs.Screen key={tab.name} name={tab.name} options={{ href: tab.hidden ? null : undefined, title: tab.label, tabBarIcon: ({ color, focused }) => <Ionicons color={color} name={focused ? tab.androidIcon.selected : tab.androidIcon.unselected} size={20} /> }} />)}
   </Tabs>;
 };
 
