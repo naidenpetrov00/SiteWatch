@@ -164,7 +164,7 @@ interface ConflictComparisonRow {
         @if (data.kind === 'responsibility') {
           <section class="selection-summary" aria-label="Current asset responsibility">
             <span>Current responsibility</span>
-            <strong>{{ currentAsset().responsibleWorkerDisplayName || 'Unassigned' }}</strong>
+            <strong>{{ currentAsset().responsibleUserDisplayName || 'Unassigned' }}</strong>
             @if (currentAsset().pendingHandoverRecipientDisplayName) {
               <small>
                 Pending handover to {{ currentAsset().pendingHandoverRecipientDisplayName }}.
@@ -173,44 +173,44 @@ interface ConflictComparisonRow {
             }
           </section>
           <mat-form-field>
-            <mat-label>Search responsible Worker</mat-label>
+            <mat-label>Search responsible user</mat-label>
             <input
               matInput
-              [formControl]="workerSearchControl"
-              [matAutocomplete]="workerAuto"
-              (input)="onWorkerSearchInput($event)"
+              [formControl]="responsibleUserSearchControl"
+              [matAutocomplete]="responsibleUserAuto"
+              (input)="onResponsibleUserSearchInput($event)"
             />
             <mat-autocomplete
-              #workerAuto="matAutocomplete"
-              [displayWith]="displayWorker"
+              #responsibleUserAuto="matAutocomplete"
+              [displayWith]="displayResponsibleUser"
               [requireSelection]="true"
-              (optionSelected)="selectWorker($event)"
+              (optionSelected)="selectResponsibleUser($event)"
             >
-              @for (worker of workerResults(); track worker.id) {
-                <mat-option [value]="worker">
-                  <span>{{ worker.displayName }}</span>
-                  @if (worker.email) {
-                    <small>{{ worker.email }}</small>
+              @for (user of responsibleUserResults(); track user.id) {
+                <mat-option [value]="user">
+                  <span>{{ user.displayName }}</span>
+                  @if (user.email) {
+                    <small>{{ user.email }}</small>
                   }
                 </mat-option>
               }
             </mat-autocomplete>
-            <mat-hint>Select a Worker from the search results.</mat-hint>
+            <mat-hint>Select an Administrator or Worker from the search results.</mat-hint>
           </mat-form-field>
-          @if (workerSearching()) {
-            <p class="lookup-status" role="status">Searching Workers…</p>
-          } @else if (workerSearchError()) {
+          @if (responsibleUserSearching()) {
+            <p class="lookup-status" role="status">Searching eligible responsible users…</p>
+          } @else if (responsibleUserSearchError()) {
             <p class="lookup-status error" role="alert">
-              {{ workerSearchError() }}
-              <button mat-button type="button" (click)="retryWorkerSearch()">Retry</button>
+              {{ responsibleUserSearchError() }}
+              <button mat-button type="button" (click)="retryResponsibleUserSearch()">Retry</button>
             </p>
           } @else if (
-            workerSearchAttempted()
-            && workerResults().length === 0
-            && !selectedWorker()
+            responsibleUserSearchAttempted()
+            && responsibleUserResults().length === 0
+            && !selectedResponsibleUser()
             && !leaveUnassigned()
           ) {
-            <p class="lookup-status" role="status">No eligible Workers match this search.</p>
+            <p class="lookup-status" role="status">No eligible responsible users match this search.</p>
           }
           @if (canLeaveUnassigned()) {
             <mat-checkbox
@@ -381,9 +381,9 @@ export class AssetActionDialogComponent {
   private readonly service = inject(AssetTrackingService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly siteSearchTerms = new Subject<string>();
-  private readonly workerSearchTerms = new Subject<string>();
+  private readonly responsibleUserSearchTerms = new Subject<string>();
   private siteSearchRevision = 0;
-  private workerSearchRevision = 0;
+  private responsibleUserSearchRevision = 0;
 
   readonly classifications = ASSET_CLASSIFICATIONS;
   readonly conditions = ASSET_CONDITIONS;
@@ -392,18 +392,18 @@ export class AssetActionDialogComponent {
   readonly conflict = signal(false);
   readonly error = signal('');
   readonly siteResults = signal<readonly SiteLookup[]>([]);
-  readonly workerResults = signal<readonly UserLookup[]>([]);
+  readonly responsibleUserResults = signal<readonly UserLookup[]>([]);
   readonly siteSearching = signal(false);
-  readonly workerSearching = signal(false);
+  readonly responsibleUserSearching = signal(false);
   readonly siteSearchAttempted = signal(false);
-  readonly workerSearchAttempted = signal(false);
+  readonly responsibleUserSearchAttempted = signal(false);
   readonly siteSearchError = signal('');
-  readonly workerSearchError = signal('');
+  readonly responsibleUserSearchError = signal('');
   readonly selectedSite = signal<SiteLookup | null>(null);
-  readonly selectedWorker = signal<UserLookup | null>(null);
+  readonly selectedResponsibleUser = signal<UserLookup | null>(null);
   readonly leaveUnassigned = signal(false);
   readonly siteSearchControl = new FormControl<string | SiteLookup | null>('');
-  readonly workerSearchControl = new FormControl<string | UserLookup | null>('');
+  readonly responsibleUserSearchControl = new FormControl<string | UserLookup | null>('');
   readonly form = new FormGroup({
     classification: new FormControl<AssetClassification>(this.data.asset.classification, {
       nonNullable: true,
@@ -437,7 +437,7 @@ export class AssetActionDialogComponent {
     operationalStatus: new FormControl(this.data.asset.operationalStatus, {
       nonNullable: true
     }),
-    responsibleWorkerId: new FormControl('', { nonNullable: true }),
+    responsibleUserId: new FormControl('', { nonNullable: true }),
     reason: new FormControl('', { nonNullable: true, validators: Validators.maxLength(2000) }),
     note: new FormControl('', { nonNullable: true, validators: Validators.maxLength(2000) })
   });
@@ -448,7 +448,7 @@ export class AssetActionDialogComponent {
   readonly currentAsset = computed(() => this.refreshedAsset() ?? this.data.asset);
   readonly canLeaveUnassigned = computed(() =>
     Boolean(
-      this.currentAsset().responsibleWorkerId
+      this.currentAsset().responsibleUserId
       || this.currentAsset().pendingHandoverRecipientId
     )
   );
@@ -466,16 +466,16 @@ export class AssetActionDialogComponent {
       return this.canLeaveUnassigned();
     }
 
-    const selectedWorker = this.selectedWorker();
-    return selectedWorker !== null
+    const selectedResponsibleUser = this.selectedResponsibleUser();
+    return selectedResponsibleUser !== null
       && (
-        selectedWorker.id !== this.currentAsset().responsibleWorkerId
+        selectedResponsibleUser.id !== this.currentAsset().responsibleUserId
         || this.currentAsset().pendingHandoverRecipientId !== null
       );
   });
   readonly displaySite = (value: string | SiteLookup | null): string =>
     typeof value === 'string' ? value : value?.name ?? '';
-  readonly displayWorker = (value: string | UserLookup | null): string =>
+  readonly displayResponsibleUser = (value: string | UserLookup | null): string =>
     typeof value === 'string' ? value : value?.displayName ?? '';
   readonly conflictRows = computed<readonly ConflictComparisonRow[]>(() => {
     const server = this.refreshedAsset();
@@ -486,11 +486,11 @@ export class AssetActionDialogComponent {
     const draft = this.draft();
     const original = this.data.asset;
     const selectedSite = this.selectedSite();
-    const selectedWorker = this.selectedWorker();
+    const selectedResponsibleUser = this.selectedResponsibleUser();
     const siteId = this.data.kind === 'site' ? selectedSite?.id ?? '' : original.siteId;
-    const workerId = this.data.kind === 'responsibility'
-      ? (this.leaveUnassigned() ? null : selectedWorker?.id ?? null)
-      : original.responsibleWorkerId;
+    const responsibleUserId = this.data.kind === 'responsibility'
+      ? (this.leaveUnassigned() ? null : selectedResponsibleUser?.id ?? null)
+      : original.responsibleUserId;
     const operationalStatus = this.data.kind === 'missing'
       ? 'Missing'
       : this.data.kind === 'retirement'
@@ -521,15 +521,17 @@ export class AssetActionDialogComponent {
         server.siteName
       ),
       this.comparison(
-        'Responsible worker',
-        workerId,
-        server.responsibleWorkerId,
+        'Responsible user',
+        responsibleUserId,
+        server.responsibleUserId,
         this.data.kind === 'responsibility'
           ? this.leaveUnassigned()
             ? 'Unassigned'
-            : (selectedWorker ? this.workerDisplayLabel(selectedWorker) : null)
-          : original.responsibleWorkerDisplayName,
-        server.responsibleWorkerDisplayName
+            : (selectedResponsibleUser
+              ? this.responsibleUserDisplayLabel(selectedResponsibleUser)
+              : null)
+          : original.responsibleUserDisplayName,
+        server.responsibleUserDisplayName
       ),
       this.comparison('Condition', draft.condition, server.condition),
       this.comparison('Operational status', operationalStatus, server.operationalStatus),
@@ -556,13 +558,13 @@ export class AssetActionDialogComponent {
       )
       .subscribe((value) => void this.searchSites(value));
 
-    this.workerSearchTerms
+    this.responsibleUserSearchTerms
       .pipe(
         debounceTime(250),
         distinctUntilChanged(),
         takeUntilDestroyed(this.destroyRef)
       )
-      .subscribe((value) => void this.searchWorkers(value));
+      .subscribe((value) => void this.searchEligibleResponsibleUsers(value));
   }
 
   onSiteSearchInput(event: Event): void {
@@ -577,17 +579,17 @@ export class AssetActionDialogComponent {
     this.siteSearchTerms.next(searchTerm);
   }
 
-  onWorkerSearchInput(event: Event): void {
+  onResponsibleUserSearchInput(event: Event): void {
     const searchTerm = (event.target as HTMLInputElement).value;
-    this.workerSearchRevision += 1;
-    this.workerResults.set([]);
-    this.workerSearchAttempted.set(false);
-    this.workerSearchError.set('');
-    this.workerSearching.set(false);
-    this.selectedWorker.set(null);
-    this.form.controls.responsibleWorkerId.setValue('', { emitEvent: false });
+    this.responsibleUserSearchRevision += 1;
+    this.responsibleUserResults.set([]);
+    this.responsibleUserSearchAttempted.set(false);
+    this.responsibleUserSearchError.set('');
+    this.responsibleUserSearching.set(false);
+    this.selectedResponsibleUser.set(null);
+    this.form.controls.responsibleUserId.setValue('', { emitEvent: false });
     this.leaveUnassigned.set(false);
-    this.workerSearchTerms.next(searchTerm);
+    this.responsibleUserSearchTerms.next(searchTerm);
   }
 
   selectSite(event: MatAutocompleteSelectedEvent): void {
@@ -600,33 +602,33 @@ export class AssetActionDialogComponent {
     this.form.controls.siteId.setValue(site.id, { emitEvent: false });
   }
 
-  selectWorker(event: MatAutocompleteSelectedEvent): void {
-    const worker = event.option.value as UserLookup;
-    this.workerSearchRevision += 1;
-    this.workerResults.set([]);
-    this.workerSearchAttempted.set(false);
-    this.workerSearchError.set('');
+  selectResponsibleUser(event: MatAutocompleteSelectedEvent): void {
+    const user = event.option.value as UserLookup;
+    this.responsibleUserSearchRevision += 1;
+    this.responsibleUserResults.set([]);
+    this.responsibleUserSearchAttempted.set(false);
+    this.responsibleUserSearchError.set('');
     this.leaveUnassigned.set(false);
-    this.selectedWorker.set(worker);
-    this.form.controls.responsibleWorkerId.setValue(worker.id, { emitEvent: false });
+    this.selectedResponsibleUser.set(user);
+    this.form.controls.responsibleUserId.setValue(user.id, { emitEvent: false });
   }
 
   setLeaveUnassigned(leaveUnassigned: boolean): void {
     this.leaveUnassigned.set(leaveUnassigned);
     if (!leaveUnassigned) {
-      this.workerSearchControl.enable({ emitEvent: false });
+      this.responsibleUserSearchControl.enable({ emitEvent: false });
       return;
     }
 
-    this.workerSearchRevision += 1;
-    this.workerResults.set([]);
-    this.workerSearchAttempted.set(false);
-    this.workerSearchError.set('');
-    this.workerSearching.set(false);
-    this.selectedWorker.set(null);
-    this.workerSearchControl.setValue('', { emitEvent: false });
-    this.workerSearchControl.disable({ emitEvent: false });
-    this.form.controls.responsibleWorkerId.setValue('', { emitEvent: false });
+    this.responsibleUserSearchRevision += 1;
+    this.responsibleUserResults.set([]);
+    this.responsibleUserSearchAttempted.set(false);
+    this.responsibleUserSearchError.set('');
+    this.responsibleUserSearching.set(false);
+    this.selectedResponsibleUser.set(null);
+    this.responsibleUserSearchControl.setValue('', { emitEvent: false });
+    this.responsibleUserSearchControl.disable({ emitEvent: false });
+    this.form.controls.responsibleUserId.setValue('', { emitEvent: false });
   }
 
   retrySiteSearch(): void {
@@ -636,10 +638,10 @@ export class AssetActionDialogComponent {
     }
   }
 
-  retryWorkerSearch(): void {
-    const value = this.workerSearchControl.value;
+  retryResponsibleUserSearch(): void {
+    const value = this.responsibleUserSearchControl.value;
     if (typeof value === 'string') {
-      void this.searchWorkers(value);
+      void this.searchEligibleResponsibleUsers(value);
     }
   }
 
@@ -654,8 +656,8 @@ export class AssetActionDialogComponent {
         this.siteSearchControl.markAsTouched();
         this.error.set('Select a different Site from the search results.');
       } else if (this.data.kind === 'responsibility') {
-        this.workerSearchControl.markAsTouched();
-        this.error.set('Select a different Worker or explicitly leave the asset unassigned.');
+        this.responsibleUserSearchControl.markAsTouched();
+        this.error.set('Select a different responsible user or explicitly leave the asset unassigned.');
       }
       return;
     }
@@ -707,9 +709,9 @@ export class AssetActionDialogComponent {
           body['operationalStatus'] = value.operationalStatus;
         }
         if (this.data.kind === 'responsibility') {
-          body['responsibleWorkerId'] = this.leaveUnassigned()
+          body['responsibleUserId'] = this.leaveUnassigned()
             ? null
-            : this.selectedWorker()!.id;
+            : this.selectedResponsibleUser()!.id;
           body['reason'] = value.reason;
         }
         updated = await this.service.mutate(this.data.asset.id, this.data.kind, body);
@@ -775,35 +777,35 @@ export class AssetActionDialogComponent {
     }
   }
 
-  private async searchWorkers(rawSearchTerm: string): Promise<void> {
+  private async searchEligibleResponsibleUsers(rawSearchTerm: string): Promise<void> {
     const searchTerm = rawSearchTerm.trim();
-    const revision = ++this.workerSearchRevision;
-    this.workerResults.set([]);
-    this.workerSearchError.set('');
-    this.workerSearchAttempted.set(searchTerm.length > 0);
-    this.workerSearching.set(searchTerm.length > 0);
+    const revision = ++this.responsibleUserSearchRevision;
+    this.responsibleUserResults.set([]);
+    this.responsibleUserSearchError.set('');
+    this.responsibleUserSearchAttempted.set(searchTerm.length > 0);
+    this.responsibleUserSearching.set(searchTerm.length > 0);
     if (!searchTerm) {
       return;
     }
 
     try {
-      const workers = await this.service.searchWorkers(searchTerm);
-      if (revision !== this.workerSearchRevision) {
+      const users = await this.service.searchEligibleResponsibleUsers(searchTerm);
+      if (revision !== this.responsibleUserSearchRevision) {
         return;
       }
 
       const current = this.currentAsset();
-      this.workerResults.set(workers.filter((worker) =>
+      this.responsibleUserResults.set(users.filter((user) =>
         current.pendingHandoverRecipientId !== null
-        || worker.id !== current.responsibleWorkerId
+        || user.id !== current.responsibleUserId
       ));
     } catch {
-      if (revision === this.workerSearchRevision) {
-        this.workerSearchError.set('Workers could not be searched.');
+      if (revision === this.responsibleUserSearchRevision) {
+        this.responsibleUserSearchError.set('Eligible responsible users could not be searched.');
       }
     } finally {
-      if (revision === this.workerSearchRevision) {
-        this.workerSearching.set(false);
+      if (revision === this.responsibleUserSearchRevision) {
+        this.responsibleUserSearching.set(false);
       }
     }
   }
@@ -812,10 +814,10 @@ export class AssetActionDialogComponent {
     return `${site.name} · #${site.numberId} · ${site.address}`;
   }
 
-  private workerDisplayLabel(worker: UserLookup): string {
-    return worker.email
-      ? `${worker.displayName} · ${worker.email}`
-      : worker.displayName;
+  private responsibleUserDisplayLabel(user: UserLookup): string {
+    return user.email
+      ? `${user.displayName} · ${user.email}`
+      : user.displayName;
   }
 
   private comparison(

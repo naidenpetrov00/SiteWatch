@@ -68,7 +68,7 @@ const LABELS: Readonly<Record<string, string>> = {
           </dl>
           <dl>
             <dt>Site</dt><dd>{{ asset.siteName }}</dd>
-            <dt>Responsible worker</dt><dd>{{ asset.responsibleWorkerDisplayName || 'Unassigned' }}</dd>
+            <dt>Responsible user</dt><dd>{{ asset.responsibleUserDisplayName || 'Unassigned' }}</dd>
             <dt>Condition</dt><dd>{{ asset.condition }}</dd>
             <dt>Operational status</dt><dd>{{ asset.operationalStatus }}</dd>
           </dl>
@@ -232,7 +232,7 @@ export class AssetDetailPage {
       ['description', 'Description'],
       ['manufacturerSerialNumber', 'Serial'],
       ['siteName', 'Site'],
-      ['responsibleWorkerDisplayName', 'Responsible worker'],
+      ['responsibleUserDisplayName', 'Responsible user'],
       ['pendingHandoverRecipientDisplayName', 'Handover recipient'],
       ['condition', 'Condition'],
       ['operationalStatus', 'Status'],

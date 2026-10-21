@@ -25,6 +25,12 @@ public interface IIdentityService
         CancellationToken cancellationToken
     );
 
+    Task<List<DashboardUserLookupDto>> SearchUsersAsync(
+        string? searchTerm,
+        IReadOnlyCollection<string> roles,
+        CancellationToken cancellationToken
+    );
+
     Task<ApplicationUser?> FindUserByEmailAsync(string email);
 
     Task<bool> IsInRoleAsync(string userId, string role);

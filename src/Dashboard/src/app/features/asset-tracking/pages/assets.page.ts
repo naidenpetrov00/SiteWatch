@@ -12,7 +12,7 @@ const COLUMNS: readonly DataTableColumn<AssetListItem>[] = [
   { key: 'classification', label: 'Class', sortable: true, filter: { kind: 'select', options: ASSET_CLASSIFICATIONS.map((x) => ({label:x,value:x})) } },
   { key: 'manufacturer', label: 'Manufacturer', sortable: true, filter: { kind: 'text', placeholder: 'Manufacturer' } },
   { key: 'model', label: 'Model', sortable: true, filter: { kind: 'text', placeholder: 'Model' } },
-  { key: 'siteName', label: 'Site', sortable: true }, { key: 'responsibleWorkerDisplayName', label: 'Responsible Worker' },
+  { key: 'siteName', label: 'Site', sortable: true }, { key: 'responsibleUserDisplayName', label: 'Responsible User', sortable: true },
   { key: 'condition', label: 'Condition', sortable: true, filter: { kind: 'select', options: ASSET_CONDITIONS.map((x) => ({label:x,value:x})) } },
   { key: 'operationalStatus', label: 'Status', sortable: true, filter: { kind: 'select', options: [...REGISTRATION_STATUSES, 'InTransfer', 'Missing', 'Retired'].map((x) => ({label:x,value:x})) } },
   { key: 'reviewStatus', label: 'Registration', sortable: true, filter: { kind: 'select', options: REVIEW_STATUSES.map((x) => ({label:x,value:x})) } },

@@ -24,7 +24,9 @@ export class AssetTrackingService {
   mutate(id: string, action: string, request: AssetActionRequest): Promise<AssetDetails> { return firstValueFrom(this.http.patch<AssetDetails>(buildApiUrl(`/assets/${id}/${action}`), request)); }
 
   searchSites(term: string): Promise<readonly SiteLookup[]> { return this.sites.searchSites(term); }
-  searchWorkers(term: string): Promise<readonly UserLookup[]> { return this.users.searchWorkers(term); }
+  searchEligibleResponsibleUsers(term: string): Promise<readonly UserLookup[]> {
+    return this.users.searchUsersByRoles(term, ['Administrator', 'Worker']);
+  }
   async invalidate(id?: string): Promise<void> {
     await Promise.all([
       this.queryClient.invalidateQueries({ queryKey: ['asset-tracking'] }),

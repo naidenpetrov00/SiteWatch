@@ -45,7 +45,7 @@ Content-Type: application/json
 }
 
 ### List assets
-GET {{Api_HostAddress}}/assets?pageIndex=0&pageSize=25
+GET {{Api_HostAddress}}/assets?pageIndex=0&pageSize=25&sortActive=responsibleUserDisplayName
 Authorization: Bearer {{AccessToken}}
 Accept: application/json
 
@@ -71,7 +71,7 @@ Content-Type: application/json
   "model": "X20",
   "description": "20V cordless drill",
   "siteId": "{{SiteId}}",
-  "responsibleWorkerId": null,
+  "responsibleUserId": null,
   "condition": "Good",
   "operationalStatus": "Available",
   "note": "Initial registration",
@@ -107,3 +107,20 @@ Content-Type: application/json
   "concurrencyToken": "{{ConcurrencyToken}}",
   "note": "Registration verified"
 }
+
+### Reassign an asset or explicitly leave it unassigned
+PATCH {{Api_HostAddress}}/assets/{{AssetId}}/responsibility
+Authorization: Bearer {{AccessToken}}
+Content-Type: application/json
+
+{
+  "responsibleUserId": null,
+  "reason": "Released from the previous responsibility",
+  "concurrencyToken": "{{ConcurrencyToken}}",
+  "note": "Asset is now unassigned"
+}
+
+### Search eligible responsible users for asset administration
+GET {{Api_HostAddress}}/dashboard/users/search?searchTerm=example&roles=Administrator&roles=Worker
+Authorization: Bearer {{AccessToken}}
+Accept: application/json

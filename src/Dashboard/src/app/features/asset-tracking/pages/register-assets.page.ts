@@ -1,5 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+  FormArray,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidatorFn,
+  Validators
+} from '@angular/forms';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -7,6 +15,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { Router } from '@angular/router';
+import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import {
   ASSET_CLASSIFICATIONS,
   ASSET_CONDITIONS,
@@ -15,6 +24,17 @@ import {
   UserLookup
 } from '../models/asset-tracking.models';
 import { AssetTrackingService } from '../services/asset-tracking.service';
+
+const responsibleUserSelectionValidator: ValidatorFn = (form) => {
+  const searchTerm = form.get('responsibleUserSearch')?.value;
+  const responsibleUserId = form.get('responsibleUserId')?.value;
+
+  return typeof searchTerm === 'string'
+    && searchTerm.trim().length > 0
+    && !responsibleUserId
+    ? { responsibleUserSelection: true }
+    : null;
+};
 
 @Component({
   selector: 'app-register-assets-page',
@@ -81,22 +101,46 @@ import { AssetTrackingService } from '../services/asset-tracking.service';
           </mat-autocomplete>
         </mat-form-field>
         <mat-form-field>
-          <mat-label>Responsible worker (optional)</mat-label>
+          <mat-label>Responsible user (optional)</mat-label>
           <input
             matInput
-            formControlName="workerSearch"
-            [matAutocomplete]="workerAuto"
-            (input)="searchWorkers($event)"
+            formControlName="responsibleUserSearch"
+            [matAutocomplete]="responsibleUserAuto"
+            (input)="onResponsibleUserSearchInput($event)"
           />
           <mat-autocomplete
-            #workerAuto="matAutocomplete"
-            (optionSelected)="selectWorker($event)"
+            #responsibleUserAuto="matAutocomplete"
+            (optionSelected)="selectResponsibleUser($event)"
           >
-            @for (item of workers(); track item.id) {
-              <mat-option [value]="item.id">{{ item.displayName }}</mat-option>
+            @for (item of eligibleResponsibleUsers(); track item.id) {
+              <mat-option [value]="item.id">
+                <span>{{ item.displayName }}</span>
+                @if (item.email) {
+                  <small>{{ item.email }}</small>
+                }
+              </mat-option>
             }
           </mat-autocomplete>
+          <mat-hint>Select an Administrator or Worker from the search results.</mat-hint>
         </mat-form-field>
+        @if (
+          form.hasError('responsibleUserSelection')
+          && form.controls.responsibleUserSearch.touched
+        ) {
+          <p class="wide error" role="alert">
+            Select a responsible user from the search results, or clear this field to leave the asset unassigned.
+          </p>
+        }
+        @if (responsibleUserSearching()) {
+          <p class="wide" role="status">Searching eligible responsible users…</p>
+        } @else if (responsibleUserSearchError()) {
+          <p class="wide error" role="alert">
+            {{ responsibleUserSearchError() }}
+            <button mat-button type="button" (click)="retryResponsibleUserSearch()">Retry</button>
+          </p>
+        } @else if (responsibleUserSearchAttempted() && eligibleResponsibleUsers().length === 0) {
+          <p class="wide" role="status">No eligible responsible users match this search.</p>
+        }
         <mat-form-field>
           <mat-label>Condition</mat-label>
           <mat-select formControlName="condition">
@@ -162,9 +206,15 @@ import { AssetTrackingService } from '../services/asset-tracking.service';
 export class RegisterAssetsPage {
   private readonly service = inject(AssetTrackingService);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly responsibleUserSearchTerms = new Subject<string>();
+  private responsibleUserSearchRevision = 0;
 
   readonly sites = signal<readonly SiteLookup[]>([]);
-  readonly workers = signal<readonly UserLookup[]>([]);
+  readonly eligibleResponsibleUsers = signal<readonly UserLookup[]>([]);
+  readonly responsibleUserSearching = signal(false);
+  readonly responsibleUserSearchAttempted = signal(false);
+  readonly responsibleUserSearchError = signal('');
   readonly saving = signal(false);
   readonly failed = signal(false);
   readonly message = signal('');
@@ -195,8 +245,8 @@ export class RegisterAssetsPage {
     }),
     siteId: new FormControl('', { nonNullable: true, validators: Validators.required }),
     siteSearch: new FormControl('', { nonNullable: true, validators: Validators.required }),
-    responsibleWorkerId: new FormControl<string | null>(null),
-    workerSearch: new FormControl('', { nonNullable: true }),
+    responsibleUserId: new FormControl<string | null>(null),
+    responsibleUserSearch: new FormControl('', { nonNullable: true }),
     condition: new FormControl<'Good' | 'Damaged' | 'Unsafe'>('Good', {
       nonNullable: true,
       validators: Validators.required
@@ -207,10 +257,20 @@ export class RegisterAssetsPage {
     }),
     note: new FormControl('', { nonNullable: true, validators: Validators.maxLength(2000) }),
     rows: new FormArray([this.newRow()])
-  });
+  }, { validators: responsibleUserSelectionValidator });
 
   get rows() {
     return this.form.controls.rows;
+  }
+
+  constructor() {
+    this.responsibleUserSearchTerms
+      .pipe(
+        debounceTime(250),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((value) => void this.searchEligibleResponsibleUsers(value));
   }
 
   newRow() {
@@ -239,9 +299,14 @@ export class RegisterAssetsPage {
     this.sites.set(await this.service.searchSites((event.target as HTMLInputElement).value));
   }
 
-  async searchWorkers(event: Event): Promise<void> {
-    this.form.controls.responsibleWorkerId.setValue(null);
-    this.workers.set(await this.service.searchWorkers((event.target as HTMLInputElement).value));
+  onResponsibleUserSearchInput(event: Event): void {
+    this.responsibleUserSearchRevision += 1;
+    this.form.controls.responsibleUserId.setValue(null);
+    this.eligibleResponsibleUsers.set([]);
+    this.responsibleUserSearchAttempted.set(false);
+    this.responsibleUserSearchError.set('');
+    this.responsibleUserSearching.set(false);
+    this.responsibleUserSearchTerms.next((event.target as HTMLInputElement).value);
   }
 
   selectSite(event: MatAutocompleteSelectedEvent): void {
@@ -249,12 +314,16 @@ export class RegisterAssetsPage {
     this.form.patchValue({ siteId: event.option.value, siteSearch: item?.name ?? '' });
   }
 
-  selectWorker(event: MatAutocompleteSelectedEvent): void {
-    const item = this.workers().find((worker) => worker.id === event.option.value);
+  selectResponsibleUser(event: MatAutocompleteSelectedEvent): void {
+    const item = this.eligibleResponsibleUsers().find((user) => user.id === event.option.value);
     this.form.patchValue({
-      responsibleWorkerId: event.option.value,
-      workerSearch: item?.displayName ?? ''
+      responsibleUserId: event.option.value,
+      responsibleUserSearch: item?.displayName ?? ''
     });
+  }
+
+  retryResponsibleUserSearch(): void {
+    void this.searchEligibleResponsibleUsers(this.form.controls.responsibleUserSearch.value);
   }
 
   async submit(): Promise<void> {
@@ -275,7 +344,7 @@ export class RegisterAssetsPage {
         model: value.model || null,
         description: value.description || null,
         siteId: value.siteId,
-        responsibleWorkerId: value.responsibleWorkerId,
+        responsibleUserId: value.responsibleUserId,
         condition: value.condition,
         operationalStatus: value.operationalStatus,
         note: value.note || null,
@@ -291,10 +360,37 @@ export class RegisterAssetsPage {
     } catch {
       this.failed.set(true);
       this.message.set(
-        'Registration failed. No rows were registered. Review the asset, Site, Worker and values.'
+        'Registration failed. No rows were registered. Review the asset, Site, responsible user and values.'
       );
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  private async searchEligibleResponsibleUsers(rawSearchTerm: string): Promise<void> {
+    const searchTerm = rawSearchTerm.trim();
+    const revision = ++this.responsibleUserSearchRevision;
+    this.eligibleResponsibleUsers.set([]);
+    this.responsibleUserSearchError.set('');
+    this.responsibleUserSearchAttempted.set(searchTerm.length > 0);
+    this.responsibleUserSearching.set(searchTerm.length > 0);
+    if (!searchTerm) {
+      return;
+    }
+
+    try {
+      const users = await this.service.searchEligibleResponsibleUsers(searchTerm);
+      if (revision === this.responsibleUserSearchRevision) {
+        this.eligibleResponsibleUsers.set(users);
+      }
+    } catch {
+      if (revision === this.responsibleUserSearchRevision) {
+        this.responsibleUserSearchError.set('Eligible responsible users could not be searched.');
+      }
+    } finally {
+      if (revision === this.responsibleUserSearchRevision) {
+        this.responsibleUserSearching.set(false);
+      }
     }
   }
 }

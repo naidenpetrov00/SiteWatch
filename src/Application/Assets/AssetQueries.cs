@@ -25,8 +25,8 @@ public sealed class AssetsQuery : TableQueryRequest, IRequest<PagedResult<AssetL
     public string? Classification { get; init; }
     public string? SiteName { get; init; }
     public Guid? SiteId { get; init; }
-    public string? ResponsibleWorker { get; init; }
-    public string? ResponsibleWorkerId { get; init; }
+    public string? ResponsibleUser { get; init; }
+    public string? ResponsibleUserId { get; init; }
     public string? Condition { get; init; }
     public string? OperationalStatus { get; init; }
     public string? ReviewStatus { get; init; }
@@ -57,8 +57,8 @@ public sealed class AssetQueriesValidator : AbstractValidator<AssetsQuery>
         RuleFor(x => x.ManufacturerSerialNumber)
             .MaximumLength(Asset.MaxManufacturerSerialNumberLength);
         RuleFor(x => x.SiteName).MaximumLength(200);
-        RuleFor(x => x.ResponsibleWorker).MaximumLength(200);
-        RuleFor(x => x.ResponsibleWorkerId).MaximumLength(450);
+        RuleFor(x => x.ResponsibleUser).MaximumLength(200);
+        RuleFor(x => x.ResponsibleUserId).MaximumLength(450);
         RuleFor(x => x.Classification)
             .Must(x => AssetValidationExtensions.IsOptionalEnum<AssetClassification>(x));
         RuleFor(x => x.Condition)
@@ -158,17 +158,17 @@ public sealed class AssetsQueryHandler(IApplicationDbContext dbContext)
         {
             source = source.Where(x => x.SiteId == request.SiteId);
         }
-        if (!string.IsNullOrWhiteSpace(request.ResponsibleWorker))
+        if (!string.IsNullOrWhiteSpace(request.ResponsibleUser))
         {
             source = source.Where(x => x.ResponsibleWorker != null
                 && ((x.ResponsibleWorker.UserName != null
-                        && x.ResponsibleWorker.UserName.Contains(request.ResponsibleWorker))
+                        && x.ResponsibleWorker.UserName.Contains(request.ResponsibleUser))
                     || (x.ResponsibleWorker.Email != null
-                        && x.ResponsibleWorker.Email.Contains(request.ResponsibleWorker))));
+                        && x.ResponsibleWorker.Email.Contains(request.ResponsibleUser))));
         }
-        if (!string.IsNullOrWhiteSpace(request.ResponsibleWorkerId))
+        if (!string.IsNullOrWhiteSpace(request.ResponsibleUserId))
         {
-            source = source.Where(x => x.ResponsibleWorkerId == request.ResponsibleWorkerId);
+            source = source.Where(x => x.ResponsibleWorkerId == request.ResponsibleUserId);
         }
         if (Enum.TryParse<AssetClassification>(
                 request.Classification,
@@ -220,7 +220,7 @@ public sealed class AssetsQueryHandler(IApplicationDbContext dbContext)
                 ? source.OrderByDescending(x => x.ManufacturerSerialNumber)
                     .ThenBy(x => x.NumberId)
                 : source.OrderBy(x => x.ManufacturerSerialNumber).ThenBy(x => x.NumberId),
-            "responsibleworkerdisplayname" => request.SortDirection == "desc"
+            "responsibleuserdisplayname" => request.SortDirection == "desc"
                 ? source.OrderByDescending(x => x.ResponsibleWorker!.UserName)
                     .ThenBy(x => x.NumberId)
                 : source.OrderBy(x => x.ResponsibleWorker!.UserName)

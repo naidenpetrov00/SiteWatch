@@ -24,7 +24,7 @@ public sealed record RegisterAssetsCommand : AssetDetailsRequest,
     IRequest<IReadOnlyList<RegisteredAssetDto>>
 {
     public Guid SiteId { get; init; }
-    public string? ResponsibleWorkerId { get; init; }
+    public string? ResponsibleUserId { get; init; }
     public string Condition { get; init; } = string.Empty;
     public string OperationalStatus { get; init; } = string.Empty;
     public string? Note { get; init; }
@@ -82,7 +82,7 @@ public sealed record RetireAssetCommand : AssetMutationRequest;
 [Authorize(Policy = AuthorizationPolicies.Administrator)]
 public sealed record ReassignAssetResponsibilityCommand : AssetMutationRequest
 {
-    public string? ResponsibleWorkerId { get; init; }
+    public string? ResponsibleUserId { get; init; }
     public string Reason { get; init; } = string.Empty;
 }
 
@@ -102,10 +102,10 @@ public sealed class RegisterAssetsHandler(
         var actor = await AssetCommandSupport.GetActorAsync(db, currentUser, ct);
         var site = await db.Sites.SingleOrDefaultAsync(x => x.Id == request.SiteId, ct)
             ?? throw new NotFoundException(nameof(Site), request.SiteId.ToString());
-        var worker = await AssetCommandSupport.GetWorkerAsync(
+        var responsibleUser = await AssetCommandSupport.GetEligibleResponsibleUserAsync(
             db,
             identity,
-            request.ResponsibleWorkerId,
+            request.ResponsibleUserId,
             ct);
         var classification = AssetCommandSupport.Parse<AssetClassification>(
             request.Classification);
@@ -121,7 +121,7 @@ public sealed class RegisterAssetsHandler(
                 request.Model,
                 request.Description,
                 site,
-                worker,
+                responsibleUser,
                 row.ManufacturerSerialNumber,
                 condition,
                 status,
@@ -279,17 +279,17 @@ public sealed class ReassignAssetResponsibilityHandler(
         ReassignAssetResponsibilityCommand request,
         CancellationToken ct)
     {
-        var worker = await AssetCommandSupport.GetWorkerAsync(
+        var responsibleUser = await AssetCommandSupport.GetEligibleResponsibleUserAsync(
             db,
             identity,
-            request.ResponsibleWorkerId,
+            request.ResponsibleUserId,
             ct);
         return await AssetCommandSupport.MutateAsync(
             db,
             currentUser,
             request,
             (asset, actor, now) => asset.AdministrativelyReassign(
-                worker,
+                responsibleUser,
                 actor,
                 now,
                 request.Reason),
@@ -335,25 +335,28 @@ internal static class AssetCommandSupport
             ?? throw new UnauthorizedAccessException();
     }
 
-    internal static async Task<ApplicationUser?> GetWorkerAsync(
+    internal static async Task<ApplicationUser?> GetEligibleResponsibleUserAsync(
         IApplicationDbContext db,
         IIdentityService identity,
         string? id,
         CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(id))
+        if (id is null)
         {
             return null;
         }
 
-        var worker = await db.Users.SingleOrDefaultAsync(x => x.Id == id, ct)
+        var responsibleUser = await db.Users.SingleOrDefaultAsync(x => x.Id == id, ct)
             ?? throw new NotFoundException(nameof(ApplicationUser), id);
-        if (!await identity.IsInRoleAsync(id, UserRoles.Worker))
+        var isEligible = await identity.IsInRoleAsync(id, UserRoles.Administrator)
+            || await identity.IsInRoleAsync(id, UserRoles.Worker);
+        if (!isEligible)
         {
-            throw new AssetInvalidTransitionException("The selected user is not a Worker.");
+            throw new AssetInvalidTransitionException(
+                "The selected user is not eligible to be responsible for an asset.");
         }
 
-        return worker;
+        return responsibleUser;
     }
 
     internal static Asset CreateActiveAsset(
@@ -363,7 +366,7 @@ internal static class AssetCommandSupport
         string? model,
         string? description,
         Site site,
-        ApplicationUser? worker,
+        ApplicationUser? responsibleUser,
         string? serial,
         AssetCondition condition,
         AssetOperationalStatus status,
@@ -380,7 +383,7 @@ internal static class AssetCommandSupport
                 model,
                 description,
                 site,
-                worker,
+                responsibleUser,
                 serial,
                 condition,
                 status,

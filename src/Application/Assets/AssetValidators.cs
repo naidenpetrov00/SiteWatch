@@ -22,7 +22,10 @@ public sealed class RegisterAssetsValidator : AssetDetailsValidator<RegisterAsse
     public RegisterAssetsValidator()
     {
         RuleFor(x => x.SiteId).NotEmpty();
-        RuleFor(x => x.ResponsibleWorkerId).MaximumLength(450);
+        RuleFor(x => x.ResponsibleUserId)
+            .Must(value => value is null || !string.IsNullOrWhiteSpace(value))
+            .WithMessage("ResponsibleUserId must be null or a non-empty user identifier.")
+            .MaximumLength(450);
         RuleFor(x => x.Condition).Must(AssetValidatorExtensions.IsEnum<AssetCondition>);
         RuleFor(x => x.OperationalStatus)
             .Must(value => Enum.TryParse<AssetOperationalStatus>(value, true, out var status)
@@ -110,7 +113,10 @@ public sealed class ReassignAssetResponsibilityValidator
 {
     public ReassignAssetResponsibilityValidator()
     {
-        RuleFor(x => x.ResponsibleWorkerId).MaximumLength(450);
+        RuleFor(x => x.ResponsibleUserId)
+            .Must(value => value is null || !string.IsNullOrWhiteSpace(value))
+            .WithMessage("ResponsibleUserId must be null or a non-empty user identifier.")
+            .MaximumLength(450);
         RuleFor(x => x.Reason)
             .Must(value => !string.IsNullOrWhiteSpace(value))
             .WithMessage("Reason is required.")

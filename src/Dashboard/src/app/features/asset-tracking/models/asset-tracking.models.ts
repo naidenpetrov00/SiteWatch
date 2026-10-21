@@ -40,8 +40,8 @@ export interface AssetListItem {
   manufacturerSerialNumber: string | null;
   siteId: string;
   siteName: string;
-  responsibleWorkerId: string | null;
-  responsibleWorkerDisplayName: string | null;
+  responsibleUserId: string | null;
+  responsibleUserDisplayName: string | null;
   condition: AssetCondition;
   operationalStatus: AssetOperationalStatus;
   reviewStatus: AssetReviewStatus;
@@ -90,8 +90,8 @@ export interface AssetEventSnapshot {
   manufacturerSerialNumber: string | null;
   siteId: string;
   siteName: string | null;
-  responsibleWorkerId: string | null;
-  responsibleWorkerDisplayName: string | null;
+  responsibleUserId: string | null;
+  responsibleUserDisplayName: string | null;
   pendingHandoverRecipientId: string | null;
   pendingHandoverRecipientDisplayName: string | null;
   condition: AssetCondition;
@@ -132,7 +132,7 @@ export interface RegisterAssetsRequest {
   model: string | null;
   description: string | null;
   siteId: string;
-  responsibleWorkerId: string | null;
+  responsibleUserId: string | null;
   condition: AssetCondition;
   operationalStatus: AssetOperationalStatus;
   note: string | null;
