@@ -1,0 +1,167 @@
+name: sitewatch
+
+x-api-build: &api-build
+  context: .
+  dockerfile: src/Api/Dockerfile
+
+x-api-environment: &api-environment
+  ASPNETCORE_ENVIRONMENT: Production
+  AllowedHosts: ${API_DOMAIN:?Set API_DOMAIN in .env.production}
+  Cors__AllowedOrigins__0: https://${DASHBOARD_DOMAIN:?Set DASHBOARD_DOMAIN in .env.production}
+  DataProtection__KeysPath: /var/lib/sitewatch/data-protection
+  Mssql__ConnectionStringDockerDb: Server=database,1433;Database=${MSSQL_DATABASE:?Set MSSQL_DATABASE in .env.production};User ID=sa;Password=${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in .env.production};Encrypt=True;TrustServerCertificate=True
+  BlobStorage__ConnectionString: DefaultEndpointsProtocol=http;AccountName=${AZURITE_ACCOUNT_NAME:?Set AZURITE_ACCOUNT_NAME in .env.production};AccountKey=${AZURITE_ACCOUNT_KEY:?Set AZURITE_ACCOUNT_KEY in .env.production};BlobEndpoint=http://azurite:10000/${AZURITE_ACCOUNT_NAME}
+  Jwt__Issuer: https://${API_DOMAIN:?Set API_DOMAIN in .env.production}
+  Jwt__Audience: https://${API_DOMAIN:?Set API_DOMAIN in .env.production}
+  Jwt__Key: ${JWT_KEY:?Set JWT_KEY in .env.production}
+  Jwt__ExpireHours: ${JWT_EXPIRE_HOURS:-12}
+  Gmail__Host: ${GMAIL_HOST:?Set GMAIL_HOST in .env.production}
+  Gmail__Port: ${GMAIL_PORT:?Set GMAIL_PORT in .env.production}
+  Gmail__Email: ${GMAIL_EMAIL:?Set GMAIL_EMAIL in .env.production}
+  GmailSmtpPassword: ${GMAIL_SMTP_PASSWORD:?Set GMAIL_SMTP_PASSWORD in .env.production}
+  Logging__LogLevel__Default: Information
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  database:
+    image: mcr.microsoft.com/mssql/server:2022-CU27-ubuntu-22.04
+    restart: unless-stopped
+    init: true
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: ${MSSQL_PID:?Set MSSQL_PID in .env.production}
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in .env.production}
+      MSSQL_MEMORY_LIMIT_MB: "2048"
+    volumes:
+      - ${SITEWATCH_DATA_ROOT:?Set SITEWATCH_DATA_ROOT in .env.production}/mssql:/var/opt/mssql
+      - ${SITEWATCH_DATA_ROOT:?Set SITEWATCH_DATA_ROOT in .env.production}/backups:/var/opt/mssql/backups
+    networks:
+      - backend
+    mem_limit: 2500m
+    stop_grace_period: 30s
+    logging: *default-logging
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\" -b -o /dev/null",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:3.37.0
+    restart: unless-stopped
+    init: true
+    user: "1000:1000"
+    command: azurite-blob --blobHost 0.0.0.0 --location /data
+    environment:
+      AZURITE_ACCOUNT_NAME: ${AZURITE_ACCOUNT_NAME:?Set AZURITE_ACCOUNT_NAME in .env.production}
+      AZURITE_ACCOUNTS: ${AZURITE_ACCOUNT_NAME:?Set AZURITE_ACCOUNT_NAME in .env.production}:${AZURITE_ACCOUNT_KEY:?Set AZURITE_ACCOUNT_KEY in .env.production}
+    volumes:
+      - ${SITEWATCH_DATA_ROOT:?Set SITEWATCH_DATA_ROOT in .env.production}/azurite:/data
+    networks:
+      - backend
+    mem_limit: 384m
+    logging: *default-logging
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "const http=require('http');const req=http.get('http://127.0.0.1:10000/',res=>process.exit(res.statusCode<500?0:1));req.on('error',()=>process.exit(1));req.setTimeout(2000,()=>{req.destroy();process.exit(1)});",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  api:
+    image: sitewatch-api:local
+    build: *api-build
+    restart: unless-stopped
+    init: true
+    depends_on:
+      database:
+        condition: service_healthy
+      azurite:
+        condition: service_healthy
+    environment: *api-environment
+    volumes:
+      - ${SITEWATCH_DATA_ROOT:?Set SITEWATCH_DATA_ROOT in .env.production}/data-protection:/var/lib/sitewatch/data-protection
+    networks:
+      - frontend
+      - backend
+    mem_limit: 768m
+    logging: *default-logging
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "--fail",
+          "--silent",
+          "--header",
+          "X-Forwarded-Proto: https",
+          "http://127.0.0.1:8080/healthz",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+
+  migrate:
+    profiles: ["tools"]
+    image: sitewatch-api:local
+    build: *api-build
+    restart: "no"
+    depends_on:
+      database:
+        condition: service_healthy
+      azurite:
+        condition: service_healthy
+    command: ["--migrate-database"]
+    environment: *api-environment
+    volumes:
+      - ${SITEWATCH_DATA_ROOT:?Set SITEWATCH_DATA_ROOT in .env.production}/data-protection:/var/lib/sitewatch/data-protection
+    networks:
+      - backend
+    logging: *default-logging
+
+  web:
+    build:
+      context: .
+      dockerfile: src/Dashboard/Dockerfile
+    restart: unless-stopped
+    init: true
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      DASHBOARD_DOMAIN: ${DASHBOARD_DOMAIN:?Set DASHBOARD_DOMAIN in .env.production}
+      API_DOMAIN: ${API_DOMAIN:?Set API_DOMAIN in .env.production}
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in .env.production}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ${SITEWATCH_DATA_ROOT:?Set SITEWATCH_DATA_ROOT in .env.production}/caddy/data:/data
+      - ${SITEWATCH_DATA_ROOT:?Set SITEWATCH_DATA_ROOT in .env.production}/caddy/config:/config
+    networks:
+      - frontend
+    mem_limit: 256m
+    logging: *default-logging
+
+networks:
+  frontend:
+  backend:
+    internal: true

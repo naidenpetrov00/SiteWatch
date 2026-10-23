@@ -22,6 +22,18 @@ if (builder.Environment.IsDevelopment())
 }
 
 var app = builder.Build();
+
+if (args.Contains("--migrate-database", StringComparer.Ordinal))
+{
+    await app.ApplyDatabaseMigrationsAsync();
+    return;
+}
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseForwardedHeaders();
+}
+
 app.UseCustomMiddleware();
 
 if (app.Environment.IsDevelopment())
@@ -29,14 +41,19 @@ if (app.Environment.IsDevelopment())
     await app.InitializeDatabaseAsync();
     app.MapOpenApi();
     app.MapScalarApiReferenceWithOptions();
-    app.UseCors("DevCors");
+    app.UseCors(DependencyInjection.DevelopmentCorsPolicy);
     // app.UseRequestResponseLogging();
+}
+else
+{
+    app.UseCors(DependencyInjection.ProductionCorsPolicy);
 }
 
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.MapHealthChecks("/healthz");
 app.MapEndpoints();
 
 app.Run();
