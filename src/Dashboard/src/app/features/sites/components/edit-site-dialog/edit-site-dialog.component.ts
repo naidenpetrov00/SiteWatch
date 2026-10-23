@@ -4,6 +4,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -26,7 +27,7 @@ import { siteDateRangeValidator } from '../site-date-range.validator';
 
 @Component({
   selector: 'app-edit-site-dialog',
-  imports: [DialogActionBarComponent, DialogShellComponent, MatButtonModule, MatChipsModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatAutocompleteModule, DatepickerComponent, ReactiveFormsModule],
+  imports: [DialogActionBarComponent, DialogShellComponent, MatButtonModule, MatCheckboxModule, MatChipsModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatAutocompleteModule, DatepickerComponent, ReactiveFormsModule],
   templateUrl: './edit-site-dialog.component.html',
   styleUrl: './edit-site-dialog.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -73,7 +74,8 @@ export class EditSiteDialogComponent {
       primaryClientUserId: this.formBuilder.control<string | null>(this.site.primaryClientUser?.id ?? null),
       startDate: this.formBuilder.control<Date | null>(this.fromDateOnly(this.site.startDate), [Validators.required]),
       endDate: this.formBuilder.control<Date | null>(this.fromDateOnly(this.site.endDate)),
-      status: [this.site.status, [Validators.required]]
+      status: [this.site.status, [Validators.required]],
+      isCompanyStock: [this.site.isCompanyStock]
     },
     { validators: siteDateRangeValidator() }
   );
@@ -160,7 +162,7 @@ export class EditSiteDialogComponent {
     this.saveError.set(null);
     const value = this.siteForm.getRawValue();
     const accessUserIds = this.accessUsers().map((user) => user.id);
-    const request: UpdateDashboardSiteRequest = { id: this.site.id, name: value.name, address: value.address, managerId: value.managerId, primaryClientUserId: value.primaryClientUserId, ...(accessUserIds.length > 0 ? { userIds: accessUserIds } : {}), startDate: this.toDateOnly(value.startDate!), endDate: value.endDate ? this.toDateOnly(value.endDate) : null, status: value.status, mediaPolicyPreset: this.site.mediaPolicy.preset, mediaCategoriesToAdd: this.newMediaCategories() };
+    const request: UpdateDashboardSiteRequest = { id: this.site.id, name: value.name, address: value.address, managerId: value.managerId, primaryClientUserId: value.primaryClientUserId, ...(accessUserIds.length > 0 ? { userIds: accessUserIds } : {}), startDate: this.toDateOnly(value.startDate!), endDate: value.endDate ? this.toDateOnly(value.endDate) : null, status: value.status, isCompanyStock: value.isCompanyStock, mediaPolicyPreset: this.site.mediaPolicy.preset, mediaCategoriesToAdd: this.newMediaCategories() };
     try { await this.dashboardSitesService.updateSite(request); this.dialogRef.close(true); } catch (error) { this.saveError.set(getSiteSaveError(error)); }
   }
 

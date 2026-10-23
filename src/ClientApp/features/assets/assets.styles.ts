@@ -159,6 +159,23 @@ const assetStyles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
   },
+  selectedSiteSummary: {
+    gap: 3,
+    paddingVertical: 2,
+  },
+  companyStockBadge: {
+    alignSelf: "flex-start",
+    borderCurve: "continuous",
+    borderRadius: 999,
+    borderWidth: 1,
+    marginTop: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  companyStockBadgeText: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
   pagination: {
     alignItems: "center",
     flexDirection: "row",

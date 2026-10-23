@@ -23,7 +23,8 @@ public sealed class Site : BaseAuditableEntity, IHasNumberId
         DateOnly startDate,
         SiteStatus status = SiteStatus.Planning,
         DateOnly? endDate = null,
-        SiteMediaPolicy? mediaPolicy = null)
+        SiteMediaPolicy? mediaPolicy = null,
+        bool isCompanyStock = false)
     {
         Name = name;
         Address = address;
@@ -32,6 +33,7 @@ public sealed class Site : BaseAuditableEntity, IHasNumberId
         EndDate = ValidateEndDate(startDate, endDate);
         Status = status;
         MediaPolicy = mediaPolicy ?? SiteMediaPolicy.FromPreset(MediaPolicyPreset.Custom);
+        IsCompanyStock = isCompanyStock;
     }
 
     // ReSharper disable once UnusedMember.Local
@@ -50,6 +52,7 @@ public sealed class Site : BaseAuditableEntity, IHasNumberId
     public DateOnly StartDate { get; private set; }
     public DateOnly? EndDate { get; private set; }
     public SiteStatus Status { get; private set; }
+    public bool IsCompanyStock { get; private set; }
     public IReadOnlyCollection<ApplicationUser> Users => _users;
     public IReadOnlyCollection<Camera> Cameras => _cameras;
     public IReadOnlyCollection<SiteImage> Images => _images;
@@ -61,6 +64,8 @@ public sealed class Site : BaseAuditableEntity, IHasNumberId
 
     public void ChangeMediaPolicy(SiteMediaPolicy mediaPolicy) =>
         MediaPolicy = Guard.Against.Null(mediaPolicy);
+
+    public void SetCompanyStock(bool isCompanyStock) => IsCompanyStock = isCompanyStock;
 
     public void UpdateDetails(
         string name,

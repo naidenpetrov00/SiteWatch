@@ -22,8 +22,8 @@ public sealed class DashboardUserSearchQueryValidator : AbstractValidator<Dashbo
             .Must(role => string.IsNullOrWhiteSpace(role) || UserRoles.IsSupported(role.Trim()))
             .WithMessage("Role must be a supported user role.");
         RuleFor(query => query.Roles)
-            .Must(roles => roles is null || roles.Length is > 0 and <= 2)
-            .WithMessage("Roles must contain one or two eligible responsibility roles.");
+            .Must(roles => roles is null || roles.Length <= 2)
+            .WithMessage("Roles must contain no more than two eligible responsibility roles.");
         RuleForEach(query => query.Roles)
             .Must(role => !string.IsNullOrWhiteSpace(role)
                 && (role.Trim() == UserRoles.Administrator || role.Trim() == UserRoles.Worker))

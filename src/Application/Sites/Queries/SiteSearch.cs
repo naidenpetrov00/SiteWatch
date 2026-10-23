@@ -42,10 +42,20 @@ public sealed class SiteSearchQueryHandler(IApplicationDbContext dbContext)
     }
 }
 
-public sealed record SiteLookupDto(Guid Id, int NumberId, string Name, string Address)
+public sealed record SiteLookupDto(
+    Guid Id,
+    int NumberId,
+    string Name,
+    string Address,
+    bool IsCompanyStock)
 {
     public static SiteLookupDto From(Site site) =>
-        new(site.Id, site.NumberId, site.Name.Value, site.Address.Value);
+        new(
+            site.Id,
+            site.NumberId,
+            site.Name.Value,
+            site.Address.Value,
+            site.IsCompanyStock);
 }
 
 public sealed class SiteSearchQueryValidator : AbstractValidator<SiteSearchQuery>

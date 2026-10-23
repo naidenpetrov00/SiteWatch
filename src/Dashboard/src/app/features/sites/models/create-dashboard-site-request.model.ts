@@ -9,6 +9,7 @@ export interface CreateDashboardSiteRequest {
   startDate: string;
   endDate: string | null;
   status: string;
+  isCompanyStock: boolean;
   mediaPolicyPreset: SiteMediaPolicyPreset;
   mediaCategories: readonly string[];
 }

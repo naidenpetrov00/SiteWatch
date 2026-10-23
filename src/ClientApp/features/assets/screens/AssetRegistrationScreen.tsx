@@ -190,9 +190,19 @@ export default function AssetRegistrationScreen() {
               },
             ]}
           >
-            <Text style={{ color: selectedSite ? colors.text : colors.placeholderText }}>
-              {selectedSite ? `${selectedSite.name} · ${selectedSite.address}` : "Choose an accessible Site"}
-            </Text>
+            {selectedSite ? (
+              <View style={assetStyles.selectedSiteSummary}>
+                <Text style={{ color: colors.text }}>{selectedSite.name}</Text>
+                <Text style={[assetStyles.metadata, { color: colors.secondary }]}>{selectedSite.address}</Text>
+                {selectedSite.isCompanyStock ? (
+                  <View style={[assetStyles.companyStockBadge, { borderColor: colors.primary }]}>
+                    <Text style={[assetStyles.companyStockBadgeText, { color: colors.primary }]}>Company Stock</Text>
+                  </View>
+                ) : null}
+              </View>
+            ) : (
+              <Text style={{ color: colors.placeholderText }}>Choose an accessible Site</Text>
+            )}
           </Pressable>
           {errors.siteId ? <Text style={assetStyles.errorText}>{errors.siteId.message}</Text> : null}
         </View>

@@ -117,6 +117,7 @@ export interface SiteLookup {
   numberId: number;
   name: string;
   address: string;
+  isCompanyStock: boolean;
 }
 
 export interface UserLookup {

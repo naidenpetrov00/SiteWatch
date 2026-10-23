@@ -96,7 +96,13 @@ const responsibleUserSelectionValidator: ValidatorFn = (form) => {
             (optionSelected)="selectSite($event)"
           >
             @for (item of sites(); track item.id) {
-              <mat-option [value]="item.id">{{ item.name }} · {{ item.address }}</mat-option>
+              <mat-option [value]="item.id">
+                <span class="site-option__name">{{ item.name }} · #{{ item.numberId }}</span>
+                <small class="site-option__details">
+                  {{ item.address }}
+                  @if (item.isCompanyStock) { · Company Stock }
+                </small>
+              </mat-option>
             }
           </mat-autocomplete>
         </mat-form-field>
@@ -311,7 +317,15 @@ export class RegisterAssetsPage {
 
   selectSite(event: MatAutocompleteSelectedEvent): void {
     const item = this.sites().find((site) => site.id === event.option.value);
-    this.form.patchValue({ siteId: event.option.value, siteSearch: item?.name ?? '' });
+    this.form.patchValue({
+      siteId: event.option.value,
+      siteSearch: item ? this.siteDisplayLabel(item) : ''
+    });
+  }
+
+  private siteDisplayLabel(site: SiteLookup): string {
+    const classification = site.isCompanyStock ? ' · Company Stock' : '';
+    return `${site.name} · #${site.numberId} · ${site.address}${classification}`;
   }
 
   selectResponsibleUser(event: MatAutocompleteSelectedEvent): void {

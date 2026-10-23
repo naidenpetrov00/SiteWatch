@@ -33,6 +33,10 @@ public class SiteConfiguration : IEntityTypeConfiguration<Site>
         builder.Property(site => site.StartDate).IsRequired();
         builder.Property(site => site.EndDate);
 
+        builder.Property(site => site.IsCompanyStock)
+            .HasDefaultValue(false)
+            .IsRequired();
+
         builder.Property(site => site.NumberId)
             .ValueGeneratedOnAdd()
             .HasDefaultValueSql("NEXT VALUE FOR [dbo].[SiteNumberIds]")

@@ -51,6 +51,7 @@ export interface MobileAssetSite {
   id: string;
   name: string;
   address: string;
+  isCompanyStock: boolean;
 }
 
 export interface RegisterMobileAssetRequest {

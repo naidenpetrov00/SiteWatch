@@ -91,6 +91,11 @@ export default function AssetSitePicker({ onClose, onSelect, visible }: Props) {
               >
                 <Text style={[assetStyles.listItemTitle, { color: colors.text }]}>{item.name}</Text>
                 <Text style={[assetStyles.metadata, { color: colors.secondary }]}>{item.address}</Text>
+                {item.isCompanyStock ? (
+                  <View style={[assetStyles.companyStockBadge, { borderColor: colors.primary }]}>
+                    <Text style={[assetStyles.companyStockBadgeText, { color: colors.primary }]}>Company Stock</Text>
+                  </View>
+                ) : null}
               </Pressable>
             )}
           />

@@ -92,4 +92,8 @@ public sealed record MobileAssetRegistrationDto(
 }
 
 /// <summary>Represents a Site available to the authenticated user.</summary>
-public sealed record MobileAssetSiteDto(Guid Id, string Name, string Address);
+public sealed record MobileAssetSiteDto(
+    Guid Id,
+    string Name,
+    string Address,
+    bool IsCompanyStock);

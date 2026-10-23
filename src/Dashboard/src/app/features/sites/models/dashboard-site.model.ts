@@ -17,6 +17,7 @@ export interface DashboardSite {
   startDate: string;
   endDate: string | null;
   status: string;
+  isCompanyStock: boolean;
   mediaPolicy: SiteMediaPolicy;
   accessUsers?: readonly DashboardSiteUser[];
   /** Dashboard-only table action; not supplied by the API. */

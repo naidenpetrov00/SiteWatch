@@ -14,6 +14,7 @@ export interface Site {
   id: string;
   name: string;
   address: string;
+  isCompanyStock: boolean;
   managerId: string;
   managerDisplayName: string;
   startDate: string;

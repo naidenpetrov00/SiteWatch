@@ -15,6 +15,7 @@ public sealed partial class DashboardSitesQuery : TableQueryRequest, IRequest<Pa
     public string? Id { get; set; }
     public string? Name { get; set; }
     public string? Address { get; set; }
+    public bool? IsCompanyStock { get; set; }
 }
 
 public sealed class DashboardSitesQueryHandler(IApplicationDbContext dbContext)
@@ -58,6 +59,7 @@ public sealed record DashboardSiteDto(
     DateOnly? EndDate,
     string Status,
     SiteMediaPolicyDto MediaPolicy,
+    bool IsCompanyStock = false,
     IReadOnlyList<DashboardSiteUserDto>? AccessUsers = null)
 {
     public static DashboardSiteDto From(Site site) => new(
@@ -77,6 +79,7 @@ public sealed record DashboardSiteDto(
         site.EndDate,
         site.Status.ToString(),
         SiteMediaPolicyDto.From(site.MediaPolicy),
+        site.IsCompanyStock,
         site.Users
             .OrderBy(user => user.UserName ?? user.Email ?? user.Id)
             .Select(user => new DashboardSiteUserDto(

@@ -24,6 +24,18 @@ const summaryStyles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 22,
   },
+  companyStockBadge: {
+    alignSelf: "flex-start",
+    borderCurve: "continuous",
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  companyStockBadgeText: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
   statusBadge: {
     alignSelf: "flex-start",
     paddingHorizontal: 12,

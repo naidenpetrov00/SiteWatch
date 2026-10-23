@@ -123,7 +123,10 @@ interface ConflictComparisonRow {
             >
               @for (site of siteResults(); track site.id) {
                 <mat-option [value]="site">
-                  <span>{{ site.name }} · #{{ site.numberId }}</span>
+                  <span>
+                    {{ site.name }} · #{{ site.numberId }}
+                    @if (site.isCompanyStock) { · Company Stock }
+                  </span>
                   <small>{{ site.address }}</small>
                 </mat-option>
               }
@@ -474,7 +477,7 @@ export class AssetActionDialogComponent {
       );
   });
   readonly displaySite = (value: string | SiteLookup | null): string =>
-    typeof value === 'string' ? value : value?.name ?? '';
+    typeof value === 'string' ? value : value ? this.siteDisplayLabel(value) : '';
   readonly displayResponsibleUser = (value: string | UserLookup | null): string =>
     typeof value === 'string' ? value : value?.displayName ?? '';
   readonly conflictRows = computed<readonly ConflictComparisonRow[]>(() => {
@@ -811,7 +814,8 @@ export class AssetActionDialogComponent {
   }
 
   private siteDisplayLabel(site: SiteLookup): string {
-    return `${site.name} · #${site.numberId} · ${site.address}`;
+    const classification = site.isCompanyStock ? ' · Company Stock' : '';
+    return `${site.name} · #${site.numberId} · ${site.address}${classification}`;
   }
 
   private responsibleUserDisplayLabel(user: UserLookup): string {

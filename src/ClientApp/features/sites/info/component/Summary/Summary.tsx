@@ -39,6 +39,24 @@ const Summary = ({ site }: SummaryProps) => {
           {site.address}
         </Text>
 
+        {site.isCompanyStock ? (
+          <View
+            style={[
+              summaryStyles.companyStockBadge,
+              { borderColor: colorPalette.primary },
+            ]}
+          >
+            <Text
+              style={[
+                summaryStyles.companyStockBadgeText,
+                { color: colorPalette.primary },
+              ]}
+            >
+              Company Stock
+            </Text>
+          </View>
+        ) : null}
+
         <View
           style={[
             summaryStyles.statusBadge,

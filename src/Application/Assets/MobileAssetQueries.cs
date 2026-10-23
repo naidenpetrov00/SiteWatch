@@ -198,7 +198,8 @@ public sealed class MobileAssetSitesHandler(IApplicationDbContext db, IUser curr
             .Select(site => new MobileAssetSiteDto(
                 site.Id,
                 site.Name.Value,
-                site.Address.Value))
+                site.Address.Value,
+                site.IsCompanyStock))
             .ToListAsync(ct);
     }
 }
