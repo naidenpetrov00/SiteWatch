@@ -144,6 +144,14 @@ const assetStyles = StyleSheet.create({
     gap: 12,
     paddingBottom: 6,
   },
+  siteSectionHeader: {
+    paddingTop: 8,
+  },
+  siteSectionHeaderText: {
+    fontSize: 13,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
   listItem: {
     borderCurve: "continuous",
     borderRadius: 14,

@@ -176,6 +176,8 @@ public sealed class MobileAssetRegistrationByIdHandler(
 public sealed class MobileAssetSitesHandler(IApplicationDbContext db, IUser currentUser)
     : IRequestHandler<MobileAssetSitesQuery, IReadOnlyList<MobileAssetSiteDto>>
 {
+    private const int DefaultSuggestionsPerClassification = 5;
+
     public async Task<IReadOnlyList<MobileAssetSiteDto>> Handle(
         MobileAssetSitesQuery request,
         CancellationToken ct)
@@ -185,11 +187,36 @@ public sealed class MobileAssetSitesHandler(IApplicationDbContext db, IUser curr
             .AsNoTracking()
             .Where(site => site.Users.Any(user => user.Id == userId));
         var search = request.Search?.Trim();
-        if (!string.IsNullOrWhiteSpace(search))
+        if (string.IsNullOrWhiteSpace(search))
         {
-            source = source.Where(site =>
-                site.Name.Value.Contains(search) || site.Address.Value.Contains(search));
+            var companyStockSites = await source
+                .Where(site => site.IsCompanyStock)
+                .OrderBy(site => site.Name.Value)
+                .ThenBy(site => site.NumberId)
+                .Take(DefaultSuggestionsPerClassification)
+                .Select(site => new MobileAssetSiteDto(
+                    site.Id,
+                    site.Name.Value,
+                    site.Address.Value,
+                    site.IsCompanyStock))
+                .ToListAsync(ct);
+            var ordinarySites = await source
+                .Where(site => !site.IsCompanyStock)
+                .OrderBy(site => site.Name.Value)
+                .ThenBy(site => site.NumberId)
+                .Take(DefaultSuggestionsPerClassification)
+                .Select(site => new MobileAssetSiteDto(
+                    site.Id,
+                    site.Name.Value,
+                    site.Address.Value,
+                    site.IsCompanyStock))
+                .ToListAsync(ct);
+
+            return companyStockSites.Concat(ordinarySites).ToList();
         }
+
+        source = source.Where(site =>
+            site.Name.Value.Contains(search) || site.Address.Value.Contains(search));
 
         return await source
             .OrderBy(site => site.Name.Value)

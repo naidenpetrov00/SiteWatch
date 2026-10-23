@@ -1,9 +1,9 @@
-import { useDeferredValue, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  FlatList,
   Modal,
   Pressable,
+  SectionList,
   Text,
   TextInput,
   View,
@@ -20,23 +20,58 @@ type Props = {
   visible: boolean;
 };
 
+type SiteSection = {
+  title: string;
+  data: MobileAssetSite[];
+};
+
 export default function AssetSitePicker({ onClose, onSelect, visible }: Props) {
   const colors = useColorPalette();
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
   const query = useMobileAssetSites(deferredSearch, visible);
+  const siteSections = useMemo<SiteSection[]>(() => {
+    const sites = query.data ?? [];
+    const companyStockSites = sites.filter((site) => site.isCompanyStock);
+    const ordinarySites = sites.filter((site) => !site.isCompanyStock);
+
+    return [
+      ...(companyStockSites.length > 0
+        ? [{ title: "Company Stock", data: companyStockSites }]
+        : []),
+      ...(ordinarySites.length > 0
+        ? [{ title: "Ordinary Sites", data: ordinarySites }]
+        : []),
+    ];
+  }, [query.data]);
+
+  useEffect(() => {
+    if (visible) {
+      setSearch("");
+    }
+  }, [visible]);
+
+  const close = () => {
+    setSearch("");
+    onClose();
+  };
+
+  const selectSite = (site: MobileAssetSite) => {
+    setSearch("");
+    onSelect(site);
+  };
 
   return (
     <Modal
       animationType="slide"
-      onRequestClose={onClose}
+      onRequestClose={close}
       presentationStyle="pageSheet"
       visible={visible}
     >
       <View style={[assetStyles.modal, { backgroundColor: colors.background }]}>
         <View style={assetStyles.modalHeader}>
           <Text style={[assetStyles.title, { color: colors.text }]}>Choose a Site</Text>
-          <Text style={[assetStyles.subtitle, { color: colors.secondary }]}>Only Sites available to your account are shown.</Text>
+          <Text style={[assetStyles.subtitle, { color: colors.secondary }]}>Company Stock and ordinary Sites available to your account are shown separately.</Text>
           <TextInput
             accessibilityLabel="Search accessible Sites"
             autoCapitalize="words"
@@ -70,20 +105,26 @@ export default function AssetSitePicker({ onClose, onSelect, visible }: Props) {
             </Pressable>
           </View>
         ) : (
-          <FlatList
+          <SectionList<MobileAssetSite, SiteSection>
             contentContainerStyle={assetStyles.listContent}
-            data={query.data ?? []}
             keyboardShouldPersistTaps="handled"
             keyExtractor={(site) => site.id}
             ListEmptyComponent={
               <Text style={[assetStyles.centerText, { color: colors.secondary }]}>
-                No accessible Sites match this search.
+                {search.trim().length > 0
+                  ? "No accessible Sites match this search."
+                  : "No accessible Sites are available."}
               </Text>
             }
+            renderSectionHeader={({ section }) => (
+              <View style={assetStyles.siteSectionHeader}>
+                <Text style={[assetStyles.siteSectionHeaderText, { color: colors.text }]}>{section.title}</Text>
+              </View>
+            )}
             renderItem={({ item }) => (
               <Pressable
                 accessibilityRole="button"
-                onPress={() => onSelect(item)}
+                onPress={() => selectSite(item)}
                 style={({ pressed }) => [
                   assetStyles.listItem,
                   { borderColor: colors.secondary, opacity: pressed ? 0.78 : 1 },
@@ -98,12 +139,13 @@ export default function AssetSitePicker({ onClose, onSelect, visible }: Props) {
                 ) : null}
               </Pressable>
             )}
+            sections={siteSections}
           />
         )}
         <View style={assetStyles.modalFooter}>
           <Pressable
             accessibilityRole="button"
-            onPress={onClose}
+            onPress={close}
             style={({ pressed }) => [
               assetStyles.button,
               { backgroundColor: colors.secondary, opacity: pressed ? 0.78 : 1 },

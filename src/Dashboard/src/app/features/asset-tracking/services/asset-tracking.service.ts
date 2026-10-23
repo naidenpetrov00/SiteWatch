@@ -24,6 +24,9 @@ export class AssetTrackingService {
   mutate(id: string, action: string, request: AssetActionRequest): Promise<AssetDetails> { return firstValueFrom(this.http.patch<AssetDetails>(buildApiUrl(`/assets/${id}/${action}`), request)); }
 
   searchSites(term: string): Promise<readonly SiteLookup[]> { return this.sites.searchSites(term); }
+  getDefaultSiteSuggestions(): Promise<readonly SiteLookup[]> {
+    return this.sites.getDefaultSiteSuggestions();
+  }
   searchEligibleResponsibleUsers(term: string): Promise<readonly UserLookup[]> {
     return this.users.searchUsersByRoles(term, ['Administrator', 'Worker']);
   }

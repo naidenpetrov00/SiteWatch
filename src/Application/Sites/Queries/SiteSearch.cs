@@ -16,6 +16,8 @@ public sealed record SiteSearchQuery : IRequest<List<SiteLookupDto>>
 public sealed class SiteSearchQueryHandler(IApplicationDbContext dbContext)
     : IRequestHandler<SiteSearchQuery, List<SiteLookupDto>>
 {
+    private const int DefaultSuggestionsPerClassification = 5;
+
     public async Task<List<SiteLookupDto>> Handle(
         SiteSearchQuery request,
         CancellationToken cancellationToken)
@@ -23,7 +25,27 @@ public sealed class SiteSearchQueryHandler(IApplicationDbContext dbContext)
         var searchTerm = request.SearchTerm?.Trim() ?? string.Empty;
         if (searchTerm.Length == 0)
         {
-            return [];
+            var companyStockSites = await dbContext.Sites
+                .AsNoTracking()
+                .Where(site => site.IsCompanyStock)
+                .OrderBy(site => site.Name.Value)
+                .ThenBy(site => site.NumberId)
+                .ThenBy(site => site.Id)
+                .Take(DefaultSuggestionsPerClassification)
+                .ToListAsync(cancellationToken);
+            var ordinarySites = await dbContext.Sites
+                .AsNoTracking()
+                .Where(site => !site.IsCompanyStock)
+                .OrderBy(site => site.Name.Value)
+                .ThenBy(site => site.NumberId)
+                .ThenBy(site => site.Id)
+                .Take(DefaultSuggestionsPerClassification)
+                .ToListAsync(cancellationToken);
+
+            return companyStockSites
+                .Concat(ordinarySites)
+                .Select(SiteLookupDto.From)
+                .ToList();
         }
 
         var hasNumberId = int.TryParse(searchTerm, out var numberId);

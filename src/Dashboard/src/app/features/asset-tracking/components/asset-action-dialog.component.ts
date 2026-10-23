@@ -121,20 +121,33 @@ interface ConflictComparisonRow {
               [requireSelection]="true"
               (optionSelected)="selectSite($event)"
             >
-              @for (site of siteResults(); track site.id) {
-                <mat-option [value]="site">
-                  <span>
-                    {{ site.name }} · #{{ site.numberId }}
-                    @if (site.isCompanyStock) { · Company Stock }
-                  </span>
-                  <small>{{ site.address }}</small>
-                </mat-option>
+              @if (companyStockSiteResults().length > 0) {
+                <mat-optgroup label="Company Stock">
+                  @for (site of companyStockSiteResults(); track site.id) {
+                    <mat-option [value]="site">
+                      <span>{{ site.name }} · #{{ site.numberId }} · Company Stock</span>
+                      <small>{{ site.address }}</small>
+                    </mat-option>
+                  }
+                </mat-optgroup>
+              }
+              @if (ordinarySiteResults().length > 0) {
+                <mat-optgroup label="Ordinary Sites">
+                  @for (site of ordinarySiteResults(); track site.id) {
+                    <mat-option [value]="site">
+                      <span>{{ site.name }} · #{{ site.numberId }}</span>
+                      <small>{{ site.address }}</small>
+                    </mat-option>
+                  }
+                </mat-optgroup>
               }
             </mat-autocomplete>
-            <mat-hint>Select a different Site from the search results.</mat-hint>
+            <mat-hint>Company Stock and ordinary Sites are shown separately. Type to search all Sites.</mat-hint>
           </mat-form-field>
           @if (siteSearching()) {
-            <p class="lookup-status" role="status">Searching Sites…</p>
+            <p class="lookup-status" role="status">
+              {{ siteSearchAttempted() ? 'Searching Sites…' : 'Loading Site suggestions…' }}
+            </p>
           } @else if (siteSearchError()) {
             <p class="lookup-status error" role="alert">
               {{ siteSearchError() }}
@@ -395,6 +408,10 @@ export class AssetActionDialogComponent {
   readonly conflict = signal(false);
   readonly error = signal('');
   readonly siteResults = signal<readonly SiteLookup[]>([]);
+  readonly companyStockSiteResults = computed(() =>
+    this.siteResults().filter((site) => site.isCompanyStock));
+  readonly ordinarySiteResults = computed(() =>
+    this.siteResults().filter((site) => !site.isCompanyStock));
   readonly responsibleUserResults = signal<readonly UserLookup[]>([]);
   readonly siteSearching = signal(false);
   readonly responsibleUserSearching = signal(false);
@@ -568,6 +585,10 @@ export class AssetActionDialogComponent {
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((value) => void this.searchEligibleResponsibleUsers(value));
+
+    if (this.data.kind === 'site') {
+      void this.searchSites('');
+    }
   }
 
   onSiteSearchInput(event: Event): void {
@@ -756,13 +777,12 @@ export class AssetActionDialogComponent {
     this.siteResults.set([]);
     this.siteSearchError.set('');
     this.siteSearchAttempted.set(searchTerm.length > 0);
-    this.siteSearching.set(searchTerm.length > 0);
-    if (!searchTerm) {
-      return;
-    }
+    this.siteSearching.set(true);
 
     try {
-      const sites = await this.service.searchSites(searchTerm);
+      const sites = searchTerm.length > 0
+        ? await this.service.searchSites(searchTerm)
+        : await this.service.getDefaultSiteSuggestions();
       if (revision !== this.siteSearchRevision) {
         return;
       }
@@ -771,7 +791,10 @@ export class AssetActionDialogComponent {
       this.siteResults.set(sites.filter((site) => site.id !== currentSiteId));
     } catch {
       if (revision === this.siteSearchRevision) {
-        this.siteSearchError.set('Sites could not be searched.');
+        this.siteSearchError.set(
+          searchTerm.length > 0
+            ? 'Sites could not be searched.'
+            : 'Site suggestions could not be loaded.');
       }
     } finally {
       if (revision === this.siteSearchRevision) {

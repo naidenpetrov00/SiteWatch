@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FormArray,
@@ -89,22 +89,35 @@ const responsibleUserSelectionValidator: ValidatorFn = (form) => {
             matInput
             formControlName="siteSearch"
             [matAutocomplete]="siteAuto"
-            (input)="searchSites($event)"
+            (focus)="showDefaultSiteSuggestions()"
+            (input)="onSiteSearchInput($event)"
           />
           <mat-autocomplete
             #siteAuto="matAutocomplete"
             (optionSelected)="selectSite($event)"
           >
-            @for (item of sites(); track item.id) {
-              <mat-option [value]="item.id">
-                <span class="site-option__name">{{ item.name }} · #{{ item.numberId }}</span>
-                <small class="site-option__details">
-                  {{ item.address }}
-                  @if (item.isCompanyStock) { · Company Stock }
-                </small>
-              </mat-option>
+            @if (companyStockSites().length > 0) {
+              <mat-optgroup label="Company Stock">
+                @for (item of companyStockSites(); track item.id) {
+                  <mat-option [value]="item.id">
+                    <span class="site-option__name">{{ item.name }} · #{{ item.numberId }}</span>
+                    <small class="site-option__details">{{ item.address }} · Company Stock</small>
+                  </mat-option>
+                }
+              </mat-optgroup>
+            }
+            @if (ordinarySites().length > 0) {
+              <mat-optgroup label="Ordinary Sites">
+                @for (item of ordinarySites(); track item.id) {
+                  <mat-option [value]="item.id">
+                    <span class="site-option__name">{{ item.name }} · #{{ item.numberId }}</span>
+                    <small class="site-option__details">{{ item.address }}</small>
+                  </mat-option>
+                }
+              </mat-optgroup>
             }
           </mat-autocomplete>
+          <mat-hint>Company Stock and ordinary Sites are shown separately. Type to search all Sites.</mat-hint>
         </mat-form-field>
         <mat-form-field>
           <mat-label>Responsible user (optional)</mat-label>
@@ -214,9 +227,12 @@ export class RegisterAssetsPage {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly responsibleUserSearchTerms = new Subject<string>();
+  private siteSearchRevision = 0;
   private responsibleUserSearchRevision = 0;
 
   readonly sites = signal<readonly SiteLookup[]>([]);
+  readonly companyStockSites = computed(() => this.sites().filter((site) => site.isCompanyStock));
+  readonly ordinarySites = computed(() => this.sites().filter((site) => !site.isCompanyStock));
   readonly eligibleResponsibleUsers = signal<readonly UserLookup[]>([]);
   readonly responsibleUserSearching = signal(false);
   readonly responsibleUserSearchAttempted = signal(false);
@@ -277,6 +293,8 @@ export class RegisterAssetsPage {
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((value) => void this.searchEligibleResponsibleUsers(value));
+
+    void this.loadSiteSuggestions('');
   }
 
   newRow() {
@@ -300,9 +318,15 @@ export class RegisterAssetsPage {
     }
   }
 
-  async searchSites(event: Event): Promise<void> {
+  onSiteSearchInput(event: Event): void {
     this.form.controls.siteId.setValue('');
-    this.sites.set(await this.service.searchSites((event.target as HTMLInputElement).value));
+    void this.loadSiteSuggestions((event.target as HTMLInputElement).value);
+  }
+
+  showDefaultSiteSuggestions(): void {
+    if (this.form.controls.siteSearch.value.trim().length === 0) {
+      void this.loadSiteSuggestions('');
+    }
   }
 
   onResponsibleUserSearchInput(event: Event): void {
@@ -316,6 +340,7 @@ export class RegisterAssetsPage {
   }
 
   selectSite(event: MatAutocompleteSelectedEvent): void {
+    this.siteSearchRevision += 1;
     const item = this.sites().find((site) => site.id === event.option.value);
     this.form.patchValue({
       siteId: event.option.value,
@@ -326,6 +351,24 @@ export class RegisterAssetsPage {
   private siteDisplayLabel(site: SiteLookup): string {
     const classification = site.isCompanyStock ? ' · Company Stock' : '';
     return `${site.name} · #${site.numberId} · ${site.address}${classification}`;
+  }
+
+  private async loadSiteSuggestions(rawSearchTerm: string): Promise<void> {
+    const searchTerm = rawSearchTerm.trim();
+    const revision = ++this.siteSearchRevision;
+
+    try {
+      const sites = searchTerm.length > 0
+        ? await this.service.searchSites(searchTerm)
+        : await this.service.getDefaultSiteSuggestions();
+      if (revision === this.siteSearchRevision) {
+        this.sites.set(sites);
+      }
+    } catch {
+      if (revision === this.siteSearchRevision) {
+        this.sites.set([]);
+      }
+    }
   }
 
   selectResponsibleUser(event: MatAutocompleteSelectedEvent): void {

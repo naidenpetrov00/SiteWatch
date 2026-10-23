@@ -106,18 +106,27 @@ export class DashboardSitesService {
     );
   }
 
-  searchSites(searchTerm: string): Promise<readonly DashboardSiteLookup[]> {
+  searchSites(
+    searchTerm: string,
+    includeDefaultSuggestions = false
+  ): Promise<readonly DashboardSiteLookup[]> {
     const normalizedSearchTerm = searchTerm.trim();
 
-    if (normalizedSearchTerm.length === 0) {
+    if (normalizedSearchTerm.length === 0 && !includeDefaultSuggestions) {
       return Promise.resolve([]);
     }
 
     return firstValueFrom(
       this.http.get<readonly DashboardSiteLookup[]>(buildApiUrl('/dashboard/sites/search'), {
-        params: new HttpParams().set('searchTerm', normalizedSearchTerm)
+        params: normalizedSearchTerm.length > 0
+          ? new HttpParams().set('searchTerm', normalizedSearchTerm)
+          : new HttpParams()
       })
     );
+  }
+
+  getDefaultSiteSuggestions(): Promise<readonly DashboardSiteLookup[]> {
+    return this.searchSites('', true);
   }
 
   createSite(request: CreateDashboardSiteRequest): Promise<CreateDashboardSiteResponse> {
