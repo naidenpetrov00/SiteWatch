@@ -11,6 +11,10 @@
 	}
 }
 
+www.{$DASHBOARD_DOMAIN} {
+	redir https://{$DASHBOARD_DOMAIN}{uri} permanent
+}
+
 {$DASHBOARD_DOMAIN} {
 	encode zstd gzip
 	import security_headers
