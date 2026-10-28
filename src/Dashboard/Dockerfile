@@ -1,6 +1,9 @@
 FROM node:24-alpine AS build
 WORKDIR /app
 
+ARG NPM_VERSION=11.6.2
+RUN npm install --global "npm@${NPM_VERSION}"
+
 COPY src/Dashboard/package.json src/Dashboard/package-lock.json ./
 RUN npm ci
 
