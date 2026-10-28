@@ -1,0 +1,18 @@
+@if (editable()) {
+  <div class="offer-pricing__online-actions">
+    <button mat-flat-button type="button" [disabled]="isMutating() || matrix().products.length === 0 || matrix().retailers.length === 0" (click)="onlinePriceCollectionRequested.emit()">Refresh Online Prices</button>
+    <span>One durable run will be created for each accepted retailer company.</span>
+  </div>
+  <mat-form-field appearance="outline" class="offer-pricing__retailer-search">
+    <mat-label>Add retailer</mat-label>
+    <input matInput [formControl]="retailerSearch()" [matAutocomplete]="retailerAutocomplete" autocomplete="off" inputmode="search" placeholder="Search active retailers" />
+    <mat-hint>Choose which retailers become comparison columns.</mat-hint>
+  </mat-form-field>
+  <mat-autocomplete #retailerAutocomplete="matAutocomplete" [displayWith]="displayRetailer" (optionSelected)="selectRetailer($event)">
+    @for (retailer of retailerResults(); track retailer.id) {
+      <mat-option [value]="retailer"><strong>{{ retailer.displayName }}</strong><span class="offer-pricing__option-detail">{{ retailer.websiteHost }}</span></mat-option>
+    }
+  </mat-autocomplete>
+} @else {
+  <p class="offer-pricing__readonly">Saved pricing snapshot · read-only</p>
+}

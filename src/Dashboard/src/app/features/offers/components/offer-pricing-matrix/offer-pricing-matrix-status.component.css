@@ -1,0 +1,44 @@
+:host {
+  display: contents;
+}
+
+.offer-pricing__feedback {
+  margin: 0;
+  padding: 0.8rem 1rem;
+  border-radius: 0.75rem;
+}
+
+.offer-pricing__feedback--success {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.offer-pricing__feedback--error {
+  color: var(--mat-sys-error);
+  background: var(--mat-sys-error-container);
+}
+
+.offer-pricing__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  min-height: 8rem;
+}
+
+.offer-pricing__collection-outcomes {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.offer-pricing__collection-outcomes article {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.75rem;
+  border-left: 0.25rem solid var(--mat-sys-primary);
+  background: var(--mat-sys-surface-container-low);
+}
+
+.offer-pricing__collection-outcomes .offer-pricing__collection-outcome--unavailable {
+  border-left-color: var(--mat-sys-error);
+}
