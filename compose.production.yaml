@@ -111,6 +111,8 @@ services:
           "--silent",
           "--header",
           "X-Forwarded-Proto: https",
+          "--header",
+          "Host: ${API_DOMAIN:?Set API_DOMAIN in .env.production}",
           "http://127.0.0.1:8080/healthz",
         ]
       interval: 15s
