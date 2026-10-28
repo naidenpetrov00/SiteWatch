@@ -32,6 +32,22 @@ docker compose \
             -b \
             -v DatabaseName="${MSSQL_DATABASE}" BackupPath="${SITEWATCH_BACKUP_PATH}" \
             -Q "${query}"
+
+        backup_directory="/var/opt/mssql/backups"
+        mapfile -t backups_to_delete < <(
+            find "${backup_directory}" \
+                -maxdepth 1 \
+                -type f \
+                -name "sitewatch_*.bak" \
+                -printf "%f\n" \
+                | sort --reverse \
+                | tail --lines=+8
+        )
+
+        for backup_to_delete in "${backups_to_delete[@]}"; do
+            rm -- "${backup_directory}/${backup_to_delete}"
+            echo "Removed expired local backup: ${backup_to_delete}"
+        done
     '
 
 echo "Created and verified database backup: ${container_backup_path}"

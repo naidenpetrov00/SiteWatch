@@ -1,0 +1,14 @@
+[Unit]
+Description=Create and verify a SiteWatch SQL Server backup
+Requires=docker.service
+After=docker.service
+ConditionPathExists=/opt/sitewatch/.env.production
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/sitewatch
+ExecStart=/opt/sitewatch/deploy/backup-database.sh
+TimeoutStartSec=1h
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
