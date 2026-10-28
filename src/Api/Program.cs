@@ -41,12 +41,12 @@ if (app.Environment.IsDevelopment())
     await app.InitializeDatabaseAsync();
     app.MapOpenApi();
     app.MapScalarApiReferenceWithOptions();
-    app.UseCors(DependencyInjection.DevelopmentCorsPolicy);
+    app.UseCors(Api.DependencyInjection.DevelopmentCorsPolicy);
     // app.UseRequestResponseLogging();
 }
 else
 {
-    app.UseCors(DependencyInjection.ProductionCorsPolicy);
+    app.UseCors(Api.DependencyInjection.ProductionCorsPolicy);
 }
 
 app.UseHttpsRedirection();
