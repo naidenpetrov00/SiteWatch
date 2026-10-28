@@ -56,6 +56,7 @@ public static class DependencyInjection
         services.AddScoped<IIdentityAuthenticationService, IdentityAuthenticationService>();
         services.AddScoped<IIdentityVerificationService, IdentityVerificationService>();
         services.AddScoped<IIdentityUserService, IdentityUserService>();
+        services.AddScoped<AdministratorCreator>();
         var blobStorageOptions = configuration.GetOptions<BlobStorageOptions>();
         var blobStorageConnectionString = Guard.Against.NullOrEmpty(blobStorageOptions.ConnectionString);
         services.AddSingleton<BlobServiceClient>(_ =>

@@ -4,6 +4,7 @@ using Api.SeedWork.Extensions;
 using Application;
 using DotNetEnv;
 using Infrastructure;
+using Infrastructure.Identity.Services;
 using Infrastructure.SeedWork.Extension;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,6 +27,25 @@ var app = builder.Build();
 if (args.Contains("--migrate-database", StringComparer.Ordinal))
 {
     await app.ApplyDatabaseMigrationsAsync();
+    return;
+}
+
+if (args.Contains("--create-administrator", StringComparer.Ordinal))
+{
+    var userName = AdministratorConsole.ReadRequired("Administrator username: ");
+    var email = AdministratorConsole.ReadRequired("Administrator email: ");
+    var password = AdministratorConsole.ReadPassword("Administrator password: ");
+    var passwordConfirmation = AdministratorConsole.ReadPassword("Confirm password: ");
+
+    if (password != passwordConfirmation)
+    {
+        throw new InvalidOperationException("The passwords do not match.");
+    }
+
+    await using var scope = app.Services.CreateAsyncScope();
+    var creator = scope.ServiceProvider.GetRequiredService<AdministratorCreator>();
+    await creator.CreateAsync(userName, email, password);
+    Console.WriteLine("Administrator created successfully.");
     return;
 }
 
