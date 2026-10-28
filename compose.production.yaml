@@ -35,6 +35,7 @@ services:
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_PID: ${MSSQL_PID:?Set MSSQL_PID in .env.production}
+      MSSQL_DATABASE: ${MSSQL_DATABASE:?Set MSSQL_DATABASE in .env.production}
       MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in .env.production}
       MSSQL_MEMORY_LIMIT_MB: "2048"
     volumes:
