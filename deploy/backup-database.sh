@@ -5,15 +5,92 @@ repository_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 environment_file="${repository_root}/.env.production"
 compose_file="${repository_root}/compose.production.yaml"
 borg_environment_file="/etc/sitewatch/backup/borg.env"
+uptimerobot_heartbeat_file="/etc/sitewatch/backup/uptimerobot-backup-heartbeat-url"
 sitewatch_data_root="/mnt/HC_Volume_107250753/sitewatch"
 
-if [[ ! -f "${environment_file}" ]]; then
-    echo "Production environment file not found: ${environment_file}" >&2
-    exit 1
-fi
+usage() {
+    echo "Usage: $0 [--preview-retention]" >&2
+}
+
+run_borg_retention() {
+    local dry_run="$1"
+    local -a prune_arguments=(
+        --list
+        --glob-archives "sitewatch-database-*"
+        --keep-daily 7
+        --keep-weekly 4
+        --keep-monthly 6
+    )
+
+    if [[ "${dry_run}" == "true" ]]; then
+        prune_arguments+=(--dry-run)
+        echo "Previewing Borg retention; no remote archives will be changed."
+    else
+        echo "Pruning remote Borg archives."
+    fi
+
+    borg prune "${prune_arguments[@]}"
+
+    if [[ "${dry_run}" == "false" ]]; then
+        echo "Compacting the Borg repository."
+        borg compact
+    fi
+}
+
+notify_uptimerobot() {
+    if [[ ! -f "${uptimerobot_heartbeat_file}" ]]; then
+        echo "UptimeRobot heartbeat is not configured; skipping notification."
+        return
+    fi
+
+    local heartbeat_url
+    heartbeat_url="$(<"${uptimerobot_heartbeat_file}")"
+
+    if [[ -z "${heartbeat_url}" ]]; then
+        echo "UptimeRobot heartbeat file is empty; skipping notification." >&2
+        return
+    fi
+
+    if ! curl \
+        --fail \
+        --silent \
+        --show-error \
+        --max-time 10 \
+        --retry 3 \
+        --output /dev/null \
+        "${heartbeat_url}"; then
+        echo "Unable to send the UptimeRobot heartbeat; backup completed successfully." >&2
+    fi
+}
+
+case "${1:-}" in
+    "")
+        mode="backup"
+        ;;
+    --preview-retention)
+        mode="preview-retention"
+        ;;
+    *)
+        usage
+        exit 1
+        ;;
+esac
 
 if [[ ! -f "${borg_environment_file}" ]]; then
     echo "Borg environment file not found: ${borg_environment_file}" >&2
+    exit 1
+fi
+
+# shellcheck disable=SC1091
+source "${borg_environment_file}"
+
+if [[ "${mode}" == "preview-retention" ]]; then
+    run_borg_retention true
+    exit
+fi
+
+if [[ ! -f "${environment_file}" ]]; then
+    echo "Production environment file not found: ${environment_file}" >&2
     exit 1
 fi
 
@@ -59,9 +136,6 @@ docker compose \
 
 echo "Created and verified database backup: ${container_backup_path}"
 
-# shellcheck disable=SC1091
-source "${borg_environment_file}"
-
 cd -- "${sitewatch_data_root}"
 borg create \
     --stats \
@@ -70,3 +144,18 @@ borg create \
     backups
 
 echo "Created encrypted off-server Borg archive."
+
+case "${BORG_RETENTION_ENABLED:-0}" in
+    0)
+        echo "Remote Borg retention is disabled; run --preview-retention before enabling it."
+        ;;
+    1)
+        run_borg_retention false
+        ;;
+    *)
+        echo "BORG_RETENTION_ENABLED must be set to 0 or 1." >&2
+        exit 1
+        ;;
+esac
+
+notify_uptimerobot
