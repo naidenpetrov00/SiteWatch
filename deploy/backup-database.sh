@@ -5,8 +5,9 @@ repository_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 environment_file="${repository_root}/.env.production"
 compose_file="${repository_root}/compose.production.yaml"
 borg_environment_file="/etc/sitewatch/backup/borg.env"
-uptimerobot_heartbeat_file="/etc/sitewatch/backup/uptimerobot-backup-heartbeat-url"
+healthchecks_ping_file="/etc/sitewatch/backup/healthchecks-ping-url"
 sitewatch_data_root="/mnt/HC_Volume_107250753/sitewatch"
+healthchecks_ping_url=""
 
 usage() {
     echo "Usage: $0 [--preview-retention]" >&2
@@ -37,19 +38,24 @@ run_borg_retention() {
     fi
 }
 
-notify_uptimerobot() {
-    if [[ ! -f "${uptimerobot_heartbeat_file}" ]]; then
-        echo "UptimeRobot heartbeat is not configured; skipping notification."
-        return
-    fi
+ping_healthchecks() {
+    local event="$1"
+    local ping_url="${healthchecks_ping_url%/}"
 
-    local heartbeat_url
-    heartbeat_url="$(<"${uptimerobot_heartbeat_file}")"
-
-    if [[ -z "${heartbeat_url}" ]]; then
-        echo "UptimeRobot heartbeat file is empty; skipping notification." >&2
-        return
-    fi
+    case "${event}" in
+        start)
+            ping_url="${ping_url}/start"
+            ;;
+        success)
+            ;;
+        failure)
+            ping_url="${ping_url}/fail"
+            ;;
+        *)
+            echo "Unsupported Healthchecks.io event: ${event}" >&2
+            return
+            ;;
+    esac
 
     if ! curl \
         --fail \
@@ -58,9 +64,22 @@ notify_uptimerobot() {
         --max-time 10 \
         --retry 3 \
         --output /dev/null \
-        "${heartbeat_url}"; then
-        echo "Unable to send the UptimeRobot heartbeat; backup completed successfully." >&2
+        "${ping_url}"; then
+        echo "Unable to send the Healthchecks.io ${event} signal." >&2
     fi
+}
+
+report_backup_result() {
+    local exit_code=$?
+    trap - EXIT
+
+    if [[ "${exit_code}" -eq 0 ]]; then
+        ping_healthchecks success
+    else
+        ping_healthchecks failure
+    fi
+
+    exit "${exit_code}"
 }
 
 case "${1:-}" in
@@ -92,6 +111,19 @@ fi
 if [[ ! -f "${environment_file}" ]]; then
     echo "Production environment file not found: ${environment_file}" >&2
     exit 1
+fi
+
+if [[ -f "${healthchecks_ping_file}" ]]; then
+    healthchecks_ping_url="$(<"${healthchecks_ping_file}")"
+
+    if [[ -n "${healthchecks_ping_url}" ]]; then
+        trap report_backup_result EXIT
+        ping_healthchecks start
+    else
+        echo "Healthchecks.io ping file is empty; monitoring is disabled." >&2
+    fi
+else
+    echo "Healthchecks.io monitoring is not configured; continuing without notifications."
 fi
 
 timestamp="$(date --utc +%Y%m%dT%H%M%SZ)"
@@ -157,5 +189,3 @@ case "${BORG_RETENTION_ENABLED:-0}" in
         exit 1
         ;;
 esac
-
-notify_uptimerobot
