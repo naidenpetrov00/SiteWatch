@@ -4,9 +4,16 @@ set -euo pipefail
 repository_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 environment_file="${repository_root}/.env.production"
 compose_file="${repository_root}/compose.production.yaml"
+borg_environment_file="/etc/sitewatch/backup/borg.env"
+sitewatch_data_root="/mnt/HC_Volume_107250753/sitewatch"
 
 if [[ ! -f "${environment_file}" ]]; then
     echo "Production environment file not found: ${environment_file}" >&2
+    exit 1
+fi
+
+if [[ ! -f "${borg_environment_file}" ]]; then
+    echo "Borg environment file not found: ${borg_environment_file}" >&2
     exit 1
 fi
 
@@ -51,3 +58,15 @@ docker compose \
     '
 
 echo "Created and verified database backup: ${container_backup_path}"
+
+# shellcheck disable=SC1091
+source "${borg_environment_file}"
+
+cd -- "${sitewatch_data_root}"
+borg create \
+    --stats \
+    --compression lz4 \
+    "::sitewatch-database-{now:%Y-%m-%dT%H-%M-%SZ}" \
+    backups
+
+echo "Created encrypted off-server Borg archive."
