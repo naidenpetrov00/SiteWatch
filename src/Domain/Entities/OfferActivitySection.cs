@@ -7,7 +7,7 @@ public sealed class OfferActivitySection : BaseEntity
 {
     public const decimal MaximumPriceAmount = 9999999999999999.99m;
 
-    private readonly List<OfferProductContribution> _productContributions = [];
+    private readonly List<OfferProductRequirement> _productRequirements = [];
 
     private OfferActivitySection()
     {
@@ -23,8 +23,8 @@ public sealed class OfferActivitySection : BaseEntity
     public ActivityPricingMode? PricingMode { get; private set; }
     public decimal? PriceAmount { get; private set; }
     public int SortOrder { get; private set; }
-    public IReadOnlyCollection<OfferProductContribution> ProductContributions =>
-        _productContributions;
+    public IReadOnlyCollection<OfferProductRequirement> ProductRequirements =>
+        _productRequirements;
 
     internal static OfferActivitySection Create(
         OfferActivity offerActivity,
@@ -55,9 +55,9 @@ public sealed class OfferActivitySection : BaseEntity
         RequestedMeasurement = OfferQuantity.ValidateInput(
             requestedMeasurement,
             nameof(requestedMeasurement));
-        foreach (var contribution in _productContributions)
+        foreach (var requirement in _productRequirements)
         {
-            contribution.Recalculate(RequestedMeasurement, BasisQuantity);
+            requirement.Recalculate(RequestedMeasurement, BasisQuantity);
         }
     }
 
@@ -129,6 +129,11 @@ public sealed class OfferActivitySection : BaseEntity
         _ => throw new InvalidOperationException("Unsupported activity pricing mode.")
     };
 
-    internal void AddContribution(OfferProductContribution contribution) =>
-        _productContributions.Add(contribution);
+    public OfferProductRequirement AddRequirement(
+        ActivityProductRequirement sourceRequirement)
+    {
+        var requirement = OfferProductRequirement.Create(this, sourceRequirement);
+        _productRequirements.Add(requirement);
+        return requirement;
+    }
 }

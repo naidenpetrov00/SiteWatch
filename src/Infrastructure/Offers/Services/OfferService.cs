@@ -3,6 +3,7 @@ using Application.Offers;
 using Application.Offers.Commands;
 using Application.Offers.Finalization;
 using Application.Offers.Queries;
+using Application.Products.Queries;
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models;
 using Application.SeedWork.Queries;
@@ -77,7 +78,8 @@ public sealed class OfferService(ApplicationDbContext dbContext, IUser user) : I
                     .OfType<Activity>()
                     .Include(current => current.RequirementSections)
                     .ThenInclude(section => section.ProductRequirements)
-                    .ThenInclude(requirement => requirement.Product)
+                    .ThenInclude(requirement => requirement.ProductType)
+                    .ThenInclude(productType => productType.Category)
                     .SingleOrDefaultAsync(
                         current => current.Id == request.ActivityId,
                         cancellationToken);
@@ -102,7 +104,6 @@ public sealed class OfferService(ApplicationDbContext dbContext, IUser user) : I
                 offer.AddActivity(offerActivity);
                 dbContext.OfferActivities.Add(offerActivity);
 
-                var linesByProductId = offer.ProductLines.ToDictionary(line => line.ProductId);
                 foreach (var sourceSection in activity.RequirementSections
                              .OrderBy(section => section.SortOrder)
                              .ThenBy(section => section.Id))
@@ -114,19 +115,8 @@ public sealed class OfferService(ApplicationDbContext dbContext, IUser user) : I
                                  .OrderBy(requirement => requirement.SortOrder)
                                  .ThenBy(requirement => requirement.Id))
                     {
-                        if (!linesByProductId.TryGetValue(
-                                sourceRequirement.ProductId,
-                                out var productLine))
-                        {
-                            productLine = OfferProductLine.Create(
-                                offer,
-                                sourceRequirement.Product);
-                            offer.AddProductLine(productLine);
-                            dbContext.OfferProductLines.Add(productLine);
-                            linesByProductId.Add(productLine.ProductId, productLine);
-                        }
-
-                        productLine.AddContribution(offerSection, sourceRequirement);
+                        var offerRequirement = offerSection.AddRequirement(sourceRequirement);
+                        dbContext.OfferProductRequirements.Add(offerRequirement);
                     }
                 }
 
@@ -159,32 +149,23 @@ public sealed class OfferService(ApplicationDbContext dbContext, IUser user) : I
                 }
 
                 var affectedLines = activity.Sections
-                    .SelectMany(section => section.ProductContributions)
-                    .Select(contribution => contribution.OfferProductLine)
-                    .DistinctBy(line => line.Id)
+                    .SelectMany(section => section.ProductRequirements)
+                    .Select(requirement => requirement.ProductLine)
+                    .Where(line => line is not null)
+                    .Cast<OfferProductLine>()
                     .ToList();
-                foreach (var contribution in activity.Sections
-                             .SelectMany(section => section.ProductContributions)
-                             .ToList())
+                foreach (var line in affectedLines)
                 {
-                    contribution.OfferProductLine.RemoveContribution(contribution);
+                    if (line.PriceSelection is not null)
+                    {
+                        dbContext.OfferProductPriceSelections.Remove(line.PriceSelection);
+                    }
+                    offer.RemoveProductLine(line);
+                    dbContext.OfferProductLines.Remove(line);
                 }
 
                 offer.RemoveActivity(activity);
                 dbContext.OfferActivities.Remove(activity);
-                foreach (var line in affectedLines)
-                {
-                    if (line.Contributions.Count == 0)
-                    {
-                        offer.RemoveProductLine(line);
-                        dbContext.OfferProductLines.Remove(line);
-                    }
-                    else
-                    {
-                        line.RecalculateTotals();
-                    }
-                }
-
                 SetAuditValues(offer, isNew: false);
             },
             "The activity could not be removed because the Offer changed.",
@@ -213,17 +194,7 @@ public sealed class OfferService(ApplicationDbContext dbContext, IUser user) : I
                 var measurements = ValidateOfferMeasurements(
                     activity.Sections,
                     request.SectionMeasurements);
-                var affectedLines = activity.Sections
-                    .SelectMany(section => section.ProductContributions)
-                    .Select(contribution => contribution.OfferProductLine)
-                    .DistinctBy(line => line.Id)
-                    .ToList();
                 offer.UpdateActivityMeasurements(activity, measurements);
-
-                foreach (var line in affectedLines)
-                {
-                    line.RecalculateTotals();
-                }
 
                 SetAuditValues(offer, isNew: false);
             },
@@ -258,6 +229,145 @@ public sealed class OfferService(ApplicationDbContext dbContext, IUser user) : I
             },
             "The activity pricing could not be updated because the Offer changed.",
             cancellationToken);
+
+    public async Task<OfferProductLineDto> SelectRequirementProductAsync(
+        SelectOfferRequirementProductCommand request,
+        CancellationToken cancellationToken)
+    {
+        OfferProductLine? selectedLine = null;
+        await ExecuteMutationAsync(
+            async () =>
+            {
+                var offer = await GetTrackedOfferGraphAsync(
+                    request.SiteId,
+                    request.OfferId,
+                    cancellationToken);
+                EnsureDraft(offer);
+                var requirement = offer.Activities
+                    .SelectMany(activity => activity.Sections)
+                    .SelectMany(section => section.ProductRequirements)
+                    .SingleOrDefault(current => current.Id == request.OfferRequirementId);
+                if (requirement is null)
+                {
+                    throw new NotFoundException(
+                        nameof(OfferProductRequirement),
+                        request.OfferRequirementId.ToString());
+                }
+
+                var product = await dbContext.Products
+                    .Include(current => current.ProductType)
+                    .ThenInclude(productType => productType.Category)
+                    .SingleOrDefaultAsync(
+                        current => current.Id == request.ProductId,
+                        cancellationToken);
+                if (product is null)
+                {
+                    throw new NotFoundException(nameof(Product), request.ProductId.ToString());
+                }
+
+                var previousSelection = requirement.ProductLine?.PriceSelection;
+                var isNew = requirement.ProductLine is null;
+                try
+                {
+                    selectedLine = requirement.SelectProduct(offer, product);
+                    if (isNew)
+                    {
+                        offer.AddProductLine(selectedLine);
+                        dbContext.OfferProductLines.Add(selectedLine);
+                    }
+                    else if (previousSelection is not null
+                             && selectedLine.PriceSelection is null)
+                    {
+                        dbContext.OfferProductPriceSelections.Remove(previousSelection);
+                    }
+                }
+                catch (InvalidOperationException exception)
+                {
+                    throw new OfferConflictException(exception.Message, exception);
+                }
+
+                SetAuditValues(offer, isNew: false);
+            },
+            "The Product could not be selected because the Offer or catalog changed.",
+            cancellationToken);
+
+        return OfferDetailsDto.ToProductLineDto(selectedLine!);
+    }
+
+    public Task ClearRequirementProductAsync(
+        Guid siteId,
+        Guid offerId,
+        Guid offerRequirementId,
+        CancellationToken cancellationToken) =>
+        ExecuteMutationAsync(
+            async () =>
+            {
+                var offer = await GetTrackedOfferGraphAsync(siteId, offerId, cancellationToken);
+                EnsureDraft(offer);
+                var requirement = offer.Activities
+                    .SelectMany(activity => activity.Sections)
+                    .SelectMany(section => section.ProductRequirements)
+                    .SingleOrDefault(current => current.Id == offerRequirementId);
+                if (requirement is null)
+                {
+                    throw new NotFoundException(
+                        nameof(OfferProductRequirement),
+                        offerRequirementId.ToString());
+                }
+
+                var line = requirement.ClearProduct();
+                if (line is null)
+                {
+                    return;
+                }
+                if (line.PriceSelection is not null)
+                {
+                    dbContext.OfferProductPriceSelections.Remove(line.PriceSelection);
+                }
+                offer.RemoveProductLine(line);
+                dbContext.OfferProductLines.Remove(line);
+                SetAuditValues(offer, isNew: false);
+            },
+            "The Product selection could not be cleared because the Offer changed.",
+            cancellationToken);
+
+    public async Task<IReadOnlyList<ProductLookupDto>> GetRequirementProductCandidatesAsync(
+        OfferRequirementProductCandidatesQuery request,
+        CancellationToken cancellationToken)
+    {
+        var offer = await GetTrackedOfferGraphAsync(
+            request.SiteId,
+            request.OfferId,
+            cancellationToken);
+        EnsureDraft(offer);
+        var requirement = offer.Activities
+            .SelectMany(activity => activity.Sections)
+            .SelectMany(section => section.ProductRequirements)
+            .SingleOrDefault(current => current.Id == request.OfferRequirementId);
+        if (requirement is null)
+        {
+            throw new NotFoundException(
+                nameof(OfferProductRequirement),
+                request.OfferRequirementId.ToString());
+        }
+
+        var normalized = NormalizeSearch(request.SearchTerm);
+        var hasNumberId = int.TryParse(request.SearchTerm?.Trim(), out var numberId);
+        var products = await dbContext.Products
+            .AsNoTracking()
+            .Include(product => product.ProductType)
+            .ThenInclude(productType => productType.Category)
+            .Where(product => product.ProductTypeId == requirement.ProductTypeId
+                && product.Status == ProductStatus.Active
+                && (normalized.Length == 0
+                    || product.SearchIdentity.Contains(normalized)
+                    || hasNumberId && product.NumberId == numberId))
+            .OrderBy(product => product.Title)
+            .ThenBy(product => product.Id)
+            .Take(20)
+            .ToListAsync(cancellationToken);
+        return products.Select(ProductLookupDto.From).ToList();
+    }
 
     public Task ArchiveAsync(
         Guid siteId,
@@ -326,9 +436,8 @@ public sealed class OfferService(ApplicationDbContext dbContext, IUser user) : I
             .Include(item => item.Site)
             .Include(item => item.Activities)
             .ThenInclude(activity => activity.Sections)
-            .ThenInclude(section => section.ProductContributions)
-            .Include(item => item.ProductLines)
-            .ThenInclude(line => line.Contributions)
+            .ThenInclude(section => section.ProductRequirements)
+            .ThenInclude(requirement => requirement.ProductLine)
             .AsSplitQuery()
             .SingleOrDefaultAsync(
                 item => item.Id == offerId && item.SiteId == siteId,
@@ -487,8 +596,11 @@ public sealed class OfferService(ApplicationDbContext dbContext, IUser user) : I
         var query = dbContext.Offers
             .Include(offer => offer.Activities)
             .ThenInclude(activity => activity.Sections)
+            .ThenInclude(section => section.ProductRequirements)
             .Include(offer => offer.ProductLines)
             .ThenInclude(line => line.PriceSelection)
+            .Include(offer => offer.ProductLines)
+            .ThenInclude(line => line.OfferProductRequirement)
             .AsSplitQuery();
         var offer = await (tracked
                 ? query
@@ -570,9 +682,10 @@ public sealed class OfferService(ApplicationDbContext dbContext, IUser user) : I
         var offer = await dbContext.Offers
             .Include(current => current.Activities)
             .ThenInclude(activity => activity.Sections)
-            .ThenInclude(section => section.ProductContributions)
+            .ThenInclude(section => section.ProductRequirements)
+            .ThenInclude(requirement => requirement.ProductLine)
             .Include(current => current.ProductLines)
-            .ThenInclude(line => line.Contributions)
+            .ThenInclude(line => line.PriceSelection)
             .AsSplitQuery()
             .SingleOrDefaultAsync(
                 current => current.Id == offerId && current.SiteId == siteId,

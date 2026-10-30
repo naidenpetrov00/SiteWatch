@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using Application.ActivityCatalog;
+using Application.ProductCatalog;
 using Application.Cameras;
 using Application.Persons;
 using Application.RetailerListings;
@@ -92,6 +93,19 @@ internal sealed class ExceptionMiddleware(
             {
                 status = StatusCodes.Status409Conflict,
                 title = "Activity catalog conflict",
+                detail = ex.Message,
+                instance = context.Request.Path.Value,
+            }));
+        }
+        catch (ProductCatalogConflictException ex)
+        {
+            logger.LogInformation(ex, "A product catalog operation was rejected due to a conflict.");
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            context.Response.ContentType = "application/problem+json";
+            await context.Response.WriteAsync(JsonSerializer.Serialize(new
+            {
+                status = StatusCodes.Status409Conflict,
+                title = "Product catalog conflict",
                 detail = ex.Message,
                 instance = context.Request.Path.Value,
             }));

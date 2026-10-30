@@ -54,17 +54,13 @@ public sealed record ActivityRequirementSectionDto(
     int SortOrder,
     IReadOnlyList<ActivityProductRequirementDto> ProductRequirements);
 
-/// <summary>Represents one Product Catalog item required by a section.</summary>
+/// <summary>Represents one Product Requirement in an activity section.</summary>
 public sealed record ActivityProductRequirementDto(
     Guid Id,
-    Guid ProductId,
-    int ProductNumberId,
-    string ProductTitle,
-    string ProductStatus,
-    string? Brand,
-    string? Model,
-    decimal? PackageQuantity,
-    string? PackageUnit,
+    Guid ProductTypeId,
+    string ProductTypeName,
+    Guid CategoryId,
+    string CategoryName,
     decimal Quantity,
     bool IsRequired,
     string QuantityBehavior,
@@ -91,7 +87,8 @@ public sealed class ActivityDetailsHandler(IApplicationDbContext dbContext)
             .AsNoTracking()
             .Include(activity => activity.RequirementSections)
             .ThenInclude(section => section.ProductRequirements)
-            .ThenInclude(requirement => requirement.Product)
+            .ThenInclude(requirement => requirement.ProductType)
+            .ThenInclude(productType => productType.Category)
             .SingleOrDefaultAsync(
                 activity => activity.Id == request.ActivityId,
                 cancellationToken);
@@ -120,14 +117,10 @@ public sealed class ActivityDetailsHandler(IApplicationDbContext dbContext)
                         .ThenBy(requirement => requirement.Id)
                         .Select(requirement => new ActivityProductRequirementDto(
                             requirement.Id,
-                            requirement.ProductId,
-                            requirement.Product.NumberId,
-                            requirement.Product.Title,
-                            requirement.Product.Status.ToString(),
-                            requirement.Product.Brand,
-                            requirement.Product.Model,
-                            requirement.Product.PackageQuantity,
-                            requirement.Product.PackageUnit?.ToCode(),
+                            requirement.ProductTypeId,
+                            requirement.ProductType.Name,
+                            requirement.ProductType.CategoryId,
+                            requirement.ProductType.Category.Name,
                             requirement.Quantity,
                             requirement.IsRequired,
                             requirement.QuantityBehavior.ToCode(),

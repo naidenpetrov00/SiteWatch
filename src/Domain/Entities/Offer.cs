@@ -178,9 +178,10 @@ public sealed class Offer : BaseAuditableEntity, IHasNumberId, IAgregateRoot
             throw new InvalidOperationException("The product line belongs to another offer.");
         }
 
-        if (_productLines.Any(current => current.ProductId == productLine.ProductId))
+        if (_productLines.Any(current =>
+                current.OfferProductRequirementId == productLine.OfferProductRequirementId))
         {
-            throw new InvalidOperationException("The product already has an aggregate offer line.");
+            throw new InvalidOperationException("The requirement already has an offer product line.");
         }
 
         _productLines.Add(productLine);

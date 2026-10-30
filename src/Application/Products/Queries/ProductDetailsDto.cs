@@ -14,7 +14,10 @@ public sealed record ProductDetailsDto
     public string? Model { get; init; }
     public decimal? PackageQuantity { get; init; }
     public string? PackageUnit { get; init; }
-    public string Category { get; init; } = string.Empty;
+    public Guid ProductTypeId { get; init; }
+    public string ProductTypeName { get; init; } = string.Empty;
+    public Guid CategoryId { get; init; }
+    public string CategoryName { get; init; } = string.Empty;
     public string Status { get; init; } = string.Empty;
     public string? PrimarySearchPhrase { get; init; }
     public string EffectivePrimarySearchPhrase { get; init; } = string.Empty;
@@ -33,7 +36,10 @@ public sealed record ProductDetailsDto
             Model = product.Model,
             PackageQuantity = product.PackageQuantity,
             PackageUnit = product.PackageUnit?.ToCode(),
-            Category = product.Category.ToCode(),
+            ProductTypeId = product.ProductTypeId,
+            ProductTypeName = product.ProductType.Name,
+            CategoryId = product.ProductType.CategoryId,
+            CategoryName = product.ProductType.Category.Name,
             Status = product.Status.ToString(),
             PrimarySearchPhrase = product.SearchConfiguration.PrimarySearchPhrase,
             EffectivePrimarySearchPhrase = product.EffectivePrimarySearchPhrase,

@@ -115,7 +115,7 @@ public sealed class ActivityRequirementService(ApplicationDbContext dbContext)
     public Task<Guid> CreateProductRequirementAsync(
         Guid activityId,
         Guid sectionId,
-        Guid productId,
+        Guid productTypeId,
         decimal quantity,
         bool isRequired,
         ProductQuantityBehavior quantityBehavior,
@@ -134,24 +134,15 @@ public sealed class ActivityRequirementService(ApplicationDbContext dbContext)
                         cancellationToken);
                 Guard.Against.NotFound(sectionId, section);
 
-                var product = await dbContext.Products.SingleOrDefaultAsync(
-                    current => current.Id == productId,
+                var productType = await dbContext.ProductTypes
+                    .Include(current => current.Category)
+                    .SingleOrDefaultAsync(
+                    current => current.Id == productTypeId,
                     cancellationToken);
-                Guard.Against.NotFound(productId, product);
-                if (product.Status != ProductStatus.Active)
-                {
-                    throw new ActivityCatalogConflictException(
-                        "Only active products can be newly assigned to an activity.");
-                }
-                if (section.ProductRequirements.Any(
-                    requirement => requirement.ProductId == productId))
-                {
-                    throw new ActivityCatalogConflictException(
-                        "This product is already assigned to the requirement section.");
-                }
+                Guard.Against.NotFound(productTypeId, productType);
 
                 var requirement = section.AddProductRequirement(
-                    product,
+                    productType,
                     quantity,
                     isRequired,
                     quantityBehavior,
@@ -160,13 +151,14 @@ public sealed class ActivityRequirementService(ApplicationDbContext dbContext)
                 dbContext.ActivityProductRequirements.Add(requirement);
                 return requirement.Id;
             },
-            "The product could not be assigned because it is no longer active or is already in the section.",
+            "The Product Requirement could not be created because the activity or Product Type changed.",
             cancellationToken);
 
     public Task UpdateProductRequirementAsync(
         Guid activityId,
         Guid sectionId,
         Guid requirementId,
+        Guid productTypeId,
         decimal quantity,
         bool isRequired,
         ProductQuantityBehavior quantityBehavior,
@@ -182,7 +174,18 @@ public sealed class ActivityRequirementService(ApplicationDbContext dbContext)
                     sectionId,
                     requirementId,
                     cancellationToken);
-                requirement.UpdateDetails(quantity, isRequired, quantityBehavior, notes);
+                var productType = await dbContext.ProductTypes
+                    .Include(current => current.Category)
+                    .SingleOrDefaultAsync(
+                        current => current.Id == productTypeId,
+                        cancellationToken);
+                Guard.Against.NotFound(productTypeId, productType);
+                requirement.UpdateDetails(
+                    productType,
+                    quantity,
+                    isRequired,
+                    quantityBehavior,
+                    notes);
             },
             "The product requirement could not be updated because the activity changed.",
             cancellationToken);

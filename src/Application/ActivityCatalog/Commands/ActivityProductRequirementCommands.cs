@@ -7,13 +7,13 @@ using MediatR;
 
 namespace Application.ActivityCatalog.Commands;
 
-/// <summary>Adds an active Product Catalog item to a requirement section.</summary>
+/// <summary>Adds a Product Requirement to a requirement section.</summary>
 [Authorize(Roles = UserRoles.Administrator)]
 public sealed record CreateActivityProductRequirementCommand : IRequest<Guid>
 {
     public Guid ActivityId { get; set; }
     public Guid SectionId { get; set; }
-    public Guid ProductId { get; init; }
+    public Guid ProductTypeId { get; init; }
     public decimal Quantity { get; init; }
     public bool IsRequired { get; init; }
     public string QuantityBehavior { get; init; } = string.Empty;
@@ -30,7 +30,7 @@ public sealed class CreateActivityProductRequirementHandler(
         requirementService.CreateProductRequirementAsync(
             request.ActivityId,
             request.SectionId,
-            request.ProductId,
+            request.ProductTypeId,
             request.Quantity,
             request.IsRequired,
             ProductQuantityBehaviorParser.Parse(request.QuantityBehavior),
@@ -45,6 +45,7 @@ public sealed record UpdateActivityProductRequirementCommand : IRequest
     public Guid ActivityId { get; set; }
     public Guid SectionId { get; set; }
     public Guid RequirementId { get; set; }
+    public Guid ProductTypeId { get; init; }
     public decimal Quantity { get; init; }
     public bool IsRequired { get; init; }
     public string QuantityBehavior { get; init; } = string.Empty;
@@ -62,6 +63,7 @@ public sealed class UpdateActivityProductRequirementHandler(
             request.ActivityId,
             request.SectionId,
             request.RequirementId,
+            request.ProductTypeId,
             request.Quantity,
             request.IsRequired,
             ProductQuantityBehaviorParser.Parse(request.QuantityBehavior),
@@ -94,7 +96,7 @@ public sealed class MoveActivityProductRequirementHandler(
             cancellationToken);
 }
 
-/// <summary>Removes a Product Catalog relationship from a requirement section.</summary>
+/// <summary>Removes a Product Requirement from a requirement section.</summary>
 [Authorize(Roles = UserRoles.Administrator)]
 public sealed record DeleteActivityProductRequirementCommand(
     Guid ActivityId,
@@ -122,7 +124,7 @@ public sealed class CreateActivityProductRequirementValidator
     {
         RuleFor(request => request.ActivityId).NotEmpty();
         RuleFor(request => request.SectionId).NotEmpty();
-        RuleFor(request => request.ProductId).NotEmpty();
+        RuleFor(request => request.ProductTypeId).NotEmpty();
         RuleFor(request => request.Quantity)
             .GreaterThan(0m)
             .PrecisionScale(18, 4, false);
@@ -143,6 +145,7 @@ public sealed class UpdateActivityProductRequirementValidator
         RuleFor(request => request.ActivityId).NotEmpty();
         RuleFor(request => request.SectionId).NotEmpty();
         RuleFor(request => request.RequirementId).NotEmpty();
+        RuleFor(request => request.ProductTypeId).NotEmpty();
         RuleFor(request => request.Quantity)
             .GreaterThan(0m)
             .PrecisionScale(18, 4, false);

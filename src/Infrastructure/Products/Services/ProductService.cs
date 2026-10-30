@@ -15,7 +15,7 @@ public sealed class ProductService(ApplicationDbContext dbContext) : IProductSer
         ProductUpsertDto request,
         CancellationToken cancellationToken)
     {
-        var product = CreateProduct(request);
+        var product = await CreateProductAsync(request, cancellationToken);
         dbContext.Products.Add(product);
         await dbContext.SaveChangesAsync(cancellationToken);
         return product.Id;
@@ -26,6 +26,8 @@ public sealed class ProductService(ApplicationDbContext dbContext) : IProductSer
         CancellationToken cancellationToken)
     {
         var product = await dbContext.Products
+            .Include(current => current.ProductType)
+            .ThenInclude(productType => productType.Category)
             .SingleOrDefaultAsync(product => product.Id == request.Id, cancellationToken);
 
         Guard.Against.NotFound(request.Id, product);
@@ -37,14 +39,16 @@ public sealed class ProductService(ApplicationDbContext dbContext) : IProductSer
             request.Model,
             request.PackageQuantity,
             ParsePackageUnit(request.PackageUnit),
-            ParseCategory(request.Category),
+            await LoadProductTypeAsync(request.ProductTypeId, cancellationToken),
             ParseStatus(request.Status),
             CreateSearchConfiguration(request));
 
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    private static Product CreateProduct(ProductUpsertDto request) =>
+    private async Task<Product> CreateProductAsync(
+        ProductUpsertDto request,
+        CancellationToken cancellationToken) =>
         Product.Create(
             request.Title,
             request.Description,
@@ -52,7 +56,7 @@ public sealed class ProductService(ApplicationDbContext dbContext) : IProductSer
             request.Model,
             request.PackageQuantity,
             ParsePackageUnit(request.PackageUnit),
-            ParseCategory(request.Category),
+            await LoadProductTypeAsync(request.ProductTypeId, cancellationToken),
             ParseStatus(request.Status),
             CreateSearchConfiguration(request));
 
@@ -90,13 +94,14 @@ public sealed class ProductService(ApplicationDbContext dbContext) : IProductSer
         return status;
     }
 
-    private static ProductCategory ParseCategory(string value)
+    private async Task<ProductType> LoadProductTypeAsync(
+        Guid productTypeId,
+        CancellationToken cancellationToken)
     {
-        if (ProductCategoryCodes.TryParse(value, out var category))
-        {
-            return category;
-        }
-
-        throw new ArgumentException($"Unsupported product category '{value}'.", nameof(value));
+        var productType = await dbContext.ProductTypes
+            .Include(current => current.Category)
+            .SingleOrDefaultAsync(current => current.Id == productTypeId, cancellationToken);
+        Guard.Against.NotFound(productTypeId, productType);
+        return productType;
     }
 }

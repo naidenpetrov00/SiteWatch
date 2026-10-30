@@ -28,10 +28,12 @@ public sealed class DashboardProductsQueryValidator : AbstractValidator<Dashboar
             .Must(value => string.IsNullOrWhiteSpace(value)
                 || ProductPackageUnitCodes.TryParse(value, out _))
             .WithMessage("PackageUnit must be a supported product package unit.");
-        RuleFor(query => query.Category)
-            .Must(value => string.IsNullOrWhiteSpace(value)
-                || ProductCategoryCodes.TryParse(value, out _))
-            .WithMessage("Category must be a supported product category.");
+        RuleFor(query => query.CategoryId)
+            .Must(value => string.IsNullOrWhiteSpace(value) || Guid.TryParse(value, out _))
+            .WithMessage("CategoryId must be a valid GUID.");
+        RuleFor(query => query.ProductTypeId)
+            .Must(value => string.IsNullOrWhiteSpace(value) || Guid.TryParse(value, out _))
+            .WithMessage("ProductTypeId must be a valid GUID.");
         RuleFor(query => query.Status)
             .Must(value => string.IsNullOrWhiteSpace(value)
                 || Enum.TryParse<Domain.SeedWork.Enums.ProductStatus>(value, true, out var status)

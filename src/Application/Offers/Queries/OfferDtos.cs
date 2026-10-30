@@ -40,8 +40,7 @@ public sealed record OfferDetailsDto(
     string? LastModifiedBy,
     DateTimeOffset? FinalizedAt,
     string? FinalizedBy,
-    IReadOnlyList<OfferActivityDto> Activities,
-    IReadOnlyList<OfferProductLineDto> Products)
+    IReadOnlyList<OfferActivityDto> Activities)
 {
     public static OfferDetailsDto From(Offer offer) => new(
         offer.Id,
@@ -82,49 +81,47 @@ public sealed record OfferDetailsDto(
                         section.PricingMode?.ToCode(),
                         section.PriceAmount,
                         TryCalculateSectionTotal(section),
-                        section.SortOrder))
-                    .ToList()))
-            .ToList(),
-        offer.ProductLines
-            .OrderBy(line => line.ProductNumberId)
-            .ThenBy(line => line.Id)
-            .Select(line => new OfferProductLineDto(
-                line.Id,
-                line.ProductId,
-                line.ProductNumberId,
-                line.Title,
-                line.Category.ToCode(),
-                line.Brand,
-                line.Model,
-                line.PackageQuantity,
-                line.PackageUnit?.ToCode(),
-                line.RequiredQuantity,
-                line.OptionalQuantity,
-                line.Contributions
-                    .OrderBy(contribution => contribution.OfferActivitySection.OfferActivity.SortOrder)
-                    .ThenBy(contribution => contribution.OfferActivitySection.SortOrder)
-                    .ThenBy(contribution => contribution.SortOrder)
-                    .ThenBy(contribution => contribution.Id)
-                    .Select(contribution => new OfferProductContributionDto(
-                        contribution.Id,
-                        contribution.SourceRequirementId,
-                        contribution.OfferActivitySection.OfferActivityId,
-                        contribution.OfferActivitySection.OfferActivity.ActivityNumberId,
-                        contribution.OfferActivitySection.OfferActivity.Name,
-                        contribution.OfferActivitySectionId,
-                        contribution.OfferActivitySection.SourceSectionId,
-                        contribution.OfferActivitySection.Name,
-                        contribution.OfferActivitySection.BasisQuantity,
-                        contribution.OfferActivitySection.MeasurementUnit.ToCode(),
-                        contribution.OfferActivitySection.RequestedMeasurement,
-                        contribution.ConfiguredQuantity,
-                        contribution.IsRequired,
-                        contribution.QuantityBehavior.ToCode(),
-                        contribution.Notes,
-                        contribution.SortOrder,
-                        contribution.CalculatedQuantity))
+                        section.SortOrder,
+                        section.ProductRequirements
+                            .OrderBy(requirement => requirement.SortOrder)
+                            .ThenBy(requirement => requirement.Id)
+                            .Select(ToRequirementDto)
+                            .ToList()))
                     .ToList()))
             .ToList());
+
+    public static OfferProductRequirementDto ToRequirementDto(
+        OfferProductRequirement requirement) => new(
+        requirement.Id,
+        requirement.SourceRequirementId,
+        requirement.ProductTypeId,
+        requirement.ProductTypeName,
+        requirement.CategoryId,
+        requirement.CategoryName,
+        requirement.ConfiguredQuantity,
+        requirement.IsRequired,
+        requirement.QuantityBehavior.ToCode(),
+        requirement.Notes,
+        requirement.SortOrder,
+        requirement.CalculatedQuantity,
+        requirement.ProductLine is null ? null : ToProductLineDto(requirement.ProductLine));
+
+    public static OfferProductLineDto ToProductLineDto(OfferProductLine line) => new(
+        line.Id,
+        line.OfferProductRequirementId,
+        line.ProductId,
+        line.ProductNumberId,
+        line.Title,
+        line.ProductTypeId,
+        line.ProductTypeName,
+        line.CategoryId,
+        line.CategoryName,
+        line.Brand,
+        line.Model,
+        line.PackageQuantity,
+        line.PackageUnit?.ToCode(),
+        line.RequiredQuantity,
+        line.OptionalQuantity);
 
     private static decimal? TryCalculateSectionTotal(OfferActivitySection section)
     {
@@ -150,7 +147,7 @@ public sealed record OfferActivityDto(
     int SortOrder,
     IReadOnlyList<OfferActivitySectionDto> Sections);
 
-/// <summary>Represents one snapshotted activity section and its requested measurement.</summary>
+/// <summary>Represents one snapshotted activity section and its Product Requirements.</summary>
 public sealed record OfferActivitySectionDto(
     Guid Id,
     Guid SourceSectionId,
@@ -161,39 +158,39 @@ public sealed record OfferActivitySectionDto(
     string? PricingMode,
     decimal? PriceAmount,
     decimal? PriceTotal,
-    int SortOrder);
+    int SortOrder,
+    IReadOnlyList<OfferProductRequirementDto> ProductRequirements);
 
-/// <summary>Represents one persisted aggregate Product line in an Offer.</summary>
-public sealed record OfferProductLineDto(
-    Guid Id,
-    Guid ProductId,
-    int ProductNumberId,
-    string Title,
-    string Category,
-    string? Brand,
-    string? Model,
-    decimal? PackageQuantity,
-    string? PackageUnit,
-    decimal RequiredQuantity,
-    decimal OptionalQuantity,
-    IReadOnlyList<OfferProductContributionDto> Contributions);
-
-/// <summary>Explains one activity requirement's contribution to an aggregate Product line.</summary>
-public sealed record OfferProductContributionDto(
+/// <summary>Represents a snapshotted Product Requirement in an Offer.</summary>
+public sealed record OfferProductRequirementDto(
     Guid Id,
     Guid SourceRequirementId,
-    Guid OfferActivityId,
-    int ActivityNumberId,
-    string ActivityName,
-    Guid OfferActivitySectionId,
-    Guid SourceSectionId,
-    string? SectionName,
-    decimal BasisQuantity,
-    string MeasurementUnit,
-    decimal RequestedMeasurement,
+    Guid ProductTypeId,
+    string ProductTypeName,
+    Guid CategoryId,
+    string CategoryName,
     decimal ConfiguredQuantity,
     bool IsRequired,
     string QuantityBehavior,
     string? Notes,
     int SortOrder,
-    decimal CalculatedQuantity);
+    decimal CalculatedQuantity,
+    OfferProductLineDto? ProductLine);
+
+/// <summary>Represents the concrete Product selected for one Offer Product Requirement.</summary>
+public sealed record OfferProductLineDto(
+    Guid Id,
+    Guid OfferProductRequirementId,
+    Guid ProductId,
+    int ProductNumberId,
+    string Title,
+    Guid ProductTypeId,
+    string ProductTypeName,
+    Guid CategoryId,
+    string CategoryName,
+    string? Brand,
+    string? Model,
+    decimal? PackageQuantity,
+    string? PackageUnit,
+    decimal RequiredQuantity,
+    decimal OptionalQuantity);

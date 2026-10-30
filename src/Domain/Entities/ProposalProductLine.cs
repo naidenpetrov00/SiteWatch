@@ -15,7 +15,10 @@ public sealed class ProposalProductLine : BaseEntity
     public Guid ProductId { get; private set; }
     public int ProductNumberId { get; private set; }
     public string Title { get; private set; } = string.Empty;
-    public ProductCategory Category { get; private set; }
+    public Guid ProductTypeId { get; private set; }
+    public string ProductTypeName { get; private set; } = string.Empty;
+    public Guid CategoryId { get; private set; }
+    public string CategoryName { get; private set; } = string.Empty;
     public string? Brand { get; private set; }
     public string? Model { get; private set; }
     public decimal? PackageQuantity { get; private set; }
@@ -92,7 +95,10 @@ public sealed class ProposalProductLine : BaseEntity
             ProductId = source.ProductId,
             ProductNumberId = source.ProductNumberId,
             Title = source.Title,
-            Category = source.Category,
+            ProductTypeId = source.ProductTypeId,
+            ProductTypeName = source.ProductTypeName,
+            CategoryId = source.CategoryId,
+            CategoryName = source.CategoryName,
             Brand = source.Brand,
             Model = source.Model,
             PackageQuantity = source.PackageQuantity,

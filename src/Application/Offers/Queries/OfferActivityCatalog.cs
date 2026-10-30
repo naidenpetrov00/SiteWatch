@@ -1,5 +1,6 @@
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Security;
+using Application.Products.Queries;
 using FluentValidation;
 using MediatR;
 
@@ -58,6 +59,23 @@ public sealed record OfferActivityCandidateDto(
     string? Description,
     IReadOnlyList<OfferActivityCandidateSectionDto> Sections);
 
+/// <summary>Searches matching active Products for an Offer Product Requirement.</summary>
+[Authorize(Roles = UserRoles.Administrator)]
+public sealed record OfferRequirementProductCandidatesQuery(
+    Guid SiteId,
+    Guid OfferId,
+    Guid OfferRequirementId,
+    string? SearchTerm) : IRequest<IReadOnlyList<ProductLookupDto>>;
+
+public sealed class OfferRequirementProductCandidatesHandler(IOfferService offerService)
+    : IRequestHandler<OfferRequirementProductCandidatesQuery, IReadOnlyList<ProductLookupDto>>
+{
+    public Task<IReadOnlyList<ProductLookupDto>> Handle(
+        OfferRequirementProductCandidatesQuery request,
+        CancellationToken cancellationToken) =>
+        offerService.GetRequirementProductCandidatesAsync(request, cancellationToken);
+}
+
 public sealed class OfferActivityCandidateHandler(IOfferService offerService)
     : IRequestHandler<OfferActivityCandidateQuery, OfferActivityCandidateDto>
 {
@@ -90,5 +108,17 @@ public sealed class OfferActivityCandidateValidator
         RuleFor(query => query.SiteId).NotEmpty();
         RuleFor(query => query.OfferId).NotEmpty();
         RuleFor(query => query.ActivityId).NotEmpty();
+    }
+}
+
+public sealed class OfferRequirementProductCandidatesValidator
+    : AbstractValidator<OfferRequirementProductCandidatesQuery>
+{
+    public OfferRequirementProductCandidatesValidator()
+    {
+        RuleFor(query => query.SiteId).NotEmpty();
+        RuleFor(query => query.OfferId).NotEmpty();
+        RuleFor(query => query.OfferRequirementId).NotEmpty();
+        RuleFor(query => query.SearchTerm).MaximumLength(200);
     }
 }

@@ -1,5 +1,6 @@
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Security;
+using Application.Offers.Queries;
 using Domain.Entities;
 using Domain.SeedWork.Enums;
 using FluentValidation;
@@ -17,6 +18,45 @@ public sealed record OfferSectionPricingInput(
     Guid SectionId,
     string? PricingMode,
     decimal? PriceAmount);
+
+/// <summary>Selects one concrete Product for an Offer Product Requirement.</summary>
+[Authorize(Roles = UserRoles.Administrator)]
+public sealed record SelectOfferRequirementProductCommand : IRequest<OfferProductLineDto>
+{
+    public Guid SiteId { get; set; }
+    public Guid OfferId { get; set; }
+    public Guid OfferRequirementId { get; set; }
+    public Guid ProductId { get; init; }
+}
+
+/// <summary>Clears the concrete Product selected for an Offer Product Requirement.</summary>
+[Authorize(Roles = UserRoles.Administrator)]
+public sealed record ClearOfferRequirementProductCommand(
+    Guid SiteId,
+    Guid OfferId,
+    Guid OfferRequirementId) : IRequest;
+
+public sealed class SelectOfferRequirementProductHandler(IOfferService offerService)
+    : IRequestHandler<SelectOfferRequirementProductCommand, OfferProductLineDto>
+{
+    public Task<OfferProductLineDto> Handle(
+        SelectOfferRequirementProductCommand request,
+        CancellationToken cancellationToken) =>
+        offerService.SelectRequirementProductAsync(request, cancellationToken);
+}
+
+public sealed class ClearOfferRequirementProductHandler(IOfferService offerService)
+    : IRequestHandler<ClearOfferRequirementProductCommand>
+{
+    public Task Handle(
+        ClearOfferRequirementProductCommand request,
+        CancellationToken cancellationToken) =>
+        offerService.ClearRequirementProductAsync(
+            request.SiteId,
+            request.OfferId,
+            request.OfferRequirementId,
+            cancellationToken);
+}
 
 /// <summary>Adds an active Activity Catalog item and its immutable requirement snapshot.</summary>
 [Authorize(Roles = UserRoles.Administrator)]
@@ -228,5 +268,28 @@ public sealed class UpdateOfferActivitySectionPricingValidator
             .Must(inputs => inputs is not null
                 && inputs.Select(input => input.SectionId).Distinct().Count() == inputs.Count)
             .WithMessage("Each Offer activity section can be supplied only once.");
+    }
+}
+
+public sealed class SelectOfferRequirementProductValidator
+    : AbstractValidator<SelectOfferRequirementProductCommand>
+{
+    public SelectOfferRequirementProductValidator()
+    {
+        RuleFor(command => command.SiteId).NotEmpty();
+        RuleFor(command => command.OfferId).NotEmpty();
+        RuleFor(command => command.OfferRequirementId).NotEmpty();
+        RuleFor(command => command.ProductId).NotEmpty();
+    }
+}
+
+public sealed class ClearOfferRequirementProductValidator
+    : AbstractValidator<ClearOfferRequirementProductCommand>
+{
+    public ClearOfferRequirementProductValidator()
+    {
+        RuleFor(command => command.SiteId).NotEmpty();
+        RuleFor(command => command.OfferId).NotEmpty();
+        RuleFor(command => command.OfferRequirementId).NotEmpty();
     }
 }

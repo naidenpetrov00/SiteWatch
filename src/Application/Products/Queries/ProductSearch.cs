@@ -12,6 +12,7 @@ namespace Application.Products.Queries;
 public sealed record ProductSearchQuery : IRequest<List<ProductLookupDto>>
 {
     public string? SearchTerm { get; init; }
+    public Guid? ProductTypeId { get; init; }
 }
 
 public sealed class ProductSearchQueryHandler(IApplicationDbContext dbContext)
@@ -30,8 +31,12 @@ public sealed class ProductSearchQueryHandler(IApplicationDbContext dbContext)
         var hasNumberId = int.TryParse(request.SearchTerm?.Trim(), out var numberId);
         var products = await dbContext.Products
             .AsNoTracking()
+            .Include(product => product.ProductType)
+            .ThenInclude(productType => productType.Category)
             .Where(product =>
                 product.Status == ProductStatus.Active
+                && (!request.ProductTypeId.HasValue
+                    || product.ProductTypeId == request.ProductTypeId.Value)
                 && (product.SearchIdentity.Contains(normalizedSearchTerm)
                     || hasNumberId && product.NumberId == numberId))
             .OrderBy(product => product.Title)
@@ -55,5 +60,8 @@ public sealed class ProductSearchQueryValidator : AbstractValidator<ProductSearc
     public ProductSearchQueryValidator()
     {
         RuleFor(query => query.SearchTerm).MaximumLength(200);
+        RuleFor(query => query.ProductTypeId)
+            .NotEqual(Guid.Empty)
+            .When(query => query.ProductTypeId.HasValue);
     }
 }

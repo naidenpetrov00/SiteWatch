@@ -36,25 +36,25 @@ public sealed class ActivityRequirements : EndpointGroupBase
             .WithName("DeleteActivityRequirementSection")
             .WithSummary("Delete an activity requirement section and its relationships");
         activityGroup.MapPost(
-                "/{activityId:guid}/requirement-sections/{sectionId:guid}/products",
+                "/{activityId:guid}/requirement-sections/{sectionId:guid}/requirements",
                 CreateProductRequirement)
             .WithName("CreateActivityProductRequirement")
-            .WithSummary("Assign an active Product Catalog item to a requirement section");
+            .WithSummary("Add a Product Requirement to a requirement section");
         activityGroup.MapPut(
-                "/{activityId:guid}/requirement-sections/{sectionId:guid}/products/{requirementId:guid}",
+                "/{activityId:guid}/requirement-sections/{sectionId:guid}/requirements/{requirementId:guid}",
                 UpdateProductRequirement)
             .WithName("UpdateActivityProductRequirement")
             .WithSummary("Update an activity product requirement");
         activityGroup.MapPatch(
-                "/{activityId:guid}/requirement-sections/{sectionId:guid}/products/{requirementId:guid}/move",
+                "/{activityId:guid}/requirement-sections/{sectionId:guid}/requirements/{requirementId:guid}/move",
                 MoveProductRequirement)
             .WithName("MoveActivityProductRequirement")
             .WithSummary("Reorder a product requirement within its section");
         activityGroup.MapDelete(
-                "/{activityId:guid}/requirement-sections/{sectionId:guid}/products/{requirementId:guid}",
+                "/{activityId:guid}/requirement-sections/{sectionId:guid}/requirements/{requirementId:guid}",
                 DeleteProductRequirement)
             .WithName("DeleteActivityProductRequirement")
-            .WithSummary("Remove a Product Catalog relationship from a requirement section");
+            .WithSummary("Remove a Product Requirement from a requirement section");
     }
 
     private static async Task<IResult> CreateRequirementSection(
@@ -119,7 +119,7 @@ public sealed class ActivityRequirements : EndpointGroupBase
         command.SectionId = sectionId;
         var requirementId = await mediator.Send(command, cancellationToken);
         return TypedResults.Created(
-            $"/activities/{activityId}/requirement-sections/{sectionId}/products/{requirementId}",
+            $"/activities/{activityId}/requirement-sections/{sectionId}/requirements/{requirementId}",
             new { id = requirementId });
     }
 

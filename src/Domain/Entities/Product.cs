@@ -19,7 +19,8 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
     public string? Model { get; private set; }
     public decimal? PackageQuantity { get; private set; }
     public ProductPackageUnit? PackageUnit { get; private set; }
-    public ProductCategory Category { get; private set; }
+    public Guid ProductTypeId { get; private set; }
+    public ProductType ProductType { get; private set; } = null!;
     public ProductStatus Status { get; private set; }
     public ProductSearchConfiguration SearchConfiguration { get; private set; } = null!;
     public string SearchIdentity { get; private set; } = null!;
@@ -35,7 +36,7 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
         string? model,
         decimal? packageQuantity,
         ProductPackageUnit? packageUnit,
-        ProductCategory category,
+        ProductType productType,
         ProductStatus status,
         ProductSearchConfiguration searchConfiguration)
     {
@@ -47,7 +48,7 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
             model,
             packageQuantity,
             packageUnit,
-            category,
+            productType,
             status,
             searchConfiguration);
         return product;
@@ -60,7 +61,7 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
         string? model,
         decimal? packageQuantity,
         ProductPackageUnit? packageUnit,
-        ProductCategory category,
+        ProductType productType,
         ProductStatus status,
         ProductSearchConfiguration searchConfiguration)
     {
@@ -80,13 +81,14 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
         Model = NormalizeOptional(model);
         PackageQuantity = packageQuantity;
         PackageUnit = packageUnit;
-        Category = category;
+        ProductType = Guard.Against.Null(productType);
+        ProductTypeId = productType.Id;
         Status = status;
         SearchConfiguration = Guard.Against.Null(searchConfiguration);
         RefreshSearchIdentity();
     }
 
-    private void RefreshSearchIdentity()
+    public void RefreshSearchIdentity()
     {
         SearchIdentity = NormalizeSearchValue(
             string.Join(
@@ -94,7 +96,8 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
                 new[]
                 {
                     Title,
-                    Category.ToSearchText(),
+                    ProductType.Category.Name,
+                    ProductType.Name,
                     Brand,
                     Model,
                     EffectivePrimarySearchPhrase

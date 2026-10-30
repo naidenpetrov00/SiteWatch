@@ -13,8 +13,8 @@ public sealed class ActivityProductRequirement : BaseAuditableEntity
 
     public Guid SectionId { get; private set; }
     public ActivityRequirementSection Section { get; private set; } = null!;
-    public Guid ProductId { get; private set; }
-    public Product Product { get; private set; } = null!;
+    public Guid ProductTypeId { get; private set; }
+    public ProductType ProductType { get; private set; } = null!;
     public decimal Quantity { get; private set; }
     public bool IsRequired { get; private set; }
     public ProductQuantityBehavior QuantityBehavior { get; private set; }
@@ -23,33 +23,28 @@ public sealed class ActivityProductRequirement : BaseAuditableEntity
 
     internal static ActivityProductRequirement Create(
         ActivityRequirementSection section,
-        Product product,
+        ProductType productType,
         decimal quantity,
         bool isRequired,
         ProductQuantityBehavior quantityBehavior,
         string? notes,
         int sortOrder)
     {
-        if (product.Status != ProductStatus.Active)
-        {
-            throw new InvalidOperationException(
-                "Only active products can be assigned to a requirement section.");
-        }
-
         var requirement = new ActivityProductRequirement
         {
             Id = Guid.NewGuid(),
             Section = section,
             SectionId = section.Id,
-            Product = product,
-            ProductId = product.Id
+            ProductType = productType,
+            ProductTypeId = productType.Id
         };
-        requirement.UpdateDetails(quantity, isRequired, quantityBehavior, notes);
+        requirement.UpdateDetails(productType, quantity, isRequired, quantityBehavior, notes);
         requirement.SetSortOrder(sortOrder);
         return requirement;
     }
 
     public void UpdateDetails(
+        ProductType productType,
         decimal quantity,
         bool isRequired,
         ProductQuantityBehavior quantityBehavior,
@@ -78,6 +73,8 @@ public sealed class ActivityProductRequirement : BaseAuditableEntity
                 "Unsupported product quantity behavior.");
         }
 
+        ProductType = productType ?? throw new ArgumentNullException(nameof(productType));
+        ProductTypeId = productType.Id;
         Quantity = quantity;
         IsRequired = isRequired;
         QuantityBehavior = quantityBehavior;
