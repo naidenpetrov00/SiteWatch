@@ -14,7 +14,7 @@
     </mat-form-field>
 
     <div class="product-type-editor__category-row">
-      <app-catalog-selector #categorySelector [formControl]="categoryControl" kind="category" label="Category" placeholder="Choose or search Categories" hint="Choose the broad catalog grouping for this Product Type." />
+      <app-catalog-selector #categorySelector [formControl]="categoryControl" kind="category" name="product-type-editor-category" label="Category" placeholder="Choose or search Categories" hint="Choose the broad catalog grouping for this Product Type." />
       <button mat-stroked-button type="button" [disabled]="saving()" (click)="createCategory()">
         Create Category
       </button>

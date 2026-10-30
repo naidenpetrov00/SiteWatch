@@ -32,6 +32,7 @@ export class CatalogSelectorComponent implements ControlValueAccessor, OnChanges
   readonly kind = input.required<CatalogSelectorKind>();
   readonly categoryId = input<string | null>(null);
   readonly label = input.required<string>();
+  readonly name = input.required<string>();
   readonly placeholder = input('');
   readonly hint = input<string | null>(null);
   readonly required = input(false);

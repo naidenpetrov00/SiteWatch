@@ -17,10 +17,10 @@
 
   <app-data-table tableEyebrow="Catalog" tableLabel="Manage Products" emptyMessage="No products match the current filters." filterApplyMode="search" [rows]="products()" [filteredRowsTotal]="filteredCount()" [overallRowsTotal]="totalCount()" [columns]="columns" [pageSize]="pageSize" [pageSizeOptions]="pageSizeOptions" [resetPageToken]="catalogFilterRevision()" (tableStateChange)="onTableStateChange($event)" (filtersCleared)="clearCatalogFilters()" (cellButtonClicked)="onCellButtonClicked($event)">
     <div data-table-filter-control class="manage-products-page__table-filter">
-      <app-catalog-selector [formControl]="categoryFilterControl" kind="category" label="Filter by Category" placeholder="Choose or search Categories" />
+      <app-catalog-selector [formControl]="categoryFilterControl" kind="category" name="products-category-filter" label="Filter by Category" placeholder="Choose or search Categories" />
     </div>
     <div data-table-filter-control class="manage-products-page__table-filter">
-      <app-catalog-selector [formControl]="productTypeFilterControl" kind="product-type" [categoryId]="selectedCategoryId()" label="Filter by Product Type" placeholder="Choose or search Product Types" />
+      <app-catalog-selector [formControl]="productTypeFilterControl" kind="product-type" [categoryId]="selectedCategoryId()" name="products-product-type-filter" label="Filter by Product Type" placeholder="Choose or search Product Types" />
     </div>
   </app-data-table>
 </main>

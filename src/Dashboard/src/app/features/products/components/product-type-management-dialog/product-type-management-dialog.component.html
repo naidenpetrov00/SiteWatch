@@ -4,10 +4,10 @@
   <div class="product-type-management__toolbar">
     <mat-form-field appearance="outline">
       <mat-label>Search Product Types</mat-label>
-      <input matInput [formControl]="nameSearchControl" inputmode="search" />
+      <input matInput name="product-type-search" autocomplete="off" [formControl]="nameSearchControl" inputmode="search" />
     </mat-form-field>
     <div class="product-type-management__category-filter">
-      <app-catalog-selector [formControl]="categoryFilterControl" kind="category" label="Filter by Category" placeholder="Choose or search Categories" />
+      <app-catalog-selector [formControl]="categoryFilterControl" kind="category" name="product-type-management-category-filter" label="Filter by Category" placeholder="Choose or search Categories" />
       @if (categoryId()) { <button mat-button type="button" aria-label="Clear Category filter" (click)="clearCategoryFilter()">Clear</button> }
     </div>
     <button mat-flat-button color="primary" type="button" (click)="createProductType()">Create Product Type</button>
