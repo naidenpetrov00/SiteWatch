@@ -10,7 +10,7 @@ export function resolveApiBaseUrl(): string {
     return 'http://localhost:5293';
   }
 
-  return '';
+  return `${window.location.protocol}//api.${window.location.hostname}`;
 }
 
 export function buildApiUrl(path: string): string {

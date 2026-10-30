@@ -1,0 +1,85 @@
+@if (matrix().products.length === 0) {
+  <div class="offer-pricing__empty">
+    <mat-icon aria-hidden="true">price_check</mat-icon>
+    <p>Add Activity requirements before comparing retailer prices.</p>
+  </div>
+} @else {
+  <p id="offer-pricing-scroll-hint" class="offer-pricing__scroll-hint">
+    Scroll horizontally to compare retailers. Product and requirement context stays pinned.
+  </p>
+  <div class="offer-pricing__table-shell" tabindex="0" aria-labelledby="offer-pricing-heading" aria-describedby="offer-pricing-scroll-hint">
+    <table mat-table [dataSource]="displayRows()" class="offer-pricing__table" aria-labelledby="offer-pricing-heading" aria-describedby="offer-pricing-scroll-hint">
+      <ng-container matColumnDef="group">
+        <td mat-cell *matCellDef="let displayRow" role="rowheader" [attr.colspan]="displayedColumns().length">
+          @if (displayRow.kind === 'activity') {
+            <div class="offer-pricing__group-heading offer-pricing__group-heading--activity"><span class="offer-pricing__group-kicker">Activity {{ displayRow.activityNumberId }}</span><strong>{{ displayRow.activityName }}</strong></div>
+          } @else if (displayRow.kind === 'section') {
+            <div class="offer-pricing__group-heading offer-pricing__group-heading--section"><span class="offer-pricing__group-kicker">Section</span><strong>{{ displayRow.sectionName || 'Measurement section' }}</strong></div>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="product" sticky>
+        <th mat-header-cell *matHeaderCellDef>Product requirement</th>
+        <td mat-cell *matCellDef="let displayRow" role="rowheader">
+          @if (displayRow.kind === 'product') {
+            @let row = displayRow.product;
+            @let requirement = displayRow.requirement;
+            <div class="offer-pricing__product">
+              <strong>#{{ row.productNumberId }} · {{ row.title }}</strong>
+              @if (productIdentity(row)) { <span>{{ productIdentity(row) }}</span> }
+              <span>{{ packageDescription(row) }}</span>
+              <div class="offer-pricing__requirement-summary"><span class="offer-pricing__requirement-state" [class.offer-pricing__requirement-state--optional]="!requirement.isRequired">{{ requirement.isRequired ? 'Required' : 'Optional' }}</span><strong>Calculated requirement {{ formatQuantity(requirement.calculatedQuantity) }}</strong></div>
+              @if (displayRow.sharedRequirementCount > 1) { <span class="offer-pricing__shared-badge">Aggregate pricing shared across {{ displayRow.sharedRequirementCount }} requirements</span> }
+              <span class="offer-pricing__offer-totals">Offer totals · Required {{ formatQuantity(row.requiredQuantity) }} · Optional {{ formatQuantity(row.optionalQuantity) }}</span>
+              <details class="offer-pricing__calculation-details"><summary>Calculation details</summary><dl><div><dt>Configured</dt><dd>{{ formatQuantity(requirement.configuredQuantity) }}</dd></div><div><dt>Behavior</dt><dd>{{ requirement.quantityBehavior === 'fixed' ? 'Fixed' : 'Proportional' }}</dd></div><div><dt>Measurement</dt><dd>{{ formatQuantity(requirement.requestedMeasurement) }} / {{ formatQuantity(requirement.basisQuantity) }} {{ measurementUnit(requirement.measurementUnit) }}</dd></div></dl>@if (requirement.notes) { <p><strong>Notes:</strong> {{ requirement.notes }}</p> }</details>
+              @if (row.selectedPrice; as selected) {
+                <div class="offer-pricing__selected-summary"><span>Selected {{ selected.retailerDisplayName }} · {{ formatCurrency(selected.amount) }} per {{ selected.basis }}</span>@if (selected.hasNewerObservation) { <span class="offer-pricing__newer">Newer price available</span> } @if (editable()) { <button mat-button type="button" [disabled]="isMutating()" (click)="selectionClearRequested.emit(row)">Clear selection</button> }</div>
+              } @else { <span class="offer-pricing__missing-selection">No price selected</span> }
+            </div>
+          }
+        </td>
+      </ng-container>
+
+      @for (retailer of matrix().retailers; track retailer.retailerId) {
+        <ng-container [matColumnDef]="retailer.retailerId">
+          <th mat-header-cell *matHeaderCellDef><div class="offer-pricing__retailer-heading"><span>{{ retailer.displayName }}</span>@if (!retailer.isActive) { <small>Inactive</small> } @if (editable()) { <button mat-icon-button type="button" aria-label="Remove {{ retailer.displayName }} from comparison" [disabled]="isMutating() || !canRemoveRetailer(retailer.retailerId)" [matTooltip]="canRemoveRetailer(retailer.retailerId) ? 'Remove retailer' : 'Clear selected prices before removing this retailer'" (click)="retailerRemovalRequested.emit({ retailerId: retailer.retailerId, displayName: retailer.displayName })"><mat-icon aria-hidden="true">close</mat-icon></button> }</div></th>
+          <td mat-cell *matCellDef="let displayRow">
+            @if (displayRow.kind === 'product') {
+              @let row = displayRow.product;
+              @if (cellFor(row, retailer.retailerId); as cell) {
+                <div class="offer-pricing__cell" [class.offer-pricing__cell--cheapest]="cell.isCheapest" [class.offer-pricing__cell--selected]="isSelected(row, retailer.retailerId)">
+                  @if (editable() && (!retailer.isActive || cell.retailerListingIsActive === false)) { <div class="offer-pricing__inactive-listing"><strong>{{ !retailer.isActive ? 'Retailer inactive' : 'Listing inactive' }}</strong><span>Prices remain visible, but cannot be recorded or selected.</span><a [routerLink]="['/manage-products', row.productId]">Manage in Product Catalog</a></div> }
+                  @if (editable()) { <div class="offer-pricing__cell-actions"><button mat-button type="button" [disabled]="isMutating()" (click)="productLinkRequested.emit({ row, cell })">{{ cell.retailerListingId ? 'Edit product link' : 'Add product link' }}</button></div> }
+                  @if (isEditing(displayRow, retailer.retailerId) && canEditCell(cell)) {
+                    <form class="offer-pricing__edit-form" [formGroup]="formFor(row, cell)" (ngSubmit)="priceSaveRequested.emit({ row, cell, displayRowId: displayRow.id })">
+                      <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>EUR price</mat-label><input matInput type="number" min="0.01" step="0.01" formControlName="amount" /><span matTextPrefix>€&nbsp;</span>@if (formFor(row, cell).controls.amount.touched && formFor(row, cell).controls.amount.invalid) { <mat-error>Enter a positive price with at most two decimals.</mat-error> }</mat-form-field>
+                      <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Price basis</mat-label><mat-select formControlName="basis">@for (basis of allowedBases(row); track basis) { <mat-option [value]="basis">{{ basis === 'item' ? 'Individual item' : 'Package' }}</mat-option> }</mat-select></mat-form-field>
+                      <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Retailer product URL</mat-label><input matInput type="url" formControlName="productUrl" autocomplete="url" />@if (formFor(row, cell).controls.productUrl.touched && formFor(row, cell).controls.productUrl.invalid) { <mat-error>Enter an absolute HTTP or HTTPS URL.</mat-error> }</mat-form-field>
+                      <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Retailer product code</mat-label><input matInput formControlName="retailerProductCode" maxlength="100" /></mat-form-field>
+                      <div class="offer-pricing__cell-actions"><button mat-flat-button color="primary" type="submit" [disabled]="formFor(row, cell).invalid || isMutating()">{{ isSaving(row, retailer.retailerId) ? 'Saving…' : 'Save' }}</button><button mat-button type="button" [disabled]="isMutating()" (click)="editCancelled.emit({ row, cell, displayRowId: displayRow.id })">Cancel</button></div>
+                      @if (cellError(row, retailer.retailerId); as saveError) { <p class="offer-pricing__cell-error" role="alert">{{ saveError }}</p> }
+                    </form>
+                  } @else if (cell.latestObservation; as observation) {
+                    <div class="offer-pricing__price"><strong>{{ formatCurrency(observation.amount) }}</strong><span>per {{ observation.basis }}</span></div><time [attr.datetime]="observation.observedAt" [attr.aria-label]="'Observed ' + exactDate(observation.observedAt)" [matTooltip]="exactDate(observation.observedAt)">{{ relativeAge(observation.observedAt) }}</time>
+                    @if (row.requiredQuantity > 0 && cell.comparableRequiredTotal !== null) { <span class="offer-pricing__line-total">Offer required total {{ formatCurrency(cell.comparableRequiredTotal) }}</span> }
+                    @if (row.optionalQuantity > 0 && cell.comparableOptionalTotal !== null) { <span class="offer-pricing__line-total">Offer optional total {{ formatCurrency(cell.comparableOptionalTotal) }}</span> }
+                    @if (cell.isCheapest) { <span class="offer-pricing__cheapest-label">Cheapest current</span> } @if (isSelected(row, retailer.retailerId)) { <span class="offer-pricing__selected-label">Selected retailer</span> }
+                    <div class="offer-pricing__cell-actions">@if (canEditCell(cell)) { <button mat-stroked-button type="button" [disabled]="isMutating()" (click)="priceUseRequested.emit({ row, cell })">{{ isSelected(row, retailer.retailerId) && !row.selectedPrice?.hasNewerObservation ? 'Selected' : 'Use this price' }}</button><button mat-button type="button" [disabled]="isMutating()" (click)="editStarted.emit({ row, cell, displayRowId: displayRow.id })">{{ isEditingElsewhere(displayRow, retailer.retailerId) ? 'Continue editing here' : 'Edit' }}</button> }<button mat-button type="button" (click)="historyRequested.emit({ row, cell })">History</button></div>
+                  } @else {
+                    <span class="offer-pricing__no-price">No price</span><div class="offer-pricing__cell-actions">@if (canEditCell(cell)) { <button mat-stroked-button type="button" (click)="editStarted.emit({ row, cell, displayRowId: displayRow.id })">{{ isEditingElsewhere(displayRow, retailer.retailerId) ? 'Continue editing here' : 'Add price' }}</button> }<button mat-button type="button" (click)="historyRequested.emit({ row, cell })">History</button></div>
+                  }
+                </div>
+              }
+            }
+          </td>
+        </ng-container>
+      }
+      <tr mat-header-row *matHeaderRowDef="displayedColumns(); sticky: true"></tr>
+      <tr mat-row *matRowDef="let row; columns: groupColumns; when: isActivityGroup" class="offer-pricing__activity-row"></tr>
+      <tr mat-row *matRowDef="let row; columns: groupColumns; when: isSectionGroup" class="offer-pricing__section-row"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns(); when: isProductRow" class="offer-pricing__product-row"></tr>
+    </table>
+  </div>
+  @if (matrix().retailers.length === 0) { <p class="offer-pricing__no-retailers">Add at least one active Retailer to begin comparing prices.</p> }
+}

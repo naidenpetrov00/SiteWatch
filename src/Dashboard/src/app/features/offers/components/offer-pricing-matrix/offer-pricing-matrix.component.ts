@@ -10,30 +10,14 @@ import {
   signal,
   untracked
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import {
   AbstractControl,
   FormBuilder,
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
   ValidationErrors,
   ValidatorFn,
   Validators
 } from '@angular/forms';
-import {
-  MatAutocompleteModule,
-  MatAutocompleteSelectedEvent
-} from '@angular/material/autocomplete';
-import { MatButtonModule } from '@angular/material/button';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSelectModule } from '@angular/material/select';
-import { MatTableModule } from '@angular/material/table';
-import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
 import { debounceTime, distinctUntilChanged, firstValueFrom } from 'rxjs';
 
 import { DashboardRetailerLookup } from '../../../retailers/models/dashboard-retailer.models';
@@ -53,7 +37,6 @@ import {
   OfferPriceBasis,
   OfferOnlinePriceCollectionStartOutcome,
   OfferOnlinePriceCollectionStartResponse,
-  OfferPricingRequirement,
   OfferPricingProductRow,
   OfferRetailerPriceCell
 } from '../../models/offer.models';
@@ -64,60 +47,20 @@ import {
   OfferOnlinePriceCollectionDialogData
 } from '../offer-online-price-collection-dialog/offer-online-price-collection-dialog.component';
 import { isPriceCollectionRunUnfinished } from '../../../retailers/models/retailer-price-collection.models';
-import {
-  formatOfferQuantity,
-  measurementUnitLabel,
-  packageUnitLabel
-} from '../../utils/offer-quantity';
-
-type PriceCellForm = FormGroup<{
-  amount: FormControl<number | null>;
-  basis: FormControl<OfferPriceBasis>;
-  productUrl: FormControl<string>;
-  retailerProductCode: FormControl<string>;
-}>;
-
-interface PricingActivityDisplayRow {
-  kind: 'activity';
-  id: string;
-  activityNumberId: number;
-  activityName: string;
-}
-
-interface PricingSectionDisplayRow {
-  kind: 'section';
-  id: string;
-  offerActivityId: string;
-  sectionName: string | null;
-}
-
-interface PricingProductDisplayRow {
-  kind: 'product';
-  id: string;
-  product: OfferPricingProductRow;
-  requirement: OfferPricingRequirement;
-  sharedRequirementCount: number;
-}
-
-type PricingDisplayRow =
-  | PricingActivityDisplayRow
-  | PricingSectionDisplayRow
-  | PricingProductDisplayRow;
+import { OfferPricingMatrixActionsComponent } from './offer-pricing-matrix-actions.component';
+import { OfferPricingMatrixCollectionRunsComponent } from './offer-pricing-matrix-collection-runs.component';
+import { OfferPricingMatrixStatusComponent } from './offer-pricing-matrix-status.component';
+import { OfferPricingMatrixSummaryComponent } from './offer-pricing-matrix-summary.component';
+import { OfferPricingMatrixTableComponent } from './offer-pricing-matrix-table.component';
+import { PriceCellForm } from './offer-pricing-matrix.types';
 @Component({
   selector: 'app-offer-pricing-matrix',
   imports: [
-    ReactiveFormsModule,
-    MatAutocompleteModule,
-    MatButtonModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatIconModule,
-    MatInputModule,
-    MatProgressSpinnerModule,
-    MatSelectModule,
-    MatTableModule,
-    MatTooltipModule,
-    RouterLink
+    OfferPricingMatrixActionsComponent,
+    OfferPricingMatrixCollectionRunsComponent,
+    OfferPricingMatrixStatusComponent,
+    OfferPricingMatrixSummaryComponent,
+    OfferPricingMatrixTableComponent
   ],
   templateUrl: './offer-pricing-matrix.component.html',
   styleUrl: './offer-pricing-matrix.component.css',
@@ -138,20 +81,6 @@ export class OfferPricingMatrixComponent {
   readonly offerId = input.required<string>();
   readonly matrix = computed(() => this.offersService.pricingMatrixQuery.data());
   readonly editable = computed(() => this.matrix()?.status === 'Draft');
-  readonly displayedColumns = computed(() => [
-    'product',
-    ...(this.matrix()?.retailers.map((retailer) => retailer.retailerId) ?? [])
-  ]);
-  readonly displayRows = computed(() =>
-    buildDisplayRows(this.matrix()?.products ?? [])
-  );
-  readonly groupColumns = ['group'];
-  readonly isActivityGroup = (_index: number, row: PricingDisplayRow): boolean =>
-    row.kind === 'activity';
-  readonly isSectionGroup = (_index: number, row: PricingDisplayRow): boolean =>
-    row.kind === 'section';
-  readonly isProductRow = (_index: number, row: PricingDisplayRow): boolean =>
-    row.kind === 'product';
 
   readonly forms = signal<ReadonlyMap<string, PriceCellForm>>(new Map());
   readonly editingLocations = signal<ReadonlyMap<string, string>>(new Map());
@@ -174,10 +103,6 @@ export class OfferPricingMatrixComponent {
       this.offersService.clearProductPriceMutation.isPending() ||
       this.offersService.startOnlinePriceCollectionMutation.isPending()
   );
-
-  readonly displayRetailer = (
-    value: string | DashboardRetailerLookup | null
-  ): string => (typeof value === 'string' ? value : value?.displayName ?? '');
 
   constructor() {
     this.retailerSearch.valueChanges
@@ -269,8 +194,7 @@ export class OfferPricingMatrixComponent {
     );
   }
 
-  async onRetailerSelected(event: MatAutocompleteSelectedEvent): Promise<void> {
-    const retailer = event.option.value as DashboardRetailerLookup;
+  async onRetailerSelected(retailer: DashboardRetailerLookup): Promise<void> {
     this.searchRevision += 1;
     this.retailerResults.set([]);
     this.retailerSearch.setValue('', { emitEvent: false });
@@ -369,25 +293,25 @@ export class OfferPricingMatrixComponent {
   }
 
   startEdit(
-    displayRow: PricingProductDisplayRow,
+    displayRowId: string,
+    row: OfferPricingProductRow,
     cell: OfferRetailerPriceCell
   ): void {
     if (!this.canEditCell(cell)) return;
-    const row = displayRow.product;
     const key = this.cellKey(row.offerProductLineId, cell.retailerId);
     this.clearCellError(key);
     this.editingLocations.update((current) => {
       const next = new Map(current);
-      next.set(key, displayRow.id);
+      next.set(key, displayRowId);
       return next;
     });
   }
 
   cancelEdit(
-    displayRow: PricingProductDisplayRow,
+    _displayRowId: string,
+    row: OfferPricingProductRow,
     cell: OfferRetailerPriceCell
   ): void {
-    const row = displayRow.product;
     const key = this.cellKey(row.offerProductLineId, cell.retailerId);
     this.clearCellError(key);
     this.resetForm(this.formFor(row, cell), row, cell, this.editable());
@@ -399,10 +323,10 @@ export class OfferPricingMatrixComponent {
   }
 
   async savePrice(
-    displayRow: PricingProductDisplayRow,
+    _displayRowId: string,
+    row: OfferPricingProductRow,
     cell: OfferRetailerPriceCell
   ): Promise<void> {
-    const row = displayRow.product;
     const form = this.formFor(row, cell);
     if (!this.canEditCell(cell) || form.invalid || this.isMutating()) {
       form.markAllAsTouched();
@@ -483,6 +407,15 @@ export class OfferPricingMatrixComponent {
     }
   }
 
+  private formFor(
+    row: OfferPricingProductRow,
+    cell: OfferRetailerPriceCell
+  ): PriceCellForm {
+    const form = this.forms().get(this.cellKey(row.offerProductLineId, cell.retailerId));
+    if (!form) throw new Error('Missing Offer pricing cell form.');
+    return form;
+  }
+
   openHistory(row: OfferPricingProductRow, cell: OfferRetailerPriceCell): void {
     this.dialog.open<
       RetailerPriceHistoryDialogComponent,
@@ -505,41 +438,6 @@ export class OfferPricingMatrixComponent {
   hasUnsavedEdits(): boolean {
     return this.editingLocations().size > 0 ||
       [...this.forms().values()].some((form) => form.dirty);
-  }
-
-  formFor(row: OfferPricingProductRow, cell: OfferRetailerPriceCell): PriceCellForm {
-    const form = this.forms().get(this.cellKey(row.offerProductLineId, cell.retailerId));
-    if (!form) throw new Error('Missing Offer pricing cell form.');
-    return form;
-  }
-
-  cellFor(row: OfferPricingProductRow, retailerId: string): OfferRetailerPriceCell {
-    const cell = row.retailerPrices.find((item) => item.retailerId === retailerId);
-    if (!cell) throw new Error('Missing Offer retailer price cell.');
-    return cell;
-  }
-
-  isEditing(displayRow: PricingProductDisplayRow, retailerId: string): boolean {
-    const key = this.cellKey(displayRow.product.offerProductLineId, retailerId);
-    return this.editingLocations().get(key) === displayRow.id;
-  }
-
-  isEditingElsewhere(displayRow: PricingProductDisplayRow, retailerId: string): boolean {
-    const key = this.cellKey(displayRow.product.offerProductLineId, retailerId);
-    const location = this.editingLocations().get(key);
-    return location !== undefined && location !== displayRow.id;
-  }
-
-  isSaving(row: OfferPricingProductRow, retailerId: string): boolean {
-    return this.savingCellKey() === this.cellKey(row.offerProductLineId, retailerId);
-  }
-
-  cellError(row: OfferPricingProductRow, retailerId: string): string | null {
-    return this.cellErrors().get(this.cellKey(row.offerProductLineId, retailerId)) ?? null;
-  }
-
-  isSelected(row: OfferPricingProductRow, retailerId: string): boolean {
-    return row.selectedPrice?.retailerId === retailerId;
   }
 
   canEditCell(cell: OfferRetailerPriceCell): boolean {
@@ -565,15 +463,6 @@ export class OfferPricingMatrixComponent {
   allowedBases(row: OfferPricingProductRow): readonly OfferPriceBasis[] {
     if (row.packageQuantity === null || row.packageUnit === null) return ['item'];
     return row.packageUnit === 'piece' ? ['item', 'package'] : ['package'];
-  }
-
-  productIdentity(row: OfferPricingProductRow): string {
-    return [row.brand, row.model].filter(Boolean).join(' · ');
-  }
-
-  packageDescription(row: OfferPricingProductRow): string {
-    if (row.packageQuantity === null || row.packageUnit === null) return 'Individual item';
-    return `${formatOfferQuantity(row.packageQuantity)} ${packageUnitLabel(row.packageUnit)}`;
   }
 
   retailerName(retailerId: string): string {
@@ -625,52 +514,6 @@ export class OfferPricingMatrixComponent {
     return blockingCodes.length > 0
       ? 'the retailer company is not currently available for collection.'
       : null;
-  }
-
-  formatQuantity = formatOfferQuantity;
-  measurementUnit = measurementUnitLabel;
-
-  formatCurrency(amount: number | null): string {
-    return amount === null
-      ? '—'
-      : new Intl.NumberFormat(undefined, {
-          style: 'currency',
-          currency: 'EUR'
-        }).format(amount);
-  }
-
-  runProgress(processedCount: number, totalCount: number): number {
-    return totalCount === 0 ? 100 : Math.round((processedCount / totalCount) * 100);
-  }
-
-  statusLabel(status: string): string {
-    return status.replace(/([A-Z])/g, ' $1').replace(/^./, value => value.toUpperCase());
-  }
-
-  relativeAge(value: string): string {
-    const observed = new Date(value);
-    const today = new Date();
-    const observedDay = new Date(
-      observed.getFullYear(),
-      observed.getMonth(),
-      observed.getDate()
-    );
-    const todayDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const days = Math.max(
-      0,
-      Math.round((todayDay.getTime() - observedDay.getTime()) / 86_400_000)
-    );
-    return new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' }).format(
-      -days,
-      'day'
-    );
-  }
-
-  exactDate(value: string): string {
-    return new Intl.DateTimeFormat(undefined, {
-      dateStyle: 'medium',
-      timeStyle: 'short'
-    }).format(new Date(value));
   }
 
   private reconcileForms(
@@ -778,74 +621,6 @@ export class OfferPricingMatrixComponent {
     this.feedback.set(null);
     this.error.set(null);
   }
-}
-
-function buildDisplayRows(
-  products: readonly OfferPricingProductRow[]
-): PricingDisplayRow[] {
-  const occurrences = products.flatMap((product) =>
-    product.requirements.map((requirement) => ({ product, requirement }))
-  );
-  occurrences.sort(
-    (left, right) =>
-      left.requirement.activitySortOrder - right.requirement.activitySortOrder ||
-      left.requirement.activityNumberId - right.requirement.activityNumberId ||
-      left.requirement.offerActivityId.localeCompare(
-        right.requirement.offerActivityId
-      ) ||
-      left.requirement.sectionSortOrder - right.requirement.sectionSortOrder ||
-      left.requirement.offerActivitySectionId.localeCompare(
-        right.requirement.offerActivitySectionId
-      ) ||
-      left.requirement.sortOrder - right.requirement.sortOrder ||
-      left.product.productNumberId - right.product.productNumberId ||
-      left.requirement.id.localeCompare(right.requirement.id)
-  );
-
-  const counts = new Map<string, number>();
-  for (const occurrence of occurrences) {
-    counts.set(
-      occurrence.product.offerProductLineId,
-      (counts.get(occurrence.product.offerProductLineId) ?? 0) + 1
-    );
-  }
-
-  const rows: PricingDisplayRow[] = [];
-  let activityId: string | null = null;
-  let sectionId: string | null = null;
-  for (const occurrence of occurrences) {
-    const { product, requirement } = occurrence;
-    if (activityId !== requirement.offerActivityId) {
-      activityId = requirement.offerActivityId;
-      sectionId = null;
-      rows.push({
-        kind: 'activity',
-        id: `activity/${requirement.offerActivityId}`,
-        activityNumberId: requirement.activityNumberId,
-        activityName: requirement.activityName
-      });
-    }
-
-    if (sectionId !== requirement.offerActivitySectionId) {
-      sectionId = requirement.offerActivitySectionId;
-      rows.push({
-        kind: 'section',
-        id: `section/${requirement.offerActivitySectionId}`,
-        offerActivityId: requirement.offerActivityId,
-        sectionName: requirement.sectionName
-      });
-    }
-
-    rows.push({
-      kind: 'product',
-      id: `requirement/${requirement.id}`,
-      product,
-      requirement,
-      sharedRequirementCount: counts.get(product.offerProductLineId) ?? 1
-    });
-  }
-
-  return rows;
 }
 
 function normalizeOptional(value: string): string | null {

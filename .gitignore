@@ -399,12 +399,12 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 src/Api/.env
+.env.production
 # JetBrains
 .idea/
 *.iml
 /guidelines.md
 /sqlserver
-src/Infrastructure/Data/Migrations
 azurelite-data/
 src/Dashboard/.angular/
 doc/Site/Ателие 48В/Алреа 2 - Ателие 48 В - Интериорен проект-29092026.pdf

@@ -1,0 +1,16 @@
+<div class="offer-pricing__heading">
+  <div>
+    <p class="offer-pricing__eyebrow">Stage 3</p>
+    <h2 id="offer-pricing-heading">Products &amp; Retailer Pricing</h2>
+  </div>
+  @if (matrix(); as currentMatrix) {
+    <div class="offer-pricing__totals" aria-label="Offer pricing totals">
+      <span [class.offer-pricing__incomplete]="!currentMatrix.requiredPricingComplete">
+        Required: {{ currentMatrix.requiredPricingComplete ? formatCurrency(currentMatrix.requiredTotal) : 'Incomplete' }}
+      </span>
+      <span [class.offer-pricing__incomplete]="!currentMatrix.optionalPricingComplete">
+        Optional: {{ currentMatrix.optionalPricingComplete ? formatCurrency(currentMatrix.optionalTotal) : 'Incomplete' }}
+      </span>
+    </div>
+  }
+</div>
