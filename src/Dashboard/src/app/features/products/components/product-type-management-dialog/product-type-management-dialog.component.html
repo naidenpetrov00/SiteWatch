@@ -1,0 +1,42 @@
+<h2 mat-dialog-title>Manage Product Types</h2>
+<mat-dialog-content class="product-type-management">
+  <p>Maintain Product Types and their Category context.</p>
+  <div class="product-type-management__toolbar">
+    <mat-form-field appearance="outline">
+      <mat-label>Search Product Types</mat-label>
+      <input matInput [formControl]="nameSearchControl" inputmode="search" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Filter by Category</mat-label>
+      <input matInput [formControl]="categoryFilterControl" [matAutocomplete]="categoryAutocomplete" autocomplete="off" inputmode="search" />
+      @if (categoryFilterControl.value) {
+        <button matSuffix mat-button type="button" aria-label="Clear Category filter" (click)="clearCategoryFilter()">Clear</button>
+      }
+    </mat-form-field>
+    <button mat-flat-button color="primary" type="button" (click)="createProductType()">Create Product Type</button>
+  </div>
+  <mat-autocomplete #categoryAutocomplete="matAutocomplete" [displayWith]="displayCategory" [requireSelection]="true" (optionSelected)="onCategoryFilterSelected($event)">
+    @for (category of categoryResults(); track category.id) { <mat-option [value]="category">{{ category.name }}</mat-option> }
+  </mat-autocomplete>
+  @if (categoryLoading()) { <p aria-live="polite">Searching Categories…</p> }
+  @if (categoryLookupError()) { <p class="product-type-management__error" role="alert">{{ categoryLookupError() }}</p> }
+  @if (pageError()) { <p class="product-type-management__error" role="alert">{{ pageError() }} <button mat-button type="button" (click)="retry()">Retry</button></p> }
+  @if (productTypesQuery.isPending()) {
+    <p aria-live="polite">Loading Product Types…</p>
+  } @else if (productTypesQuery.isError()) {
+    <p class="product-type-management__error" role="alert">Product Types could not be loaded.</p>
+  } @else if (productTypesQuery.data(); as response) {
+    <div class="product-type-management__table-shell" tabindex="0" aria-label="Product Types table">
+      <table mat-table [dataSource]="response.items">
+        <ng-container matColumnDef="name"><th mat-header-cell *matHeaderCellDef>Product Type</th><td mat-cell *matCellDef="let item">{{ item.name }}</td></ng-container>
+        <ng-container matColumnDef="categoryName"><th mat-header-cell *matHeaderCellDef>Category</th><td mat-cell *matCellDef="let item">{{ item.categoryName }}</td></ng-container>
+        <ng-container matColumnDef="actions"><th mat-header-cell *matHeaderCellDef>Actions</th><td mat-cell *matCellDef="let item"><div class="product-type-management__actions"><button mat-stroked-button type="button" [disabled]="deletingId() === item.id" (click)="editProductType(item)">Edit</button><button mat-stroked-button color="warn" type="button" [disabled]="deletingId() === item.id" (click)="deleteProductType(item)">{{ deletingId() === item.id ? 'Deleting…' : 'Delete' }}</button></div></td></ng-container>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+    </div>
+    @if (response.items.length === 0) { <p>No Product Types match the current filters.</p> }
+    <mat-paginator [length]="response.filteredCount" [pageIndex]="pageIndex()" [pageSize]="pageSize()" [pageSizeOptions]="[25, 50, 100]" [showFirstLastButtons]="true" (page)="onPageChange($event)" />
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end"><button mat-button mat-dialog-close type="button">Close</button></mat-dialog-actions>

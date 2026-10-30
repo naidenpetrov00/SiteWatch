@@ -1,0 +1,67 @@
+<app-dialog-shell
+  eyebrow="Catalog"
+  [title]="isEdit ? 'Edit Product Type' : 'Create Product Type'"
+  subtitle="A Product Type is an abstract grouping within a Category."
+  [closeDisabled]="saving()"
+>
+  <form [id]="formId" class="product-type-editor" [formGroup]="form" novalidate (ngSubmit)="save()">
+    <mat-form-field appearance="outline">
+      <mat-label>Product Type name</mat-label>
+      <input matInput formControlName="name" maxlength="200" autocomplete="off" />
+      @if (form.controls.name.touched && form.controls.name.invalid) {
+        <mat-error>Enter a Product Type name of no more than 200 characters.</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="product-type-editor__category-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Category</mat-label>
+        <input
+          #categoryInput
+          matInput
+          [formControl]="categoryControl"
+          [matAutocomplete]="categoryAutocomplete"
+          autocomplete="off"
+          inputmode="search"
+          placeholder="Search Categories"
+        />
+        <mat-hint>Choose the broad catalog grouping for this Product Type.</mat-hint>
+        @if (categoryControl.touched && form.controls.categoryId.invalid) {
+          <mat-error>Select a Category.</mat-error>
+        }
+      </mat-form-field>
+      <button mat-stroked-button type="button" [disabled]="saving()" (click)="createCategory()">
+        Create Category
+      </button>
+    </div>
+
+    <mat-autocomplete
+      #categoryAutocomplete="matAutocomplete"
+      [displayWith]="displayCategory"
+      [requireSelection]="true"
+      (optionSelected)="onCategorySelected($event)"
+    >
+      @for (category of categoryResults(); track category.id) {
+        <mat-option [value]="category">{{ category.name }}</mat-option>
+      }
+    </mat-autocomplete>
+
+    @if (categoryLoading()) { <p class="product-type-editor__status" aria-live="polite">Searching Categories…</p> }
+    @if (categoryLookupError()) { <p class="product-type-editor__error" role="alert">{{ categoryLookupError() }}</p> }
+    @if (categoryChanged()) {
+      <p class="product-type-editor__warning" role="alert">
+        Changing this Category changes the derived Category for every Product assigned to this Product Type.
+      </p>
+    }
+    @if (saveError()) { <p class="product-type-editor__error" role="alert">{{ saveError() }}</p> }
+  </form>
+  <app-dialog-action-bar
+    dialog-shell-actions
+    [cancelDisabled]="saving()"
+    [submitDisabled]="form.invalid || saving()"
+    [submitLabel]="saving() ? 'Saving…' : isEdit ? 'Save Product Type' : 'Create Product Type'"
+    [submitFormId]="formId"
+    submitButtonType="submit"
+    (cancel)="close()"
+  />
+</app-dialog-shell>

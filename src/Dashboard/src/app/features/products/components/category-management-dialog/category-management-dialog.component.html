@@ -1,0 +1,49 @@
+<h2 mat-dialog-title>Manage Categories</h2>
+<mat-dialog-content class="category-management">
+  <p>Maintain broad catalog groupings, such as Adhesives.</p>
+  <div class="category-management__toolbar">
+    <mat-form-field appearance="outline">
+      <mat-label>Search Categories</mat-label>
+      <input matInput [formControl]="searchControl" inputmode="search" />
+    </mat-form-field>
+    <button mat-flat-button color="primary" type="button" (click)="createCategory()">Create Category</button>
+  </div>
+
+  @if (pageError()) {
+    <p class="category-management__error" role="alert">
+      {{ pageError() }} <button mat-button type="button" (click)="retry()">Retry</button>
+    </p>
+  }
+  @if (categoriesQuery.isPending()) {
+    <p aria-live="polite">Loading Categories…</p>
+  } @else if (categoriesQuery.isError()) {
+    <p class="category-management__error" role="alert">Categories could not be loaded.</p>
+  } @else if (categoriesQuery.data(); as response) {
+    @if (response.items.length === 0) {
+      <p>No Categories match the current search.</p>
+    } @else {
+      <ul class="category-management__list" aria-label="Categories">
+        @for (category of response.items; track category.id) {
+          <li>
+            <span>{{ category.name }}</span>
+            <span class="category-management__actions">
+              <button mat-stroked-button type="button" [disabled]="deletingId() === category.id" (click)="editCategory(category)">Rename</button>
+              <button mat-stroked-button color="warn" type="button" [disabled]="deletingId() === category.id" (click)="deleteCategory(category)">
+                {{ deletingId() === category.id ? 'Deleting…' : 'Delete' }}
+              </button>
+            </span>
+          </li>
+        }
+      </ul>
+    }
+    <mat-paginator
+      [length]="response.filteredCount"
+      [pageIndex]="pageIndex()"
+      [pageSize]="pageSize()"
+      [pageSizeOptions]="[25, 50, 100]"
+      [showFirstLastButtons]="true"
+      (page)="onPageChange($event)"
+    />
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end"><button mat-button mat-dialog-close type="button">Close</button></mat-dialog-actions>

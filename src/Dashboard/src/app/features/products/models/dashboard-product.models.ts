@@ -6,24 +6,6 @@ export const PRODUCT_STATUSES = [
 
 export type ProductStatus = (typeof PRODUCT_STATUSES)[number];
 
-export const PRODUCT_CATEGORY_OPTIONS = [
-  { value: 'building-construction', label: 'Building & Construction' },
-  { value: 'tools-equipment', label: 'Tools & Equipment' },
-  { value: 'electrical-lighting', label: 'Electrical & Lighting' },
-  { value: 'plumbing-hvac', label: 'Plumbing & HVAC' },
-  { value: 'hardware-fasteners', label: 'Hardware & Fasteners' },
-  { value: 'paints-finishes', label: 'Paints & Finishes' },
-  { value: 'safety-security', label: 'Safety & Security' },
-  { value: 'cleaning-maintenance', label: 'Cleaning & Maintenance' },
-  { value: 'fixtures-appliances', label: 'Fixtures & Appliances' },
-  { value: 'outdoor-landscaping', label: 'Outdoor & Landscaping' },
-  { value: 'office-general-supplies', label: 'Office & General Supplies' },
-  { value: 'other', label: 'Other' }
-] as const;
-
-export type ProductCategory =
-  (typeof PRODUCT_CATEGORY_OPTIONS)[number]['value'];
-
 export const PRODUCT_PACKAGE_UNIT_OPTIONS = [
   { value: 'piece', label: 'Piece' },
   { value: 'pack', label: 'Pack' },
@@ -48,7 +30,10 @@ export interface DashboardProduct {
   id: string;
   numberId: number;
   title: string;
-  category: ProductCategory;
+  productTypeId: string;
+  productTypeName: string;
+  categoryId: string;
+  categoryName: string;
   brand: string | null;
   model: string | null;
   packageQuantity: number | null;
@@ -65,15 +50,23 @@ export interface DashboardProductDetails extends DashboardProduct {
   excludedKeywords: readonly string[];
 }
 
-export interface DashboardProductLookup {
+export interface DashboardProductLookupResponse {
   id: string;
   numberId: number;
   title: string;
-  category: ProductCategory;
+  productTypeId: string;
+  productTypeName: string;
+  categoryId: string;
+  categoryName: string;
   brand: string | null;
   model: string | null;
   packageQuantity: number | null;
   packageUnit: ProductPackageUnit | null;
+}
+
+export interface DashboardProductLookup extends DashboardProductLookupResponse {
+  /** Temporary Activity Requirement compatibility until its Product Type migration. */
+  category: string;
 }
 
 export interface DashboardProductsResponse {
@@ -89,7 +82,7 @@ export interface CreateDashboardProductRequest {
   model: string | null;
   packageQuantity: number | null;
   packageUnit: ProductPackageUnit | null;
-  category: ProductCategory;
+  productTypeId: string;
   status: ProductStatus;
   primarySearchPhrase: string | null;
   alternativeSearchPhrases: readonly string[];

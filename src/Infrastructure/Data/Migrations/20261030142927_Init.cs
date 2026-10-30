@@ -23,6 +23,10 @@ namespace Infrastructure.Data.Migrations
                 schema: "dbo");
 
             migrationBuilder.CreateSequence<int>(
+                name: "AssetNumberIds",
+                schema: "dbo");
+
+            migrationBuilder.CreateSequence<int>(
                 name: "CameraNumberIds",
                 schema: "dbo");
 
@@ -125,6 +129,23 @@ namespace Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Categories",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    NormalizedName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Created = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    LastModified = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    LastModifiedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Categories", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Persons",
                 columns: table => new
                 {
@@ -149,32 +170,6 @@ namespace Infrastructure.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Persons", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Products",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    NumberId = table.Column<int>(type: "int", nullable: false, defaultValueSql: "NEXT VALUE FOR [dbo].[ProductNumberIds]"),
-                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
-                    Brand = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    Model = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    PackageQuantity = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: true),
-                    PackageUnit = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    Category = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
-                    SearchConfiguration = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    SearchIdentity = table.Column<string>(type: "nvarchar(1200)", maxLength: 1200, nullable: false),
-                    Created = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    LastModified = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    LastModifiedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Products", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -337,6 +332,7 @@ namespace Infrastructure.Data.Migrations
                     StartDate = table.Column<DateOnly>(type: "date", nullable: false),
                     EndDate = table.Column<DateOnly>(type: "date", nullable: true),
                     Status = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
+                    IsCompanyStock = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     Created = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LastModified = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
@@ -355,6 +351,30 @@ namespace Infrastructure.Data.Migrations
                         name: "FK_Sites_AspNetUsers_PrimaryClientUserId",
                         column: x => x.PrimaryClientUserId,
                         principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProductTypes",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CategoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    NormalizedName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Created = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    LastModified = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    LastModifiedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProductTypes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ProductTypes_Categories_CategoryId",
+                        column: x => x.CategoryId,
+                        principalTable: "Categories",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -473,40 +493,6 @@ namespace Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ActivityProductRequirements",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SectionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ProductId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Quantity = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
-                    IsRequired = table.Column<bool>(type: "bit", nullable: false),
-                    QuantityBehavior = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
-                    Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    SortOrder = table.Column<int>(type: "int", nullable: false),
-                    Created = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    LastModified = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    LastModifiedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ActivityProductRequirements", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ActivityProductRequirements_ActivityRequirementSections_SectionId",
-                        column: x => x.SectionId,
-                        principalTable: "ActivityRequirementSections",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_ActivityProductRequirements_Products_ProductId",
-                        column: x => x.ProductId,
-                        principalTable: "Products",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "ApplicationUserSite",
                 columns: table => new
                 {
@@ -528,6 +514,58 @@ namespace Infrastructure.Data.Migrations
                         principalTable: "Sites",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Assets",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    NumberId = table.Column<int>(type: "int", nullable: false, defaultValueSql: "NEXT VALUE FOR [dbo].[AssetNumberIds]"),
+                    QrIdentifier = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Classification = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Manufacturer = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Model = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    ManufacturerSerialNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    SiteId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ResponsibleWorkerId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    Condition = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
+                    OperationalStatus = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
+                    ReviewStatus = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
+                    PendingHandoverRecipientId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    PreHandoverOperationalStatus = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
+                    HistorySequence = table.Column<long>(type: "bigint", nullable: false),
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false),
+                    Created = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    LastModified = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    LastModifiedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Assets", x => x.Id);
+                    table.CheckConstraint("CK_Assets_HandoverRecipient", "[PendingHandoverRecipientId] IS NULL OR [PendingHandoverRecipientId] <> [ResponsibleWorkerId]");
+                    table.CheckConstraint("CK_Assets_HandoverState", "([OperationalStatus] = N'InTransfer' AND [ResponsibleWorkerId] IS NOT NULL AND [PendingHandoverRecipientId] IS NOT NULL AND [PreHandoverOperationalStatus] IS NOT NULL AND [PreHandoverOperationalStatus] NOT IN (N'InTransfer', N'Missing', N'Retired')) OR ([OperationalStatus] <> N'InTransfer' AND [PendingHandoverRecipientId] IS NULL AND [PreHandoverOperationalStatus] IS NULL)");
+                    table.ForeignKey(
+                        name: "FK_Assets_AspNetUsers_PendingHandoverRecipientId",
+                        column: x => x.PendingHandoverRecipientId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Assets_AspNetUsers_ResponsibleWorkerId",
+                        column: x => x.ResponsibleWorkerId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Assets_Sites_SiteId",
+                        column: x => x.SiteId,
+                        principalTable: "Sites",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -746,15 +784,17 @@ namespace Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "RetailerListings",
+                name: "ActivityProductRequirements",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ProductId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    RetailerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ProductUrl = table.Column<string>(type: "nvarchar(2048)", maxLength: 2048, nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
-                    RetailerProductCode = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    SectionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ProductTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Quantity = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
+                    IsRequired = table.Column<bool>(type: "bit", nullable: false),
+                    QuantityBehavior = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
+                    Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    SortOrder = table.Column<int>(type: "int", nullable: false),
                     Created = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LastModified = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
@@ -762,17 +802,142 @@ namespace Infrastructure.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_RetailerListings", x => x.Id);
+                    table.PrimaryKey("PK_ActivityProductRequirements", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_RetailerListings_Products_ProductId",
-                        column: x => x.ProductId,
-                        principalTable: "Products",
+                        name: "FK_ActivityProductRequirements_ActivityRequirementSections_SectionId",
+                        column: x => x.SectionId,
+                        principalTable: "ActivityRequirementSections",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ActivityProductRequirements_ProductTypes_ProductTypeId",
+                        column: x => x.ProductTypeId,
+                        principalTable: "ProductTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Products",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    NumberId = table.Column<int>(type: "int", nullable: false, defaultValueSql: "NEXT VALUE FOR [dbo].[ProductNumberIds]"),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    Brand = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Model = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    PackageQuantity = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: true),
+                    PackageUnit = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    ProductTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
+                    SearchConfiguration = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    SearchIdentity = table.Column<string>(type: "nvarchar(1200)", maxLength: 1200, nullable: false),
+                    Created = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    LastModified = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    LastModifiedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Products", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Products_ProductTypes_ProductTypeId",
+                        column: x => x.ProductTypeId,
+                        principalTable: "ProductTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AssetEvents",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AssetId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SequenceNumber = table.Column<long>(type: "bigint", nullable: false),
+                    EventType = table.Column<string>(type: "nvarchar(48)", maxLength: 48, nullable: false),
+                    ActorId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    OccurredAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    Note = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    PreviousClassification = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: true),
+                    PreviousName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    PreviousManufacturer = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    PreviousModel = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    PreviousDescription = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    PreviousQrIdentifier = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    PreviousManufacturerSerialNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    PreviousSiteId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    PreviousResponsibleWorkerId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    PreviousPendingHandoverRecipientId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    PreviousCondition = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: true),
+                    PreviousOperationalStatus = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
+                    PreviousPreHandoverOperationalStatus = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
+                    PreviousReviewStatus = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
+                    ResultingClassification = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
+                    ResultingName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    ResultingManufacturer = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    ResultingModel = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    ResultingDescription = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    ResultingQrIdentifier = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ResultingManufacturerSerialNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    ResultingSiteId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ResultingResponsibleWorkerId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    ResultingPendingHandoverRecipientId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: true),
+                    ResultingCondition = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
+                    ResultingOperationalStatus = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
+                    ResultingPreHandoverOperationalStatus = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: true),
+                    ResultingReviewStatus = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AssetEvents", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AssetEvents_AspNetUsers_ActorId",
+                        column: x => x.ActorId,
+                        principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_RetailerListings_Retailers_RetailerId",
-                        column: x => x.RetailerId,
-                        principalTable: "Retailers",
+                        name: "FK_AssetEvents_AspNetUsers_PreviousPendingHandoverRecipientId",
+                        column: x => x.PreviousPendingHandoverRecipientId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_AssetEvents_AspNetUsers_PreviousResponsibleWorkerId",
+                        column: x => x.PreviousResponsibleWorkerId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_AssetEvents_AspNetUsers_ResultingPendingHandoverRecipientId",
+                        column: x => x.ResultingPendingHandoverRecipientId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_AssetEvents_AspNetUsers_ResultingResponsibleWorkerId",
+                        column: x => x.ResultingResponsibleWorkerId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_AssetEvents_Assets_AssetId",
+                        column: x => x.AssetId,
+                        principalTable: "Assets",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_AssetEvents_Sites_PreviousSiteId",
+                        column: x => x.PreviousSiteId,
+                        principalTable: "Sites",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_AssetEvents_Sites_ResultingSiteId",
+                        column: x => x.ResultingSiteId,
+                        principalTable: "Sites",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -890,40 +1055,6 @@ namespace Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "OfferProductLines",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    OfferId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ProductId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ProductNumberId = table.Column<int>(type: "int", nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Category = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Brand = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    Model = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    PackageQuantity = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: true),
-                    PackageUnit = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    RequiredQuantity = table.Column<decimal>(type: "decimal(28,8)", precision: 28, scale: 8, nullable: false),
-                    OptionalQuantity = table.Column<decimal>(type: "decimal(28,8)", precision: 28, scale: 8, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_OfferProductLines", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_OfferProductLines_Offers_OfferId",
-                        column: x => x.OfferId,
-                        principalTable: "Offers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_OfferProductLines_Products_ProductId",
-                        column: x => x.ProductId,
-                        principalTable: "Products",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "OfferRetailerComparisons",
                 columns: table => new
                 {
@@ -1017,6 +1148,38 @@ namespace Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "RetailerListings",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ProductId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RetailerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ProductUrl = table.Column<string>(type: "nvarchar(2048)", maxLength: 2048, nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    RetailerProductCode = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Created = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    LastModified = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    LastModifiedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RetailerListings", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RetailerListings_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_RetailerListings_Retailers_RetailerId",
+                        column: x => x.RetailerId,
+                        principalTable: "Retailers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "OfferActivitySections",
                 columns: table => new
                 {
@@ -1100,7 +1263,10 @@ namespace Infrastructure.Data.Migrations
                     ProductId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ProductNumberId = table.Column<int>(type: "int", nullable: false),
                     Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Category = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    ProductTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ProductTypeName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    CategoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CategoryName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     Brand = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     Model = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     PackageQuantity = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: true),
@@ -1129,13 +1295,16 @@ namespace Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "OfferProductContributions",
+                name: "OfferProductRequirements",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     OfferActivitySectionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    OfferProductLineId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SourceRequirementId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ProductTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ProductTypeName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    CategoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CategoryName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     ConfiguredQuantity = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
                     IsRequired = table.Column<bool>(type: "bit", nullable: false),
                     QuantityBehavior = table.Column<string>(type: "nvarchar(32)", maxLength: 32, nullable: false),
@@ -1145,17 +1314,24 @@ namespace Infrastructure.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_OfferProductContributions", x => x.Id);
+                    table.PrimaryKey("PK_OfferProductRequirements", x => x.Id);
+                    table.UniqueConstraint("AK_OfferProductRequirements_Id_ProductTypeId", x => new { x.Id, x.ProductTypeId });
                     table.ForeignKey(
-                        name: "FK_OfferProductContributions_OfferActivitySections_OfferActivitySectionId",
+                        name: "FK_OfferProductRequirements_Categories_CategoryId",
+                        column: x => x.CategoryId,
+                        principalTable: "Categories",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_OfferProductRequirements_OfferActivitySections_OfferActivitySectionId",
                         column: x => x.OfferActivitySectionId,
                         principalTable: "OfferActivitySections",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_OfferProductContributions_OfferProductLines_OfferProductLineId",
-                        column: x => x.OfferProductLineId,
-                        principalTable: "OfferProductLines",
+                        name: "FK_OfferProductRequirements_ProductTypes_ProductTypeId",
+                        column: x => x.ProductTypeId,
+                        principalTable: "ProductTypes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -1185,6 +1361,50 @@ namespace Infrastructure.Data.Migrations
                         principalTable: "ProposalActivities",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "OfferProductLines",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OfferId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OfferProductRequirementId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ProductTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ProductTypeName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    CategoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CategoryName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    ProductId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ProductNumberId = table.Column<int>(type: "int", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Brand = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Model = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    PackageQuantity = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: true),
+                    PackageUnit = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    RequiredQuantity = table.Column<decimal>(type: "decimal(28,8)", precision: 28, scale: 8, nullable: false),
+                    OptionalQuantity = table.Column<decimal>(type: "decimal(28,8)", precision: 28, scale: 8, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OfferProductLines", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_OfferProductLines_OfferProductRequirements_OfferProductRequirementId_ProductTypeId",
+                        columns: x => new { x.OfferProductRequirementId, x.ProductTypeId },
+                        principalTable: "OfferProductRequirements",
+                        principalColumns: new[] { "Id", "ProductTypeId" },
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_OfferProductLines_Offers_OfferId",
+                        column: x => x.OfferId,
+                        principalTable: "Offers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_OfferProductLines_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1477,15 +1697,9 @@ namespace Infrastructure.Data.Migrations
                 column: "Status");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ActivityProductRequirements_ProductId",
+                name: "IX_ActivityProductRequirements_ProductTypeId",
                 table: "ActivityProductRequirements",
-                column: "ProductId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ActivityProductRequirements_SectionId_ProductId",
-                table: "ActivityProductRequirements",
-                columns: new[] { "SectionId", "ProductId" },
-                unique: true);
+                column: "ProductTypeId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ActivityProductRequirements_SectionId_SortOrder",
@@ -1548,6 +1762,129 @@ namespace Infrastructure.Data.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_AssetEvents_ActorId",
+                table: "AssetEvents",
+                column: "ActorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AssetEvents_AssetId_OccurredAt_SequenceNumber",
+                table: "AssetEvents",
+                columns: new[] { "AssetId", "OccurredAt", "SequenceNumber" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AssetEvents_AssetId_SequenceNumber",
+                table: "AssetEvents",
+                columns: new[] { "AssetId", "SequenceNumber" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AssetEvents_PreviousPendingHandoverRecipientId",
+                table: "AssetEvents",
+                column: "PreviousPendingHandoverRecipientId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AssetEvents_PreviousResponsibleWorkerId",
+                table: "AssetEvents",
+                column: "PreviousResponsibleWorkerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AssetEvents_PreviousSiteId",
+                table: "AssetEvents",
+                column: "PreviousSiteId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AssetEvents_ResultingPendingHandoverRecipientId",
+                table: "AssetEvents",
+                column: "ResultingPendingHandoverRecipientId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AssetEvents_ResultingResponsibleWorkerId",
+                table: "AssetEvents",
+                column: "ResultingResponsibleWorkerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AssetEvents_ResultingSiteId",
+                table: "AssetEvents",
+                column: "ResultingSiteId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Assets_Classification",
+                table: "Assets",
+                column: "Classification");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Assets_Classification_Name_NumberId",
+                table: "Assets",
+                columns: new[] { "Classification", "Name", "NumberId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Assets_Condition",
+                table: "Assets",
+                column: "Condition");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Assets_Manufacturer",
+                table: "Assets",
+                column: "Manufacturer");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Assets_ManufacturerSerialNumber",
+                table: "Assets",
+                column: "ManufacturerSerialNumber");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Assets_Model",
+                table: "Assets",
+                column: "Model");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Assets_Name",
+                table: "Assets",
+                column: "Name");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Assets_NumberId",
+                table: "Assets",
+                column: "NumberId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Assets_OperationalStatus",
+                table: "Assets",
+                column: "OperationalStatus");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Assets_PendingHandoverRecipientId",
+                table: "Assets",
+                column: "PendingHandoverRecipientId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Assets_QrIdentifier",
+                table: "Assets",
+                column: "QrIdentifier",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Assets_ResponsibleWorkerId",
+                table: "Assets",
+                column: "ResponsibleWorkerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Assets_ReviewStatus",
+                table: "Assets",
+                column: "ReviewStatus");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Assets_SiteId",
+                table: "Assets",
+                column: "SiteId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Assets_SiteId_OperationalStatus_NumberId",
+                table: "Assets",
+                columns: new[] { "SiteId", "OperationalStatus", "NumberId" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Cameras_NumberId",
                 table: "Cameras",
                 column: "NumberId");
@@ -1556,6 +1893,12 @@ namespace Infrastructure.Data.Migrations
                 name: "IX_Cameras_SiteId",
                 table: "Cameras",
                 column: "SiteId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Categories_NormalizedName",
+                table: "Categories",
+                column: "NormalizedName",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Invoices_Date",
@@ -1641,31 +1984,21 @@ namespace Infrastructure.Data.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_OfferProductContributions_OfferActivitySectionId_SortOrder",
-                table: "OfferProductContributions",
-                columns: new[] { "OfferActivitySectionId", "SortOrder" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_OfferProductContributions_OfferActivitySectionId_SourceRequirementId",
-                table: "OfferProductContributions",
-                columns: new[] { "OfferActivitySectionId", "SourceRequirementId" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_OfferProductContributions_OfferProductLineId",
-                table: "OfferProductContributions",
-                column: "OfferProductLineId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_OfferProductLines_OfferId_ProductId",
-                table: "OfferProductLines",
-                columns: new[] { "OfferId", "ProductId" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_OfferProductLines_OfferId_ProductNumberId",
                 table: "OfferProductLines",
                 columns: new[] { "OfferId", "ProductNumberId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OfferProductLines_OfferProductRequirementId",
+                table: "OfferProductLines",
+                column: "OfferProductRequirementId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OfferProductLines_OfferProductRequirementId_ProductTypeId",
+                table: "OfferProductLines",
+                columns: new[] { "OfferProductRequirementId", "ProductTypeId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_OfferProductLines_ProductId",
@@ -1692,6 +2025,27 @@ namespace Infrastructure.Data.Migrations
                 name: "IX_OfferProductPriceSelections_RetailerPriceObservationId",
                 table: "OfferProductPriceSelections",
                 column: "RetailerPriceObservationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OfferProductRequirements_CategoryId",
+                table: "OfferProductRequirements",
+                column: "CategoryId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OfferProductRequirements_OfferActivitySectionId_SortOrder",
+                table: "OfferProductRequirements",
+                columns: new[] { "OfferActivitySectionId", "SortOrder" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OfferProductRequirements_OfferActivitySectionId_SourceRequirementId",
+                table: "OfferProductRequirements",
+                columns: new[] { "OfferActivitySectionId", "SourceRequirementId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OfferProductRequirements_ProductTypeId",
+                table: "OfferProductRequirements",
+                column: "ProductTypeId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OfferRetailerComparisons_OfferId_RetailerId",
@@ -1762,15 +2116,15 @@ namespace Infrastructure.Data.Migrations
                 column: "SearchTaxIdentifier");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Products_Category",
-                table: "Products",
-                column: "Category");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Products_NumberId",
                 table: "Products",
                 column: "NumberId",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Products_ProductTypeId",
+                table: "Products",
+                column: "ProductTypeId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Products_Status",
@@ -1781,6 +2135,12 @@ namespace Infrastructure.Data.Migrations
                 name: "IX_Products_Title",
                 table: "Products",
                 column: "Title");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductTypes_CategoryId_NormalizedName",
+                table: "ProductTypes",
+                columns: new[] { "CategoryId", "NormalizedName" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_ProposalActivities_ProposalId_SortOrder",
@@ -2049,6 +2409,9 @@ namespace Infrastructure.Data.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
+                name: "AssetEvents");
+
+            migrationBuilder.DropTable(
                 name: "Cameras");
 
             migrationBuilder.DropTable(
@@ -2056,9 +2419,6 @@ namespace Infrastructure.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "IssueWorkers");
-
-            migrationBuilder.DropTable(
-                name: "OfferProductContributions");
 
             migrationBuilder.DropTable(
                 name: "OfferProductPriceSelections");
@@ -2112,10 +2472,10 @@ namespace Infrastructure.Data.Migrations
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
-                name: "Issues");
+                name: "Assets");
 
             migrationBuilder.DropTable(
-                name: "OfferActivitySections");
+                name: "Issues");
 
             migrationBuilder.DropTable(
                 name: "OfferProductLines");
@@ -2133,7 +2493,7 @@ namespace Infrastructure.Data.Migrations
                 name: "Invoices");
 
             migrationBuilder.DropTable(
-                name: "OfferActivities");
+                name: "OfferProductRequirements");
 
             migrationBuilder.DropTable(
                 name: "Proposals");
@@ -2142,16 +2502,28 @@ namespace Infrastructure.Data.Migrations
                 name: "RetailerListings");
 
             migrationBuilder.DropTable(
-                name: "ActivityCatalogNodes");
-
-            migrationBuilder.DropTable(
-                name: "Offers");
+                name: "OfferActivitySections");
 
             migrationBuilder.DropTable(
                 name: "Products");
 
             migrationBuilder.DropTable(
                 name: "Retailers");
+
+            migrationBuilder.DropTable(
+                name: "OfferActivities");
+
+            migrationBuilder.DropTable(
+                name: "ProductTypes");
+
+            migrationBuilder.DropTable(
+                name: "ActivityCatalogNodes");
+
+            migrationBuilder.DropTable(
+                name: "Offers");
+
+            migrationBuilder.DropTable(
+                name: "Categories");
 
             migrationBuilder.DropTable(
                 name: "Sites");
@@ -2174,6 +2546,10 @@ namespace Infrastructure.Data.Migrations
 
             migrationBuilder.DropSequence(
                 name: "ApplicationUserNumberIds",
+                schema: "dbo");
+
+            migrationBuilder.DropSequence(
+                name: "AssetNumberIds",
                 schema: "dbo");
 
             migrationBuilder.DropSequence(

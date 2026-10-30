@@ -1,0 +1,10 @@
+.category-management { display: grid; gap: 1rem; min-height: 20rem; }
+.category-management p { margin: 0; }
+.category-management__toolbar { display: flex; align-items: start; gap: 1rem; }
+.category-management__toolbar mat-form-field { flex: 1; }
+.category-management__toolbar button { margin-top: .5rem; white-space: nowrap; }
+.category-management__list { display: grid; gap: .5rem; list-style: none; margin: 0; padding: 0; }
+.category-management__list li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .75rem; border: 1px solid rgba(15,23,42,.14); border-radius: .5rem; }
+.category-management__actions { display: flex; gap: .5rem; }
+.category-management__error { color: #b91c1c; }
+@media (max-width: 38rem) { .category-management__toolbar, .category-management__list li { align-items: stretch; flex-direction: column; } .category-management__toolbar button { margin-top: 0; } }

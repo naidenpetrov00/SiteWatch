@@ -1,0 +1,9 @@
+.product-type-management { display: grid; gap: 1rem; min-height: 28rem; }
+.product-type-management p { margin: 0; }
+.product-type-management__toolbar { display: grid; grid-template-columns: minmax(12rem, 1fr) minmax(12rem, 1fr) auto; gap: 1rem; align-items: start; }
+.product-type-management__toolbar button { margin-top: .5rem; white-space: nowrap; }
+.product-type-management__table-shell { overflow: auto; border: 1px solid rgba(15,23,42,.14); border-radius: .5rem; }
+.product-type-management table { width: 100%; min-width: 38rem; }
+.product-type-management__actions { display: flex; gap: .5rem; }
+.product-type-management__error { color: #b91c1c; }
+@media (max-width: 48rem) { .product-type-management__toolbar { grid-template-columns: 1fr; } .product-type-management__toolbar button { margin-top: 0; } }

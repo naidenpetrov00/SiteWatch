@@ -3,30 +3,31 @@
     <div>
       <p class="manage-products-page__eyebrow">Administration</p>
       <h1>Manage Products</h1>
-      <p class="manage-products-page__summary">
-        Maintain concrete products and their future retailer-search requirements.
-      </p>
+      <p class="manage-products-page__summary">Maintain concrete Products and their future retailer-search requirements.</p>
     </div>
-
-    <app-action-button
-      label="Add Product"
-      variant="primary"
-      (clicked)="openAddProductDialog()"
-    />
+    <div class="manage-products-page__header-actions">
+      <button mat-stroked-button type="button" [matMenuTriggerFor]="catalogMenu">Manage catalog</button>
+      <app-action-button label="Add Product" variant="primary" (clicked)="openAddProductDialog()" />
+    </div>
+    <mat-menu #catalogMenu="matMenu">
+      <button mat-menu-item type="button" (click)="openCategoryManagement()">Manage Categories</button>
+      <button mat-menu-item type="button" (click)="openProductTypeManagement()">Manage Product Types</button>
+    </mat-menu>
   </header>
 
-  <app-data-table
-    tableEyebrow="Catalog"
-    tableLabel="Manage Products"
-    emptyMessage="No products match the current filters."
-    filterApplyMode="search"
-    [rows]="products()"
-    [filteredRowsTotal]="filteredCount()"
-    [overallRowsTotal]="totalCount()"
-    [columns]="columns"
-    [pageSize]="pageSize"
-    [pageSizeOptions]="pageSizeOptions"
-    (tableStateChange)="onTableStateChange($event)"
-    (cellButtonClicked)="onCellButtonClicked($event)"
-  />
+  <section class="manage-products-page__catalog-filters" aria-label="Catalog filters">
+    <mat-form-field appearance="outline"><mat-label>Filter by Category</mat-label><input matInput [formControl]="categoryFilterControl" [matAutocomplete]="categoryAutocomplete" autocomplete="off" inputmode="search" /></mat-form-field>
+    <mat-form-field appearance="outline"><mat-label>Filter by Product Type</mat-label><input matInput [formControl]="productTypeFilterControl" [matAutocomplete]="productTypeAutocomplete" autocomplete="off" inputmode="search" /></mat-form-field>
+    <button mat-button type="button" (click)="clearCatalogFilters()">Clear catalog filters</button>
+    <mat-autocomplete #categoryAutocomplete="matAutocomplete" [displayWith]="displayCategory" [requireSelection]="true" (optionSelected)="onCategorySelected($event)">
+      @for (category of categoryResults(); track category.id) { <mat-option [value]="category">{{ category.name }}</mat-option> }
+    </mat-autocomplete>
+    <mat-autocomplete #productTypeAutocomplete="matAutocomplete" [displayWith]="displayProductType" [requireSelection]="true" (optionSelected)="onProductTypeSelected($event)">
+      @for (productType of productTypeResults(); track productType.id) { <mat-option [value]="productType"><strong>{{ productType.name }}</strong><span> · {{ productType.categoryName }}</span></mat-option> }
+    </mat-autocomplete>
+    @if (categoryLoading() || productTypeLoading()) { <p aria-live="polite">Searching catalog…</p> }
+    @if (catalogLookupError()) { <p class="manage-products-page__catalog-error" role="alert">{{ catalogLookupError() }}</p> }
+  </section>
+
+  <app-data-table tableEyebrow="Catalog" tableLabel="Manage Products" emptyMessage="No products match the current filters." filterApplyMode="search" [rows]="products()" [filteredRowsTotal]="filteredCount()" [overallRowsTotal]="totalCount()" [columns]="columns" [pageSize]="pageSize" [pageSizeOptions]="pageSizeOptions" [resetPageToken]="catalogFilterRevision()" (tableStateChange)="onTableStateChange($event)" (cellButtonClicked)="onCellButtonClicked($event)" />
 </main>

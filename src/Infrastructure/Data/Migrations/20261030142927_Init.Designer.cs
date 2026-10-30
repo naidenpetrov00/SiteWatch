@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20261019113308_UpdateAssetsDomain")]
-    partial class UpdateAssetsDomain
+    [Migration("20261030142927_Init")]
+    partial class Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -155,7 +155,7 @@ namespace Infrastructure.Data.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
-                    b.Property<Guid>("ProductId")
+                    b.Property<Guid>("ProductTypeId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Quantity")
@@ -175,10 +175,7 @@ namespace Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("SectionId", "ProductId")
-                        .IsUnique();
+                    b.HasIndex("ProductTypeId");
 
                     b.HasIndex("SectionId", "SortOrder");
 
@@ -663,6 +660,42 @@ namespace Infrastructure.Data.Migrations
                     b.ToTable("Cameras");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Category", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("LastModified")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique();
+
+                    b.ToTable("Categories", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Entities.Invoice", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1055,56 +1088,6 @@ namespace Infrastructure.Data.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Domain.Entities.OfferProductContribution", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("CalculatedQuantity")
-                        .HasPrecision(28, 8)
-                        .HasColumnType("decimal(28,8)");
-
-                    b.Property<decimal>("ConfiguredQuantity")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<bool>("IsRequired")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<Guid>("OfferActivitySectionId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("OfferProductLineId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("QuantityBehavior")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("SourceRequirementId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OfferProductLineId");
-
-                    b.HasIndex("OfferActivitySectionId", "SortOrder");
-
-                    b.HasIndex("OfferActivitySectionId", "SourceRequirementId")
-                        .IsUnique();
-
-                    b.ToTable("OfferProductContributions", (string)null);
-                });
-
             modelBuilder.Entity("Domain.Entities.OfferProductLine", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1115,16 +1098,22 @@ namespace Infrastructure.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("Category")
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CategoryName")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("Model")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<Guid>("OfferId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("OfferProductRequirementId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("OptionalQuantity")
@@ -1145,6 +1134,14 @@ namespace Infrastructure.Data.Migrations
                     b.Property<int>("ProductNumberId")
                         .HasColumnType("int");
 
+                    b.Property<Guid>("ProductTypeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ProductTypeName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<decimal>("RequiredQuantity")
                         .HasPrecision(28, 8)
                         .HasColumnType("decimal(28,8)");
@@ -1156,12 +1153,15 @@ namespace Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("OfferId", "ProductId")
+                    b.HasIndex("OfferProductRequirementId")
                         .IsUnique();
 
+                    b.HasIndex("ProductId");
+
                     b.HasIndex("OfferId", "ProductNumberId");
+
+                    b.HasIndex("OfferProductRequirementId", "ProductTypeId")
+                        .IsUnique();
 
                     b.ToTable("OfferProductLines", (string)null);
                 });
@@ -1251,6 +1251,71 @@ namespace Infrastructure.Data.Migrations
                     b.HasIndex("RetailerPriceObservationId");
 
                     b.ToTable("OfferProductPriceSelections", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.OfferProductRequirement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("CalculatedQuantity")
+                        .HasPrecision(28, 8)
+                        .HasColumnType("decimal(28,8)");
+
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CategoryName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal>("ConfiguredQuantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<bool>("IsRequired")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("OfferActivitySectionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ProductTypeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ProductTypeName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("QuantityBehavior")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("SourceRequirementId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("ProductTypeId");
+
+                    b.HasIndex("OfferActivitySectionId", "SortOrder");
+
+                    b.HasIndex("OfferActivitySectionId", "SourceRequirementId")
+                        .IsUnique();
+
+                    b.ToTable("OfferProductRequirements", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.OfferRetailerComparison", b =>
@@ -1535,11 +1600,6 @@ namespace Infrastructure.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.Property<DateTimeOffset>("Created")
                         .HasColumnType("datetimeoffset");
 
@@ -1573,6 +1633,9 @@ namespace Infrastructure.Data.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<Guid>("ProductTypeId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("SearchConfiguration")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -1594,16 +1657,55 @@ namespace Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Category");
-
                     b.HasIndex("NumberId")
                         .IsUnique();
+
+                    b.HasIndex("ProductTypeId");
 
                     b.HasIndex("Status");
 
                     b.HasIndex("Title");
 
                     b.ToTable("Products", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.ProductType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("LastModified")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId", "NormalizedName")
+                        .IsUnique();
+
+                    b.ToTable("ProductTypes", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.Proposal", b =>
@@ -1931,10 +2033,13 @@ namespace Infrastructure.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("Category")
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CategoryName")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<bool>("IsOptionalPriceExcluded")
                         .HasColumnType("bit");
@@ -1964,6 +2069,14 @@ namespace Infrastructure.Data.Migrations
 
                     b.Property<int>("ProductNumberId")
                         .HasColumnType("int");
+
+                    b.Property<Guid>("ProductTypeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ProductTypeName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<Guid>("ProposalId")
                         .HasColumnType("uniqueidentifier");
@@ -2561,6 +2674,11 @@ namespace Infrastructure.Data.Migrations
                     b.Property<DateOnly?>("EndDate")
                         .HasColumnType("date");
 
+                    b.Property<bool>("IsCompanyStock")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<DateTimeOffset>("LastModified")
                         .HasColumnType("datetimeoffset");
 
@@ -2994,9 +3112,9 @@ namespace Infrastructure.Data.Migrations
 
             modelBuilder.Entity("Domain.Entities.ActivityProductRequirement", b =>
                 {
-                    b.HasOne("Domain.Entities.Product", "Product")
+                    b.HasOne("Domain.Entities.ProductType", "ProductType")
                         .WithMany()
-                        .HasForeignKey("ProductId")
+                        .HasForeignKey("ProductTypeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -3006,7 +3124,7 @@ namespace Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Product");
+                    b.Navigation("ProductType");
 
                     b.Navigation("Section");
                 });
@@ -3234,25 +3352,6 @@ namespace Infrastructure.Data.Migrations
                     b.Navigation("OfferActivity");
                 });
 
-            modelBuilder.Entity("Domain.Entities.OfferProductContribution", b =>
-                {
-                    b.HasOne("Domain.Entities.OfferActivitySection", "OfferActivitySection")
-                        .WithMany("ProductContributions")
-                        .HasForeignKey("OfferActivitySectionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Entities.OfferProductLine", "OfferProductLine")
-                        .WithMany("Contributions")
-                        .HasForeignKey("OfferProductLineId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("OfferActivitySection");
-
-                    b.Navigation("OfferProductLine");
-                });
-
             modelBuilder.Entity("Domain.Entities.OfferProductLine", b =>
                 {
                     b.HasOne("Domain.Entities.Offer", "Offer")
@@ -3267,7 +3366,16 @@ namespace Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Domain.Entities.OfferProductRequirement", "OfferProductRequirement")
+                        .WithOne("ProductLine")
+                        .HasForeignKey("Domain.Entities.OfferProductLine", "OfferProductRequirementId", "ProductTypeId")
+                        .HasPrincipalKey("Domain.Entities.OfferProductRequirement", "Id", "ProductTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Offer");
+
+                    b.Navigation("OfferProductRequirement");
 
                     b.Navigation("Product");
                 });
@@ -3299,6 +3407,29 @@ namespace Infrastructure.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("OfferProductLine");
+                });
+
+            modelBuilder.Entity("Domain.Entities.OfferProductRequirement", b =>
+                {
+                    b.HasOne("Domain.Entities.Category", null)
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.OfferActivitySection", "OfferActivitySection")
+                        .WithMany("ProductRequirements")
+                        .HasForeignKey("OfferActivitySectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.ProductType", null)
+                        .WithMany()
+                        .HasForeignKey("ProductTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("OfferActivitySection");
                 });
 
             modelBuilder.Entity("Domain.Entities.OfferRetailerComparison", b =>
@@ -3351,6 +3482,28 @@ namespace Infrastructure.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Person");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Product", b =>
+                {
+                    b.HasOne("Domain.Entities.ProductType", "ProductType")
+                        .WithMany()
+                        .HasForeignKey("ProductTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ProductType");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ProductType", b =>
+                {
+                    b.HasOne("Domain.Entities.Category", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Category");
                 });
 
             modelBuilder.Entity("Domain.Entities.Proposal", b =>
@@ -3771,14 +3924,17 @@ namespace Infrastructure.Data.Migrations
 
             modelBuilder.Entity("Domain.Entities.OfferActivitySection", b =>
                 {
-                    b.Navigation("ProductContributions");
+                    b.Navigation("ProductRequirements");
                 });
 
             modelBuilder.Entity("Domain.Entities.OfferProductLine", b =>
                 {
-                    b.Navigation("Contributions");
-
                     b.Navigation("PriceSelection");
+                });
+
+            modelBuilder.Entity("Domain.Entities.OfferProductRequirement", b =>
+                {
+                    b.Navigation("ProductLine");
                 });
 
             modelBuilder.Entity("Domain.Entities.Person", b =>

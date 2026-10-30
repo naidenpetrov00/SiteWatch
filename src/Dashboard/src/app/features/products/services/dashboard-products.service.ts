@@ -15,6 +15,7 @@ import {
   DashboardProduct,
   DashboardProductDetails,
   DashboardProductLookup,
+  DashboardProductLookupResponse,
   DashboardProductsResponse,
   UpdateDashboardProductRequest
 } from '../models/dashboard-product.models';
@@ -29,6 +30,8 @@ interface DashboardProductsQueryState {
   sortActive: string;
   sortDirection: string;
   appliedFilters: Readonly<Record<string, string>>;
+  categoryId: string;
+  productTypeId: string;
 }
 
 const DEFAULT_QUERY_STATE: DashboardProductsQueryState = {
@@ -36,7 +39,9 @@ const DEFAULT_QUERY_STATE: DashboardProductsQueryState = {
   pageSize: 50,
   sortActive: '',
   sortDirection: '',
-  appliedFilters: {}
+  appliedFilters: {},
+  categoryId: '',
+  productTypeId: ''
 };
 
 @Injectable({ providedIn: 'root' })
@@ -45,6 +50,7 @@ export class DashboardProductsService {
   private readonly queryClient = inject(QueryClient);
   private readonly retailerListingsService = inject(RetailerListingsService);
   private readonly queryState = signal<DashboardProductsQueryState>(DEFAULT_QUERY_STATE);
+  readonly catalogFilterRevision = signal(0);
 
   readonly dashboardProductsQuery = injectQuery<DashboardProductsResponse>(() => {
     const state = this.queryState();
@@ -106,6 +112,25 @@ export class DashboardProductsService {
     }
   }
 
+  setCatalogFilters(filters: { categoryId?: string | null; productTypeId?: string | null }): void {
+    const state = this.queryState();
+    const categoryId = 'categoryId' in filters
+      ? filters.categoryId?.trim() ?? ''
+      : state.categoryId;
+    const productTypeId = 'productTypeId' in filters
+      ? filters.productTypeId?.trim() ?? ''
+      : state.productTypeId;
+    if (categoryId === state.categoryId && productTypeId === state.productTypeId) return;
+
+    this.queryState.set({
+      ...state,
+      pageIndex: 0,
+      categoryId,
+      productTypeId
+    });
+    this.catalogFilterRevision.update((revision) => revision + 1);
+  }
+
   createProduct(
     request: CreateDashboardProductRequest
   ): Promise<CreateDashboardProductResponse> {
@@ -129,11 +154,14 @@ export class DashboardProductsService {
     }
 
     return firstValueFrom(
-      this.http.get<readonly DashboardProductLookup[]>(
+      this.http.get<readonly DashboardProductLookupResponse[]>(
         buildApiUrl('/dashboard/products/search'),
         { params: new HttpParams().set('searchTerm', normalizedSearchTerm) }
       )
-    );
+    ).then((products) => products.map((product) => ({
+      ...product,
+      category: product.categoryName
+    })));
   }
 
   private async invalidateProductLists(): Promise<void> {
@@ -145,12 +173,15 @@ export class DashboardProductsService {
   private toQueryState(
     state: DataTableState<DashboardProduct>
   ): DashboardProductsQueryState {
+    const current = this.queryState();
     return {
       pageIndex: state.page.pageIndex,
       pageSize: state.page.pageSize,
       sortActive: state.sort.active,
       sortDirection: state.sort.direction,
-      appliedFilters: { ...state.appliedFilters }
+      appliedFilters: { ...state.appliedFilters },
+      categoryId: current.categoryId,
+      productTypeId: current.productTypeId
     };
   }
 
@@ -165,6 +196,8 @@ export class DashboardProductsService {
     if (state.sortDirection) {
       params = params.set('sortDirection', state.sortDirection);
     }
+    if (state.categoryId) params = params.set('categoryId', state.categoryId);
+    if (state.productTypeId) params = params.set('productTypeId', state.productTypeId);
 
     for (const [key, value] of Object.entries(
       this.normalizeFilters(state.appliedFilters)
@@ -181,6 +214,8 @@ export class DashboardProductsService {
       pageSize: state.pageSize,
       sortActive: state.sortActive,
       sortDirection: state.sortDirection,
+      categoryId: state.categoryId,
+      productTypeId: state.productTypeId,
       appliedFilters: Object.entries(
         this.normalizeFilters(state.appliedFilters)
       ).sort(([left], [right]) => left.localeCompare(right))

@@ -65,6 +65,7 @@ export class DataTableComponent<T extends object> {
   readonly emptyMessage = input('No matching records found.');
   readonly pageSize = input(5);
   readonly pageSizeOptions = input<readonly number[]>([5, 10, 25]);
+  readonly resetPageToken = input(0);
   readonly filterApplyMode = input<DataTableFilterMode>('instant');
   readonly errorRowPredicate = input<((row: T) => boolean) | null>(null);
   readonly rowActions = input<readonly DataTableRowAction<T>[]>([]);
@@ -142,6 +143,13 @@ export class DataTableComponent<T extends object> {
               pageIndex: 0,
               pageSize: defaultPageSize
             }
+      );
+    });
+
+    effect(() => {
+      this.resetPageToken();
+      this.pageState.update((page) =>
+        page.pageIndex === 0 ? page : { ...page, pageIndex: 0 }
       );
     });
 
