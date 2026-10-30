@@ -27,6 +27,7 @@ const PRODUCT_COLUMNS: readonly DataTableColumn<DashboardProduct>[] = [
     key: 'numberId',
     label: 'Number Id',
     sortable: true,
+    cellType: 'button',
     filter: { kind: 'number', placeholder: 'Filter Number Id' }
   },
   {
@@ -147,6 +148,27 @@ export class ManageProductsPage {
       maxWidth: 'calc(100vw - 2rem)',
       data: null
     });
+  }
+
+  async onCellButtonClicked(
+    event: { row: DashboardProduct; column: DataTableColumn<DashboardProduct> }
+  ): Promise<void> {
+    if (event.column.key !== 'numberId') {
+      return;
+    }
+
+    try {
+      const product = await this.productsService.getProductById(event.row.id);
+
+      this.dialog.open(ProductDialogComponent, {
+        autoFocus: false,
+        width: '72rem',
+        maxWidth: 'calc(100vw - 2rem)',
+        data: product
+      });
+    } catch {
+      // Keep the table usable if product details cannot be loaded.
+    }
   }
 
 }
