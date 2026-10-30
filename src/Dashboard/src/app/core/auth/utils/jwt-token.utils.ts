@@ -18,12 +18,21 @@ export function decodeJwtPayload(token: string): JwtPayload | null {
 }
 
 export function isTokenExpired(token: string): boolean {
+  const expirationTime = getTokenExpirationTime(token);
+  return expirationTime !== null && Date.now() >= expirationTime;
+}
+
+export function getTokenExpirationTime(token: string): number | null {
   const payload = decodeJwtPayload(token);
-  if (!payload || typeof payload.exp !== 'number') {
-    return false;
+  if (
+    !payload ||
+    typeof payload.exp !== 'number' ||
+    !Number.isFinite(payload.exp)
+  ) {
+    return null;
   }
 
-  return Date.now() >= payload.exp * 1000;
+  return payload.exp * 1000;
 }
 
 function normalizeBase64Url(value: string): string {

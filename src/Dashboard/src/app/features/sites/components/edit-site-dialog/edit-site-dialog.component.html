@@ -13,9 +13,11 @@
     <div class="edit-site-dialog__readonly">
       <span>NumberId</span>
       <strong>{{ site.numberId }}</strong>
-      <span>Id</span>
-      <strong>{{ site.id }}</strong>
     </div>
+
+    @if (site.isCompanyStock) {
+      <span class="edit-site-dialog__stock-badge">Company Stock</span>
+    }
 
     <mat-form-field appearance="outline">
       <mat-label>Name</mat-label>
@@ -136,6 +138,11 @@
       <mat-label>Address</mat-label>
       <input matInput formControlName="address" />
     </mat-form-field>
+
+    <section class="edit-site-dialog__classification">
+      <mat-checkbox formControlName="isCompanyStock">Company Stock</mat-checkbox>
+      <p>This marker classifies the Site only. It does not change access or move assets.</p>
+    </section>
 
     <div class="edit-site-dialog__readonly-policy">
       <span>Media Policy</span>

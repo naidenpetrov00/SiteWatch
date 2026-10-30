@@ -10,6 +10,7 @@ export interface UpdateDashboardSiteRequest {
   startDate: string;
   endDate: string | null;
   status: string;
+  isCompanyStock: boolean;
   mediaPolicyPreset: SiteMediaPolicyPreset;
   mediaCategoriesToAdd: readonly string[];
 }

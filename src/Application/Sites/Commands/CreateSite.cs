@@ -18,6 +18,7 @@ public sealed record CreateSiteCommand : IRequest<Guid>
     public string StartDate { get; init; } = string.Empty;
     public string? EndDate { get; init; }
     public string Status { get; init; } = SiteStatus.Planning.ToString();
+    public bool IsCompanyStock { get; init; }
     public string MediaPolicyPreset { get; init; } = string.Empty;
     public string[] MediaCategories { get; init; } = [];
 }

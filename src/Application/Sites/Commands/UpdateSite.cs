@@ -20,6 +20,7 @@ public sealed record UpdateSiteCommand : IRequest
     public string StartDate { get; init; } = string.Empty;
     public string? EndDate { get; init; }
     public string Status { get; init; } = string.Empty;
+    public bool? IsCompanyStock { get; init; }
     public string MediaPolicyPreset { get; init; } = string.Empty;
     public string[] MediaCategoriesToAdd { get; init; } = [];
 }
@@ -49,6 +50,9 @@ public sealed class UpdateSiteValidator : AbstractValidator<UpdateSiteCommand>
             .Must(value => Enum.TryParse<SiteStatus>(value, true, out var status)
                 && Enum.IsDefined(typeof(SiteStatus), status))
             .WithMessage("Status must be a valid site status.");
+        RuleFor(command => command.IsCompanyStock)
+            .NotNull()
+            .WithMessage("IsCompanyStock is required.");
         RuleFor(command => command.MediaPolicyPreset)
             .Must(value =>
                 Enum.TryParse<MediaPolicyPreset>(value, true, out var preset)

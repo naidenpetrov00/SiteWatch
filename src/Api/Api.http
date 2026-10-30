@@ -1,6 +1,9 @@
 @Api_HostAddress = http://localhost:5293
 @AccessToken = replace-with-access-token
 @CameraId = 00000000-0000-0000-0000-000000000000
+@AssetId = 00000000-0000-0000-0000-000000000000
+@SiteId = 00000000-0000-0000-0000-000000000000
+@ConcurrencyToken = replace-with-base64-rowversion
 
 GET {{Api_HostAddress}}/weatherforecast/
 Accept: application/json
@@ -40,3 +43,84 @@ Content-Type: application/json
   "vertical": 0,
   "zoom": 0
 }
+
+### List assets
+GET {{Api_HostAddress}}/assets?pageIndex=0&pageSize=25&sortActive=responsibleUserDisplayName
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+### Get asset details
+GET {{Api_HostAddress}}/assets/{{AssetId}}
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+### Get asset history
+GET {{Api_HostAddress}}/assets/{{AssetId}}/events?pageIndex=0&pageSize=50
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+### Register two active assets with shared details
+POST {{Api_HostAddress}}/assets
+Authorization: Bearer {{AccessToken}}
+Content-Type: application/json
+
+{
+  "classification": "Tool",
+  "name": "Cordless drill",
+  "manufacturer": "Example Manufacturer",
+  "model": "X20",
+  "description": "20V cordless drill",
+  "siteId": "{{SiteId}}",
+  "responsibleUserId": null,
+  "condition": "Good",
+  "operationalStatus": "Available",
+  "note": "Initial registration",
+  "rows": [
+    { "manufacturerSerialNumber": "DRILL-001" },
+    { "manufacturerSerialNumber": "DRILL-002" }
+  ]
+}
+
+### Update audited asset details
+PUT {{Api_HostAddress}}/assets/{{AssetId}}/details
+Authorization: Bearer {{AccessToken}}
+Content-Type: application/json
+
+{
+  "classification": "Tool",
+  "name": "Cordless drill",
+  "manufacturer": "Example Manufacturer",
+  "model": "X20",
+  "description": "20V cordless drill with carrying case",
+  "manufacturerSerialNumber": "DRILL-001",
+  "concurrencyToken": "{{ConcurrencyToken}}",
+  "note": "Corrected asset description"
+}
+
+### Accept a pending asset registration
+PATCH {{Api_HostAddress}}/assets/{{AssetId}}/registration-review
+Authorization: Bearer {{AccessToken}}
+Content-Type: application/json
+
+{
+  "accepted": true,
+  "concurrencyToken": "{{ConcurrencyToken}}",
+  "note": "Registration verified"
+}
+
+### Reassign an asset or explicitly leave it unassigned
+PATCH {{Api_HostAddress}}/assets/{{AssetId}}/responsibility
+Authorization: Bearer {{AccessToken}}
+Content-Type: application/json
+
+{
+  "responsibleUserId": null,
+  "reason": "Released from the previous responsibility",
+  "concurrencyToken": "{{ConcurrencyToken}}",
+  "note": "Asset is now unassigned"
+}
+
+### Search eligible responsible users for asset administration
+GET {{Api_HostAddress}}/dashboard/users/search?searchTerm=example&roles=Administrator&roles=Worker
+Authorization: Bearer {{AccessToken}}
+Accept: application/json

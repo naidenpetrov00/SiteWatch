@@ -16,6 +16,10 @@ public sealed class RetailerPriceCollectionProcessor(
     : IRetailerPriceCollectionProcessor
 {
     private static readonly TimeSpan ItemLeaseDuration = TimeSpan.FromMinutes(2);
+    private const string LeadershipRenewalTag =
+        "SiteWatch.RetailerPriceCollection.Polling.LeadershipRenewal";
+    private const string LeadershipReleaseTag =
+        "SiteWatch.RetailerPriceCollection.Polling.LeadershipRelease";
 
     public async Task<bool> TryAcquireLeadershipAsync(
         Guid ownerId,
@@ -69,6 +73,7 @@ public sealed class RetailerPriceCollectionProcessor(
             .Where(lease => lease.Id == RetailerPriceCollectionWorkerLease.SingletonId
                 && lease.OwnerId == ownerId
                 && lease.LeaseExpiresAt > DateTimeOffset.UtcNow)
+            .TagWith(LeadershipRenewalTag)
             .ExecuteUpdateAsync(
                 setters => setters.SetProperty(
                     lease => lease.LeaseExpiresAt,
@@ -82,6 +87,7 @@ public sealed class RetailerPriceCollectionProcessor(
         await dbContext.RetailerPriceCollectionWorkerLeases
             .Where(lease => lease.Id == RetailerPriceCollectionWorkerLease.SingletonId
                 && lease.OwnerId == ownerId)
+            .TagWith(LeadershipReleaseTag)
             .ExecuteUpdateAsync(
                 setters => setters.SetProperty(
                     lease => lease.LeaseExpiresAt,

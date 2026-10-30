@@ -28,6 +28,11 @@ public sealed partial class DashboardSitesQuery
                     "address",
                     query => query.Address,
                     site => site.Address.Value
+                ),
+                TableFilterDescriptor<Site, DashboardSitesQuery>.BooleanEquals(
+                    "isCompanyStock",
+                    query => query.IsCompanyStock,
+                    site => site.IsCompanyStock
                 )
             ],
             Sorts: new Dictionary<string, TableSortDescriptor<Site, DashboardSitesQuery>>(
@@ -51,6 +56,11 @@ public sealed partial class DashboardSitesQuery
                 ["address"] = TableSortDescriptor<Site, DashboardSitesQuery>.Create(
                     "address",
                     site => site.Address.Value,
+                    site => site.Id
+                ),
+                ["isCompanyStock"] = TableSortDescriptor<Site, DashboardSitesQuery>.Create(
+                    "isCompanyStock",
+                    site => site.IsCompanyStock,
                     site => site.Id
                 )
             },

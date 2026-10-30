@@ -27,12 +27,6 @@ const SITE_COLUMNS: readonly DataTableColumn<DashboardSite>[] = [
     filter: { kind: 'number', placeholder: 'Filter NumberId' }
   },
   {
-    key: 'id',
-    label: 'Id',
-    sortable: true,
-    filter: { kind: 'text', placeholder: 'Filter Id' }
-  },
-  {
     key: 'name',
     label: 'Name',
     sortable: true,
@@ -43,6 +37,20 @@ const SITE_COLUMNS: readonly DataTableColumn<DashboardSite>[] = [
     label: 'Address',
     sortable: true,
     filter: { kind: 'text', placeholder: 'Filter Address' }
+  },
+  {
+    key: 'isCompanyStock',
+    label: 'Classification',
+    sortable: true,
+    filter: {
+      kind: 'select',
+      placeholder: 'Filter Classification',
+      options: [
+        { label: 'Company Stock', value: 'true' },
+        { label: 'Ordinary Site', value: 'false' }
+      ]
+    },
+    displayFormatter: (value) => value ? 'Company Stock' : 'Ordinary Site'
   },
   {
     key: 'managerDisplayName',

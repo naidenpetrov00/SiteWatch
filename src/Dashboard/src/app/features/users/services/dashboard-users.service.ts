@@ -79,6 +79,29 @@ export class DashboardUsersService {
     return this.searchUsers(searchTerm, 'Worker');
   }
 
+  searchUsersByRoles(
+    searchTerm: string,
+    roles: readonly string[]
+  ): Promise<readonly DashboardUserLookup[]> {
+    const normalizedSearchTerm = searchTerm.trim();
+    const normalizedRoles = [...new Set(roles.map((role) => role.trim()).filter(Boolean))];
+
+    if (normalizedSearchTerm.length === 0 || normalizedRoles.length === 0) {
+      return Promise.resolve([]);
+    }
+
+    let params = new HttpParams().set('searchTerm', normalizedSearchTerm);
+    for (const role of normalizedRoles) {
+      params = params.append('roles', role);
+    }
+
+    return firstValueFrom(
+      this.http.get<readonly DashboardUserLookup[]>(buildApiUrl('/dashboard/users/search'), {
+        params
+      })
+    );
+  }
+
   private toQueryState(state: DataTableState<DashboardUser>): DashboardUsersQueryState {
     return {
       pageIndex: state.page.pageIndex,

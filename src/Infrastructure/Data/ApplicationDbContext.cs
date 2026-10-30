@@ -11,6 +11,7 @@ namespace Infrastructure.Data;
 public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IMediator mediator)
     : IdentityDbContext<ApplicationUser>(options), IApplicationDbContext
 {
+    public new DbSet<ApplicationUser> Users => Set<ApplicationUser>();
     public DbSet<Site> Sites => Set<Site>();
     public DbSet<SiteImage> SiteImages => Set<SiteImage>();
     public DbSet<SiteFile> SiteFiles => Set<SiteFile>();
@@ -53,6 +54,8 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
         Set<OfferRetailerComparison>();
     public DbSet<OfferProductPriceSelection> OfferProductPriceSelections =>
         Set<OfferProductPriceSelection>();
+    public DbSet<Asset> Assets => Set<Asset>();
+    public DbSet<AssetEvent> AssetEvents => Set<AssetEvent>();
     public DbSet<Proposal> Proposals => Set<Proposal>();
     public DbSet<ProposalActivity> ProposalActivities => Set<ProposalActivity>();
     public DbSet<ProposalActivitySection> ProposalActivitySections =>
@@ -67,10 +70,39 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
     }
 
-    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        EnsureAssetHistoryIsAppendOnly();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
+        SaveChangesAsync(true, cancellationToken);
+
+    public override async Task<int> SaveChangesAsync(
+        bool acceptAllChangesOnSuccess,
+        CancellationToken cancellationToken = default)
     {
         await mediator.DispatchDomainEventsAsync(this);
+        EnsureAssetHistoryIsAppendOnly();
 
-        return await base.SaveChangesAsync(cancellationToken);
+        return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    private void EnsureAssetHistoryIsAppendOnly()
+    {
+        ChangeTracker.DetectChanges();
+
+        if (ChangeTracker.Entries<Asset>().Any(entry => entry.State == EntityState.Deleted))
+        {
+            throw new InvalidOperationException("Assets cannot be hard-deleted.");
+        }
+
+        if (ChangeTracker.Entries<AssetEvent>().Any(entry =>
+                entry.State is EntityState.Modified or EntityState.Deleted))
+        {
+            throw new InvalidOperationException(
+                "Persisted asset history cannot be changed or deleted.");
+        }
     }
 }

@@ -1,5 +1,4 @@
 using System.IdentityModel.Tokens.Jwt;
-using System.Globalization;
 using System.Security.Claims;
 using System.Text;
 using Ardalis.GuardClauses;
@@ -43,15 +42,20 @@ public class JwtTokenService(
         var issuerFromConfiguration = Guard.Against.Null(options.Issuer);
         var audienceFromConfiguration = Guard.Against.Null(options.Audience);
         var keyFromConfiguration = Guard.Against.Null(options.Key);
-        var expiresFromConfiguration = Guard.Against.Null(options.ExpireDays);
+        var expireHours = options.ExpireHours
+            ?? throw new InvalidOperationException("Jwt:ExpireHours must be configured.");
+        if (expireHours <= 0)
+        {
+            throw new InvalidOperationException("Jwt:ExpireHours must be greater than zero.");
+        }
+
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyFromConfiguration));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        var expireDays = double.Parse(expiresFromConfiguration, CultureInfo.InvariantCulture);
         var token = new JwtSecurityToken(
             issuer: issuerFromConfiguration,
             audience: audienceFromConfiguration,
-            expires: DateTime.UtcNow.AddDays(expireDays),
+            expires: DateTime.UtcNow.AddHours(expireHours),
             claims: claims,
             signingCredentials: creds
         );

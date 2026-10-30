@@ -75,7 +75,7 @@ export class OfferWorkspacePage {
   readonly hasDraftProposal = computed(() =>
     this.proposals().some((proposal) => proposal.status === 'Draft')
   );
-  readonly latestProposal = computed(() => this.proposals()[0] ?? null);
+  readonly latestProposal = computed(() => this.proposals().at(0) ?? null);
   readonly canCreateProposal = computed(() =>
     !this.hasDraftProposal() && this.latestProposal()?.status !== 'Accepted'
   );

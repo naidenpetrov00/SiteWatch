@@ -15,6 +15,7 @@ public class SitesDto
     public DateOnly StartDate { get; init; }
     public DateOnly? EndDate { get; init; }
     public string Status { get; init; } = string.Empty;
+    public bool IsCompanyStock { get; init; }
     public SiteMediaPolicyDto MediaPolicy { get; init; } = null!;
 
     public class Mapping : Profile

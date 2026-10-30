@@ -27,6 +27,23 @@ const SiteCard = ({site, onPress}: SiteCardProps) => {
                 <Text style={[siteCardStyles.address, {color: colorPalette.text}]}>
                     {site.address}
                 </Text>
+                {site.isCompanyStock ? (
+                    <View
+                        style={[
+                            siteCardStyles.companyStockBadge,
+                            {borderColor: colorPalette.primary},
+                        ]}
+                    >
+                        <Text
+                            style={[
+                                siteCardStyles.companyStockBadgeText,
+                                {color: colorPalette.primary},
+                            ]}
+                        >
+                            Company Stock
+                        </Text>
+                    </View>
+                ) : null}
             </View>
         </Card>
     );

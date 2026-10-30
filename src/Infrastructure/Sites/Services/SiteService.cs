@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Sites.Services;
 
-public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) : ISiteService
+public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper, IUser user) : ISiteService
 {
     public async Task<Guid> CreateAsync(CreateSiteCommand request, CancellationToken cancellationToken)
     {
@@ -39,7 +39,8 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
             startDate,
             status,
             endDate,
-            mediaPolicy);
+            mediaPolicy,
+            request.IsCompanyStock);
 
         site.AssignPrimaryClientRecipient(primaryClientUser);
         site.SynchronizeAccessUsers(accessUsers, manager);
@@ -91,6 +92,10 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
             request.PrimaryClientUserId,
             cancellationToken);
         var accessUsers = await GetAccessUsersAsync(request.UserIds, cancellationToken);
+        var isCompanyStock = request.IsCompanyStock
+            ?? throw new ArgumentException(
+                "Company stock classification is required.",
+                nameof(request.IsCompanyStock));
 
         site.UpdateDetails(
             request.Name,
@@ -100,9 +105,12 @@ public sealed class SiteService(ApplicationDbContext dbContext, IMapper mapper) 
             ParseOptionalDate(request.EndDate, nameof(request.EndDate)),
             ParseStatus(request.Status),
             preset);
+        site.SetCompanyStock(isCompanyStock);
         site.MediaPolicy.AddCategories(request.MediaCategoriesToAdd);
         site.AssignPrimaryClientRecipient(primaryClientUser);
         site.SynchronizeAccessUsers(accessUsers, manager);
+        site.LastModified = DateTimeOffset.UtcNow;
+        site.LastModifiedBy = user.Id ?? throw new UnauthorizedAccessException();
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 

@@ -2,7 +2,12 @@
   <a class="site-media-page__back" routerLink="/manage-sites"><mat-icon>arrow_back</mat-icon>Back to sites</a>
   <header class="site-media-page__header">
     <p class="site-media-page__eyebrow">Site catalog</p><h1>Media &amp; files</h1>
-    @if (site(); as currentSite) { <p>{{ currentSite.name }} · {{ currentSite.address }}</p> }
+    @if (site(); as currentSite) {
+      <p class="site-media-page__identity">{{ currentSite.name }} · {{ currentSite.address }}</p>
+      @if (currentSite.isCompanyStock) {
+        <span class="site-media-page__stock-badge">Company Stock</span>
+      }
+    }
   </header>
   @if (siteLoadFailed()) {
     <div class="site-media-page__empty site-media-page__empty--error" role="alert"><mat-icon>cloud_off</mat-icon><strong>Unable to load this site</strong><span>Check the link, your permissions, or network connection.</span></div>

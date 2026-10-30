@@ -51,6 +51,14 @@ export const paths = {
         attachmentAccess: (issueId: string, attachmentId: string) =>
             `/issues/${issueId}/attachments/${attachmentId}/access`,
     },
+    mobileAssets: {
+        byId: (assetId: string) => `/mobile/assets/${assetId}`,
+        byQr: "/mobile/assets/discovery/qr",
+        register: "/mobile/assets/registrations",
+        registration: (assetId: string) => `/mobile/assets/registrations/${assetId}`,
+        search: "/mobile/assets/search",
+        sites: "/mobile/assets/sites",
+    },
     proposals: {
         getBySiteId: (siteId: string) => `/client/sites/${siteId}/proposals`,
         getById: (siteId: string, proposalId: string) =>

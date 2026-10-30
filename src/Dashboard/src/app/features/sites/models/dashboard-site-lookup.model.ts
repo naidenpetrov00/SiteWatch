@@ -3,4 +3,5 @@ export interface DashboardSiteLookup {
   numberId: number;
   name: string;
   address: string;
+  isCompanyStock: boolean;
 }

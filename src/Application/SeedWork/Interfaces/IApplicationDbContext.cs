@@ -5,6 +5,7 @@ namespace Application.SeedWork.Interfaces;
 
 public interface IApplicationDbContext
 {
+    DbSet<ApplicationUser> Users { get; }
     DbSet<Site> Sites { get; }
     DbSet<SiteImage> SiteImages { get; }
     DbSet<SiteFile> SiteFiles { get; }
@@ -34,6 +35,8 @@ public interface IApplicationDbContext
     DbSet<OfferProductLine> OfferProductLines { get; }
     DbSet<OfferRetailerComparison> OfferRetailerComparisons { get; }
     DbSet<OfferProductPriceSelection> OfferProductPriceSelections { get; }
+    DbSet<Asset> Assets { get; }
+    DbSet<AssetEvent> AssetEvents { get; }
     DbSet<Proposal> Proposals { get; }
     DbSet<ProposalActivity> ProposalActivities { get; }
     DbSet<ProposalActivitySection> ProposalActivitySections { get; }

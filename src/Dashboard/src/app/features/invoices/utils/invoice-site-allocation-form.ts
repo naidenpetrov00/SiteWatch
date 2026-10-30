@@ -41,7 +41,8 @@ export function createInvoiceSiteAllocationForm(
         id: allocation.siteId,
         numberId: allocation.siteNumberId,
         name: allocation.siteName,
-        address: ''
+        address: '',
+        isCompanyStock: false
       }
     : null;
 

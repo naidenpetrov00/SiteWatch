@@ -150,11 +150,20 @@ public class IdentityUserService(
     public async Task<List<DashboardUserLookupDto>> SearchUsersAsync(
         string? searchTerm,
         CancellationToken cancellationToken) =>
-        await SearchUsersAsync(searchTerm, null, cancellationToken);
+        await SearchUsersAsync(searchTerm, Array.Empty<string>(), cancellationToken);
 
     public async Task<List<DashboardUserLookupDto>> SearchUsersAsync(
         string? searchTerm,
         string? role,
+        CancellationToken cancellationToken) =>
+        await SearchUsersAsync(
+            searchTerm,
+            string.IsNullOrWhiteSpace(role) ? Array.Empty<string>() : [role.Trim()],
+            cancellationToken);
+
+    public async Task<List<DashboardUserLookupDto>> SearchUsersAsync(
+        string? searchTerm,
+        IReadOnlyCollection<string> roles,
         CancellationToken cancellationToken)
     {
         var normalizedSearchTerm = searchTerm?.Trim();
@@ -164,7 +173,9 @@ public class IdentityUserService(
             return [];
         }
 
-        var normalizedRole = role?.Trim();
+        var normalizedRoles = roles
+            .Where(UserRoles.IsSupported)
+            .ToHashSet(StringComparer.Ordinal);
         var candidates = await userManager.Users
             .AsNoTracking()
             .Where(user =>
@@ -172,16 +183,16 @@ public class IdentityUserService(
                 || (user.Email != null && user.Email.Contains(normalizedSearchTerm)))
             .OrderBy(user => user.UserName)
             .ThenBy(user => user.Id)
-            .Take(string.IsNullOrWhiteSpace(normalizedRole) ? 20 : 100)
+            .Take(normalizedRoles.Count == 0 ? 20 : 100)
             .ToListAsync(cancellationToken);
 
-        if (!string.IsNullOrWhiteSpace(normalizedRole))
+        if (normalizedRoles.Count > 0)
         {
             candidates = (await Task.WhenAll(candidates.Select(async candidate =>
                 (Candidate: candidate, Claims: await userManager.GetClaimsAsync(candidate)))))
                 .Where(item => item.Claims.Any(claim =>
                     claim.Type == UserClaimTypes.UserType
-                    && claim.Value.Equals(normalizedRole, StringComparison.Ordinal)))
+                    && normalizedRoles.Contains(claim.Value)))
                 .Select(item => item.Candidate)
                 .Take(20)
                 .ToList();

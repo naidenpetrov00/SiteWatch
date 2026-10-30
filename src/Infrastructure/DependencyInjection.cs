@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using Application.SeedWork.Interfaces;
+using Application.SeedWork.Security;
 using Ardalis.GuardClauses;
 using Azure.Storage.Blobs;
 using Domain.Entities;
@@ -111,7 +112,11 @@ public static class DependencyInjection
         services.AddScoped<IProposalService, ProposalService>();
 
         services
-            .AddIdentity<ApplicationUser, IdentityRole>(options => { options.User.RequireUniqueEmail = true; })
+            .AddIdentity<ApplicationUser, IdentityRole>(options =>
+            {
+                options.User.RequireUniqueEmail = true;
+                options.ClaimsIdentity.RoleClaimType = UserClaimTypes.UserType;
+            })
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders()
             .AddSignInManager();

@@ -4,6 +4,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatChipInputEvent, MatChipsModule } from '@angular/material/chips';
 import { MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -32,7 +33,7 @@ import { siteDateRangeValidator } from '../site-date-range.validator';
 
 @Component({
   selector: 'app-add-site-dialog',
-  imports: [DialogActionBarComponent, DialogShellComponent, MatButtonModule, MatChipsModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatAutocompleteModule, DatepickerComponent, ReactiveFormsModule],
+  imports: [DialogActionBarComponent, DialogShellComponent, MatButtonModule, MatCheckboxModule, MatChipsModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatAutocompleteModule, DatepickerComponent, ReactiveFormsModule],
   templateUrl: './add-site-dialog.component.html',
   styleUrl: './add-site-dialog.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -75,6 +76,7 @@ export class AddSiteDialogComponent {
       startDate: this.formBuilder.control<Date | null>(new Date(), [Validators.required]),
       endDate: this.formBuilder.control<Date | null>(null),
       status: ['Planning', [Validators.required]],
+      isCompanyStock: [false],
       mediaPolicyPreset: ['ApartmentRenovation' as SiteMediaPolicyPreset, [Validators.required]]
     },
     { validators: siteDateRangeValidator() }
@@ -187,7 +189,7 @@ export class AddSiteDialogComponent {
     try {
       const value = this.siteForm.getRawValue();
       const accessUserIds = this.accessUsers().map((user) => user.id);
-      await this.dashboardSitesService.createSite({ name: value.name, address: value.address, managerId: value.managerId, primaryClientUserId: value.primaryClientUserId, ...(accessUserIds.length > 0 ? { userIds: accessUserIds } : {}), startDate: this.toDateOnly(value.startDate!), endDate: value.endDate ? this.toDateOnly(value.endDate) : null, status: value.status, mediaPolicyPreset: value.mediaPolicyPreset, mediaCategories: this.mediaCategories() });
+      await this.dashboardSitesService.createSite({ name: value.name, address: value.address, managerId: value.managerId, primaryClientUserId: value.primaryClientUserId, ...(accessUserIds.length > 0 ? { userIds: accessUserIds } : {}), startDate: this.toDateOnly(value.startDate!), endDate: value.endDate ? this.toDateOnly(value.endDate) : null, status: value.status, isCompanyStock: value.isCompanyStock, mediaPolicyPreset: value.mediaPolicyPreset, mediaCategories: this.mediaCategories() });
       this.dialogRef.close(true);
     } catch (error) { this.saveError.set(getSiteSaveError(error)); }
   }
