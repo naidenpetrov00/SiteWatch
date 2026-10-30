@@ -73,6 +73,7 @@ export class DataTableComponent<T extends object> {
   readonly tableStateChange = output<DataTableState<T>>();
   readonly searchRequested = output<DataTableState<T>>();
   readonly exportRequested = output<DataTableExportRequest<T>>();
+  readonly filtersCleared = output<void>();
   readonly cellButtonClicked = output<{ row: T; column: DataTableColumn<T> }>();
   readonly rowActionClicked = output<DataTableRowActionEvent<T>>();
 
@@ -209,6 +210,7 @@ export class DataTableComponent<T extends object> {
       ...page,
       pageIndex: 0
     }));
+    this.filtersCleared.emit();
   }
 
   toggleFiltersVisibility(): void {

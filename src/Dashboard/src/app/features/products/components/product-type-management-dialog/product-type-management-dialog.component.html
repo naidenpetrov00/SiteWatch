@@ -6,20 +6,12 @@
       <mat-label>Search Product Types</mat-label>
       <input matInput [formControl]="nameSearchControl" inputmode="search" />
     </mat-form-field>
-    <mat-form-field appearance="outline">
-      <mat-label>Filter by Category</mat-label>
-      <input matInput [formControl]="categoryFilterControl" [matAutocomplete]="categoryAutocomplete" autocomplete="off" inputmode="search" />
-      @if (categoryFilterControl.value) {
-        <button matSuffix mat-button type="button" aria-label="Clear Category filter" (click)="clearCategoryFilter()">Clear</button>
-      }
-    </mat-form-field>
+    <div class="product-type-management__category-filter">
+      <app-catalog-selector [formControl]="categoryFilterControl" kind="category" label="Filter by Category" placeholder="Choose or search Categories" />
+      @if (categoryId()) { <button mat-button type="button" aria-label="Clear Category filter" (click)="clearCategoryFilter()">Clear</button> }
+    </div>
     <button mat-flat-button color="primary" type="button" (click)="createProductType()">Create Product Type</button>
   </div>
-  <mat-autocomplete #categoryAutocomplete="matAutocomplete" [displayWith]="displayCategory" [requireSelection]="true" (optionSelected)="onCategoryFilterSelected($event)">
-    @for (category of categoryResults(); track category.id) { <mat-option [value]="category">{{ category.name }}</mat-option> }
-  </mat-autocomplete>
-  @if (categoryLoading()) { <p aria-live="polite">Searching Categories…</p> }
-  @if (categoryLookupError()) { <p class="product-type-management__error" role="alert">{{ categoryLookupError() }}</p> }
   @if (pageError()) { <p class="product-type-management__error" role="alert">{{ pageError() }} <button mat-button type="button" (click)="retry()">Retry</button></p> }
   @if (productTypesQuery.isPending()) {
     <p aria-live="polite">Loading Product Types…</p>

@@ -1,14 +1,13 @@
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, ViewChild, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewChild, inject, signal } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormControl, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { debounceTime, distinctUntilChanged, firstValueFrom } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 
+import { CatalogSelectorComponent } from '../catalog-selector/catalog-selector.component';
 import { DialogActionBarComponent } from '../../../../shared/ui/dialog-action-bar/dialog-action-bar.component';
 import { DialogShellComponent } from '../../../../shared/ui/dialog-shell/dialog-shell.component';
 import { DialogWizardTabsComponent } from '../../../../shared/ui/dialog-wizard-tabs/dialog-wizard-tabs.component';
@@ -16,7 +15,6 @@ import { DialogWizardTabDefinition } from '../../../../shared/ui/dialog-wizard-t
 import { ProductTypeEditorDialogComponent, ProductTypeEditorDialogData } from '../product-type-editor-dialog/product-type-editor-dialog.component';
 import { ProductCatalogProductType } from '../../models/product-catalog.models';
 import { CreateDashboardProductRequest, DashboardProductDetails, PRODUCT_PACKAGE_UNIT_OPTIONS, PRODUCT_STATUSES, ProductPackageUnit, ProductStatus } from '../../models/dashboard-product.models';
-import { ProductCatalogService } from '../../services/product-catalog.service';
 import { DashboardProductsService } from '../../services/dashboard-products.service';
 import { getProductCatalogError } from '../../utils/product-catalog-error';
 
@@ -31,30 +29,24 @@ const PRODUCT_DIALOG_TABS = [
 
 @Component({
   selector: 'app-product-dialog',
-  imports: [ReactiveFormsModule, MatAutocompleteModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, DialogActionBarComponent, DialogShellComponent, DialogWizardTabsComponent],
+  imports: [ReactiveFormsModule, CatalogSelectorComponent, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, DialogActionBarComponent, DialogShellComponent, DialogWizardTabsComponent],
   templateUrl: './product-dialog.component.html',
   styleUrl: './product-dialog.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProductDialogComponent {
-  @ViewChild('productTypeInput') private productTypeInput?: ElementRef<HTMLInputElement>;
+  @ViewChild(CatalogSelectorComponent) private productTypeSelector?: CatalogSelectorComponent;
 
-  private readonly destroyRef = inject(DestroyRef);
   private readonly formBuilder = inject(FormBuilder);
   private readonly dialog = inject(MatDialog);
   private readonly dialogRef = inject(MatDialogRef<ProductDialogComponent, ProductDialogResult>);
   private readonly productsService = inject(DashboardProductsService);
-  private readonly catalogService = inject(ProductCatalogService);
   private readonly product = inject<DashboardProductDetails | null>(MAT_DIALOG_DATA, { optional: true });
-  private searchRevision = 0;
 
   readonly statuses = PRODUCT_STATUSES;
   readonly packageUnits = PRODUCT_PACKAGE_UNIT_OPTIONS;
   readonly tabs = PRODUCT_DIALOG_TABS;
   readonly selectedTabId = signal<ProductDialogTabId>('details');
-  readonly productTypeResults = signal<readonly ProductCatalogProductType[]>([]);
-  readonly productTypeLoading = signal(false);
-  readonly productTypeLookupError = signal<string | null>(null);
   readonly selectedProductType = signal<ProductCatalogProductType | null>(
     this.product ? {
       id: this.product.productTypeId,
@@ -63,9 +55,7 @@ export class ProductDialogComponent {
       categoryName: this.product.categoryName
     } : null
   );
-  readonly productTypeControl = this.formBuilder.control<string | ProductCatalogProductType | null>(
-    this.selectedProductType()
-  );
+  readonly productTypeControl = this.formBuilder.control<ProductCatalogProductType | null>(this.selectedProductType(), [Validators.required]);
   readonly saveError = signal<string | null>(null);
   readonly formId = this.product ? 'edit-product-dialog-form' : 'add-product-dialog-form';
   readonly dialogTitle = this.product ? 'Edit Product' : 'Add Product';
@@ -91,28 +81,15 @@ export class ProductDialogComponent {
   readonly isSaving = (): boolean => this.product
     ? this.productsService.updateProductMutation.isPending()
     : this.productsService.createProductMutation.isPending();
-  readonly displayProductType = (value: string | ProductCatalogProductType | null): string =>
-    typeof value === 'string' || value === null ? value ?? '' : `${value.name} · ${value.categoryName}`;
-
   constructor() {
-    this.productTypeControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
-      if (typeof value !== 'string') return;
-      this.searchRevision += 1;
-      this.selectedProductType.set(null);
-      this.clearProductTypeLookup();
-      this.productForm.controls.productTypeId.setValue('');
-    });
-    this.productTypeControl.valueChanges.pipe(debounceTime(250), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
-      if (typeof value === 'string') void this.searchProductTypes(value, this.searchRevision);
+    this.productTypeControl.valueChanges.subscribe((productType) => {
+      this.selectedProductType.set(productType);
+      this.productForm.controls.productTypeId.setValue(productType?.id ?? '');
     });
   }
 
   setSelectedTab(tabId: string): void {
     if (this.tabs.some((tab) => tab.id === tabId)) this.selectedTabId.set(tabId as ProductDialogTabId);
-  }
-
-  onProductTypeSelected(event: MatAutocompleteSelectedEvent): void {
-    this.selectProductType(event.option.value as ProductCatalogProductType);
   }
 
   async createProductType(): Promise<void> {
@@ -127,7 +104,7 @@ export class ProductDialogComponent {
     const productType = await firstValueFrom(dialogRef.afterClosed());
     if (!productType) return;
     this.selectProductType(productType);
-    setTimeout(() => this.productTypeInput?.nativeElement.focus());
+    setTimeout(() => this.productTypeSelector?.focus());
   }
 
   addSearchEntry(collectionName: SearchCollectionName): void {
@@ -173,32 +150,7 @@ export class ProductDialogComponent {
   }
 
   private selectProductType(productType: ProductCatalogProductType): void {
-    this.searchRevision += 1;
-    this.clearProductTypeLookup();
-    this.selectedProductType.set(productType);
-    this.productTypeControl.setValue(productType, { emitEvent: false });
-    this.productForm.controls.productTypeId.setValue(productType.id);
-  }
-
-  private async searchProductTypes(searchTerm: string, revision: number): Promise<void> {
-    const normalized = searchTerm.trim();
-    if (!normalized) {
-      this.clearProductTypeLookup();
-      return;
-    }
-    this.productTypeLoading.set(true);
-    this.productTypeLookupError.set(null);
-    try {
-      const response = await this.catalogService.getProductTypes({ searchTerm: normalized, pageSize: 20 });
-      if (revision === this.searchRevision) this.productTypeResults.set(response.items);
-    } catch {
-      if (revision === this.searchRevision) {
-        this.productTypeResults.set([]);
-        this.productTypeLookupError.set('Product Types could not be searched. Try again.');
-      }
-    } finally {
-      if (revision === this.searchRevision) this.productTypeLoading.set(false);
-    }
+    this.productTypeControl.setValue(productType);
   }
 
   private toRequest(): CreateDashboardProductRequest {
@@ -211,12 +163,6 @@ export class ProductDialogComponent {
       requiredKeywords: this.normalizeCollection(value.requiredKeywords),
       excludedKeywords: this.normalizeCollection(value.excludedKeywords)
     };
-  }
-
-  private clearProductTypeLookup(): void {
-    this.productTypeResults.set([]);
-    this.productTypeLoading.set(false);
-    this.productTypeLookupError.set(null);
   }
 
   private createSearchCollection(values: readonly string[] = []): FormArray<FormControl<string>> {

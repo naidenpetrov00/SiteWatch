@@ -1,24 +1,18 @@
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
-  ElementRef,
   ViewChild,
   inject,
   signal
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import {
-  MatAutocompleteModule,
-  MatAutocompleteSelectedEvent
-} from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { debounceTime, distinctUntilChanged, firstValueFrom } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 
+import { CatalogSelectorComponent } from '../catalog-selector/catalog-selector.component';
 import { DialogActionBarComponent } from '../../../../shared/ui/dialog-action-bar/dialog-action-bar.component';
 import { DialogShellComponent } from '../../../../shared/ui/dialog-shell/dialog-shell.component';
 import {
@@ -41,7 +35,7 @@ export interface ProductTypeEditorDialogData {
   selector: 'app-product-type-editor-dialog',
   imports: [
     ReactiveFormsModule,
-    MatAutocompleteModule,
+    CatalogSelectorComponent,
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
@@ -53,24 +47,19 @@ export interface ProductTypeEditorDialogData {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProductTypeEditorDialogComponent {
-  @ViewChild('categoryInput') private categoryInput?: ElementRef<HTMLInputElement>;
+  @ViewChild(CatalogSelectorComponent) private categorySelector?: CatalogSelectorComponent;
   readonly data = inject<ProductTypeEditorDialogData>(MAT_DIALOG_DATA);
-  private readonly destroyRef = inject(DestroyRef);
   private readonly formBuilder = inject(FormBuilder);
   private readonly dialog = inject(MatDialog);
   private readonly catalogService = inject(ProductCatalogService);
   private readonly dialogRef = inject(
     MatDialogRef<ProductTypeEditorDialogComponent, ProductCatalogProductType | null>
   );
-  private searchRevision = 0;
 
   readonly isEdit = this.data.productType !== null;
   readonly formId = this.isEdit ? 'edit-product-type-form' : 'create-product-type-form';
   readonly saving = signal(false);
   readonly saveError = signal<string | null>(null);
-  readonly categoryResults = signal<readonly ProductCatalogCategory[]>([]);
-  readonly categoryLoading = signal(false);
-  readonly categoryLookupError = signal<string | null>(null);
   readonly selectedCategory = signal<ProductCatalogCategory | null>(
     this.data.productType
       ? {
@@ -79,9 +68,7 @@ export class ProductTypeEditorDialogComponent {
         }
       : null
   );
-  readonly categoryControl = this.formBuilder.control<string | ProductCatalogCategory | null>(
-    this.selectedCategory()
-  );
+  readonly categoryControl = this.formBuilder.control<ProductCatalogCategory | null>(this.selectedCategory(), [Validators.required]);
   readonly form = this.formBuilder.group({
     name: this.formBuilder.nonNullable.control(this.data.productType?.name ?? '', [
       trimmedRequiredValidator(),
@@ -95,29 +82,11 @@ export class ProductTypeEditorDialogComponent {
 
   readonly categoryChanged = () =>
     this.isEdit && this.form.controls.categoryId.value !== this.data.productType?.categoryId;
-  readonly displayCategory = (value: string | ProductCatalogCategory | null): string =>
-    typeof value === 'string' ? value : value?.name ?? '';
-
   constructor() {
-    this.categoryControl.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((value) => {
-        if (typeof value !== 'string') return;
-        this.form.controls.categoryId.setValue('');
-        this.selectedCategory.set(null);
-        this.searchRevision += 1;
-        this.clearCategoryLookup();
-      });
-
-    this.categoryControl.valueChanges
-      .pipe(debounceTime(250), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
-      .subscribe((value) => {
-        if (typeof value === 'string') void this.searchCategories(value, this.searchRevision);
-      });
-  }
-
-  onCategorySelected(event: MatAutocompleteSelectedEvent): void {
-    this.selectCategory(event.option.value as ProductCatalogCategory);
+    this.categoryControl.valueChanges.subscribe((category) => {
+      this.selectedCategory.set(category);
+      this.form.controls.categoryId.setValue(category?.id ?? '');
+    });
   }
 
   async createCategory(): Promise<void> {
@@ -136,7 +105,7 @@ export class ProductTypeEditorDialogComponent {
     const category = await firstValueFrom(dialogRef.afterClosed());
     if (category) {
       this.selectCategory(category);
-      setTimeout(() => this.categoryInput?.nativeElement.focus());
+      setTimeout(() => this.categorySelector?.focus());
     }
   }
 
@@ -171,41 +140,6 @@ export class ProductTypeEditorDialogComponent {
   }
 
   private selectCategory(category: ProductCatalogCategory): void {
-    this.searchRevision += 1;
-    this.clearCategoryLookup();
-    this.selectedCategory.set(category);
-    this.categoryControl.setValue(category, { emitEvent: false });
-    this.form.controls.categoryId.setValue(category.id);
-  }
-
-  private async searchCategories(searchTerm: string, revision: number): Promise<void> {
-    const normalized = searchTerm.trim();
-    if (!normalized) {
-      this.clearCategoryLookup();
-      return;
-    }
-
-    this.categoryLoading.set(true);
-    this.categoryLookupError.set(null);
-    try {
-      const response = await this.catalogService.getCategories({
-        searchTerm: normalized,
-        pageSize: 20
-      });
-      if (revision === this.searchRevision) this.categoryResults.set(response.items);
-    } catch {
-      if (revision === this.searchRevision) {
-        this.categoryResults.set([]);
-        this.categoryLookupError.set('Categories could not be searched. Try again.');
-      }
-    } finally {
-      if (revision === this.searchRevision) this.categoryLoading.set(false);
-    }
-  }
-
-  private clearCategoryLookup(): void {
-    this.categoryResults.set([]);
-    this.categoryLoading.set(false);
-    this.categoryLookupError.set(null);
+    this.categoryControl.setValue(category);
   }
 }

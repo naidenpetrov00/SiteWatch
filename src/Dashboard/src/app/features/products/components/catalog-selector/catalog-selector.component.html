@@ -1,0 +1,52 @@
+<mat-form-field appearance="outline" class="catalog-selector">
+  <mat-label>{{ label() }}</mat-label>
+  <input
+    #selectorInput
+    matInput
+    [formControl]="inputControl"
+    [matAutocomplete]="autocomplete"
+    [placeholder]="placeholder()"
+    autocomplete="off"
+    inputmode="search"
+    (input)="onInput($any($event.target).value)"
+    (focus)="onFocus()"
+    (click)="onFocus()"
+    (keydown.arrowdown)="onKeyboardOpen()"
+    (blur)="onBlur()"
+  />
+  @if (hint(); as selectorHint) { <mat-hint>{{ selectorHint }}</mat-hint> }
+  @if (required() && inputControl.touched && !inputControl.value) { <mat-error>{{ errorMessage() }}</mat-error> }
+</mat-form-field>
+
+<mat-autocomplete
+  #autocomplete="matAutocomplete"
+  [displayWith]="displaySelection"
+  [requireSelection]="true"
+  [autoActiveFirstOption]="true"
+  (opened)="onOpened()"
+  (optionSelected)="onOptionSelected($event)"
+>
+  @if (loading()) {
+    <mat-option disabled>Loading {{ kind() === 'category' ? 'Categories' : 'Product Types' }}…</mat-option>
+  } @else if (lookupError()) {
+    <mat-option disabled>{{ lookupError() }}</mat-option>
+  } @else if (hasLoaded() && results().length === 0) {
+    <mat-option disabled>No {{ kind() === 'category' ? 'Categories' : 'Product Types' }} found.</mat-option>
+  } @else {
+    @for (result of results(); track result.id) {
+      <mat-option [value]="result">
+        @if (isProductType(result)) { <strong>{{ result.name }}</strong><span> · {{ result.categoryName }}</span> }
+        @else { {{ result.name }} }
+      </mat-option>
+    }
+  }
+</mat-autocomplete>
+
+@if (lookupError()) {
+  <p class="catalog-selector__error" role="alert">
+    {{ lookupError() }} <button mat-button type="button" [disabled]="disabled()" (click)="retry()">Retry</button>
+  </p>
+}
+@if (loading()) {
+  <p class="catalog-selector__status" aria-live="polite">Loading {{ kind() === 'category' ? 'Categories' : 'Product Types' }}…</p>
+}

@@ -6,14 +6,10 @@
         <div class="product-dialog__grid">
           <mat-form-field appearance="outline" class="product-dialog__wide-field"><mat-label>Title</mat-label><input matInput formControlName="title" maxlength="200" placeholder="e.g. Ceresit CM 11" />@if (productForm.controls.title.touched && productForm.controls.title.invalid) { <mat-error>A title is required and cannot exceed 200 characters.</mat-error> }</mat-form-field>
           <div class="product-dialog__product-type-field product-dialog__wide-field">
-            <mat-form-field appearance="outline"><mat-label>Product Type</mat-label><input #productTypeInput matInput [formControl]="productTypeControl" [matAutocomplete]="productTypeAutocomplete" autocomplete="off" inputmode="search" placeholder="Search Product Types" />@if (productTypeControl.touched && productForm.controls.productTypeId.invalid) { <mat-error>Select a Product Type.</mat-error> }</mat-form-field>
+            <app-catalog-selector #productTypeSelector [formControl]="productTypeControl" kind="product-type" label="Product Type" placeholder="Choose or search Product Types" />
             <button mat-stroked-button type="button" [disabled]="isSaving()" (click)="createProductType()">Create Product Type</button>
           </div>
-          <mat-autocomplete #productTypeAutocomplete="matAutocomplete" [displayWith]="displayProductType" [requireSelection]="true" (optionSelected)="onProductTypeSelected($event)">
-            @for (productType of productTypeResults(); track productType.id) { <mat-option [value]="productType"><strong>{{ productType.name }}</strong><span> · {{ productType.categoryName }}</span></mat-option> }
-          </mat-autocomplete>
-          @if (productTypeLoading()) { <p class="product-dialog__lookup-status" aria-live="polite">Searching Product Types…</p> }
-          @if (productTypeLookupError()) { <p class="product-dialog__error" role="alert">{{ productTypeLookupError() }}</p> }
+          @if (productTypeControl.touched && productForm.controls.productTypeId.invalid) { <p class="product-dialog__error product-dialog__wide-field" role="alert">Select a Product Type.</p> }
           @if (selectedProductType(); as productType) { <p class="product-dialog__derived-category"><span>Category</span><strong>{{ productType.categoryName }}</strong></p> }
           <mat-form-field appearance="outline"><mat-label>Status</mat-label><mat-select formControlName="status">@for (status of statuses; track status) { <mat-option [value]="status">{{ status }}</mat-option> }</mat-select></mat-form-field>
           <mat-form-field appearance="outline"><mat-label>Brand</mat-label><input matInput formControlName="brand" maxlength="100" placeholder="e.g. Ceresit" /></mat-form-field>
