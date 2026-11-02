@@ -64,10 +64,7 @@ export interface DashboardProductLookupResponse {
   packageUnit: ProductPackageUnit | null;
 }
 
-export interface DashboardProductLookup extends DashboardProductLookupResponse {
-  /** Temporary Activity Requirement compatibility until its Product Type migration. */
-  category: string;
-}
+export type DashboardProductLookup = DashboardProductLookupResponse;
 
 export interface DashboardProductsResponse {
   items: readonly DashboardProduct[];

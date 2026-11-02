@@ -351,7 +351,7 @@ export class ActivityCatalogService {
         return firstValueFrom(
           this.http.post<CreatedResponse>(
             buildApiUrl(
-              `/activities/${mutation.activityId}/requirement-sections/${mutation.sectionId}/products`
+              `/activities/${mutation.activityId}/requirement-sections/${mutation.sectionId}/requirements`
             ),
             mutation.request
           )
@@ -360,7 +360,7 @@ export class ActivityCatalogService {
         return firstValueFrom(
           this.http.put<void>(
             buildApiUrl(
-              `/activities/${mutation.activityId}/requirement-sections/${mutation.sectionId}/products/${mutation.requirementId}`
+              `/activities/${mutation.activityId}/requirement-sections/${mutation.sectionId}/requirements/${mutation.requirementId}`
             ),
             mutation.request
           )
@@ -369,7 +369,7 @@ export class ActivityCatalogService {
         return firstValueFrom(
           this.http.patch<void>(
             buildApiUrl(
-              `/activities/${mutation.activityId}/requirement-sections/${mutation.sectionId}/products/${mutation.requirementId}/move`
+              `/activities/${mutation.activityId}/requirement-sections/${mutation.sectionId}/requirements/${mutation.requirementId}/move`
             ),
             mutation.request
           )
@@ -378,7 +378,7 @@ export class ActivityCatalogService {
         return firstValueFrom(
           this.http.delete<void>(
             buildApiUrl(
-              `/activities/${mutation.activityId}/requirement-sections/${mutation.sectionId}/products/${mutation.requirementId}`
+              `/activities/${mutation.activityId}/requirement-sections/${mutation.sectionId}/requirements/${mutation.requirementId}`
             )
           )
         );

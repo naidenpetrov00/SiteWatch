@@ -17,13 +17,14 @@ import { MatTableModule } from '@angular/material/table';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { debounceTime, distinctUntilChanged, firstValueFrom } from 'rxjs';
 
+import { CatalogSelectorComponent } from '../../../../shared/product-catalog/catalog-selector/catalog-selector.component';
 import {
   ProductCatalogCategory,
   ProductCatalogProductType
-} from '../../models/product-catalog.models';
+} from '../../../../shared/product-catalog/product-catalog.models';
+import { ProductCatalogLookupService } from '../../../../shared/product-catalog/product-catalog-lookup.service';
 import { ProductCatalogService } from '../../services/product-catalog.service';
 import { getProductCatalogError } from '../../utils/product-catalog-error';
-import { CatalogSelectorComponent } from '../catalog-selector/catalog-selector.component';
 import {
   CatalogConfirmDialogComponent,
   CatalogConfirmDialogData
@@ -54,6 +55,7 @@ export class ProductTypeManagementDialogComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly dialog = inject(MatDialog);
   private readonly catalogService = inject(ProductCatalogService);
+  private readonly catalogLookupService = inject(ProductCatalogLookupService);
 
   readonly displayedColumns = ['name', 'categoryName', 'actions'];
   readonly nameSearchControl = this.formBuilder.nonNullable.control('');
@@ -72,7 +74,7 @@ export class ProductTypeManagementDialogComponent {
   }));
   readonly productTypesQuery = injectQuery(() => ({
     queryKey: ['product-catalog', 'product-types', this.queryState()] as const,
-    queryFn: () => this.catalogService.getProductTypes(this.queryState())
+    queryFn: () => this.catalogLookupService.getProductTypes(this.queryState())
   }));
   constructor() {
     this.nameSearchControl.valueChanges

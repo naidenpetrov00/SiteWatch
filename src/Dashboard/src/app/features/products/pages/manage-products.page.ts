@@ -6,12 +6,15 @@ import { MatMenuModule } from '@angular/material/menu';
 
 import { DataTableComponent } from '../../../shared/data-table/data-table.component';
 import { DataTableColumn, DataTableState } from '../../../shared/data-table/data-table.types';
+import { CatalogSelectorComponent } from '../../../shared/product-catalog/catalog-selector/catalog-selector.component';
+import {
+  ProductCatalogCategory,
+  ProductCatalogProductType
+} from '../../../shared/product-catalog/product-catalog.models';
 import { ActionButtonComponent } from '../../../shared/ui/action-button/action-button.component';
-import { CatalogSelectorComponent } from '../components/catalog-selector/catalog-selector.component';
 import { CategoryManagementDialogComponent } from '../components/category-management-dialog/category-management-dialog.component';
 import { ProductDialogComponent } from '../components/product-dialog/product-dialog.component';
 import { ProductTypeManagementDialogComponent } from '../components/product-type-management-dialog/product-type-management-dialog.component';
-import { ProductCatalogCategory, ProductCatalogProductType } from '../models/product-catalog.models';
 import { DashboardProduct, PRODUCT_PACKAGE_UNIT_OPTIONS, PRODUCT_STATUSES } from '../models/dashboard-product.models';
 import { DashboardProductsService } from '../services/dashboard-products.service';
 

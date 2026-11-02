@@ -7,13 +7,13 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { firstValueFrom } from 'rxjs';
 
-import { CatalogSelectorComponent } from '../catalog-selector/catalog-selector.component';
 import { DialogActionBarComponent } from '../../../../shared/ui/dialog-action-bar/dialog-action-bar.component';
 import { DialogShellComponent } from '../../../../shared/ui/dialog-shell/dialog-shell.component';
 import { DialogWizardTabsComponent } from '../../../../shared/ui/dialog-wizard-tabs/dialog-wizard-tabs.component';
 import { DialogWizardTabDefinition } from '../../../../shared/ui/dialog-wizard-tabs/dialog-wizard-tabs.types';
+import { CatalogSelectorComponent } from '../../../../shared/product-catalog/catalog-selector/catalog-selector.component';
+import { ProductCatalogProductType } from '../../../../shared/product-catalog/product-catalog.models';
 import { ProductTypeEditorDialogComponent, ProductTypeEditorDialogData } from '../product-type-editor-dialog/product-type-editor-dialog.component';
-import { ProductCatalogProductType } from '../../models/product-catalog.models';
 import { CreateDashboardProductRequest, DashboardProductDetails, PRODUCT_PACKAGE_UNIT_OPTIONS, PRODUCT_STATUSES, ProductPackageUnit, ProductStatus } from '../../models/dashboard-product.models';
 import { DashboardProductsService } from '../../services/dashboard-products.service';
 import { getProductCatalogError } from '../../utils/product-catalog-error';

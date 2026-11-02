@@ -7,7 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 
 import { DialogActionBarComponent } from '../../../../shared/ui/dialog-action-bar/dialog-action-bar.component';
 import { DialogShellComponent } from '../../../../shared/ui/dialog-shell/dialog-shell.component';
-import { ProductCatalogCategory } from '../../models/product-catalog.models';
+import { ProductCatalogCategory } from '../../../../shared/product-catalog/product-catalog.models';
 import { ProductCatalogService } from '../../services/product-catalog.service';
 import { getProductCatalogError } from '../../utils/product-catalog-error';
 import { trimmedRequiredValidator } from '../../utils/product-catalog.validators';

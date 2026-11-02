@@ -62,14 +62,10 @@ export interface ActivityRequirementSection {
 
 export interface ActivityProductRequirement {
   id: string;
-  productId: string;
-  productNumberId: number;
-  productTitle: string;
-  productStatus: 'Active' | 'Unavailable' | 'Discontinued';
-  brand: string | null;
-  model: string | null;
-  packageQuantity: number | null;
-  packageUnit: string | null;
+  productTypeId: string;
+  productTypeName: string;
+  categoryId: string;
+  categoryName: string;
   quantity: number;
   isRequired: boolean;
   quantityBehavior: ProductQuantityBehavior;
@@ -103,17 +99,15 @@ export interface UpsertActivityRequirementSectionRequest {
 }
 
 export interface CreateActivityProductRequirementRequest {
-  productId: string;
+  productTypeId: string;
   quantity: number;
   isRequired: boolean;
   quantityBehavior: ProductQuantityBehavior;
   notes: string | null;
 }
 
-export type UpdateActivityProductRequirementRequest = Omit<
-  CreateActivityProductRequirementRequest,
-  'productId'
->;
+export type UpdateActivityProductRequirementRequest =
+  CreateActivityProductRequirementRequest;
 
 export interface MoveActivityRequirementRequest {
   targetIndex: number;

@@ -16,7 +16,8 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { injectQuery } from '@tanstack/angular-query-experimental';
 import { debounceTime, distinctUntilChanged, firstValueFrom } from 'rxjs';
 
-import { ProductCatalogCategory } from '../../models/product-catalog.models';
+import { ProductCatalogCategory } from '../../../../shared/product-catalog/product-catalog.models';
+import { ProductCatalogLookupService } from '../../../../shared/product-catalog/product-catalog-lookup.service';
 import { ProductCatalogService } from '../../services/product-catalog.service';
 import { getProductCatalogError } from '../../utils/product-catalog-error';
 import {
@@ -47,6 +48,7 @@ export class CategoryManagementDialogComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly dialog = inject(MatDialog);
   private readonly catalogService = inject(ProductCatalogService);
+  private readonly catalogLookupService = inject(ProductCatalogLookupService);
 
   readonly searchControl = this.formBuilder.nonNullable.control('');
   readonly searchTerm = signal('');
@@ -61,7 +63,7 @@ export class CategoryManagementDialogComponent {
   }));
   readonly categoriesQuery = injectQuery(() => ({
     queryKey: ['product-catalog', 'categories', this.queryState()] as const,
-    queryFn: () => this.catalogService.getCategories(this.queryState())
+    queryFn: () => this.catalogLookupService.getCategories(this.queryState())
   }));
 
   constructor() {

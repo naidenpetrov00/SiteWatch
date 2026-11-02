@@ -12,13 +12,13 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { firstValueFrom } from 'rxjs';
 
-import { CatalogSelectorComponent } from '../catalog-selector/catalog-selector.component';
 import { DialogActionBarComponent } from '../../../../shared/ui/dialog-action-bar/dialog-action-bar.component';
 import { DialogShellComponent } from '../../../../shared/ui/dialog-shell/dialog-shell.component';
+import { CatalogSelectorComponent } from '../../../../shared/product-catalog/catalog-selector/catalog-selector.component';
 import {
   ProductCatalogCategory,
   ProductCatalogProductType
-} from '../../models/product-catalog.models';
+} from '../../../../shared/product-catalog/product-catalog.models';
 import { ProductCatalogService } from '../../services/product-catalog.service';
 import { getProductCatalogError } from '../../utils/product-catalog-error';
 import { trimmedRequiredValidator } from '../../utils/product-catalog.validators';

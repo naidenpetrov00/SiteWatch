@@ -1,29 +1,66 @@
-import { ChangeDetectionStrategy, Component, ElementRef, OnChanges, SimpleChanges, ViewChild, forwardRef, inject, input, output, signal } from '@angular/core';
-import { ControlValueAccessor, FormControl, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent, MatAutocompleteTrigger } from '@angular/material/autocomplete';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  OnChanges,
+  SimpleChanges,
+  ViewChild,
+  forwardRef,
+  inject,
+  input,
+  output,
+  signal
+} from '@angular/core';
+import {
+  ControlValueAccessor,
+  FormControl,
+  NG_VALUE_ACCESSOR,
+  ReactiveFormsModule
+} from '@angular/forms';
+import {
+  MatAutocompleteModule,
+  MatAutocompleteSelectedEvent,
+  MatAutocompleteTrigger
+} from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 
-import { ProductCatalogCategory, ProductCatalogProductType } from '../../models/product-catalog.models';
-import { ProductCatalogService } from '../../services/product-catalog.service';
+import {
+  ProductCatalogCategory,
+  ProductCatalogProductType
+} from '../product-catalog.models';
+import { ProductCatalogLookupService } from '../product-catalog-lookup.service';
 
 export type CatalogSelectorKind = 'category' | 'product-type';
 export type CatalogSelection = ProductCatalogCategory | ProductCatalogProductType;
 
 @Component({
   selector: 'app-catalog-selector',
-  imports: [ReactiveFormsModule, MatAutocompleteModule, MatButtonModule, MatFormFieldModule, MatInputModule],
+  imports: [
+    ReactiveFormsModule,
+    MatAutocompleteModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule
+  ],
   templateUrl: './catalog-selector.component.html',
   styleUrl: './catalog-selector.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [{ provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => CatalogSelectorComponent), multi: true }]
+  providers: [
+    {
+      provide: NG_VALUE_ACCESSOR,
+      useExisting: forwardRef(() => CatalogSelectorComponent),
+      multi: true
+    }
+  ]
 })
 export class CatalogSelectorComponent implements ControlValueAccessor, OnChanges {
   @ViewChild('selectorInput') private selectorInput?: ElementRef<HTMLInputElement>;
-  @ViewChild(MatAutocompleteTrigger) private autocompleteTrigger?: MatAutocompleteTrigger;
+  @ViewChild(MatAutocompleteTrigger)
+  private autocompleteTrigger?: MatAutocompleteTrigger;
 
-  private readonly catalogService = inject(ProductCatalogService);
+  private readonly catalogLookupService = inject(ProductCatalogLookupService);
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
   private searchRevision = 0;
   private onChange: (value: CatalogSelection | null) => void = () => undefined;
@@ -45,9 +82,13 @@ export class CatalogSelectorComponent implements ControlValueAccessor, OnChanges
   readonly lookupError = signal<string | null>(null);
   readonly hasLoaded = signal(false);
   readonly disabled = signal(false);
-  readonly displaySelection = (value: string | CatalogSelection | null): string => {
+  readonly displaySelection = (
+    value: string | CatalogSelection | null
+  ): string => {
     if (typeof value === 'string' || value === null) return value ?? '';
-    return this.isProductType(value) ? `${value.name} · ${value.categoryName}` : value.name;
+    return this.isProductType(value)
+      ? `${value.name} · ${value.categoryName}`
+      : value.name;
   };
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -129,21 +170,27 @@ export class CatalogSelectorComponent implements ControlValueAccessor, OnChanges
     this.openPanelSoon();
 
     try {
-      const response = this.kind() === 'category'
-        ? await this.catalogService.getCategories({ searchTerm: normalizedSearchTerm, pageSize: 20 })
-        : await this.catalogService.getProductTypes({
-          searchTerm: normalizedSearchTerm,
-          categoryId: this.categoryId(),
-          pageSize: 20
-        });
+      const response =
+        this.kind() === 'category'
+          ? await this.catalogLookupService.getCategories({
+              searchTerm: normalizedSearchTerm,
+              pageSize: 20
+            })
+          : await this.catalogLookupService.getProductTypes({
+              searchTerm: normalizedSearchTerm,
+              categoryId: this.categoryId(),
+              pageSize: 20
+            });
       if (revision !== this.searchRevision) return;
       this.results.set(response.items);
       this.openPanelSoon();
     } catch {
       if (revision !== this.searchRevision) return;
-      this.lookupError.set(this.kind() === 'category'
-        ? 'Categories could not be loaded. Try again.'
-        : 'Product Types could not be loaded. Try again.');
+      this.lookupError.set(
+        this.kind() === 'category'
+          ? 'Categories could not be loaded. Try again.'
+          : 'Product Types could not be loaded. Try again.'
+      );
     } finally {
       if (revision === this.searchRevision) this.loading.set(false);
     }
@@ -174,7 +221,9 @@ export class CatalogSelectorComponent implements ControlValueAccessor, OnChanges
     setTimeout(() => this.autocompleteTrigger?.openPanel());
   }
 
-  isProductType(selection: CatalogSelection): selection is ProductCatalogProductType {
+  isProductType(
+    selection: CatalogSelection
+  ): selection is ProductCatalogProductType {
     return 'categoryId' in selection;
   }
 }

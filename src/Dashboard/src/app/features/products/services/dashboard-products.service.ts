@@ -158,10 +158,7 @@ export class DashboardProductsService {
         buildApiUrl('/dashboard/products/search'),
         { params: new HttpParams().set('searchTerm', normalizedSearchTerm) }
       )
-    ).then((products) => products.map((product) => ({
-      ...product,
-      category: product.categoryName
-    })));
+    );
   }
 
   private async invalidateProductLists(): Promise<void> {
