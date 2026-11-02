@@ -294,7 +294,7 @@
               <fieldset class="extraction__source-modes">
                 <legend>Test source</legend>
                 <label>
-                  <input name="retailer-extraction-test-source"
+                  <input
                     type="radio"
                     value="retailerListing"
                     [formField]="testForm.sourceType"
@@ -303,7 +303,7 @@
                   Existing listing
                 </label>
                 <label>
-                  <input name="retailer-extraction-test-source"
+                  <input
                     type="radio"
                     value="manualUrl"
                     [formField]="testForm.sourceType"
@@ -316,7 +316,7 @@
               @if (testModel().sourceType === 'retailerListing') {
                 <label class="extraction__test-control">
                   <span>Search listings from all company Retailer locations</span>
-                  <input name="retailer-extraction-listing-search"
+                  <input
                     type="search"
                     placeholder="Product number or title"
                     [formField]="testForm.listingSearch"
@@ -351,7 +351,7 @@
               } @else {
                 <label class="extraction__test-control">
                   <span>Absolute HTTPS product URL</span>
-                  <input name="retailer-extraction-manual-url"
+                  <input
                     type="url"
                     placeholder="https://shop.example.com/product"
                     [formField]="testForm.manualUrl"
