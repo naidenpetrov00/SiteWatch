@@ -17,6 +17,14 @@ public sealed record OfferReadinessActivitySectionDto(
     string ActivityName,
     string? SectionName);
 
+/// <summary>Identifies an Offer Product Requirement without a selected Product.</summary>
+public sealed record OfferReadinessRequirementDto(
+    Guid OfferProductRequirementId,
+    int ActivityNumberId,
+    string ActivityName,
+    string? SectionName,
+    string ProductTypeName);
+
 /// <summary>Describes whether the current persisted Offer can be finalized.</summary>
 public sealed record OfferFinalizationReadinessDto(
     Guid OfferId,
@@ -28,6 +36,9 @@ public sealed record OfferFinalizationReadinessDto(
     IReadOnlyList<OfferReadinessActivitySectionDto> ActivitySectionsMissingPricing,
     IReadOnlyList<OfferReadinessActivitySectionDto> ActivitySectionsWithInvalidPricing,
     int RequiredProductCount,
+    IReadOnlyList<OfferReadinessRequirementDto> RequiredProductRequirementsMissingSelections,
+    int OptionalProductCount,
+    IReadOnlyList<OfferReadinessRequirementDto> OptionalProductRequirementsMissingSelections,
     int RequiredProductsWithSelectedPrices,
     IReadOnlyList<OfferReadinessProductDto> RequiredProductsMissingSelectedPrices,
     IReadOnlyList<OfferReadinessProductDto> RequiredProductsWithInvalidTotals,
@@ -63,6 +74,8 @@ public static class OfferFinalizationReadiness
         var missingActivityPricing = new List<OfferReadinessActivitySectionDto>();
         var invalidActivityPricing = new List<OfferReadinessActivitySectionDto>();
         var newer = new List<OfferReadinessProductDto>();
+        var missingRequiredSelections = new List<OfferReadinessRequirementDto>();
+        var missingOptionalSelections = new List<OfferReadinessRequirementDto>();
         decimal? requiredSubtotal = 0m;
         decimal? optionalSubtotal = null;
         var requiredOverflow = false;
@@ -82,6 +95,26 @@ public static class OfferFinalizationReadiness
                     activity.ActivityNumberId,
                     activity.Name,
                     section.Name);
+                foreach (var requirement in section.ProductRequirements
+                             .Where(requirement => requirement.ProductLine is null)
+                             .OrderBy(requirement => requirement.SortOrder)
+                             .ThenBy(requirement => requirement.Id))
+                {
+                    var missingSelection = new OfferReadinessRequirementDto(
+                        requirement.Id,
+                        activity.ActivityNumberId,
+                        activity.Name,
+                        section.Name,
+                        requirement.ProductTypeName);
+                    if (requirement.IsRequired)
+                    {
+                        missingRequiredSelections.Add(missingSelection);
+                    }
+                    else
+                    {
+                        missingOptionalSelections.Add(missingSelection);
+                    }
+                }
                 if (!section.PricingMode.HasValue)
                 {
                     missingActivityPricing.Add(item);
@@ -100,6 +133,7 @@ public static class OfferFinalizationReadiness
                 {
                     invalidActivityPricing.Add(item);
                 }
+
             }
         }
 
@@ -186,6 +220,16 @@ public static class OfferFinalizationReadiness
         {
             reasons.Add($"Required product #{product.ProductNumberId} · {product.Title} needs a selected price.");
         }
+        foreach (var requirement in missingRequiredSelections)
+        {
+            reasons.Add(
+                $"Activity #{requirement.ActivityNumberId} · {requirement.ActivityName} · {requirement.SectionName ?? "Measurement"} needs a required Product for {requirement.ProductTypeName}.");
+        }
+        foreach (var requirement in missingOptionalSelections)
+        {
+            reasons.Add(
+                $"Activity #{requirement.ActivityNumberId} · {requirement.ActivityName} · {requirement.SectionName ?? "Measurement"} needs an optional Product for {requirement.ProductTypeName}.");
+        }
         foreach (var product in invalidRequired)
         {
             reasons.Add($"Required product #{product.ProductNumberId} · {product.Title} has a selected price that cannot produce a valid EUR total.");
@@ -239,7 +283,16 @@ public static class OfferFinalizationReadiness
                 activity.Sections.Count(section => section.PricingMode.HasValue)),
             missingActivityPricing,
             invalidActivityPricing,
-            lines.Count(line => line.RequiredQuantity > 0m),
+            offer.Activities
+                .SelectMany(activity => activity.Sections)
+                .SelectMany(section => section.ProductRequirements)
+                .Count(requirement => requirement.IsRequired),
+            missingRequiredSelections,
+            offer.Activities
+                .SelectMany(activity => activity.Sections)
+                .SelectMany(section => section.ProductRequirements)
+                .Count(requirement => !requirement.IsRequired),
+            missingOptionalSelections,
             lines.Count(line => line.RequiredQuantity > 0m && line.PriceSelection is not null),
             missingRequired,
             invalidRequired,
@@ -247,8 +300,14 @@ public static class OfferFinalizationReadiness
             invalidOptional,
             requiredSubtotal,
             optionalSubtotal,
-            missingRequired.Count == 0 && invalidRequired.Count == 0 && !requiredOverflow,
-            missingOptional.Count == 0 && invalidOptional.Count == 0 && !optionalOverflow,
+            missingRequiredSelections.Count == 0
+                && missingRequired.Count == 0
+                && invalidRequired.Count == 0
+                && !requiredOverflow,
+            missingOptionalSelections.Count == 0
+                && missingOptional.Count == 0
+                && invalidOptional.Count == 0
+                && !optionalOverflow,
             commercial.DiscountsValid,
             commercial.Totals,
             newer,

@@ -24,6 +24,10 @@ public sealed class SiteWatchApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+        builder.UseSetting(
+            "DataProtection:KeysPath",
+            Path.Combine(Path.GetTempPath(), "SiteWatchApiTests", "DataProtection"));
+        builder.UseSetting("Cors:AllowedOrigins:0", "https://dashboard.sitewatch.test");
         builder.ConfigureAppConfiguration((_, configuration) =>
             configuration.AddInMemoryCollection(new Dictionary<string, string?>
             {
@@ -33,6 +37,10 @@ public sealed class SiteWatchApiFactory : WebApplicationFactory<Program>
                 ["Jwt:Issuer"] = "SiteWatchApiTests",
                 ["Jwt:Audience"] = "SiteWatchApiTests",
                 ["Jwt:Key"] = "site-watch-api-tests-only-signing-key-0000000000000000",
+                ["DataProtection:KeysPath"] = Path.Combine(
+                    Path.GetTempPath(),
+                    "SiteWatchApiTests",
+                    "DataProtection"),
             }));
 
         builder.ConfigureTestServices(services =>

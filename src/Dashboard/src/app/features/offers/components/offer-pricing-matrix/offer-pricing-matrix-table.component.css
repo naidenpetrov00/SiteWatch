@@ -172,8 +172,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-.offer-pricing__requirement-state,
-.offer-pricing__shared-badge {
+.offer-pricing__requirement-state {
   justify-self: start;
   padding: 0.2rem 0.5rem;
   border: 1px solid var(--mat-sys-outline);
@@ -190,13 +189,6 @@
 .offer-pricing__requirement-state--optional {
   color: var(--mat-sys-on-tertiary-container);
   background: var(--mat-sys-tertiary-container);
-}
-
-.offer-pricing__shared-badge {
-  margin-top: 0.15rem;
-  border-style: dashed;
-  color: var(--mat-sys-on-secondary-container);
-  background: var(--mat-sys-secondary-container);
 }
 
 .offer-pricing__offer-totals {

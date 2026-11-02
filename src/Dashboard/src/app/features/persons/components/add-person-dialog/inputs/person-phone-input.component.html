@@ -20,6 +20,7 @@
       appPersonInputSanitizer="digits"
       [value]="nationalNumber()"
       [disabled]="isDisabled()"
+      [attr.name]="name()"
       autocomplete="tel-national"
       inputmode="numeric"
       maxlength="15"

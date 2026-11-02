@@ -25,7 +25,7 @@ public sealed class OfferPricingService(
         CancellationToken cancellationToken)
     {
         var offer = await LoadMatrixOfferAsync(siteId, offerId, cancellationToken);
-        var productIds = offer.ProductLines.Select(line => line.ProductId).ToList();
+        var productIds = offer.ProductLines.Select(line => line.ProductId).Distinct().ToList();
         var retailerIds = offer.RetailerComparisons.Select(item => item.RetailerId).ToList();
 
         List<ListingLatest> listings = productIds.Count == 0 || retailerIds.Count == 0
@@ -321,13 +321,14 @@ public sealed class OfferPricingService(
             .AsNoTrackingWithIdentityResolution()
             .Include(item => item.Activities)
             .ThenInclude(activity => activity.Sections)
+            .ThenInclude(section => section.ProductRequirements)
             .Include(item => item.RetailerComparisons)
             .ThenInclude(comparison => comparison.Retailer)
             .Include(item => item.ProductLines)
             .ThenInclude(line => line.PriceSelection)
             .Include(item => item.ProductLines)
-            .ThenInclude(line => line.Contributions)
-            .ThenInclude(contribution => contribution.OfferActivitySection)
+            .ThenInclude(line => line.OfferProductRequirement)
+            .ThenInclude(requirement => requirement.OfferActivitySection)
             .ThenInclude(section => section.OfferActivity)
             .AsSplitQuery()
             .SingleOrDefaultAsync(
@@ -374,9 +375,17 @@ public sealed class OfferPricingService(
             .Select(line => BuildRow(line, retailers, listingsByPair))
             .ToList();
 
-        var requiredComplete = rows.All(row =>
+        var missingRequiredSelections = offer.Activities
+            .SelectMany(activity => activity.Sections)
+            .SelectMany(section => section.ProductRequirements)
+            .Any(requirement => requirement.IsRequired && requirement.ProductLine is null);
+        var missingOptionalSelections = offer.Activities
+            .SelectMany(activity => activity.Sections)
+            .SelectMany(section => section.ProductRequirements)
+            .Any(requirement => !requirement.IsRequired && requirement.ProductLine is null);
+        var requiredComplete = !missingRequiredSelections && rows.All(row =>
             row.RequiredQuantity <= 0m || row.SelectedRequiredTotal.HasValue);
-        var optionalComplete = rows.All(row =>
+        var optionalComplete = !missingOptionalSelections && rows.All(row =>
             row.OptionalQuantity <= 0m || row.SelectedOptionalTotal.HasValue);
         var requiredTotal = requiredComplete
             ? SumTotals(rows.Select(row => row.SelectedRequiredTotal))
@@ -438,30 +447,30 @@ public sealed class OfferPricingService(
             }).ToList();
         }
 
-        var requirements = line.Contributions
-            .OrderBy(contribution => contribution.OfferActivitySection.OfferActivity.SortOrder)
-            .ThenBy(contribution => contribution.OfferActivitySection.SortOrder)
-            .ThenBy(contribution => contribution.SortOrder)
-            .ThenBy(contribution => contribution.Id)
-            .Select(contribution => new OfferPricingRequirementDto(
-                contribution.Id,
-                contribution.OfferActivitySection.OfferActivityId,
-                contribution.OfferActivitySection.OfferActivity.ActivityNumberId,
-                contribution.OfferActivitySection.OfferActivity.Name,
-                contribution.OfferActivitySection.OfferActivity.SortOrder,
-                contribution.OfferActivitySectionId,
-                contribution.OfferActivitySection.Name,
-                contribution.OfferActivitySection.SortOrder,
-                contribution.OfferActivitySection.BasisQuantity,
-                contribution.OfferActivitySection.MeasurementUnit.ToCode(),
-                contribution.OfferActivitySection.RequestedMeasurement,
-                contribution.ConfiguredQuantity,
-                contribution.IsRequired,
-                contribution.QuantityBehavior.ToCode(),
-                contribution.Notes,
-                contribution.SortOrder,
-                contribution.CalculatedQuantity))
-            .ToList();
+        var requirement = line.OfferProductRequirement;
+        var section = requirement.OfferActivitySection;
+        var activity = section.OfferActivity;
+        var requirements = new List<OfferPricingRequirementDto>
+        {
+            new(
+                requirement.Id,
+                section.OfferActivityId,
+                activity.ActivityNumberId,
+                activity.Name,
+                activity.SortOrder,
+                section.Id,
+                section.Name,
+                section.SortOrder,
+                section.BasisQuantity,
+                section.MeasurementUnit.ToCode(),
+                section.RequestedMeasurement,
+                requirement.ConfiguredQuantity,
+                requirement.IsRequired,
+                requirement.QuantityBehavior.ToCode(),
+                requirement.Notes,
+                requirement.SortOrder,
+                requirement.CalculatedQuantity)
+        };
 
         var selection = line.PriceSelection;
         decimal? selectedRequiredTotal = null;
@@ -504,10 +513,14 @@ public sealed class OfferPricingService(
 
         return new OfferPricingProductRowDto(
             line.Id,
+            line.OfferProductRequirementId,
             line.ProductId,
             line.ProductNumberId,
             line.Title,
-            line.Category.ToCode(),
+            line.ProductTypeId,
+            line.ProductTypeName,
+            line.CategoryId,
+            line.CategoryName,
             line.Brand,
             line.Model,
             line.PackageQuantity,

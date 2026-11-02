@@ -41,17 +41,12 @@ describe('ManageRetailersPage', () => {
     expect(component.pageMessage()).toBe('Retailer created successfully.');
   });
 
-  it('opens retrieved details and reports a detail-loading failure', async () => {
+  it('ignores non-button table cells', async () => {
     const component = TestBed.createComponent(ManageRetailersPage).componentInstance;
-    retailers.getRetailerById.mockResolvedValue({ id: 'retailer-1', displayName: 'Example Store' });
-    dialog.open.mockReturnValue({ afterClosed: () => of(false) });
 
     await component.onCellButtonClick({ row: { id: 'retailer-1', displayName: 'Example Store' }, column: { key: 'displayName' } } as never);
-    expect(dialog.open).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ data: { id: 'retailer-1', displayName: 'Example Store' } }));
-
-    retailers.getRetailerById.mockRejectedValue(new Error('offline'));
-    await component.onCellButtonClick({ row: { id: 'retailer-1', displayName: 'Example Store' }, column: { key: 'displayName' } } as never);
-    expect(component.pageError()).toBe('The retailer details could not be loaded.');
+    expect(dialog.open).not.toHaveBeenCalled();
+    expect(retailers.getRetailerById).not.toHaveBeenCalled();
   });
 
   it('confirms and applies a retailer status change', async () => {

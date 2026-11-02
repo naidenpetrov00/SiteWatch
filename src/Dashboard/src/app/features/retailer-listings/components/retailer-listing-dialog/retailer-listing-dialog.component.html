@@ -37,7 +37,7 @@
         <mat-label>
           {{ data.fixedProduct ? 'Retailer' : 'Product' }}
         </mat-label>
-        <input
+        <input name="retailer-listing-counterpart-search"
           matInput
           [formControl]="counterpartControl"
           [matAutocomplete]="counterpartAutocomplete"
@@ -75,7 +75,7 @@
     <div class="listing-dialog__grid">
       <mat-form-field appearance="outline" class="listing-dialog__wide">
         <mat-label>Retailer product URL</mat-label>
-        <input
+        <input name="retailer-listing-dialog-product-url"
           matInput
           type="url"
           formControlName="productUrl"
@@ -90,7 +90,7 @@
 
       <mat-form-field appearance="outline">
         <mat-label>Retailer product code</mat-label>
-        <input matInput formControlName="retailerProductCode" maxlength="100" />
+        <input name="retailer-listing-dialog-retailer-product-code" matInput formControlName="retailerProductCode" maxlength="100"  autocomplete="off"/>
       </mat-form-field>
     </div>
 
@@ -117,13 +117,13 @@
         <mat-form-field appearance="outline">
           <mat-label>EUR amount</mat-label>
           <span matTextPrefix>€&nbsp;</span>
-          <input
+          <input name="retailer-listing-dialog-amount"
             matInput
             type="number"
             min="0.01"
             step="0.01"
             formControlName="amount"
-          />
+           autocomplete="off"/>
           @if (form.controls.amount.touched && form.controls.amount.invalid) {
             <mat-error>Enter a positive amount with at most two decimals.</mat-error>
           }

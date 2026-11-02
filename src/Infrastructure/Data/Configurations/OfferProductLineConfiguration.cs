@@ -15,23 +15,18 @@ public sealed class OfferProductLineConfiguration
 
         builder.Property(line => line.ProductNumberId).IsRequired();
         builder.Property(line => line.Title).HasMaxLength(200).IsRequired();
+        builder.Property(line => line.ProductTypeName)
+            .HasMaxLength(ProductType.MaxNameLength)
+            .IsRequired();
+        builder.Property(line => line.CategoryName)
+            .HasMaxLength(Category.MaxNameLength)
+            .IsRequired();
         builder.Property(line => line.Brand).HasMaxLength(100);
         builder.Property(line => line.Model).HasMaxLength(100);
         builder.Property(line => line.PackageQuantity).HasPrecision(18, 4);
-        builder.Property(line => line.RequiredQuantity)
-            .HasPrecision(28, 8)
-            .IsRequired();
-        builder.Property(line => line.OptionalQuantity)
-            .HasPrecision(28, 8)
-            .IsRequired();
+        builder.Property(line => line.RequiredQuantity).HasPrecision(28, 8).IsRequired();
+        builder.Property(line => line.OptionalQuantity).HasPrecision(28, 8).IsRequired();
 
-        var categoryConverter = new ValueConverter<ProductCategory, string>(
-            category => category.ToCode(),
-            value => ParseCategory(value));
-        builder.Property(line => line.Category)
-            .HasConversion(categoryConverter)
-            .HasMaxLength(100)
-            .IsRequired();
         var packageUnitConverter = new ValueConverter<ProductPackageUnit, string>(
             unit => unit.ToCode(),
             value => ParsePackageUnit(value));
@@ -43,20 +38,28 @@ public sealed class OfferProductLineConfiguration
             .WithMany(offer => offer.ProductLines)
             .HasForeignKey(line => line.OfferId)
             .OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(line => line.OfferProductRequirement)
+            .WithOne(requirement => requirement.ProductLine)
+            .HasForeignKey<OfferProductLine>(line => new
+            {
+                line.OfferProductRequirementId,
+                line.ProductTypeId
+            })
+            .HasPrincipalKey<OfferProductRequirement>(requirement => new
+            {
+                requirement.Id,
+                requirement.ProductTypeId
+            })
+            .OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(line => line.Product)
             .WithMany()
             .HasForeignKey(line => line.ProductId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(line => new { line.OfferId, line.ProductId }).IsUnique();
+        builder.HasIndex(line => line.OfferProductRequirementId).IsUnique();
         builder.HasIndex(line => new { line.OfferId, line.ProductNumberId });
+        builder.HasIndex(line => line.ProductId);
     }
-
-    private static ProductCategory ParseCategory(string value) =>
-        ProductCategoryCodes.TryParse(value, out var category)
-            ? category
-            : throw new InvalidOperationException(
-                $"Unsupported stored product category '{value}'.");
 
     private static ProductPackageUnit ParsePackageUnit(string value) =>
         ProductPackageUnitCodes.TryParse(value, out var unit)

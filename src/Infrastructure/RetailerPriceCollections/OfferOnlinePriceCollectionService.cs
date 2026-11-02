@@ -270,7 +270,7 @@ public sealed class OfferOnlinePriceCollectionService(
             .ThenBy(line => line.Id)
             .ToList();
         var retailerIds = comparisons.Select(comparison => comparison.RetailerId).ToList();
-        var productIds = products.Select(line => line.ProductId).ToList();
+        var productIds = products.Select(line => line.ProductId).Distinct().ToList();
         List<RetailerListing> listings = retailerIds.Count == 0 || productIds.Count == 0
             ? []
             : await dbContext.RetailerListings
@@ -354,6 +354,7 @@ public sealed class OfferOnlinePriceCollectionService(
         var productIds = offer.ProductLines
             .Where(line => line.RequiredQuantity > 0m || line.OptionalQuantity > 0m)
             .Select(line => line.ProductId)
+            .Distinct()
             .ToList();
         var retailerIds = offer.RetailerComparisons
             .Where(comparison => comparison.Retailer.CompanyPersonId == companyPersonId

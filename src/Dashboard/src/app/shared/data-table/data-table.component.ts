@@ -65,6 +65,7 @@ export class DataTableComponent<T extends object> {
   readonly emptyMessage = input('No matching records found.');
   readonly pageSize = input(5);
   readonly pageSizeOptions = input<readonly number[]>([5, 10, 25]);
+  readonly resetPageToken = input(0);
   readonly filterApplyMode = input<DataTableFilterMode>('instant');
   readonly errorRowPredicate = input<((row: T) => boolean) | null>(null);
   readonly rowActions = input<readonly DataTableRowAction<T>[]>([]);
@@ -72,6 +73,7 @@ export class DataTableComponent<T extends object> {
   readonly tableStateChange = output<DataTableState<T>>();
   readonly searchRequested = output<DataTableState<T>>();
   readonly exportRequested = output<DataTableExportRequest<T>>();
+  readonly filtersCleared = output<void>();
   readonly cellButtonClicked = output<{ row: T; column: DataTableColumn<T> }>();
   readonly rowActionClicked = output<DataTableRowActionEvent<T>>();
 
@@ -146,6 +148,13 @@ export class DataTableComponent<T extends object> {
     });
 
     effect(() => {
+      this.resetPageToken();
+      this.pageState.update((page) =>
+        page.pageIndex === 0 ? page : { ...page, pageIndex: 0 }
+      );
+    });
+
+    effect(() => {
       this.tableStateChange.emit(this.tableState());
     });
   }
@@ -201,6 +210,7 @@ export class DataTableComponent<T extends object> {
       ...page,
       pageIndex: 0
     }));
+    this.filtersCleared.emit();
   }
 
   toggleFiltersVisibility(): void {

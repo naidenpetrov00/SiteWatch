@@ -5,6 +5,8 @@ import {
   provideHttpClientTesting
 } from '@angular/common/http/testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { vi } from 'vitest';
 
 import { AuthSessionService } from './services/auth-session.service';
 import { authInterceptor } from './auth.interceptor';
@@ -19,6 +21,7 @@ describe('authInterceptor', () => {
     TestBed.configureTestingModule({
       providers: [
         AuthSessionService,
+        { provide: Router, useValue: { navigateByUrl: vi.fn() } },
         provideHttpClient(withInterceptors([authInterceptor])),
         provideHttpClientTesting()
       ]
@@ -78,7 +81,7 @@ describe('authInterceptor', () => {
     expect(authSession.isLoggedIn()).toBe(false);
   });
 
-  it('clears the session on forbidden responses', () => {
+  it('preserves the session on forbidden responses', () => {
     authSession.setSession('test-token');
 
     httpClient.get('/api/secure').subscribe({
@@ -91,7 +94,7 @@ describe('authInterceptor', () => {
       statusText: 'Forbidden'
     });
 
-    expect(authSession.accessToken()).toBeNull();
-    expect(authSession.isLoggedIn()).toBe(false);
+    expect(authSession.accessToken()).toBe('test-token');
+    expect(authSession.isLoggedIn()).toBe(true);
   });
 });

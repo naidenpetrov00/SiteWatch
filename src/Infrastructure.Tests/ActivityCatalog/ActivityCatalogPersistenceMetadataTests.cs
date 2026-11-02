@@ -81,8 +81,9 @@ public sealed class ActivityCatalogPersistenceMetadataTests
         Assert.Equal(ActivityProductRequirement.MaxNotesLength, requirement.FindProperty(nameof(ActivityProductRequirement.Notes))!.GetMaxLength());
         Assert.Equal("fixed", requirement.FindProperty(nameof(ActivityProductRequirement.QuantityBehavior))!.GetValueConverter()!.ConvertToProvider(ProductQuantityBehavior.Fixed));
         Assert.Contains(requirement.GetForeignKeys(), key => key.PrincipalEntityType.ClrType == typeof(ActivityRequirementSection) && key.DeleteBehavior == DeleteBehavior.Cascade);
-        Assert.Contains(requirement.GetForeignKeys(), key => key.PrincipalEntityType.ClrType == typeof(Product) && key.DeleteBehavior == DeleteBehavior.Restrict);
-        Assert.Contains(requirement.GetIndexes(), index => index.IsUnique && index.Properties.Select(property => property.Name).SequenceEqual([nameof(ActivityProductRequirement.SectionId), nameof(ActivityProductRequirement.ProductId)]));
+        Assert.Contains(requirement.GetForeignKeys(), key => key.PrincipalEntityType.ClrType == typeof(ProductType) && key.DeleteBehavior == DeleteBehavior.Restrict);
+        Assert.DoesNotContain(requirement.GetIndexes(), index => index.IsUnique && index.Properties.Select(property => property.Name).SequenceEqual([nameof(ActivityProductRequirement.SectionId), nameof(ActivityProductRequirement.ProductTypeId)]));
+        Assert.Contains(requirement.GetIndexes(), index => index.Properties.Single().Name == nameof(ActivityProductRequirement.ProductTypeId));
         Assert.Contains(requirement.GetIndexes(), index => index.Properties.Select(property => property.Name).SequenceEqual([nameof(ActivityProductRequirement.SectionId), nameof(ActivityProductRequirement.SortOrder)]));
     }
 

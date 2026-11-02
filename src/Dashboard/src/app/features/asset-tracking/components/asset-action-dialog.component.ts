@@ -83,15 +83,15 @@ interface ConflictComparisonRow {
           </mat-form-field>
           <mat-form-field>
             <mat-label>Name</mat-label>
-            <input matInput formControlName="name" />
+            <input matInput formControlName="name" name="asset-action-name" autocomplete="off" />
           </mat-form-field>
           <mat-form-field>
             <mat-label>Manufacturer</mat-label>
-            <input matInput formControlName="manufacturer" />
+            <input matInput formControlName="manufacturer" name="asset-action-manufacturer" autocomplete="off" />
           </mat-form-field>
           <mat-form-field>
             <mat-label>Model</mat-label>
-            <input matInput formControlName="model" />
+            <input matInput formControlName="model" name="asset-action-model" autocomplete="off" />
           </mat-form-field>
           <mat-form-field>
             <mat-label>Description</mat-label>
@@ -99,7 +99,7 @@ interface ConflictComparisonRow {
           </mat-form-field>
           <mat-form-field>
             <mat-label>Manufacturer serial number</mat-label>
-            <input matInput formControlName="manufacturerSerialNumber" />
+            <input matInput formControlName="manufacturerSerialNumber" name="asset-action-manufacturer-serial-number" autocomplete="off" />
           </mat-form-field>
         }
         @if (data.kind === 'site') {
@@ -112,6 +112,8 @@ interface ConflictComparisonRow {
             <input
               matInput
               [formControl]="siteSearchControl"
+              name="asset-action-site-search"
+              autocomplete="off"
               [matAutocomplete]="siteAuto"
               (input)="onSiteSearchInput($event)"
             />
@@ -193,6 +195,8 @@ interface ConflictComparisonRow {
             <input
               matInput
               [formControl]="responsibleUserSearchControl"
+              name="asset-action-responsible-user-search"
+              autocomplete="off"
               [matAutocomplete]="responsibleUserAuto"
               (input)="onResponsibleUserSearchInput($event)"
             />

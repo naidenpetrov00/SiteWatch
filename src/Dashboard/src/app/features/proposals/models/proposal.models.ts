@@ -53,7 +53,10 @@ export interface ProposalProductLine {
   productId: string;
   productNumberId: number;
   title: string;
-  category: string;
+  productTypeId: string;
+  productTypeName: string;
+  categoryId: string;
+  categoryName: string;
   brand: string | null;
   model: string | null;
   packageQuantity: number | null;

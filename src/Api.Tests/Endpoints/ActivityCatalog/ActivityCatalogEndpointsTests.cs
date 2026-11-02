@@ -95,30 +95,32 @@ public sealed class ActivityCatalogEndpointsTests
         await using var factory = new SiteWatchApiFactory();
         var activityId = Guid.Parse("11111111-1111-1111-1111-111111111111");
         var sectionId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-        var productId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+        var productTypeId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+        var categoryId = Guid.Parse("55555555-5555-5555-5555-555555555555");
         var requirementId = Guid.Parse("44444444-4444-4444-4444-444444444444");
         factory.Mediator.Send(Arg.Any<ActivityDetailsQuery>(), Arg.Any<CancellationToken>()).Returns(
             new ActivityDetailsDto(activityId, 7, "Inspection", null, "Active", null, 0,
             [new ActivityRequirementSectionDto(sectionId, "Exterior", 10m, "m2", 0,
-                [new ActivityProductRequirementDto(requirementId, productId, 12, "Anchor", "Active", "Brand", "Model", 20m, "piece", 2.5m, true, "proportional", "Notes", 0)])]));
+                [new ActivityProductRequirementDto(requirementId, productTypeId, "Anchor", categoryId, "Fixings", 2.5m, true, "proportional", "Notes", 0)])]));
         factory.Mediator.Send(Arg.Any<CreateActivityRequirementSectionCommand>(), Arg.Any<CancellationToken>()).Returns(sectionId);
         factory.Mediator.Send(Arg.Any<CreateActivityProductRequirementCommand>(), Arg.Any<CancellationToken>()).Returns(requirementId);
         using var client = factory.CreateHttpsClient();
 
         var details = await client.GetAsync($"/activities/{activityId}");
         var section = await client.PostAsJsonAsync($"/activities/{activityId}/requirement-sections", new { name = "Exterior", basisQuantity = 10m, measurementUnit = "m2" });
-        var product = await client.PostAsJsonAsync($"/activities/{activityId}/requirement-sections/{sectionId}/products", new { productId, quantity = 2.5m, isRequired = true, quantityBehavior = "proportional", notes = "Notes" });
+        var product = await client.PostAsJsonAsync($"/activities/{activityId}/requirement-sections/{sectionId}/requirements", new { productTypeId, quantity = 2.5m, isRequired = true, quantityBehavior = "proportional", notes = "Notes" });
 
         var body = await details.Content.ReadFromJsonAsync<JsonElement>();
         var returnedSection = body.GetProperty("requirementSections")[0];
         var returnedProduct = returnedSection.GetProperty("productRequirements")[0];
         Assert.Equal("m2", returnedSection.GetProperty("measurementUnit").GetString());
-        Assert.Equal(productId, returnedProduct.GetProperty("productId").GetGuid());
+        Assert.Equal(productTypeId, returnedProduct.GetProperty("productTypeId").GetGuid());
+        Assert.Equal("Fixings", returnedProduct.GetProperty("categoryName").GetString());
         Assert.Equal("proportional", returnedProduct.GetProperty("quantityBehavior").GetString());
         Assert.Equal(HttpStatusCode.Created, section.StatusCode);
         Assert.Equal($"/activities/{activityId}/requirement-sections/{sectionId}", section.Headers.Location?.OriginalString);
         Assert.Equal(HttpStatusCode.Created, product.StatusCode);
-        Assert.Equal($"/activities/{activityId}/requirement-sections/{sectionId}/products/{requirementId}", product.Headers.Location?.OriginalString);
+        Assert.Equal($"/activities/{activityId}/requirement-sections/{sectionId}/requirements/{requirementId}", product.Headers.Location?.OriginalString);
     }
 
     [Fact]
@@ -140,9 +142,9 @@ public sealed class ActivityCatalogEndpointsTests
             client.PutAsJsonAsync($"/activities/{activityId}/requirement-sections/{sectionId}", new { activityId = Guid.NewGuid(), sectionId = Guid.NewGuid(), basisQuantity = 1m, measurementUnit = "piece" }),
             client.PatchAsJsonAsync($"/activities/{activityId}/requirement-sections/{sectionId}/move", new { activityId = Guid.NewGuid(), sectionId = Guid.NewGuid(), targetIndex = 0 }),
             client.DeleteAsync($"/activities/{activityId}/requirement-sections/{sectionId}"),
-            client.PutAsJsonAsync($"/activities/{activityId}/requirement-sections/{sectionId}/products/{requirementId}", new { activityId = Guid.NewGuid(), sectionId = Guid.NewGuid(), requirementId = Guid.NewGuid(), quantity = 1m, quantityBehavior = "fixed" }),
-            client.PatchAsJsonAsync($"/activities/{activityId}/requirement-sections/{sectionId}/products/{requirementId}/move", new { activityId = Guid.NewGuid(), sectionId = Guid.NewGuid(), requirementId = Guid.NewGuid(), targetIndex = 0 }),
-            client.DeleteAsync($"/activities/{activityId}/requirement-sections/{sectionId}/products/{requirementId}"));
+            client.PutAsJsonAsync($"/activities/{activityId}/requirement-sections/{sectionId}/requirements/{requirementId}", new { activityId = Guid.NewGuid(), sectionId = Guid.NewGuid(), requirementId = Guid.NewGuid(), productTypeId = Guid.NewGuid(), quantity = 1m, quantityBehavior = "fixed" }),
+            client.PatchAsJsonAsync($"/activities/{activityId}/requirement-sections/{sectionId}/requirements/{requirementId}/move", new { activityId = Guid.NewGuid(), sectionId = Guid.NewGuid(), requirementId = Guid.NewGuid(), targetIndex = 0 }),
+            client.DeleteAsync($"/activities/{activityId}/requirement-sections/{sectionId}/requirements/{requirementId}"));
 
         Assert.All(responses, response => Assert.Equal(HttpStatusCode.NoContent, response.StatusCode));
         await factory.Mediator.Received(1).Send(Arg.Is<UpdateActivityRequirementSectionCommand>(command => command.ActivityId == activityId && command.SectionId == sectionId), Arg.Any<CancellationToken>());

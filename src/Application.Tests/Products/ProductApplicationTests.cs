@@ -16,15 +16,14 @@ public sealed class ProductApplicationTests
     }
 
     [Theory]
-    [InlineData("unknown", "Active", "piece", "Category")]
-    [InlineData("tools-equipment", "Retired", "piece", "Status")]
-    [InlineData("tools-equipment", "Active", "crate", "PackageUnit")]
-    public async Task Create_product_validator_rejects_unsupported_catalog_codes(
-        string category, string status, string packageUnit, string property)
+    [InlineData("Retired", "piece", "Status")]
+    [InlineData("Active", "crate", "PackageUnit")]
+    public async Task Create_product_validator_rejects_unsupported_status_or_package_unit(
+        string status, string packageUnit, string property)
     {
         var result = await new CreateProductValidator().ValidateAsync(ValidCreate() with
         {
-            Category = category, Status = status, PackageUnit = packageUnit
+            Status = status, PackageUnit = packageUnit
         });
 
         Assert.Contains(result.Errors, error => error.PropertyName == property);
@@ -55,7 +54,7 @@ public sealed class ProductApplicationTests
     {
         var result = await new UpdateProductValidator().ValidateAsync(new UpdateProductCommand
         {
-            Title = "Drill", Category = "tools-equipment", Status = "Active"
+            Title = "Drill", ProductTypeId = Guid.NewGuid(), Status = "Active"
         });
 
         Assert.Contains(result.Errors, error => error.PropertyName == nameof(UpdateProductCommand.Id));
@@ -81,11 +80,11 @@ public sealed class ProductApplicationTests
         var result = await new DashboardProductsQueryValidator().ValidateAsync(new DashboardProductsQuery
         {
             NumberId = "not-a-number", Id = "not-a-guid", PackageQuantity = "one",
-            Category = "invalid", PackageUnit = "crate", Status = "Retired",
+            CategoryId = "not-a-guid", ProductTypeId = "also-not-a-guid", PackageUnit = "crate", Status = "Retired",
             SortActive = "unknown", SortDirection = "sideways"
         });
 
-        Assert.Equal(8, result.Errors.Count);
+        Assert.Equal(9, result.Errors.Count);
     }
 
     [Fact]
@@ -107,7 +106,7 @@ public sealed class ProductApplicationTests
         var update = new UpdateProductCommand
         {
             Id = Guid.Parse("22222222-2222-2222-2222-222222222222"), Title = "Updated drill",
-            Category = "tools-equipment", Status = "Active"
+            ProductTypeId = Guid.NewGuid(), Status = "Active"
         };
         products.CreateAsync(create, CancellationToken.None).Returns(createdId);
 
@@ -121,7 +120,7 @@ public sealed class ProductApplicationTests
 
     private static CreateProductCommand ValidCreate() => new()
     {
-        Title = "Cordless Drill", Category = "tools-equipment", Status = "Active",
+        Title = "Cordless Drill", ProductTypeId = Guid.NewGuid(), Status = "Active",
         PackageQuantity = 1, PackageUnit = "piece", AlternativeSearchPhrases = [],
         RequiredKeywords = [], ExcludedKeywords = []
     };

@@ -33,15 +33,22 @@ import { firstValueFrom } from 'rxjs';
 
 import {
   OfferActivity,
-  OfferActivityPricingMode
+  OfferActivityPricingMode,
+  OfferProductLine,
+  OfferProductRequirement
 } from '../../models/offer.models';
 import { OffersService } from '../../services/offers.service';
 import { getOfferError } from '../../utils/offer-error';
 import {
   fourDecimalPlaces,
   formatOfferQuantity,
-  measurementUnitLabel
+  measurementUnitLabel,
+  packageUnitLabel
 } from '../../utils/offer-quantity';
+import {
+  OfferProductSelectionDialogComponent,
+  OfferProductSelectionDialogData
+} from '../offer-product-selection-dialog/offer-product-selection-dialog.component';
 
 type SectionPricingForm = FormGroup<{
   pricingMode: FormControl<OfferActivityPricingMode | null>;
@@ -58,6 +65,12 @@ interface RemoveActivityDialogData {
   name: string;
 }
 
+interface ClearProductDialogData {
+  productLabel: string;
+  productTypeName: string;
+  hasSelectedPrice: boolean;
+}
+
 @Component({
   selector: 'app-remove-offer-activity-dialog',
   imports: [MatButtonModule, MatDialogModule],
@@ -65,8 +78,8 @@ interface RemoveActivityDialogData {
     <h2 mat-dialog-title>Remove Activity?</h2>
     <mat-dialog-content>
       <p>
-        Remove #{{ data.numberId }} · {{ data.name }} and all of its calculated
-        contributions from this Offer?
+        Remove #{{ data.numberId }} · {{ data.name }} and all of its snapshotted
+        requirements, selected Products, and prices from this Offer?
       </p>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
@@ -80,6 +93,33 @@ interface RemoveActivityDialogData {
 })
 class RemoveOfferActivityDialogComponent {
   readonly data = inject<RemoveActivityDialogData>(MAT_DIALOG_DATA);
+}
+
+@Component({
+  selector: 'app-clear-offer-requirement-product-dialog',
+  imports: [MatButtonModule, MatDialogModule],
+  template: `
+    <h2 mat-dialog-title>Clear Exact Product?</h2>
+    <mat-dialog-content>
+      <p>
+        Clear {{ data.productLabel }} from the {{ data.productTypeName }} requirement?
+      </p>
+      @if (data.hasSelectedPrice) {
+        <p>This will also remove this requirement's selected retailer price.</p>
+      }
+      <p>The requirement will remain in the Offer and can be assigned again.</p>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-button type="button" [mat-dialog-close]="false">Cancel</button>
+      <button mat-flat-button color="warn" type="button" [mat-dialog-close]="true">
+        {{ data.hasSelectedPrice ? 'Clear Product and Price' : 'Clear Product' }}
+      </button>
+    </mat-dialog-actions>
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+class ClearOfferRequirementProductDialogComponent {
+  readonly data = inject<ClearProductDialogData>(MAT_DIALOG_DATA);
 }
 
 @Component({
@@ -107,6 +147,10 @@ export class OfferSelectedActivitiesComponent {
   readonly siteId = input.required<string>();
   readonly offerId = input.required<string>();
   readonly activities = input.required<readonly OfferActivity[]>();
+  readonly pricingState = input.required<'loading' | 'ready' | 'error'>();
+  readonly selectedPriceByProductLineId = input.required<
+    ReadonlyMap<string, boolean>
+  >();
   readonly editable = input(false);
   readonly forms = signal<ReadonlyMap<string, ActivitySectionsForm>>(new Map());
   readonly feedbackMessage = signal<string | null>(null);
@@ -115,7 +159,9 @@ export class OfferSelectedActivitiesComponent {
     () =>
       this.offersService.updateMeasurementsMutation.isPending() ||
       this.offersService.updateActivityPricingMutation.isPending() ||
-      this.offersService.removeActivityMutation.isPending()
+      this.offersService.removeActivityMutation.isPending() ||
+      this.offersService.selectRequirementProductMutation.isPending() ||
+      this.offersService.clearRequirementProductMutation.isPending()
   );
 
   measurementUnit = measurementUnitLabel;
@@ -247,6 +293,121 @@ export class OfferSelectedActivitiesComponent {
           style: 'currency',
           currency: 'EUR'
         }).format(value);
+  }
+
+  productIdentity(line: OfferProductLine): string {
+    return [line.brand, line.model].filter(Boolean).join(' · ');
+  }
+
+  packageDescription(line: OfferProductLine): string {
+    if (line.packageQuantity === null || line.packageUnit === null) {
+      return 'Individual item';
+    }
+    return `${formatOfferQuantity(line.packageQuantity)} ${packageUnitLabel(line.packageUnit)}`;
+  }
+
+  hasSelectedPrice(line: OfferProductLine): boolean {
+    return this.selectedPriceByProductLineId().get(line.id) === true;
+  }
+
+  hasAuthoritativePriceState(line: OfferProductLine): boolean {
+    return (
+      this.pricingState() === 'ready' &&
+      this.selectedPriceByProductLineId().has(line.id)
+    );
+  }
+
+  canChangeProduct(requirement: OfferProductRequirement): boolean {
+    return (
+      this.editable() &&
+      !this.isMutating() &&
+      (requirement.productLine === null ||
+        this.hasAuthoritativePriceState(requirement.productLine))
+    );
+  }
+
+  async openProductSelection(requirement: OfferProductRequirement): Promise<void> {
+    if (!this.editable() || this.isMutating()) return;
+    if (
+      requirement.productLine &&
+      !this.hasAuthoritativePriceState(requirement.productLine)
+    ) {
+      this.errorMessage.set(
+        'Product replacement is unavailable until selected-price state can be loaded.'
+      );
+      return;
+    }
+
+    this.clearFeedback();
+    const dialogRef = this.dialog.open<
+      OfferProductSelectionDialogComponent,
+      OfferProductSelectionDialogData,
+      boolean
+    >(OfferProductSelectionDialogComponent, {
+      autoFocus: '.offer-product-selection__input',
+      restoreFocus: true,
+      width: '46rem',
+      maxWidth: 'calc(100vw - 2rem)',
+      ariaLabel: `${requirement.productLine ? 'Replace' : 'Select'} exact Product for ${requirement.productTypeName}`,
+      data: {
+        siteId: this.siteId(),
+        offerId: this.offerId(),
+        requirement,
+        hasSelectedPrice: requirement.productLine
+          ? this.hasSelectedPrice(requirement.productLine)
+          : false
+      }
+    });
+    if (await firstValueFrom(dialogRef.afterClosed())) {
+      this.feedbackMessage.set(
+        `Exact Product saved for ${requirement.productTypeName}.`
+      );
+    }
+  }
+
+  async confirmClearProduct(requirement: OfferProductRequirement): Promise<void> {
+    const line = requirement.productLine;
+    if (!line || !this.editable() || this.isMutating()) return;
+    if (!this.hasAuthoritativePriceState(line)) {
+      this.errorMessage.set(
+        'Product clearing is unavailable until selected-price state can be loaded.'
+      );
+      return;
+    }
+
+    const dialogRef = this.dialog.open<
+      ClearOfferRequirementProductDialogComponent,
+      ClearProductDialogData,
+      boolean
+    >(ClearOfferRequirementProductDialogComponent, {
+      autoFocus: 'dialog',
+      restoreFocus: true,
+      width: '34rem',
+      maxWidth: 'calc(100vw - 2rem)',
+      ariaLabel: `Clear exact Product from ${requirement.productTypeName} requirement`,
+      data: {
+        productLabel: `#${line.productNumberId} · ${line.title}`,
+        productTypeName: requirement.productTypeName,
+        hasSelectedPrice: this.hasSelectedPrice(line)
+      }
+    });
+    if (!(await firstValueFrom(dialogRef.afterClosed()))) return;
+
+    this.clearFeedback();
+    try {
+      await this.offersService.clearRequirementProduct({
+        siteId: this.siteId(),
+        offerId: this.offerId(),
+        offerRequirementId: requirement.id
+      });
+      this.feedbackMessage.set(
+        `Exact Product cleared from ${requirement.productTypeName}.`
+      );
+    } catch (error) {
+      this.errorMessage.set(
+        getOfferError(error, 'The Product selection could not be cleared.')
+      );
+    }
   }
 
   async confirmRemove(activity: OfferActivity): Promise<void> {

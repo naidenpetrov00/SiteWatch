@@ -15,10 +15,17 @@
     <dl class="offer-finalize__summary">
       <div><dt>Selected activities</dt><dd>{{ current.selectedActivityCount }}</dd></div>
       <div><dt>Activity sections priced or free</dt><dd>{{ current.activitySectionsWithPricing }} / {{ current.activitySectionCount }}</dd></div>
-      <div><dt>Products with required quantities</dt><dd>{{ current.requiredProductCount }}</dd></div>
-      <div><dt>Required products with selected prices</dt><dd>{{ current.requiredProductsWithSelectedPrices }}</dd></div>
-      <div><dt>Required products missing prices</dt><dd>{{ current.requiredProductsMissingSelectedPrices.length }}</dd></div>
-      <div><dt>Optional products missing prices</dt><dd>{{ current.optionalProductsMissingSelectedPrices.length }}</dd></div>
+      <div>
+        <dt>Required requirements missing exact Products</dt>
+        <dd>{{ current.requiredProductRequirementsMissingSelections.length }} / {{ current.requiredProductCount }}</dd>
+      </div>
+      <div>
+        <dt>Optional requirements missing exact Products</dt>
+        <dd>{{ current.optionalProductRequirementsMissingSelections.length }} / {{ current.optionalProductCount }}</dd>
+      </div>
+      <div><dt>Required Product Lines with selected prices</dt><dd>{{ current.requiredProductsWithSelectedPrices }}</dd></div>
+      <div><dt>Selected required Products missing prices</dt><dd>{{ current.requiredProductsMissingSelectedPrices.length }}</dd></div>
+      <div><dt>Selected optional Products missing prices</dt><dd>{{ current.optionalProductsMissingSelectedPrices.length }}</dd></div>
       <div>
         <dt>{{ current.requiredPricingComplete ? 'Selected required total' : 'Selected required subtotal' }}</dt>
         <dd>{{ formatCurrency(current.selectedRequiredTotal) }}</dd>
@@ -36,7 +43,11 @@
 
     @if (current.blockingReasons.length > 0) {
       <section class="offer-finalize__issues offer-finalize__issues--blocking" aria-label="Blocking problems">
-        <h3>Blocking problems</h3>
+        <h3>Blocking readiness reasons</h3>
+        <p>
+          These authoritative checks distinguish missing exact Product selections,
+          missing required prices, and other Offer readiness problems.
+        </p>
         <ul>
           @for (reason of current.blockingReasons; track reason) {
             <li>{{ reason }}</li>

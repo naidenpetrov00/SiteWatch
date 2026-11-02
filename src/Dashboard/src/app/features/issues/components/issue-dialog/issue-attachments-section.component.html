@@ -4,14 +4,14 @@
       <h3 id="issue-attachments-heading">Issue attachments</h3>
       <p>Add photos, videos, and supporting files. Files are uploaded when the issue is saved.</p>
     </div>
-    <input
+    <input name="issue-attachments-upload"
       #fileInput
       class="issue-attachments__file-input"
       type="file"
       multiple
       [disabled]="interactionsDisabled()"
       (change)="onFilesSelected($event)"
-    />
+     autocomplete="off"/>
     <button
       mat-stroked-button
       type="button"

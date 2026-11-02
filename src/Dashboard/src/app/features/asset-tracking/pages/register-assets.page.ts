@@ -69,15 +69,15 @@ const responsibleUserSelectionValidator: ValidatorFn = (form) => {
         </mat-form-field>
         <mat-form-field>
           <mat-label>Name</mat-label>
-          <input matInput formControlName="name" />
+          <input matInput formControlName="name" name="asset-registration-name" autocomplete="off" />
         </mat-form-field>
         <mat-form-field>
           <mat-label>Manufacturer (optional)</mat-label>
-          <input matInput formControlName="manufacturer" />
+          <input matInput formControlName="manufacturer" name="asset-registration-manufacturer" autocomplete="off" />
         </mat-form-field>
         <mat-form-field>
           <mat-label>Model (optional)</mat-label>
-          <input matInput formControlName="model" />
+          <input matInput formControlName="model" name="asset-registration-model" autocomplete="off" />
         </mat-form-field>
         <mat-form-field class="wide">
           <mat-label>Description (optional)</mat-label>
@@ -88,6 +88,8 @@ const responsibleUserSelectionValidator: ValidatorFn = (form) => {
           <input
             matInput
             formControlName="siteSearch"
+            name="asset-registration-site-search"
+            autocomplete="off"
             [matAutocomplete]="siteAuto"
             (focus)="showDefaultSiteSuggestions()"
             (input)="onSiteSearchInput($event)"
@@ -124,6 +126,8 @@ const responsibleUserSelectionValidator: ValidatorFn = (form) => {
           <input
             matInput
             formControlName="responsibleUserSearch"
+            name="asset-registration-responsible-user-search"
+            autocomplete="off"
             [matAutocomplete]="responsibleUserAuto"
             (input)="onResponsibleUserSearchInput($event)"
           />
@@ -186,7 +190,7 @@ const responsibleUserSelectionValidator: ValidatorFn = (form) => {
             <div [formGroupName]="index" class="actions">
               <mat-form-field>
                 <mat-label>Serial number {{ index + 1 }} (optional)</mat-label>
-                <input matInput formControlName="manufacturerSerialNumber" />
+                <input matInput formControlName="manufacturerSerialNumber" [attr.name]="'asset-registration-manufacturer-serial-number-' + (index + 1)" autocomplete="off" />
               </mat-form-field>
               <button
                 mat-icon-button

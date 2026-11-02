@@ -95,6 +95,7 @@ public static class DependencyInjection
         services.AddScoped<ICameraService, CameraService>();
         services.AddScoped<IPersonService, PersonService>();
         services.AddScoped<IProductService, ProductService>();
+        services.AddScoped<IProductCatalogService, ProductCatalogService>();
         services.AddScoped<IRetailerService, RetailerService>();
         services.AddScoped<RetailerListingWriter>();
         services.AddScoped<IRetailerListingService, RetailerListingService>();

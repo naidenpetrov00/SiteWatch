@@ -73,22 +73,16 @@ public sealed class ActivityRequirementSection : BaseAuditableEntity
     }
 
     public ActivityProductRequirement AddProductRequirement(
-        Product product,
+        ProductType productType,
         decimal quantity,
         bool isRequired,
         ProductQuantityBehavior quantityBehavior,
         string? notes,
         int sortOrder)
     {
-        if (_productRequirements.Any(requirement => requirement.ProductId == product.Id))
-        {
-            throw new InvalidOperationException(
-                "The product is already assigned to this requirement section.");
-        }
-
         var requirement = ActivityProductRequirement.Create(
             this,
-            product,
+            productType,
             quantity,
             isRequired,
             quantityBehavior,

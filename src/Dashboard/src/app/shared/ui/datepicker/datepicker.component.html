@@ -4,6 +4,8 @@
     matInput
     [formControl]="control()"
     [matDatepicker]="datepicker"
+    [attr.name]="name()"
+    autocomplete="off"
     (click)="datepicker.open()"
   />
   <span matSuffix class="datepicker__actions">

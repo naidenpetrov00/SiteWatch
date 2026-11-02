@@ -33,7 +33,7 @@ public interface IActivityRequirementService
     Task<Guid> CreateProductRequirementAsync(
         Guid activityId,
         Guid sectionId,
-        Guid productId,
+        Guid productTypeId,
         decimal quantity,
         bool isRequired,
         ProductQuantityBehavior quantityBehavior,
@@ -44,6 +44,7 @@ public interface IActivityRequirementService
         Guid activityId,
         Guid sectionId,
         Guid requirementId,
+        Guid productTypeId,
         decimal quantity,
         bool isRequired,
         ProductQuantityBehavior quantityBehavior,

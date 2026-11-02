@@ -12,7 +12,7 @@
   >
     <mat-form-field appearance="outline">
       <mat-label>Name</mat-label>
-      <input matInput formControlName="name" maxlength="100" />
+      <input name="add-site-dialog-name" matInput formControlName="name" maxlength="100"  autocomplete="off"/>
       @if (siteForm.controls.name.touched && siteForm.controls.name.hasError('required')) {
         <mat-error>Name is required.</mat-error>
       }
@@ -23,7 +23,7 @@
 
     <mat-form-field appearance="outline">
       <mat-label>Site Manager</mat-label>
-      <input
+      <input name="add-site-manager-search"
         matInput
         [formControl]="managerSearchControl"
         [matAutocomplete]="managerAutocomplete"
@@ -52,7 +52,7 @@
 
     <mat-form-field appearance="outline">
       <mat-label>Primary client recipient</mat-label>
-      <input
+      <input name="add-site-primary-client-search"
         matInput
         [formControl]="primaryClientSearchControl"
         [matAutocomplete]="primaryClientAutocomplete"
@@ -79,7 +79,7 @@
 
     <mat-form-field appearance="outline">
       <mat-label>Users with access</mat-label>
-      <input
+      <input name="add-site-access-user-search"
         matInput
         [formControl]="accessUserSearchControl"
         [matAutocomplete]="accessUserAutocomplete"
@@ -116,8 +116,8 @@
       </mat-chip-grid>
     }
 
-    <app-datepicker label="Start Date" [control]="siteForm.controls.startDate" />
-    <app-datepicker label="End Date" [control]="siteForm.controls.endDate" [showRequiredError]="false" />
+    <app-datepicker label="Start Date" name="add-site-start-date" [control]="siteForm.controls.startDate" />
+    <app-datepicker label="End Date" name="add-site-end-date" [control]="siteForm.controls.endDate" [showRequiredError]="false" />
     @if (siteForm.hasError('dateRange') && (siteForm.controls.startDate.touched || siteForm.controls.endDate.touched)) {
       <p class="add-site-dialog__error">End Date cannot be before Start Date.</p>
     }
@@ -133,7 +133,7 @@
 
     <mat-form-field appearance="outline">
       <mat-label>Address</mat-label>
-      <input matInput formControlName="address" maxlength="200" />
+      <input name="add-site-dialog-address" matInput formControlName="address" maxlength="200"  autocomplete="off"/>
       @if (siteForm.controls.address.touched && siteForm.controls.address.hasError('required')) {
         <mat-error>Address is required.</mat-error>
       }
@@ -184,14 +184,14 @@
             }
           </mat-chip-row>
         }
-        <input
+        <input name="add-site-category-entry"
           placeholder="Add category"
           [maxLength]="maxCategoryLength"
           [matChipInputFor]="categoryGrid"
           [matChipInputSeparatorKeyCodes]="separatorKeyCodes"
           [matChipInputAddOnBlur]="true"
           (matChipInputTokenEnd)="addCategory($event)"
-        />
+         autocomplete="off"/>
       </mat-chip-grid>
       <mat-hint>{{ mediaCategories().length }}/{{ maxCategoryCount }} categories</mat-hint>
     </mat-form-field>

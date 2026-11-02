@@ -2,6 +2,7 @@ using Application.Offers.Commands;
 using Application.Offers.Finalization;
 using Application.Offers.Queries;
 using Application.SeedWork.Models;
+using Application.Products.Queries;
 
 namespace Application.SeedWork.Interfaces;
 
@@ -36,6 +37,17 @@ public interface IOfferService
         CancellationToken cancellationToken);
     Task UpdateActivitySectionPricingAsync(
         UpdateOfferActivitySectionPricingCommand request,
+        CancellationToken cancellationToken);
+    Task<OfferProductLineDto> SelectRequirementProductAsync(
+        SelectOfferRequirementProductCommand request,
+        CancellationToken cancellationToken);
+    Task ClearRequirementProductAsync(
+        Guid siteId,
+        Guid offerId,
+        Guid offerRequirementId,
+        CancellationToken cancellationToken);
+    Task<IReadOnlyList<ProductLookupDto>> GetRequirementProductCandidatesAsync(
+        OfferRequirementProductCandidatesQuery request,
         CancellationToken cancellationToken);
     Task<OfferDetailsDto> GetByIdAsync(
         Guid siteId,

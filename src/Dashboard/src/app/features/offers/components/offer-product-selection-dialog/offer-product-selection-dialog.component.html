@@ -1,0 +1,115 @@
+<app-dialog-shell
+  eyebrow="Offer Product Requirement"
+  [title]="title()"
+  subtitle="The snapshotted Product Type is fixed. Choose the exact Product for this requirement."
+>
+  <section class="offer-product-selection__requirement" aria-label="Requirement context">
+    <div>
+      <span>Category</span>
+      <strong>{{ data.requirement.categoryName }}</strong>
+    </div>
+    <div>
+      <span>Product Type</span>
+      <strong>{{ data.requirement.productTypeName }}</strong>
+    </div>
+    <div>
+      <span>Requirement</span>
+      <strong>
+        {{ data.requirement.isRequired ? 'Required' : 'Optional' }} ·
+        {{ data.requirement.calculatedQuantity }} calculated
+      </strong>
+    </div>
+  </section>
+
+  <form
+    [id]="formId"
+    class="offer-product-selection__form"
+    novalidate
+    (submit)="submit(); $event.preventDefault()"
+  >
+    <mat-form-field appearance="outline">
+      <mat-label>Exact Product</mat-label>
+      <input
+        #productInput
+        #productTrigger="matAutocompleteTrigger"
+        class="offer-product-selection__input"
+        matInput
+        [attr.name]="'offer-requirement-' + data.requirement.id + '-exact-product'"
+        autocomplete="off"
+        inputmode="search"
+        maxlength="200"
+        [formControl]="productControl"
+        [matAutocomplete]="productAutocomplete"
+        placeholder="Choose or search matching active Products"
+        (input)="onInput($any($event.target).value, productTrigger)"
+        (focus)="onFocus(productTrigger)"
+        (click)="onFocus(productTrigger)"
+      />
+      <mat-hint>Only active Products matching the snapshotted Product Type are available.</mat-hint>
+      @if (productControl.touched && productControl.invalid) {
+        <mat-error>Select a Product from the candidate list.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-autocomplete
+      #productAutocomplete="matAutocomplete"
+      [displayWith]="displayProduct"
+      [requireSelection]="true"
+      [autoActiveFirstOption]="true"
+      (optionSelected)="onOptionSelected($event)"
+    >
+      @if (loading()) {
+        <mat-option disabled>Loading Product candidates…</mat-option>
+      } @else if (lookupError()) {
+        <mat-option disabled>Product candidates could not be loaded.</mat-option>
+      } @else if (hasLoaded() && results().length === 0) {
+        <mat-option disabled>No matching active Products found.</mat-option>
+      } @else {
+        @for (product of results(); track product.id) {
+          <mat-option [value]="product">
+            <div class="offer-product-selection__option">
+              <strong>#{{ product.numberId }} · {{ product.title }}</strong>
+              @if (productIdentity(product)) {
+                <span>{{ productIdentity(product) }}</span>
+              }
+              <span>{{ packageDescription(product) }}</span>
+            </div>
+          </mat-option>
+        }
+      }
+    </mat-autocomplete>
+
+    @if (loading()) {
+      <p class="offer-product-selection__status" aria-live="polite">
+        Loading Product candidates…
+      </p>
+    }
+    @if (hasLoaded() && !loading() && !lookupError() && results().length === 0) {
+      <p class="offer-product-selection__status" role="status" aria-live="polite">
+        No matching active Products found.
+      </p>
+    }
+    @if (lookupError()) {
+      <p class="offer-product-selection__error" role="alert">
+        {{ lookupError() }}
+        <button mat-button type="button" (click)="retry(productTrigger)">Retry</button>
+      </p>
+    }
+    @if (mutationError()) {
+      <p class="offer-product-selection__error" role="alert">
+        {{ mutationError() }}
+      </p>
+    }
+  </form>
+
+  <app-dialog-action-bar
+    dialog-shell-actions
+    cancelLabel="Cancel"
+    [cancelDisabled]="submitting()"
+    [submitLabel]="submitLabel()"
+    [submitFormId]="formId"
+    submitButtonType="submit"
+    [submitDisabled]="productControl.invalid || submitting()"
+    (cancel)="close()"
+  />
+</app-dialog-shell>
