@@ -62,7 +62,7 @@
         <form [formGroup]="metadataForm" (ngSubmit)="saveMetadata()">
           <mat-form-field appearance="outline">
             <mat-label>Valid Until</mat-label>
-            <input matInput type="date" formControlName="validUntil" />
+            <input name="proposal-valid-until" matInput type="date" formControlName="validUntil"  autocomplete="off"/>
             <mat-hint>Required before issue.</mat-hint>
           </mat-form-field>
           <mat-form-field appearance="outline">

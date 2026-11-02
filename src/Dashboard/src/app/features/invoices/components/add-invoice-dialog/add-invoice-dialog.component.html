@@ -22,7 +22,7 @@
       <div class="add-invoice-dialog__grid">
         <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--full">
           <mat-label>Supplier</mat-label>
-          <input name="add-invoice-dialog-input-1"
+          <input name="add-invoice-supplier-search"
             matInput
             [formControl]="supplierSearchControl"
             [matAutocomplete]="supplierAutocomplete"
@@ -57,7 +57,7 @@
 
         <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--half">
           <mat-label>Invoice Number</mat-label>
-          <input name="add-invoice-dialog-invoiceNumber"
+          <input name="add-invoice-dialog-invoice-number"
             matInput
             formControlName="invoiceNumber"
             autocomplete="off"
@@ -84,7 +84,7 @@
           floatLabel="always"
         >
           <mat-label>Contact Person</mat-label>
-          <input name="add-invoice-dialog-contactPerson"
+          <input name="add-invoice-dialog-contact-person"
             matInput
             formControlName="contactPerson"
             readonly
@@ -124,7 +124,7 @@
           floatLabel="always"
         >
           <mat-label>Phone Number</mat-label>
-          <input name="add-invoice-dialog-phoneNumber"
+          <input name="add-invoice-dialog-phone-number"
             matInput
             formControlName="phoneNumber"
             readonly
@@ -158,7 +158,7 @@
       <div class="add-invoice-dialog__grid">
         <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--half">
           <mat-label>Total Value</mat-label>
-          <input name="add-invoice-dialog-totalValue"
+          <input name="add-invoice-dialog-total-value"
             matInput
             formControlName="totalValue"
             type="number"
@@ -176,7 +176,7 @@
 
         <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--half">
           <mat-label>VAT Rate</mat-label>
-          <input name="add-invoice-dialog-vatRate"
+          <input name="add-invoice-dialog-vat-rate"
             matInput
             formControlName="vatRate"
             type="number"
@@ -195,7 +195,7 @@
 
         <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--half">
           <mat-label>VAT Amount</mat-label>
-          <input name="add-invoice-dialog-vatAmount"
+          <input name="add-invoice-dialog-vat-amount"
             matInput
             formControlName="vatAmount"
             readonly
@@ -204,7 +204,7 @@
 
         <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--half">
           <mat-label>Total Including VAT</mat-label>
-          <input name="add-invoice-dialog-totalValueIncludingVat"
+          <input name="add-invoice-dialog-total-value-including-vat"
             matInput
             formControlName="totalValueIncludingVat"
             readonly
@@ -236,7 +236,7 @@
 
           <mat-form-field appearance="outline" class="add-invoice-dialog__field add-invoice-dialog__field--half">
             <mat-label>Payment Time</mat-label>
-            <input name="add-invoice-dialog-paymentTime"
+            <input name="add-invoice-dialog-payment-time"
               matInput
               formControlName="paymentTime"
               type="time"
@@ -269,7 +269,7 @@
 
       <label class="add-invoice-dialog__file-field">
         <span>PDF or image (optional)</span>
-        <input name="add-invoice-dialog-input-12"
+        <input name="add-invoice-supplier-search2"
           type="file"
           accept="application/pdf,image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.pdf,.jpg,.jpeg,.png,.webp,.gif,.heic,.heif"
           [disabled]="createdInvoiceId() !== null || isSavingInvoice()"
@@ -307,7 +307,7 @@
           >
             <mat-form-field appearance="outline" class="add-invoice-dialog__allocation-site">
               <mat-label>Site</mat-label>
-              <input name="add-invoice-dialog-siteSearch"
+              <input name="add-invoice-dialog-site-search"
                 matInput
                 formControlName="siteSearch"
                 [matAutocomplete]="siteAutocomplete"

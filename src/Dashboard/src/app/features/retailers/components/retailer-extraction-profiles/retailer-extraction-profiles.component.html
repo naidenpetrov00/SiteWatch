@@ -190,14 +190,14 @@
                     <button matChipRemove type="button" [attr.aria-label]="'Remove ' + host">×</button>
                   </mat-chip-row>
                 }
-                <input
+                <input name="retailer-extraction-hostname"
                   placeholder="shop.example.com"
                   [formControl]="hostInput"
                   [matChipInputFor]="hostGrid"
                   [matChipInputAddOnBlur]="true"
                   [matChipInputSeparatorKeyCodes]="hostSeparatorKeyCodes"
                   (matChipInputTokenEnd)="addHost($event)"
-                />
+                 autocomplete="off"/>
               </mat-chip-grid>
             </mat-form-field>
           } @else {
@@ -294,21 +294,21 @@
               <fieldset class="extraction__source-modes">
                 <legend>Test source</legend>
                 <label>
-                  <input
+                  <input name="retailer-extraction-test-source"
                     type="radio"
                     value="retailerListing"
                     [formField]="testForm.sourceType"
                     (change)="setTestSource('retailerListing')"
-                  />
+                   autocomplete="off"/>
                   Existing listing
                 </label>
                 <label>
-                  <input
+                  <input name="retailer-extraction-test-source"
                     type="radio"
                     value="manualUrl"
                     [formField]="testForm.sourceType"
                     (change)="setTestSource('manualUrl')"
-                  />
+                   autocomplete="off"/>
                   Manual URL
                 </label>
               </fieldset>
@@ -316,11 +316,11 @@
               @if (testModel().sourceType === 'retailerListing') {
                 <label class="extraction__test-control">
                   <span>Search listings from all company Retailer locations</span>
-                  <input
+                  <input name="retailer-extraction-listing-search"
                     type="search"
                     placeholder="Product number or title"
                     [formField]="testForm.listingSearch"
-                  />
+                   autocomplete="off"/>
                 </label>
                 @if (testForm.listingSearch().touched() && testForm.listingSearch().errors().length) {
                   <p class="extraction__field-error">{{ testForm.listingSearch().errors()[0].message }}</p>
@@ -351,11 +351,11 @@
               } @else {
                 <label class="extraction__test-control">
                   <span>Absolute HTTPS product URL</span>
-                  <input
+                  <input name="retailer-extraction-manual-url"
                     type="url"
                     placeholder="https://shop.example.com/product"
                     [formField]="testForm.manualUrl"
-                  />
+                   autocomplete="off"/>
                 </label>
                 @if (testForm.manualUrl().touched() && testForm.manualUrl().errors().length) {
                   <p class="extraction__field-error">{{ testForm.manualUrl().errors()[0].message }}</p>

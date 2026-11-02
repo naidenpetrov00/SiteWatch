@@ -23,7 +23,7 @@
 
     <mat-form-field appearance="outline">
       <mat-label>Site Manager</mat-label>
-      <input name="add-site-dialog-input-2"
+      <input name="add-site-manager-search"
         matInput
         [formControl]="managerSearchControl"
         [matAutocomplete]="managerAutocomplete"
@@ -52,7 +52,7 @@
 
     <mat-form-field appearance="outline">
       <mat-label>Primary client recipient</mat-label>
-      <input name="add-site-dialog-input-3"
+      <input name="add-site-primary-client-search"
         matInput
         [formControl]="primaryClientSearchControl"
         [matAutocomplete]="primaryClientAutocomplete"
@@ -79,7 +79,7 @@
 
     <mat-form-field appearance="outline">
       <mat-label>Users with access</mat-label>
-      <input name="add-site-dialog-input-4"
+      <input name="add-site-access-user-search"
         matInput
         [formControl]="accessUserSearchControl"
         [matAutocomplete]="accessUserAutocomplete"
@@ -184,7 +184,7 @@
             }
           </mat-chip-row>
         }
-        <input name="add-site-dialog-input-6"
+        <input name="add-site-category-entry"
           placeholder="Add category"
           [maxLength]="maxCategoryLength"
           [matChipInputFor]="categoryGrid"

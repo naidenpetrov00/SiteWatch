@@ -73,13 +73,13 @@
                     <div class="offer-selected__section-fields">
                       <mat-form-field appearance="outline">
                         <mat-label>Requested measurement</mat-label>
-                        <input
+                        <input name="offer-selected-activity-measurement-quantity"
                           matInput
                           type="number"
                           min="0.0001"
                           step="any"
                           [formControl]="formFor(activity.id).controls.measurements.controls[index]"
-                        />
+                         autocomplete="off"/>
                         <span matTextSuffix>{{ measurementUnit(section.measurementUnit) }}</span>
                         @if (formFor(activity.id).controls.measurements.controls[index].touched && formFor(activity.id).controls.measurements.controls[index].invalid) {
                           <mat-error>Enter a positive value with at most four decimal places.</mat-error>
@@ -107,13 +107,13 @@
                           <mat-label>
                             {{ formFor(activity.id).controls.pricing.controls[index].controls.pricingMode.value === 'fixed' ? 'Fixed EUR price' : 'EUR price per measurement' }}
                           </mat-label>
-                          <input
+                          <input name="offer-selected-activity-price-amount"
                             matInput
                             type="number"
                             min="0.01"
                             step="0.01"
                             [formControl]="formFor(activity.id).controls.pricing.controls[index].controls.priceAmount"
-                          />
+                           autocomplete="off"/>
                           <span matTextPrefix>€&nbsp;</span>
                           @if (formFor(activity.id).controls.pricing.controls[index].touched && formFor(activity.id).controls.pricing.controls[index].invalid) {
                             <mat-error>Enter a positive EUR amount with at most two decimals.</mat-error>
