@@ -12,7 +12,7 @@ public sealed class ProductDomainTests
     {
         var product = Product.Create(
             "  Cordless   Drill  ", "  Brushless   drill ", " Bosch ", " GSB 18V ",
-            1, ProductPackageUnit.Piece, ProductCategory.ToolsEquipment, ProductStatus.Active,
+            1, ProductPackageUnit.Piece, CreateProductType(), ProductStatus.Active,
             ProductSearchConfiguration.Create(null));
 
         Assert.Equal("Cordless Drill", product.Title);
@@ -20,7 +20,7 @@ public sealed class ProductDomainTests
         Assert.Equal("Bosch", product.Brand);
         Assert.Equal("GSB 18V", product.Model);
         Assert.Equal("Cordless Drill Bosch GSB 18V", product.EffectivePrimarySearchPhrase);
-        Assert.Equal("CORDLESS DRILL TOOLS EQUIPMENT BOSCH GSB 18V CORDLESS DRILL BOSCH GSB 18V", product.SearchIdentity);
+        Assert.Equal("CORDLESS DRILL TOOLS TOOLS EQUIPMENT BOSCH GSB 18V CORDLESS DRILL BOSCH GSB 18V", product.SearchIdentity);
     }
 
     [Fact]
@@ -29,14 +29,15 @@ public sealed class ProductDomainTests
         var configuration = ProductSearchConfiguration.Create("  Bosch drill  ", [" Drill Driver "]);
         var product = Product.Create(
             "Cordless Drill", null, "Bosch", "GSB", null, null,
-            ProductCategory.ToolsEquipment, ProductStatus.Unavailable, configuration);
+            CreateProductType(), ProductStatus.Unavailable, configuration);
 
         var details = ProductDetailsDto.From(product);
 
         Assert.Equal("Bosch drill", details.PrimarySearchPhrase);
         Assert.Equal("Bosch drill", details.EffectivePrimarySearchPhrase);
         Assert.Equal(["Drill Driver"], details.AlternativeSearchPhrases);
-        Assert.Equal("tools-equipment", details.Category);
+        Assert.Equal("Tools", details.CategoryName);
+        Assert.Equal("Tools Equipment", details.ProductTypeName);
         Assert.Equal("Unavailable", details.Status);
     }
 
@@ -49,7 +50,7 @@ public sealed class ProductDomainTests
         var unit = hasUnit ? ProductPackageUnit.Piece : (ProductPackageUnit?)null;
 
         Assert.Throws<ArgumentException>(() => Product.Create(
-            "Drill", null, null, null, quantity, unit, ProductCategory.ToolsEquipment,
+            "Drill", null, null, null, quantity, unit, CreateProductType(),
             ProductStatus.Active, ProductSearchConfiguration.Create(null)));
     }
 
@@ -58,7 +59,7 @@ public sealed class ProductDomainTests
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => Product.Create(
             "Drill", null, null, null, 0, ProductPackageUnit.Piece,
-            ProductCategory.ToolsEquipment, ProductStatus.Active, ProductSearchConfiguration.Create(null)));
+            CreateProductType(), ProductStatus.Active, ProductSearchConfiguration.Create(null)));
     }
 
     [Fact]
@@ -86,15 +87,6 @@ public sealed class ProductDomainTests
     }
 
     [Theory]
-    [InlineData(" tools-equipment ", ProductCategory.ToolsEquipment)]
-    [InlineData("OTHER", ProductCategory.Other)]
-    public void Product_category_codes_parse_case_insensitively(string value, ProductCategory expected)
-    {
-        Assert.True(ProductCategoryCodes.TryParse(value, out var category));
-        Assert.Equal(expected, category);
-    }
-
-    [Theory]
     [InlineData(" kg ", ProductPackageUnit.Kilogram)]
     [InlineData("M3", ProductPackageUnit.CubicMeter)]
     public void Product_package_unit_codes_parse_case_insensitively(string value, ProductPackageUnit expected)
@@ -102,4 +94,7 @@ public sealed class ProductDomainTests
         Assert.True(ProductPackageUnitCodes.TryParse(value, out var unit));
         Assert.Equal(expected, unit);
     }
+
+    private static ProductType CreateProductType() =>
+        ProductType.Create(Category.Create("Tools"), "Tools Equipment");
 }

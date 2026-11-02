@@ -72,17 +72,17 @@ describe('ActivityCatalogService', () => {
     const queryClient = TestBed.inject(QueryClient);
     const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
     const sectionRequest = { name: 'Exterior', basisQuantity: 10, measurementUnit: 'm2' as const };
-    const productRequest = { productId: 'product-1', quantity: 2.5, isRequired: true, quantityBehavior: 'proportional' as const, notes: 'Use anchors' };
+    const productRequest = { productTypeId: 'product-type-1', quantity: 2.5, isRequired: true, quantityBehavior: 'proportional' as const, notes: 'Use anchors' };
 
     await complete(service.createRequirementSection('activity-1', sectionRequest), 'POST', '/activities/activity-1/requirement-sections', { id: 'section-1' }, sectionRequest);
     await complete(service.updateRequirementSection('activity-1', 'section-1', sectionRequest), 'PUT', '/activities/activity-1/requirement-sections/section-1', null, sectionRequest);
     await complete(service.moveRequirementSection('activity-1', 'section-1', { targetIndex: 1 }), 'PATCH', '/activities/activity-1/requirement-sections/section-1/move', null, { targetIndex: 1 });
     await complete(service.deleteRequirementSection('activity-1', 'section-1'), 'DELETE', '/activities/activity-1/requirement-sections/section-1');
-    await complete(service.createProductRequirement('activity-1', 'section-1', productRequest), 'POST', '/activities/activity-1/requirement-sections/section-1/products', { id: 'requirement-1' }, productRequest);
-    const updateRequest = { quantity: 1, isRequired: false, quantityBehavior: 'fixed' as const, notes: null };
-    await complete(service.updateProductRequirement('activity-1', 'section-1', 'requirement-1', updateRequest), 'PUT', '/activities/activity-1/requirement-sections/section-1/products/requirement-1', null, updateRequest);
-    await complete(service.moveProductRequirement('activity-1', 'section-1', 'requirement-1', { targetIndex: 0 }), 'PATCH', '/activities/activity-1/requirement-sections/section-1/products/requirement-1/move', null, { targetIndex: 0 });
-    await complete(service.deleteProductRequirement('activity-1', 'section-1', 'requirement-1'), 'DELETE', '/activities/activity-1/requirement-sections/section-1/products/requirement-1');
+    await complete(service.createProductRequirement('activity-1', 'section-1', productRequest), 'POST', '/activities/activity-1/requirement-sections/section-1/requirements', { id: 'requirement-1' }, productRequest);
+    const updateRequest = { productTypeId: 'product-type-2', quantity: 1, isRequired: false, quantityBehavior: 'fixed' as const, notes: null };
+    await complete(service.updateProductRequirement('activity-1', 'section-1', 'requirement-1', updateRequest), 'PUT', '/activities/activity-1/requirement-sections/section-1/requirements/requirement-1', null, updateRequest);
+    await complete(service.moveProductRequirement('activity-1', 'section-1', 'requirement-1', { targetIndex: 0 }), 'PATCH', '/activities/activity-1/requirement-sections/section-1/requirements/requirement-1/move', null, { targetIndex: 0 });
+    await complete(service.deleteProductRequirement('activity-1', 'section-1', 'requirement-1'), 'DELETE', '/activities/activity-1/requirement-sections/section-1/requirements/requirement-1');
 
     expect(invalidate).toHaveBeenCalledTimes(8);
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['activity-catalog'] });

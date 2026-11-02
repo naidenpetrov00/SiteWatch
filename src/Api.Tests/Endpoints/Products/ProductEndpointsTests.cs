@@ -28,7 +28,7 @@ public sealed class ProductEndpointsTests
         Assert.Equal($"/products/{productId}", response.Headers.Location?.OriginalString);
         Assert.Equal(productId, payload.GetProperty("id").GetGuid());
         Assert.Equal("Cordless Drill", captured?.Title);
-        Assert.Equal("tools-equipment", captured?.Category);
+        Assert.Equal(ProductTypeId, captured?.ProductTypeId);
     }
 
     [Fact]
@@ -40,11 +40,11 @@ public sealed class ProductEndpointsTests
         factory.Mediator.Send(Arg.Any<DashboardProductsQuery>(), Arg.Any<CancellationToken>())
             .Returns(new PagedResult<ProductTableDto>([ProductTable(productId)], 1, 3));
         factory.Mediator.Send(Arg.Any<ProductSearchQuery>(), Arg.Any<CancellationToken>())
-            .Returns([new ProductLookupDto { Id = productId, NumberId = 7, Title = "Cordless Drill", Category = "tools-equipment" }]);
+            .Returns([new ProductLookupDto { Id = productId, NumberId = 7, Title = "Cordless Drill", ProductTypeId = ProductTypeId, ProductTypeName = "Tools Equipment", CategoryId = CategoryId, CategoryName = "Tools" }]);
         using var client = factory.CreateHttpsClient();
 
         var detail = await client.GetAsync($"/products/{productId}");
-        var table = await client.GetAsync("/dashboard/products?pageIndex=1&pageSize=50&title=drill&sortActive=title&sortDirection=asc");
+        var table = await client.GetAsync($"/dashboard/products?pageIndex=1&pageSize=50&title=drill&categoryId={CategoryId}&productTypeId={ProductTypeId}&sortActive=title&sortDirection=asc");
         var lookup = await client.GetAsync("/dashboard/products/search?searchTerm=drill");
 
         Assert.Equal(HttpStatusCode.OK, detail.StatusCode);
@@ -54,7 +54,7 @@ public sealed class ProductEndpointsTests
         Assert.Equal(HttpStatusCode.OK, lookup.StatusCode);
         Assert.Equal(7, (await lookup.Content.ReadFromJsonAsync<JsonElement>())[0].GetProperty("numberId").GetInt32());
         await factory.Mediator.Received(1).Send(Arg.Is<ProductByIdQuery>(query => query.ProductId == productId), Arg.Any<CancellationToken>());
-        await factory.Mediator.Received(1).Send(Arg.Is<DashboardProductsQuery>(query => query.PageIndex == 1 && query.Title == "drill" && query.SortActive == "title"), Arg.Any<CancellationToken>());
+        await factory.Mediator.Received(1).Send(Arg.Is<DashboardProductsQuery>(query => query.PageIndex == 1 && query.Title == "drill" && query.CategoryId == CategoryId.ToString() && query.ProductTypeId == ProductTypeId.ToString() && query.SortActive == "title"), Arg.Any<CancellationToken>());
         await factory.Mediator.Received(1).Send(Arg.Is<ProductSearchQuery>(query => query.SearchTerm == "drill"), Arg.Any<CancellationToken>());
     }
 
@@ -70,7 +70,7 @@ public sealed class ProductEndpointsTests
 
         var response = await client.PutAsJsonAsync($"/products/{routeId}", new
         {
-            id = Guid.NewGuid(), title = "Cordless Drill", category = "tools-equipment", status = "Active"
+            id = Guid.NewGuid(), title = "Cordless Drill", productTypeId = ProductTypeId, status = "Active"
         });
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -80,19 +80,22 @@ public sealed class ProductEndpointsTests
     private static object ProductRequest() => new
     {
         title = "Cordless Drill", description = "Brushless drill", brand = "Bosch", model = "GSB 18V",
-        packageQuantity = 1, packageUnit = "piece", category = "tools-equipment", status = "Active",
+        packageQuantity = 1, packageUnit = "piece", productTypeId = ProductTypeId, status = "Active",
         primarySearchPhrase = (string?)null, alternativeSearchPhrases = Array.Empty<string>(),
         requiredKeywords = Array.Empty<string>(), excludedKeywords = Array.Empty<string>()
     };
 
     private static ProductDetailsDto ProductDetails(Guid id) => new()
     {
-        Id = id, NumberId = 7, Title = "Cordless Drill", Category = "tools-equipment", Status = "Active",
+        Id = id, NumberId = 7, Title = "Cordless Drill", ProductTypeId = ProductTypeId, ProductTypeName = "Tools Equipment", CategoryId = CategoryId, CategoryName = "Tools", Status = "Active",
         EffectivePrimarySearchPhrase = "Cordless Drill"
     };
 
     private static ProductTableDto ProductTable(Guid id) => new()
     {
-        Id = id, NumberId = 7, Title = "Cordless Drill", Category = "tools-equipment", Status = "Active"
+        Id = id, NumberId = 7, Title = "Cordless Drill", ProductTypeId = ProductTypeId, ProductTypeName = "Tools Equipment", CategoryId = CategoryId, CategoryName = "Tools", Status = "Active"
     };
+
+    private static readonly Guid CategoryId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+    private static readonly Guid ProductTypeId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
 }

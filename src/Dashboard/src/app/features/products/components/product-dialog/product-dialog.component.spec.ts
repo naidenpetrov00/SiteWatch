@@ -3,6 +3,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { vi } from 'vitest';
 
 import { DashboardProductsService } from '../../services/dashboard-products.service';
+import { ProductCatalogLookupService } from '../../../../shared/product-catalog/product-catalog-lookup.service';
 import { ProductDialogComponent } from './product-dialog.component';
 
 describe('ProductDialogComponent', () => {
@@ -11,6 +12,7 @@ describe('ProductDialogComponent', () => {
     createProduct: vi.fn(), updateProduct: vi.fn()
   };
   const dialogRef = { close: vi.fn() };
+  const catalogLookupService = { getProductTypes: vi.fn(), getCategories: vi.fn() };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -18,7 +20,8 @@ describe('ProductDialogComponent', () => {
       providers: [
         { provide: MAT_DIALOG_DATA, useValue: null },
         { provide: MatDialogRef, useValue: dialogRef },
-        { provide: DashboardProductsService, useValue: productsService }
+        { provide: DashboardProductsService, useValue: productsService },
+        { provide: ProductCatalogLookupService, useValue: catalogLookupService }
       ]
     }).compileComponents();
     vi.clearAllMocks();
@@ -39,8 +42,9 @@ describe('ProductDialogComponent', () => {
   it('normalizes a valid create request and closes after success', async () => {
     productsService.createProduct.mockResolvedValue({ id: 'product-1' });
     const component = TestBed.createComponent(ProductDialogComponent).componentInstance;
+    component.productTypeControl.setValue({ id: 'product-type-1', name: 'Tools Equipment', categoryId: 'category-1', categoryName: 'Tools' });
     component.productForm.patchValue({
-      title: '  Cordless   Drill ', brand: ' Bosch ', model: ' GSB ', category: 'tools-equipment',
+      title: '  Cordless   Drill ', brand: ' Bosch ', model: ' GSB ',
       status: 'Active', packageQuantity: 1, packageUnit: 'piece', primarySearchPhrase: ' '
     });
     component.addSearchEntry('alternativeSearchPhrases');
@@ -54,13 +58,14 @@ describe('ProductDialogComponent', () => {
       title: 'Cordless   Drill', brand: 'Bosch', model: 'GSB', primarySearchPhrase: null,
       alternativeSearchPhrases: ['Drill Driver']
     }));
-    expect(dialogRef.close).toHaveBeenCalledWith(true);
+    expect(dialogRef.close).toHaveBeenCalledWith({ createdProductId: 'product-1' });
   });
 
   it('keeps the dialog open after a save failure', async () => {
     productsService.createProduct.mockRejectedValue(new Error('offline'));
     const component = TestBed.createComponent(ProductDialogComponent).componentInstance;
-    component.productForm.patchValue({ title: 'Drill', category: 'tools-equipment', status: 'Active' });
+    component.productTypeControl.setValue({ id: 'product-type-1', name: 'Tools Equipment', categoryId: 'category-1', categoryName: 'Tools' });
+    component.productForm.patchValue({ title: 'Drill', status: 'Active' });
 
     await component.submitProduct();
 
