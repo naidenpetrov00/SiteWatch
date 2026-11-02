@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import IssuesCard from './IssuesCard';
 
 const mockUseGetSiteIssues = jest.fn();
+const mockRouterPush = jest.fn();
 
 jest.mock('@expo/vector-icons/Ionicons', () => 'Ionicons');
 jest.mock('@/hooks/useColorPalette', () => ({ useColorPalette: () => ({ background: 'white', primary: 'blue', secondary: 'gray', text: 'black' }) }));
@@ -11,6 +12,7 @@ jest.mock('@/hooks/useGetSearchParams', () => () => ({ siteId: 'site-1' }));
 jest.mock('@/features/auth/components/RoleGate/RoleGate', () => ({ children }: { children: ReactNode }) => children);
 jest.mock('@/store/auth_context', () => ({ useAuth: () => ({ hasAnyRole: () => true }) }));
 jest.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ bottom: 0 }) }));
+jest.mock('expo-router', () => ({ router: { push: (...args: unknown[]) => mockRouterPush(...args) } }));
 jest.mock('../hooks/useGetSiteIssues', () => ({ useGetSiteIssues: (...args: unknown[]) => mockUseGetSiteIssues(...args) }));
 jest.mock('./AddIssueModal', () => () => null);
 jest.mock('./IssueDetailsModal', () => {
@@ -32,7 +34,10 @@ describe('IssuesCard', () => {
     fireEvent.press(screen.getByRole('button', { name: 'View issue Broken gate' }));
 
     expect(screen.getByText('Issue #42')).toBeTruthy();
-    expect(screen.getByText('selected:issue-1')).toBeTruthy();
+    expect(mockRouterPush).toHaveBeenCalledWith({
+      pathname: '/Site/[siteId]/Issues/[issueId]',
+      params: { siteId: 'site-1', issueId: 'issue-1' }
+    });
   });
 
   it('shows an observable error state when the issue list fails', () => {

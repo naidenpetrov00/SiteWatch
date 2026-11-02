@@ -1,7 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { Router } from '@angular/router';
 import { vi } from 'vitest';
 
+import { OffersService } from '../../offers/services/offers.service';
 import { DashboardSite } from '../models/dashboard-site.model';
 import { DashboardSitesService } from '../services/dashboard-sites.service';
 import { ManageSitesPage } from './manage-sites.page';
@@ -17,7 +19,9 @@ describe('ManageSitesPage', () => {
       imports: [ManageSitesPage],
       providers: [
         { provide: DashboardSitesService, useValue: sitesService },
-        { provide: MatDialog, useValue: { open: vi.fn() } }
+        { provide: MatDialog, useValue: { open: vi.fn() } },
+        { provide: OffersService, useValue: { createOfferMutation: { isPending: () => false } } },
+        { provide: Router, useValue: { navigate: vi.fn() } }
       ]
     }).compileComponents();
   });
@@ -37,6 +41,7 @@ describe('ManageSitesPage', () => {
       startDate: '2026-03-03',
       endDate: null,
       status: 'Planning',
+      isCompanyStock: false,
       mediaPolicy: { preset: 'CommercialBuild', categories: ['Structure', 'Other'] }
     } satisfies DashboardSite;
 

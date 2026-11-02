@@ -50,6 +50,7 @@ describe('DashboardSitesService', () => {
       startDate: '2026-03-03',
       endDate: null,
       status: 'Planning',
+      isCompanyStock: false,
       mediaPolicyPreset: 'Custom',
       mediaCategories: ['HVAC Controls', 'Other']
     });
@@ -64,6 +65,7 @@ describe('DashboardSitesService', () => {
       startDate: '2026-03-03',
       endDate: null,
       status: 'Planning',
+      isCompanyStock: false,
       mediaPolicyPreset: 'Custom',
       mediaCategories: ['HVAC Controls', 'Other']
     });
@@ -81,6 +83,7 @@ describe('DashboardSitesService', () => {
       startDate: '2026-03-03',
       endDate: null,
       status: 'Planning',
+      isCompanyStock: false,
       mediaPolicyPreset: 'Custom',
       mediaCategoriesToAdd: ['Access Control']
     });
@@ -96,6 +99,7 @@ describe('DashboardSitesService', () => {
       startDate: '2026-03-03',
       endDate: null,
       status: 'Planning',
+      isCompanyStock: false,
       mediaPolicyPreset: 'Custom',
       mediaCategoriesToAdd: ['Access Control']
     });

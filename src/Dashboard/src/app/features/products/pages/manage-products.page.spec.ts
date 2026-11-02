@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { QueryClient, provideTanStackQuery } from '@tanstack/angular-query-experimental';
@@ -8,7 +9,7 @@ import { ManageProductsPage } from './manage-products.page';
 
 describe('ManageProductsPage', () => {
   const productsService = {
-    dashboardProductsQuery: { data: () => undefined }, setTableState: vi.fn(), getProductById: vi.fn()
+    dashboardProductsQuery: { data: () => undefined }, catalogFilterRevision: signal(0), setTableState: vi.fn(), setCatalogFilters: vi.fn(), getProductById: vi.fn()
   };
   const dialog = { open: vi.fn() };
 
@@ -39,10 +40,16 @@ describe('ManageProductsPage', () => {
     productsService.getProductById.mockResolvedValue({ id: 'product-1' });
     const component = TestBed.createComponent(ManageProductsPage).componentInstance;
 
-    await component.onNumberIdClick({ id: 'product-1' } as never);
+    await component.onCellButtonClicked({
+      row: { id: 'product-1' } as never,
+      column: { key: 'numberId' } as never
+    });
     expect(dialog.open).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ data: { id: 'product-1' } }));
 
     productsService.getProductById.mockRejectedValue(new Error('offline'));
-    await expect(component.onNumberIdClick({ id: 'product-1' } as never)).resolves.toBeUndefined();
+    await expect(component.onCellButtonClicked({
+      row: { id: 'product-1' } as never,
+      column: { key: 'numberId' } as never
+    })).resolves.toBeUndefined();
   });
 });
