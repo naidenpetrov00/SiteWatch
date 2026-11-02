@@ -186,7 +186,10 @@
           <tbody>
             @for (product of current.products; track product.id) {
               <tr [class.proposal-page__excluded-row]="product.isOptionalPriceExcluded">
-                <td>#{{ product.productNumberId }} · {{ product.title }}</td>
+                <td>
+                  #{{ product.productNumberId }} · {{ product.title }}
+                  <br />{{ product.categoryName }} · {{ product.productTypeName }}
+                </td>
                 <td>Required {{ formatQuantity(product.requiredQuantity) }}<br />Optional {{ formatQuantity(product.optionalQuantity) }}</td>
                 @if (product.isOptionalPriceExcluded) {
                   <td colspan="2"><strong>Optional — price not included</strong></td>

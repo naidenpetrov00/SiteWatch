@@ -27,7 +27,6 @@ export interface OfferDetails extends OfferSummary {
   finalizedAt: string | null;
   finalizedBy: string | null;
   activities: readonly OfferActivity[];
-  products: readonly OfferProductLine[];
 }
 
 export type OfferActivityMeasurementUnit = 'piece' | 'cm' | 'm' | 'm2' | 'm3';
@@ -55,41 +54,55 @@ export interface OfferActivitySection {
   priceAmount: number | null;
   priceTotal: number | null;
   sortOrder: number;
+  productRequirements: readonly OfferProductRequirement[];
 }
 
-export interface OfferProductLine {
-  id: string;
-  productId: string;
-  productNumberId: number;
-  title: string;
-  category: string;
-  brand: string | null;
-  model: string | null;
-  packageQuantity: number | null;
-  packageUnit: string | null;
-  requiredQuantity: number;
-  optionalQuantity: number;
-  contributions: readonly OfferProductContribution[];
-}
-
-export interface OfferProductContribution {
+export interface OfferProductRequirement {
   id: string;
   sourceRequirementId: string;
-  offerActivityId: string;
-  activityNumberId: number;
-  activityName: string;
-  offerActivitySectionId: string;
-  sourceSectionId: string;
-  sectionName: string | null;
-  basisQuantity: number;
-  measurementUnit: OfferActivityMeasurementUnit;
-  requestedMeasurement: number;
+  productTypeId: string;
+  productTypeName: string;
+  categoryId: string;
+  categoryName: string;
   configuredQuantity: number;
   isRequired: boolean;
   quantityBehavior: OfferProductQuantityBehavior;
   notes: string | null;
   sortOrder: number;
   calculatedQuantity: number;
+  productLine: OfferProductLine | null;
+}
+
+export interface OfferProductLine {
+  id: string;
+  offerProductRequirementId: string;
+  productId: string;
+  productNumberId: number;
+  title: string;
+  productTypeId: string;
+  productTypeName: string;
+  categoryId: string;
+  categoryName: string;
+  brand: string | null;
+  model: string | null;
+  packageQuantity: number | null;
+  packageUnit: string | null;
+  requiredQuantity: number;
+  optionalQuantity: number;
+}
+
+export interface OfferProductCandidate {
+  id: string;
+  numberId: number;
+  title: string;
+  productTypeId: string;
+  productTypeName: string;
+  categoryId: string;
+  categoryName: string;
+  brand: string | null;
+  model: string | null;
+  packageQuantity: number | null;
+  packageUnit: string | null;
 }
 
 export interface OfferActivityCatalogNode {
@@ -155,6 +168,17 @@ export interface OfferSectionPricingRequest {
 export interface UpdateOfferActivitySectionPricingRequest
   extends RemoveOfferActivityRequest {
   sectionPricing: readonly OfferSectionPricingRequest[];
+}
+
+export interface OfferRequirementIdentity {
+  siteId: string;
+  offerId: string;
+  offerRequirementId: string;
+}
+
+export interface SelectOfferRequirementProductRequest
+  extends OfferRequirementIdentity {
+  productId: string;
 }
 
 export interface OfferSiteIdentity {
@@ -254,10 +278,14 @@ export interface OfferPricingRequirement {
 
 export interface OfferPricingProductRow {
   offerProductLineId: string;
+  offerProductRequirementId: string;
   productId: string;
   productNumberId: number;
   title: string;
-  category: string;
+  productTypeId: string;
+  productTypeName: string;
+  categoryId: string;
+  categoryName: string;
   brand: string | null;
   model: string | null;
   packageQuantity: number | null;
@@ -318,6 +346,14 @@ export interface OfferReadinessActivitySection {
   sectionName: string | null;
 }
 
+export interface OfferReadinessRequirement {
+  offerProductRequirementId: string;
+  activityNumberId: number;
+  activityName: string;
+  sectionName: string | null;
+  productTypeName: string;
+}
+
 export interface OfferFinalizationReadiness {
   offerId: string;
   status: OfferStatus;
@@ -328,6 +364,9 @@ export interface OfferFinalizationReadiness {
   activitySectionsMissingPricing: readonly OfferReadinessActivitySection[];
   activitySectionsWithInvalidPricing: readonly OfferReadinessActivitySection[];
   requiredProductCount: number;
+  requiredProductRequirementsMissingSelections: readonly OfferReadinessRequirement[];
+  optionalProductCount: number;
+  optionalProductRequirementsMissingSelections: readonly OfferReadinessRequirement[];
   requiredProductsWithSelectedPrices: number;
   requiredProductsMissingSelectedPrices: readonly OfferReadinessProduct[];
   requiredProductsWithInvalidTotals: readonly OfferReadinessProduct[];

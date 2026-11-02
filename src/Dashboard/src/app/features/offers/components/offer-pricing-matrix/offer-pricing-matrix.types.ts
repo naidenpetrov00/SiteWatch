@@ -33,7 +33,6 @@ export interface PricingProductDisplayRow {
   id: string;
   product: OfferPricingProductRow;
   requirement: OfferPricingRequirement;
-  sharedRequirementCount: number;
 }
 
 export type PricingDisplayRow =

@@ -2,7 +2,7 @@
   <div class="offer-selected__heading">
     <div>
       <p class="offer-selected__eyebrow">Selected Activities</p>
-      <h2 id="offer-selected-heading">Section Measurements</h2>
+      <h2 id="offer-selected-heading">Sections &amp; Product Requirements</h2>
     </div>
     @if (!editable()) {
       <p class="offer-selected__readonly">Saved snapshot · read-only</p>
@@ -53,75 +53,197 @@
 
           @if (activity.sections.length === 0) {
             <p class="offer-selected__no-sections">
-              This activity snapshot has no requirement sections.
+              This Activity snapshot has no requirement sections.
             </p>
           } @else if (editable()) {
             <form [formGroup]="formFor(activity.id)">
               <div class="offer-selected__sections">
                 @for (section of activity.sections; track section.id; let index = $index) {
-                  <div class="offer-selected__section">
-                    <div class="offer-selected__section-copy">
-                      <strong>{{ section.name || 'Measurement' }}</strong>
-                      <span>
-                        Basis: {{ formatQuantity(section.basisQuantity) }}
-                        {{ measurementUnit(section.measurementUnit) }}
-                      </span>
-                      <span>
-                        Current price total: {{ formatCurrency(section.priceTotal) }}
-                      </span>
-                    </div>
-                    <div class="offer-selected__section-fields">
-                      <mat-form-field appearance="outline">
-                        <mat-label>Requested measurement</mat-label>
-                        <input name="offer-selected-activity-measurement-quantity"
-                          matInput
-                          type="number"
-                          min="0.0001"
-                          step="any"
-                          [formControl]="formFor(activity.id).controls.measurements.controls[index]"
-                         autocomplete="off"/>
-                        <span matTextSuffix>{{ measurementUnit(section.measurementUnit) }}</span>
-                        @if (formFor(activity.id).controls.measurements.controls[index].touched && formFor(activity.id).controls.measurements.controls[index].invalid) {
-                          <mat-error>Enter a positive value with at most four decimal places.</mat-error>
-                        }
-                      </mat-form-field>
-
-                      <mat-form-field appearance="outline">
-                        <mat-label>Activity pricing</mat-label>
-                        <mat-select
-                          [formControl]="formFor(activity.id).controls.pricing.controls[index].controls.pricingMode"
-                          (selectionChange)="onPricingModeChange(activity.id, index)"
-                        >
-                          <mat-option [value]="null">Not priced</mat-option>
-                          <mat-option value="fixed">Fixed section price</mat-option>
-                          <mat-option value="per-measurement">Per measurement</mat-option>
-                          <mat-option value="free">Included / free</mat-option>
-                        </mat-select>
-                      </mat-form-field>
-
-                      @if (
-                        formFor(activity.id).controls.pricing.controls[index].controls.pricingMode.value === 'fixed' ||
-                        formFor(activity.id).controls.pricing.controls[index].controls.pricingMode.value === 'per-measurement'
-                      ) {
+                  <section class="offer-selected__section">
+                    <div class="offer-selected__section-overview">
+                      <div class="offer-selected__section-copy">
+                        <strong>{{ section.name || 'Measurement' }}</strong>
+                        <span>
+                          Basis: {{ formatQuantity(section.basisQuantity) }}
+                          {{ measurementUnit(section.measurementUnit) }}
+                        </span>
+                        <span>
+                          Current price total: {{ formatCurrency(section.priceTotal) }}
+                        </span>
+                      </div>
+                      <div class="offer-selected__section-fields">
                         <mat-form-field appearance="outline">
-                          <mat-label>
-                            {{ formFor(activity.id).controls.pricing.controls[index].controls.pricingMode.value === 'fixed' ? 'Fixed EUR price' : 'EUR price per measurement' }}
-                          </mat-label>
-                          <input name="offer-selected-activity-price-amount"
+                          <mat-label>Requested measurement</mat-label>
+                          <input
                             matInput
                             type="number"
-                            min="0.01"
-                            step="0.01"
-                            [formControl]="formFor(activity.id).controls.pricing.controls[index].controls.priceAmount"
-                           autocomplete="off"/>
-                          <span matTextPrefix>€&nbsp;</span>
-                          @if (formFor(activity.id).controls.pricing.controls[index].touched && formFor(activity.id).controls.pricing.controls[index].invalid) {
-                            <mat-error>Enter a positive EUR amount with at most two decimals.</mat-error>
+                            min="0.0001"
+                            step="any"
+                            autocomplete="off"
+                            [attr.name]="'offer-activity-' + activity.id + '-section-' + section.id + '-measurement'"
+                            [formControl]="formFor(activity.id).controls.measurements.controls[index]"
+                          />
+                          <span matTextSuffix>{{ measurementUnit(section.measurementUnit) }}</span>
+                          @if (formFor(activity.id).controls.measurements.controls[index].touched && formFor(activity.id).controls.measurements.controls[index].invalid) {
+                            <mat-error>Enter a positive value with at most four decimal places.</mat-error>
                           }
                         </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                          <mat-label>Activity pricing</mat-label>
+                          <mat-select
+                            [attr.aria-label]="'Activity pricing for ' + (section.name || 'Measurement')"
+                            [formControl]="formFor(activity.id).controls.pricing.controls[index].controls.pricingMode"
+                            (selectionChange)="onPricingModeChange(activity.id, index)"
+                          >
+                            <mat-option [value]="null">Not priced</mat-option>
+                            <mat-option value="fixed">Fixed section price</mat-option>
+                            <mat-option value="per-measurement">Per measurement</mat-option>
+                            <mat-option value="free">Included / free</mat-option>
+                          </mat-select>
+                        </mat-form-field>
+
+                        @if (
+                          formFor(activity.id).controls.pricing.controls[index].controls.pricingMode.value === 'fixed' ||
+                          formFor(activity.id).controls.pricing.controls[index].controls.pricingMode.value === 'per-measurement'
+                        ) {
+                          <mat-form-field appearance="outline">
+                            <mat-label>
+                              {{ formFor(activity.id).controls.pricing.controls[index].controls.pricingMode.value === 'fixed' ? 'Fixed EUR price' : 'EUR price per measurement' }}
+                            </mat-label>
+                            <input
+                              matInput
+                              type="number"
+                              min="0.01"
+                              step="0.01"
+                              autocomplete="off"
+                              [attr.name]="'offer-activity-' + activity.id + '-section-' + section.id + '-price'"
+                              [formControl]="formFor(activity.id).controls.pricing.controls[index].controls.priceAmount"
+                            />
+                            <span matTextPrefix>€&nbsp;</span>
+                            @if (formFor(activity.id).controls.pricing.controls[index].touched && formFor(activity.id).controls.pricing.controls[index].invalid) {
+                              <mat-error>Enter a positive EUR amount with at most two decimals.</mat-error>
+                            }
+                          </mat-form-field>
+                        }
+                      </div>
+                    </div>
+
+                    <div class="offer-selected__requirements" aria-label="Product requirements">
+                      @for (requirement of section.productRequirements; track requirement.id) {
+                        <article
+                          class="offer-selected__requirement"
+                          [class.offer-selected__requirement--missing]="!requirement.productLine"
+                        >
+                          <div class="offer-selected__requirement-heading">
+                            <div>
+                              <span class="offer-selected__category">{{ requirement.categoryName }}</span>
+                              <h4>{{ requirement.productTypeName }}</h4>
+                            </div>
+                            <span
+                              class="offer-selected__requirement-state"
+                              [class.offer-selected__requirement-state--optional]="!requirement.isRequired"
+                            >
+                              {{ requirement.isRequired ? 'Required' : 'Optional' }}
+                            </span>
+                          </div>
+
+                          <dl class="offer-selected__requirement-quantities">
+                            <div>
+                              <dt>Configured</dt>
+                              <dd>
+                                {{ formatQuantity(requirement.configuredQuantity) }} ·
+                                {{ requirement.quantityBehavior === 'fixed' ? 'Fixed' : 'Proportional' }}
+                              </dd>
+                            </div>
+                            <div>
+                              <dt>Calculated</dt>
+                              <dd>{{ formatQuantity(requirement.calculatedQuantity) }}</dd>
+                            </div>
+                            <div>
+                              <dt>Measurement</dt>
+                              <dd>
+                                {{ formatQuantity(section.requestedMeasurement) }} requested /
+                                {{ formatQuantity(section.basisQuantity) }}
+                                {{ measurementUnit(section.measurementUnit) }} basis
+                              </dd>
+                            </div>
+                          </dl>
+
+                          @if (requirement.notes) {
+                            <p class="offer-selected__requirement-notes">
+                              <strong>Notes:</strong> {{ requirement.notes }}
+                            </p>
+                          }
+
+                          @if (requirement.productLine; as line) {
+                            <div class="offer-selected__product-line">
+                              <div>
+                                <span class="offer-selected__selection-status offer-selected__selection-status--selected">
+                                  Product selected
+                                </span>
+                                <strong>#{{ line.productNumberId }} · {{ line.title }}</strong>
+                                @if (productIdentity(line)) {
+                                  <span>{{ productIdentity(line) }}</span>
+                                }
+                                <span>{{ packageDescription(line) }}</span>
+                                @if (hasAuthoritativePriceState(line)) {
+                                  <span [class.offer-selected__price-selected]="hasSelectedPrice(line)">
+                                    {{ hasSelectedPrice(line) ? 'Retailer price selected' : 'No retailer price selected' }}
+                                  </span>
+                                } @else if (pricingState() === 'loading') {
+                                  <span aria-live="polite">Checking selected-price state…</span>
+                                } @else {
+                                  <span class="offer-selected__price-unavailable" role="status">
+                                    Selected-price state unavailable; replacement and clearing are disabled.
+                                  </span>
+                                }
+                              </div>
+                              <div class="offer-selected__product-actions">
+                                <button
+                                  mat-stroked-button
+                                  type="button"
+                                  [disabled]="!canChangeProduct(requirement)"
+                                  (click)="openProductSelection(requirement)"
+                                >
+                                  Replace Product
+                                </button>
+                                <button
+                                  mat-button
+                                  color="warn"
+                                  type="button"
+                                  [disabled]="!canChangeProduct(requirement)"
+                                  (click)="confirmClearProduct(requirement)"
+                                >
+                                  Clear Product
+                                </button>
+                              </div>
+                            </div>
+                          } @else {
+                            <div class="offer-selected__product-line offer-selected__product-line--missing">
+                              <div>
+                                <span class="offer-selected__selection-status">Exact Product needed</span>
+                                <span>Select one active Product matching this Product Type.</span>
+                              </div>
+                              <button
+                                mat-flat-button
+                                color="primary"
+                                type="button"
+                                [disabled]="!canChangeProduct(requirement)"
+                                (click)="openProductSelection(requirement)"
+                              >
+                                Select Product
+                              </button>
+                            </div>
+                          }
+                        </article>
+                      } @empty {
+                        <p class="offer-selected__no-requirements">
+                          This section has no Product Requirements.
+                        </p>
                       }
                     </div>
-                  </div>
+                  </section>
                 }
               </div>
 
@@ -148,29 +270,65 @@
           } @else {
             <div class="offer-selected__sections">
               @for (section of activity.sections; track section.id) {
-                <div class="offer-selected__section offer-selected__section--readonly">
-                  <div class="offer-selected__section-copy">
-                    <strong>{{ section.name || 'Measurement' }}</strong>
-                    <span>
-                      {{ formatQuantity(section.requestedMeasurement) }}
-                      {{ measurementUnit(section.measurementUnit) }} requested
-                    </span>
+                <section class="offer-selected__section offer-selected__section--readonly">
+                  <div class="offer-selected__section-overview">
+                    <div class="offer-selected__section-copy">
+                      <strong>{{ section.name || 'Measurement' }}</strong>
+                      <span>
+                        {{ formatQuantity(section.requestedMeasurement) }}
+                        {{ measurementUnit(section.measurementUnit) }} requested
+                      </span>
+                    </div>
+                    <dl class="offer-selected__pricing-summary">
+                      <div><dt>Pricing</dt><dd>{{ pricingModeLabel(section.pricingMode) }}</dd></div>
+                      <div><dt>Price</dt><dd>{{ formatCurrency(section.priceAmount) }}</dd></div>
+                      <div><dt>Section total</dt><dd>{{ formatCurrency(section.priceTotal) }}</dd></div>
+                    </dl>
                   </div>
-                  <dl class="offer-selected__pricing-summary">
-                    <div>
-                      <dt>Pricing</dt>
-                      <dd>{{ pricingModeLabel(section.pricingMode) }}</dd>
-                    </div>
-                    <div>
-                      <dt>Price</dt>
-                      <dd>{{ formatCurrency(section.priceAmount) }}</dd>
-                    </div>
-                    <div>
-                      <dt>Section total</dt>
-                      <dd>{{ formatCurrency(section.priceTotal) }}</dd>
-                    </div>
-                  </dl>
-                </div>
+
+                  <div class="offer-selected__requirements" aria-label="Product requirements">
+                    @for (requirement of section.productRequirements; track requirement.id) {
+                      <article class="offer-selected__requirement">
+                        <div class="offer-selected__requirement-heading">
+                          <div>
+                            <span class="offer-selected__category">{{ requirement.categoryName }}</span>
+                            <h4>{{ requirement.productTypeName }}</h4>
+                          </div>
+                          <span
+                            class="offer-selected__requirement-state"
+                            [class.offer-selected__requirement-state--optional]="!requirement.isRequired"
+                          >
+                            {{ requirement.isRequired ? 'Required' : 'Optional' }}
+                          </span>
+                        </div>
+                        <dl class="offer-selected__requirement-quantities">
+                          <div><dt>Configured</dt><dd>{{ formatQuantity(requirement.configuredQuantity) }} · {{ requirement.quantityBehavior === 'fixed' ? 'Fixed' : 'Proportional' }}</dd></div>
+                          <div><dt>Calculated</dt><dd>{{ formatQuantity(requirement.calculatedQuantity) }}</dd></div>
+                          <div><dt>Measurement</dt><dd>{{ formatQuantity(section.requestedMeasurement) }} / {{ formatQuantity(section.basisQuantity) }} {{ measurementUnit(section.measurementUnit) }}</dd></div>
+                        </dl>
+                        @if (requirement.notes) {
+                          <p class="offer-selected__requirement-notes"><strong>Notes:</strong> {{ requirement.notes }}</p>
+                        }
+                        @if (requirement.productLine; as line) {
+                          <div class="offer-selected__product-line">
+                            <div>
+                              <span class="offer-selected__selection-status offer-selected__selection-status--selected">Product selected</span>
+                              <strong>#{{ line.productNumberId }} · {{ line.title }}</strong>
+                              @if (productIdentity(line)) { <span>{{ productIdentity(line) }}</span> }
+                              <span>{{ packageDescription(line) }}</span>
+                            </div>
+                          </div>
+                        } @else {
+                          <div class="offer-selected__product-line offer-selected__product-line--missing">
+                            <span class="offer-selected__selection-status">No Product was selected</span>
+                          </div>
+                        }
+                      </article>
+                    } @empty {
+                      <p class="offer-selected__no-requirements">This section has no Product Requirements.</p>
+                    }
+                  </div>
+                </section>
               }
             </div>
           }

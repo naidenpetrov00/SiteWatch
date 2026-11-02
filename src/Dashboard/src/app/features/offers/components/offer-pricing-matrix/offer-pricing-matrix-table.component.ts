@@ -136,15 +136,13 @@ export class OfferPricingMatrixTableComponent {
 function buildDisplayRows(products: readonly OfferPricingProductRow[]): PricingDisplayRow[] {
   const occurrences = products.flatMap(product => product.requirements.map(requirement => ({ product, requirement })));
   occurrences.sort((left, right) => left.requirement.activitySortOrder - right.requirement.activitySortOrder || left.requirement.activityNumberId - right.requirement.activityNumberId || left.requirement.offerActivityId.localeCompare(right.requirement.offerActivityId) || left.requirement.sectionSortOrder - right.requirement.sectionSortOrder || left.requirement.offerActivitySectionId.localeCompare(right.requirement.offerActivitySectionId) || left.requirement.sortOrder - right.requirement.sortOrder || left.product.productNumberId - right.product.productNumberId || left.requirement.id.localeCompare(right.requirement.id));
-  const counts = new Map<string, number>();
-  for (const occurrence of occurrences) counts.set(occurrence.product.offerProductLineId, (counts.get(occurrence.product.offerProductLineId) ?? 0) + 1);
   const rows: PricingDisplayRow[] = [];
   let activityId: string | null = null;
   let sectionId: string | null = null;
   for (const { product, requirement } of occurrences) {
     if (activityId !== requirement.offerActivityId) { activityId = requirement.offerActivityId; sectionId = null; rows.push({ kind: 'activity', id: `activity/${requirement.offerActivityId}`, activityNumberId: requirement.activityNumberId, activityName: requirement.activityName }); }
     if (sectionId !== requirement.offerActivitySectionId) { sectionId = requirement.offerActivitySectionId; rows.push({ kind: 'section', id: `section/${requirement.offerActivitySectionId}`, offerActivityId: requirement.offerActivityId, sectionName: requirement.sectionName }); }
-    rows.push({ kind: 'product', id: `requirement/${requirement.id}`, product, requirement, sharedRequirementCount: counts.get(product.offerProductLineId) ?? 1 });
+    rows.push({ kind: 'product', id: `product-line/${product.offerProductLineId}`, product, requirement });
   }
   return rows;
 }

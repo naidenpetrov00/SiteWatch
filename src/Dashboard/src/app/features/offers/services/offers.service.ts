@@ -20,13 +20,17 @@ import {
   OfferFinalizationReadiness,
   OfferOnlinePriceCollectionOptions,
   OfferOnlinePriceCollectionStartResponse,
+  OfferProductCandidate,
+  OfferProductLine,
   OfferPricingMatrix,
   OfferPricingProductRow,
+  OfferRequirementIdentity,
   OfferRetailerPriceCell,
   OfferSiteIdentity,
   OfferSummary,
   RecordManualOfferPriceRequest,
   RemoveOfferActivityRequest,
+  SelectOfferRequirementProductRequest,
   SelectOfferProductPriceRequest,
   SiteOffersResponse,
   StartOfferOnlinePriceCollectionRequest,
@@ -371,6 +375,43 @@ export class OffersService {
       this.invalidateOfferWorkspace(request.siteId, request.offerId)
   }));
 
+  readonly selectRequirementProductMutation = injectMutation<
+    OfferProductLine,
+    Error,
+    SelectOfferRequirementProductRequest
+  >(() => ({
+    mutationKey: ['offers', 'requirement', 'product', 'select'],
+    mutationFn: ({ siteId, offerId, offerRequirementId, productId }) =>
+      firstValueFrom(
+        this.http.put<OfferProductLine>(
+          buildApiUrl(
+            `/sites/${siteId}/offers/${offerId}/requirements/${offerRequirementId}/product-line`
+          ),
+          { productId }
+        )
+      ),
+    onSuccess: async (_, request) =>
+      this.invalidateAndRefetchOfferProductState(request.siteId, request.offerId)
+  }));
+
+  readonly clearRequirementProductMutation = injectMutation<
+    void,
+    Error,
+    OfferRequirementIdentity
+  >(() => ({
+    mutationKey: ['offers', 'requirement', 'product', 'clear'],
+    mutationFn: ({ siteId, offerId, offerRequirementId }) =>
+      firstValueFrom(
+        this.http.delete<void>(
+          buildApiUrl(
+            `/sites/${siteId}/offers/${offerId}/requirements/${offerRequirementId}/product-line`
+          )
+        )
+      ),
+    onSuccess: async (_, request) =>
+      this.invalidateAndRefetchOfferProductState(request.siteId, request.offerId)
+  }));
+
   readonly updateDiscountsMutation = injectMutation<
     void,
     Error,
@@ -625,6 +666,26 @@ export class OffersService {
     );
   }
 
+  getRequirementProductCandidates(
+    siteId: string,
+    offerId: string,
+    offerRequirementId: string,
+    searchTerm: string
+  ): Promise<readonly OfferProductCandidate[]> {
+    const normalizedSearchTerm = searchTerm.trim();
+    const params = normalizedSearchTerm
+      ? new HttpParams().set('searchTerm', normalizedSearchTerm)
+      : undefined;
+    return firstValueFrom(
+      this.http.get<readonly OfferProductCandidate[]>(
+        buildApiUrl(
+          `/sites/${siteId}/offers/${offerId}/requirements/${offerRequirementId}/product-candidates`
+        ),
+        { params }
+      )
+    );
+  }
+
   addActivity(
     request: AddOfferActivityRequest
   ): Promise<OfferActivityCreatedResponse> {
@@ -645,6 +706,16 @@ export class OffersService {
     request: UpdateOfferActivitySectionPricingRequest
   ): Promise<void> {
     return this.updateActivityPricingMutation.mutateAsync(request);
+  }
+
+  selectRequirementProduct(
+    request: SelectOfferRequirementProductRequest
+  ): Promise<OfferProductLine> {
+    return this.selectRequirementProductMutation.mutateAsync(request);
+  }
+
+  clearRequirementProduct(request: OfferRequirementIdentity): Promise<void> {
+    return this.clearRequirementProductMutation.mutateAsync(request);
   }
 
   updateDiscounts(request: UpdateOfferDiscountsRequest): Promise<void> {
@@ -772,6 +843,50 @@ export class OffersService {
       }),
       this.queryClient.invalidateQueries({
         queryKey: this.onlineCollectionOptionsKey(siteId, offerId),
+        exact: true
+      })
+    ]);
+  }
+
+  private async invalidateAndRefetchOfferProductState(
+    siteId: string,
+    offerId: string
+  ): Promise<void> {
+    await Promise.all([
+      this.queryClient.invalidateQueries({
+        queryKey: ['offers', 'site', siteId, 'detail', offerId],
+        exact: true,
+        refetchType: 'none'
+      }),
+      this.queryClient.invalidateQueries({
+        queryKey: this.pricingQueryKey(siteId, offerId),
+        exact: true,
+        refetchType: 'none'
+      }),
+      this.queryClient.invalidateQueries({
+        queryKey: this.readinessQueryKey(siteId, offerId),
+        exact: true,
+        refetchType: 'none'
+      }),
+      this.queryClient.invalidateQueries({
+        queryKey: ['offers', 'site', siteId, 'list']
+      }),
+      this.queryClient.invalidateQueries({
+        queryKey: this.onlineCollectionOptionsKey(siteId, offerId),
+        exact: true
+      })
+    ]);
+    await Promise.all([
+      this.queryClient.refetchQueries({
+        queryKey: ['offers', 'site', siteId, 'detail', offerId],
+        exact: true
+      }),
+      this.queryClient.refetchQueries({
+        queryKey: this.pricingQueryKey(siteId, offerId),
+        exact: true
+      }),
+      this.queryClient.refetchQueries({
+        queryKey: this.readinessQueryKey(siteId, offerId),
         exact: true
       })
     ]);
