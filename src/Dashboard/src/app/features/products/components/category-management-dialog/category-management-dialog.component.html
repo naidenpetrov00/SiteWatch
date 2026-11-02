@@ -4,7 +4,7 @@
   <div class="category-management__toolbar">
     <mat-form-field appearance="outline">
       <mat-label>Search Categories</mat-label>
-      <input matInput [formControl]="searchControl" inputmode="search" />
+      <input matInput [formControl]="searchControl" name="category-search" autocomplete="off" inputmode="search" />
     </mat-form-field>
     <button mat-flat-button color="primary" type="button" (click)="createCategory()">Create Category</button>
   </div>

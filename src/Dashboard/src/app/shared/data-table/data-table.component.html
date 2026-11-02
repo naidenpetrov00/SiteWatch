@@ -69,6 +69,8 @@
                 matInput
                 [type]="column.filter?.kind === 'number' ? 'number' : 'text'"
                 [value]="getFilterValue(column.key)"
+                [attr.name]="'data-table-filter-' + column.key"
+                autocomplete="off"
                 (input)="onFilterValueChange(column.key, $any($event.target).value)"
               />
             }

@@ -7,7 +7,7 @@
   <form [id]="formId" class="product-type-editor" [formGroup]="form" novalidate (ngSubmit)="save()">
     <mat-form-field appearance="outline">
       <mat-label>Product Type name</mat-label>
-      <input matInput formControlName="name" maxlength="200" autocomplete="off" />
+      <input matInput formControlName="name" name="product-type-name" maxlength="200" autocomplete="off" />
       @if (form.controls.name.touched && form.controls.name.invalid) {
         <mat-error>Enter a Product Type name of no more than 200 characters.</mat-error>
       }

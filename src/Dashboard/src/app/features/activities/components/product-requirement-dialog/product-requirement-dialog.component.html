@@ -31,6 +31,7 @@
             matInput
             [formControl]="productSearchControl"
             [matAutocomplete]="productAutocomplete"
+            name="product-requirement-product-search"
             autocomplete="off"
             inputmode="search"
             placeholder="Search by title, brand, model, category, or number"
@@ -87,6 +88,8 @@
         matInput
         type="number"
         formControlName="quantity"
+        name="product-requirement-quantity"
+        autocomplete="off"
         min="0.0001"
         step="any"
       />

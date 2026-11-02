@@ -7,7 +7,7 @@
   <form [id]="formId" [formGroup]="form" novalidate (ngSubmit)="save()">
     <mat-form-field appearance="outline" class="category-editor__field">
       <mat-label>Category name</mat-label>
-      <input matInput formControlName="name" maxlength="200" autocomplete="off" />
+      <input matInput formControlName="name" name="category-name" maxlength="200" autocomplete="off" />
       @if (form.controls.name.touched && form.controls.name.invalid) {
         <mat-error>Enter a Category name of no more than 200 characters.</mat-error>
       }

@@ -24,6 +24,7 @@ import { MatInputModule } from '@angular/material/input';
 export class DatepickerComponent {
   readonly control = input.required<FormControl<Date | null>>();
   readonly label = input.required<string>();
+  readonly name = input.required<string>();
   readonly showRequiredError = input(true);
   readonly showParseError = input(true);
 
