@@ -22,7 +22,8 @@ public sealed class OfferCommercialPricingTests
                 [fixture.Sections[2].Id] = (ActivityPricingMode.Free, null)
             });
         fixture.Offer.UpdateDiscounts(10m, 20m);
-        AddSelectedProduct(fixture, requiredQuantity: 2m, optionalQuantity: 1m, price: 10m);
+        SelectProduct(fixture, sectionIndex: 0, price: 10m);
+        SelectProduct(fixture, sectionIndex: 1, price: 10m);
 
         var result = OfferCommercialTotals.Calculate(fixture.Offer);
 
@@ -31,10 +32,10 @@ public sealed class OfferCommercialPricingTests
         Assert.Equal(150m, result.Totals.ActivitySubtotalBeforeDiscount);
         Assert.Equal(15m, result.Totals.ActivityDiscountAmount);
         Assert.Equal(135m, result.Totals.ActivityTotalAfterDiscount);
-        Assert.Equal(30m, result.Totals.ProductSubtotalBeforeDiscount);
-        Assert.Equal(6m, result.Totals.ProductDiscountAmount);
-        Assert.Equal(24m, result.Totals.ProductTotalAfterDiscount);
-        Assert.Equal(159m, result.Totals.CombinedOfferTotal);
+        Assert.Equal(40m, result.Totals.ProductSubtotalBeforeDiscount);
+        Assert.Equal(8m, result.Totals.ProductDiscountAmount);
+        Assert.Equal(32m, result.Totals.ProductTotalAfterDiscount);
+        Assert.Equal(167m, result.Totals.CombinedOfferTotal);
     }
 
     [Fact]
@@ -52,6 +53,8 @@ public sealed class OfferCommercialPricingTests
             fixture.Sections.ToDictionary(
                 section => section.Id,
                 _ => ((ActivityPricingMode?)ActivityPricingMode.Free, (decimal?)null)));
+        SelectProduct(fixture, sectionIndex: 0, price: 10m);
+        SelectProduct(fixture, sectionIndex: 1, price: 10m);
 
         var explicitlyFree = OfferFinalizationReadiness.Evaluate(
             fixture.Offer,
@@ -143,17 +146,16 @@ public sealed class OfferCommercialPricingTests
     [Fact]
     public void Readiness_OptionalProductTotalFailureRemainsAWarning()
     {
-        var fixture = CreateOfferWithThreeSections();
+        var fixture = CreateOfferWithThreeSections(optionalRequirementQuantity: 1m);
         fixture.Offer.UpdateActivitySectionPricing(
             fixture.OfferActivity,
             fixture.Sections.ToDictionary(
                 section => section.Id,
                 _ => ((ActivityPricingMode?)ActivityPricingMode.Free, (decimal?)null)));
-        AddSelectedProduct(
-            fixture,
-            requiredQuantity: null,
-            optionalQuantity: 2m,
-            price: decimal.MaxValue);
+        SelectProduct(fixture, sectionIndex: 0, price: 10m);
+        // The optional line can be selected at this price; combining it with the
+        // required line then overflows during readiness, which is a warning only.
+        SelectProduct(fixture, sectionIndex: 1, price: decimal.MaxValue);
 
         var readiness = OfferFinalizationReadiness.Evaluate(
             fixture.Offer,
@@ -166,7 +168,7 @@ public sealed class OfferCommercialPricingTests
         Assert.Null(readiness.CommercialTotals.CombinedOfferTotal);
     }
 
-    private static OfferFixture CreateOfferWithThreeSections()
+    private static OfferFixture CreateOfferWithThreeSections(decimal optionalRequirementQuantity = 2m)
     {
         var site = new Site(
             (SiteName)"Commercial test site",
@@ -175,11 +177,18 @@ public sealed class OfferCommercialPricingTests
             new DateOnly(2026, 1, 1));
         var offer = Offer.Create(site);
         var activity = Activity.Create("Installation", null, null, 0);
+        var category = Category.Create("Materials");
+        var productType = ProductType.Create(category, "Test Product Type");
         var sources = new[]
         {
             activity.AddRequirementSection("Fixed", 1m, ActivityMeasurementUnit.Piece, 0),
             activity.AddRequirementSection("Measured", 1m, ActivityMeasurementUnit.Meter, 1),
             activity.AddRequirementSection("Included", 1m, ActivityMeasurementUnit.Piece, 2)
+        };
+        var sourceRequirements = new[]
+        {
+            sources[0].AddProductRequirement(productType, 2m, true, ProductQuantityBehavior.Fixed, null, 0),
+            sources[1].AddProductRequirement(productType, optionalRequirementQuantity, false, ProductQuantityBehavior.Fixed, null, 0)
         };
         var offerActivity = OfferActivity.Create(offer, activity, 0);
         var sections = new[]
@@ -188,14 +197,15 @@ public sealed class OfferCommercialPricingTests
             offerActivity.AddSection(sources[1], 10m),
             offerActivity.AddSection(sources[2], 1m)
         };
+        sections[0].AddRequirement(sourceRequirements[0]);
+        sections[1].AddRequirement(sourceRequirements[1]);
         offer.AddActivity(offerActivity);
-        return new OfferFixture(offer, offerActivity, sources, sections);
+        return new OfferFixture(offer, offerActivity, sections, productType);
     }
 
-    private static void AddSelectedProduct(
+    private static void SelectProduct(
         OfferFixture fixture,
-        decimal? requiredQuantity,
-        decimal? optionalQuantity,
+        int sectionIndex,
         decimal price)
     {
         var product = Product.Create(
@@ -205,35 +215,11 @@ public sealed class OfferCommercialPricingTests
             null,
             null,
             null,
-            ProductCategory.Other,
+            fixture.ProductType,
             ProductStatus.Active,
             ProductSearchConfiguration.Create(null));
-        var line = OfferProductLine.Create(fixture.Offer, product);
-
-        if (requiredQuantity.HasValue)
-        {
-            var requirement = fixture.SourceSections[0].AddProductRequirement(
-                product,
-                requiredQuantity.Value,
-                true,
-                ProductQuantityBehavior.Fixed,
-                null,
-                0);
-            line.AddContribution(fixture.Sections[0], requirement);
-        }
-
-        if (optionalQuantity.HasValue)
-        {
-            var requirement = fixture.SourceSections[1].AddProductRequirement(
-                product,
-                optionalQuantity.Value,
-                false,
-                ProductQuantityBehavior.Fixed,
-                null,
-                0);
-            line.AddContribution(fixture.Sections[1], requirement);
-        }
-
+        var requirement = fixture.Sections[sectionIndex].ProductRequirements.Single();
+        var line = requirement.SelectProduct(fixture.Offer, product);
         fixture.Offer.AddProductLine(line);
         var company = Person.CreateCompany("Retailer Ltd", null, "123456789", "BG123456789");
         var retailer = Retailer.Create("Retailer", company, "https://retailer.test", null);
@@ -260,6 +246,6 @@ public sealed class OfferCommercialPricingTests
     private sealed record OfferFixture(
         Offer Offer,
         OfferActivity OfferActivity,
-        ActivityRequirementSection[] SourceSections,
-        OfferActivitySection[] Sections);
+        OfferActivitySection[] Sections,
+        ProductType ProductType);
 }

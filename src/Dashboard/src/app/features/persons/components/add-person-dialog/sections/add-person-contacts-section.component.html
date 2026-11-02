@@ -54,7 +54,7 @@
             @switch (contactGroup.controls.contactType.value) {
               @case (contactTypes.phone) {
                 <div class="add-person-contacts-section__field add-person-contacts-section__field--full">
-                  <app-person-phone-input formControlName="value" />
+                  <app-person-phone-input [name]="'person-contact-phone-' + (index + 1)" formControlName="value" />
                   @if (contactGroup.controls.value.touched && contactGroup.controls.value.hasError('digitsOnly')) {
                     <p class="add-person-contacts-section__error" role="alert">
                       Phone number must contain digits only.
@@ -77,6 +77,7 @@
                     matInput
                     formControlName="value"
                     type="email"
+                    [attr.name]="'person-contact-email-' + (index + 1)"
                     autocomplete="email"
                     inputmode="email"
                     minlength="1"
@@ -100,6 +101,7 @@
                     matInput
                     formControlName="value"
                     type="text"
+                    [attr.name]="'person-contact-website-' + (index + 1)"
                     autocomplete="url"
                     inputmode="url"
                     minlength="1"
@@ -123,6 +125,8 @@
                     matInput
                     formControlName="value"
                     type="text"
+                    [attr.name]="'person-contact-value-' + (index + 1)"
+                    autocomplete="off"
                     minlength="1"
                     maxlength="256"
                   />

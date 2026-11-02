@@ -66,7 +66,8 @@ describe('ActivityRequirementsComponent', () => {
       const text = fixture.nativeElement.textContent;
       expect(text).toContain('Requirements are read-only');
       expect(text).toContain('For 10 m²');
-      expect(text).toContain('#12 · Anchor');
+      expect(text).toContain('Anchor');
+      expect(text).toContain('Category · Fixings');
       expect(text).not.toContain('Add Section');
     });
   });
@@ -79,8 +80,8 @@ const activity: ActivityDetails = {
     {
       id: 'section-1', name: 'Exterior', basisQuantity: 10, measurementUnit: 'm2', sortOrder: 0,
       productRequirements: [
-        { id: 'requirement-1', productId: 'product-1', productNumberId: 12, productTitle: 'Anchor', productStatus: 'Active', brand: null, model: null, packageQuantity: null, packageUnit: null, quantity: 2, isRequired: true, quantityBehavior: 'proportional', notes: null, sortOrder: 0 },
-        { id: 'requirement-2', productId: 'product-2', productNumberId: 13, productTitle: 'Bolt', productStatus: 'Active', brand: null, model: null, packageQuantity: null, packageUnit: null, quantity: 1, isRequired: false, quantityBehavior: 'fixed', notes: null, sortOrder: 1 }
+        { id: 'requirement-1', productTypeId: 'product-type-1', productTypeName: 'Anchor', categoryId: 'category-1', categoryName: 'Fixings', quantity: 2, isRequired: true, quantityBehavior: 'proportional', notes: null, sortOrder: 0 },
+        { id: 'requirement-2', productTypeId: 'product-type-2', productTypeName: 'Bolt', categoryId: 'category-1', categoryName: 'Fixings', quantity: 1, isRequired: false, quantityBehavior: 'fixed', notes: null, sortOrder: 1 }
       ]
     },
     { id: 'section-2', name: null, basisQuantity: 1, measurementUnit: 'piece', sortOrder: 1, productRequirements: [] }

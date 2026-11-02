@@ -18,9 +18,10 @@ public sealed partial class DashboardProductsQuery
                     "id", query => query.Id, product => product.Id),
                 TableFilterDescriptor<Product, DashboardProductsQuery>.TextContains(
                     "title", query => query.Title, product => product.Title),
-                new TableFilterDescriptor<Product, DashboardProductsQuery>(
-                    "category",
-                    request => BuildCategoryPredicate(request.Category)),
+                TableFilterDescriptorExtensions.GuidEquals<Product, DashboardProductsQuery>(
+                    "categoryId", query => query.CategoryId, product => product.ProductType.CategoryId),
+                TableFilterDescriptorExtensions.GuidEquals<Product, DashboardProductsQuery>(
+                    "productTypeId", query => query.ProductTypeId, product => product.ProductTypeId),
                 TableFilterDescriptor<Product, DashboardProductsQuery>.TextContains(
                     "brand", query => query.Brand, product => product.Brand ?? string.Empty),
                 TableFilterDescriptor<Product, DashboardProductsQuery>.TextContains(
@@ -46,8 +47,10 @@ public sealed partial class DashboardProductsQuery
                     "id", product => product.Id),
                 ["title"] = TableSortDescriptor<Product, DashboardProductsQuery>.Create(
                     "title", product => product.Title, product => product.Id),
-                ["category"] = TableSortDescriptor<Product, DashboardProductsQuery>.Create(
-                    "category", product => product.Category, product => product.Id),
+                ["categoryName"] = TableSortDescriptor<Product, DashboardProductsQuery>.Create(
+                    "categoryName", product => product.ProductType.Category.Name, product => product.Id),
+                ["productTypeName"] = TableSortDescriptor<Product, DashboardProductsQuery>.Create(
+                    "productTypeName", product => product.ProductType.Name, product => product.Id),
                 ["brand"] = TableSortDescriptor<Product, DashboardProductsQuery>.Create(
                     "brand", product => product.Brand ?? string.Empty, product => product.Id),
                 ["model"] = TableSortDescriptor<Product, DashboardProductsQuery>.Create(
@@ -74,16 +77,6 @@ public sealed partial class DashboardProductsQuery
         }
 
         return product => product.Status == status;
-    }
-
-    private static Expression<Func<Product, bool>>? BuildCategoryPredicate(string? rawValue)
-    {
-        if (!ProductCategoryCodes.TryParse(rawValue, out var category))
-        {
-            return null;
-        }
-
-        return product => product.Category == category;
     }
 
     private static Expression<Func<Product, bool>>? BuildPackageUnitPredicate(string? rawValue)

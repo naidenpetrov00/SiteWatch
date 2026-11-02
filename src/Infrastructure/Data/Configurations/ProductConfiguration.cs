@@ -32,13 +32,6 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(product => product.PackageUnit)
             .HasConversion(packageUnitConverter)
             .HasMaxLength(50);
-        var categoryConverter = new ValueConverter<ProductCategory, string>(
-            category => category.ToCode(),
-            value => ParseStoredCategory(value));
-        builder.Property(product => product.Category)
-            .HasConversion(categoryConverter)
-            .HasMaxLength(100)
-            .IsRequired();
         builder.Property(product => product.Status)
             .HasConversion<string>()
             .HasMaxLength(32)
@@ -64,8 +57,12 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
 
         builder.HasIndex(product => product.NumberId).IsUnique();
         builder.HasIndex(product => product.Title);
-        builder.HasIndex(product => product.Category);
+        builder.HasIndex(product => product.ProductTypeId);
         builder.HasIndex(product => product.Status);
+        builder.HasOne(product => product.ProductType)
+            .WithMany()
+            .HasForeignKey(product => product.ProductTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 
     private static ProductPackageUnit ParseStoredPackageUnit(string value)
@@ -88,33 +85,6 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
                 ProductPackageUnit.Centimeter,
             _ => throw new InvalidOperationException(
                 $"Unsupported stored product package unit '{value}'.")
-        };
-    }
-
-    private static ProductCategory ParseStoredCategory(string value)
-    {
-        if (ProductCategoryCodes.TryParse(value, out var category))
-        {
-            return category;
-        }
-
-        return value.Trim().ToLowerInvariant() switch
-        {
-            "building & construction" or "building materials" =>
-                ProductCategory.BuildingConstruction,
-            "tools & equipment" or "power tools" => ProductCategory.ToolsEquipment,
-            "electrical & lighting" or "electrical supplies" or "lighting" =>
-                ProductCategory.ElectricalLighting,
-            "plumbing & hvac" => ProductCategory.PlumbingHvac,
-            "hardware & fasteners" => ProductCategory.HardwareFasteners,
-            "paints & finishes" => ProductCategory.PaintsFinishes,
-            "safety & security" => ProductCategory.SafetySecurity,
-            "cleaning & maintenance" => ProductCategory.CleaningMaintenance,
-            "fixtures & appliances" => ProductCategory.FixturesAppliances,
-            "outdoor & landscaping" => ProductCategory.OutdoorLandscaping,
-            "office & general supplies" => ProductCategory.OfficeGeneralSupplies,
-            _ => throw new InvalidOperationException(
-                $"Unsupported stored product category '{value}'.")
         };
     }
 }

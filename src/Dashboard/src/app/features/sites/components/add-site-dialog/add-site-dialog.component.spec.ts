@@ -40,7 +40,7 @@ describe('AddSiteDialogComponent', () => {
     await component.submitSite();
 
     expect(component.siteForm.controls.mediaPolicyPreset.value).toBe('Custom');
-    expect(sitesService.createSite).toHaveBeenCalledWith({ name: 'Apartment 42', address: '42 Main Street', managerId: 'manager-1', startDate: '2026-03-03', endDate: '2026-04-18', status: 'Operational', mediaPolicyPreset: 'Custom', mediaCategories: ['Design', 'Demolition', 'Electricity', 'Pipes', 'Finishes', 'HVAC Controls', 'Other'] });
+    expect(sitesService.createSite).toHaveBeenCalledWith({ name: 'Apartment 42', address: '42 Main Street', managerId: 'manager-1', primaryClientUserId: null, startDate: '2026-03-03', endDate: '2026-04-18', status: 'Operational', isCompanyStock: false, mediaPolicyPreset: 'Custom', mediaCategories: ['Design', 'Demolition', 'Electricity', 'Pipes', 'Finishes', 'HVAC Controls', 'Other'] });
     expect(dialogRef.close).toHaveBeenCalledWith(true);
   });
 

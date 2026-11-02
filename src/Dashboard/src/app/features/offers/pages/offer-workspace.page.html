@@ -55,7 +55,7 @@
         <form [formGroup]="metadataForm" (ngSubmit)="saveMetadata()">
           <mat-form-field appearance="outline">
             <mat-label>Internal Title</mat-label>
-            <input matInput formControlName="title" maxlength="200" />
+            <input name="offer-workspace-title" matInput formControlName="title" maxlength="200"  autocomplete="off"/>
             <mat-hint align="end">
               {{ metadataForm.controls.title.value?.length ?? 0 }}/200
             </mat-hint>
@@ -189,6 +189,8 @@
         [siteId]="siteId()"
         [offerId]="offerId()"
         [activities]="currentOffer.activities"
+        [pricingState]="pricingState()"
+        [selectedPriceByProductLineId]="selectedPriceByProductLineId()"
         [editable]="isDraft()"
       />
     </section>

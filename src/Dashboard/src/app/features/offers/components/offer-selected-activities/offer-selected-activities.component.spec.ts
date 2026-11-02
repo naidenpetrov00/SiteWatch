@@ -12,6 +12,8 @@ describe('OfferSelectedActivitiesComponent commercial pricing', () => {
     updateMeasurementsMutation: { isPending: () => false },
     updateActivityPricingMutation: { isPending: () => false },
     removeActivityMutation: { isPending: () => false },
+    selectRequirementProductMutation: { isPending: () => false },
+    clearRequirementProductMutation: { isPending: () => false },
     updateActivityMeasurements: vi.fn(),
     updateActivitySectionPricing: vi.fn(),
     removeActivity: vi.fn()
@@ -32,6 +34,8 @@ describe('OfferSelectedActivitiesComponent commercial pricing', () => {
     fixture.componentRef.setInput('siteId', 'site-1');
     fixture.componentRef.setInput('offerId', 'offer-1');
     fixture.componentRef.setInput('activities', [activity]);
+    fixture.componentRef.setInput('pricingState', 'ready');
+    fixture.componentRef.setInput('selectedPriceByProductLineId', new Map());
     fixture.componentRef.setInput('editable', true);
     fixture.detectChanges();
     await fixture.whenStable();
@@ -66,6 +70,8 @@ describe('OfferSelectedActivitiesComponent commercial pricing', () => {
     fixture.componentRef.setInput('siteId', 'site-1');
     fixture.componentRef.setInput('offerId', 'offer-1');
     fixture.componentRef.setInput('activities', [activity]);
+    fixture.componentRef.setInput('pricingState', 'ready');
+    fixture.componentRef.setInput('selectedPriceByProductLineId', new Map());
     fixture.componentRef.setInput('editable', false);
     fixture.detectChanges();
     await fixture.whenStable();
@@ -98,7 +104,8 @@ const activity: OfferActivity = {
       pricingMode: 'fixed',
       priceAmount: 100,
       priceTotal: 100,
-      sortOrder: 0
+      sortOrder: 0,
+      productRequirements: []
     },
     {
       id: 'section-2',
@@ -110,7 +117,8 @@ const activity: OfferActivity = {
       pricingMode: 'free',
       priceAmount: null,
       priceTotal: 0,
-      sortOrder: 1
+      sortOrder: 1,
+      productRequirements: []
     }
   ]
 };

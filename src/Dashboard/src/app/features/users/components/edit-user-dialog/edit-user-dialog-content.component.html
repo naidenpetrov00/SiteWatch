@@ -11,7 +11,7 @@
       class="edit-user-dialog__field edit-user-dialog__field--half"
     >
       <mat-label>Number Id</mat-label>
-      <input matInput formControlName="numberId" type="number" readonly />
+      <input name="edit-user-dialog-content-number-id" matInput formControlName="numberId" type="number" readonly  autocomplete="off"/>
     </mat-form-field>
 
     <mat-form-field
@@ -19,7 +19,7 @@
       class="edit-user-dialog__field edit-user-dialog__field--half"
     >
       <mat-label>Id</mat-label>
-      <input matInput formControlName="id" type="text" readonly />
+      <input name="edit-user-dialog-content-id" matInput formControlName="id" type="text" readonly  autocomplete="off"/>
     </mat-form-field>
 
     <mat-form-field
@@ -27,7 +27,7 @@
       class="edit-user-dialog__field edit-user-dialog__field--full"
     >
       <mat-label>Username</mat-label>
-      <input matInput formControlName="username" type="text" />
+      <input name="edit-user-dialog-content-username" matInput formControlName="username" type="text"  autocomplete="username"/>
     </mat-form-field>
 
     <mat-form-field
@@ -35,7 +35,7 @@
       class="edit-user-dialog__field edit-user-dialog__field--half"
     >
       <mat-label>Email</mat-label>
-      <input matInput formControlName="email" type="email" />
+      <input name="edit-user-dialog-content-email" matInput formControlName="email" type="email"  autocomplete="email"/>
     </mat-form-field>
 
     <mat-form-field
@@ -43,7 +43,7 @@
       class="edit-user-dialog__field edit-user-dialog__field--half"
     >
       <mat-label>Phone number</mat-label>
-      <input matInput formControlName="phoneNumber" type="text" />
+      <input name="edit-user-dialog-content-phone-number" matInput formControlName="phoneNumber" type="text"  autocomplete="tel"/>
     </mat-form-field>
 
     <div class="edit-user-dialog__field edit-user-dialog__field--checkbox">
@@ -59,12 +59,12 @@
       class="edit-user-dialog__field edit-user-dialog__field--full"
     >
       <mat-label>Last login at</mat-label>
-      <input
+      <input name="edit-user-last-login"
         matInput
         type="text"
         [value]="formatLastLoginAt(userForm().controls.lastLoginAt.value)"
         readonly
-      />
+       autocomplete="off"/>
     </mat-form-field>
   </div>
 </form>

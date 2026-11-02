@@ -3,6 +3,8 @@ using Domain.SeedWork.Enums;
 using Infrastructure.Data;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using NSubstitute;
 
 namespace Infrastructure.Tests.Offers;
@@ -13,8 +15,9 @@ public sealed class OfferPricingPersistenceMetadataTests
     public void Offer_pricing_mapping_preserves_discount_and_activity_price_contracts()
     {
         using var dbContext = CreateDbContext();
-        var offer = dbContext.Model.FindEntityType(typeof(Offer))!;
-        var section = dbContext.Model.FindEntityType(typeof(OfferActivitySection))!;
+        var model = dbContext.GetService<IDesignTimeModel>().Model;
+        var offer = model.FindEntityType(typeof(Offer))!;
+        var section = model.FindEntityType(typeof(OfferActivitySection))!;
 
         var activityDiscount = offer.FindProperty(nameof(Offer.ActivityDiscountPercentage))!;
         var productDiscount = offer.FindProperty(nameof(Offer.ProductDiscountPercentage))!;

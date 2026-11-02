@@ -15,7 +15,7 @@ public sealed class ActivityCatalogSeedData(
     public async Task SeedAsync()
     {
         var definitions = CreateDefinitions();
-        var productsByTitle = await LoadProductsAsync(definitions);
+        var productTypesByName = await LoadProductTypesAsync(definitions);
         var nodes = await dbContext.ActivityCatalogNodes.ToListAsync();
         var sections = await dbContext.ActivityRequirementSections
             .Include(section => section.ProductRequirements)
@@ -66,7 +66,7 @@ public sealed class ActivityCatalogSeedData(
                     activity,
                     activityDefinition,
                     sections,
-                    productsByTitle,
+                    productTypesByName,
                     seededAt,
                     counters);
             }
@@ -85,40 +85,41 @@ public sealed class ActivityCatalogSeedData(
             counters.Requirements);
     }
 
-    private async Task<Dictionary<string, Product>> LoadProductsAsync(
+    private async Task<Dictionary<string, ProductType>> LoadProductTypesAsync(
         IReadOnlyCollection<AreaDefinition> definitions)
     {
-        var requiredTitles = definitions
+        var requiredNames = definitions
             .SelectMany(area => area.Activities)
             .SelectMany(activity => activity.Sections)
             .SelectMany(section => section.Requirements)
-            .Select(requirement => requirement.ProductTitle)
+            .Select(requirement => requirement.ProductTypeName)
             .Distinct(StringComparer.Ordinal)
             .ToArray();
-        var products = await dbContext.Products
-            .Where(product => requiredTitles.Contains(product.Title))
+        var productTypes = await dbContext.ProductTypes
+            .Include(productType => productType.Category)
+            .Where(productType => requiredNames.Contains(productType.Name))
             .ToListAsync();
-        var productsByTitle = new Dictionary<string, Product>(StringComparer.Ordinal);
+        var productTypesByName = new Dictionary<string, ProductType>(StringComparer.Ordinal);
 
-        foreach (var title in requiredTitles)
+        foreach (var name in requiredNames)
         {
-            var activeMatches = products
-                .Where(product => product.Title == title && product.Status == ProductStatus.Active)
+            var matches = productTypes
+                .Where(productType => productType.Name == name)
                 .ToList();
-            if (activeMatches.Count == 1)
+            if (matches.Count == 1)
             {
-                productsByTitle.Add(title, activeMatches[0]);
+                productTypesByName.Add(name, matches[0]);
                 continue;
             }
 
             logger.LogWarning(
-                activeMatches.Count == 0
-                    ? "Activity catalog product requirement {ProductTitle} was skipped because the active seeded product is missing."
-                    : "Activity catalog product requirement {ProductTitle} was skipped because multiple active products have that title.",
-                title);
+                matches.Count == 0
+                    ? "Activity catalog Product Requirement {ProductTypeName} was skipped because the seeded Product Type is missing."
+                    : "Activity catalog Product Requirement {ProductTypeName} was skipped because multiple Product Types have that name.",
+                name);
         }
 
-        return productsByTitle;
+        return productTypesByName;
     }
 
     private ActivityFolder? EnsureFolder(
@@ -194,7 +195,7 @@ public sealed class ActivityCatalogSeedData(
         Activity activity,
         ActivityDefinition definition,
         List<ActivityRequirementSection> sections,
-        IReadOnlyDictionary<string, Product> productsByTitle,
+        IReadOnlyDictionary<string, ProductType> productTypesByName,
         DateTimeOffset seededAt,
         SeedCounters counters)
     {
@@ -250,17 +251,21 @@ public sealed class ActivityCatalogSeedData(
 
             foreach (var requirementDefinition in sectionDefinition.Requirements)
             {
-                if (!productsByTitle.TryGetValue(
-                        requirementDefinition.ProductTitle,
-                        out var product)
-                    || section.ProductRequirements.Any(requirement =>
-                        requirement.ProductId == product.Id))
+                if (!productTypesByName.TryGetValue(
+                        requirementDefinition.ProductTypeName,
+                        out var productType))
+                {
+                    continue;
+                }
+                if (section.ProductRequirements.Any(requirement =>
+                        requirement.ProductTypeId == productType.Id
+                        && requirement.SortOrder == requirementDefinition.SortOrder))
                 {
                     continue;
                 }
 
                 var requirement = section.AddProductRequirement(
-                    product,
+                    productType,
                     requirementDefinition.Quantity,
                     requirementDefinition.IsRequired,
                     requirementDefinition.QuantityBehavior,
@@ -305,7 +310,7 @@ public sealed class ActivityCatalogSeedData(
                             0,
                             [
                                 new(
-                                    "Polyethylene Laminate Underlay, 5 mm, 15 m2",
+                                    "Laminate Underlay",
                                     1m,
                                     true,
                                     ProductQuantityBehavior.Proportional,
@@ -319,14 +324,14 @@ public sealed class ActivityCatalogSeedData(
                             1,
                             [
                                 new(
-                                    "EGGER Aqua Treviso Oak Laminate Flooring, 1.9948 m2",
+                                    "Laminate Flooring",
                                     0.5514m,
                                     true,
                                     ProductQuantityBehavior.Proportional,
                                     "Allows 1.10 m2 of flooring per measured m2, including 10 percent cutting waste.",
                                     0),
                                 new(
-                                    "Laminate and Parquet Installation Kit",
+                                    "Laminate Installation Kit",
                                     1m,
                                     false,
                                     ProductQuantityBehavior.Fixed,
@@ -352,7 +357,7 @@ public sealed class ActivityCatalogSeedData(
                             0,
                             [
                                 new(
-                                    "Interior Gypsum Filler, 15 kg",
+                                    "Gypsum Filler",
                                     0.0667m,
                                     true,
                                     ProductQuantityBehavior.Proportional,
@@ -366,7 +371,7 @@ public sealed class ActivityCatalogSeedData(
                             1,
                             [
                                 new(
-                                    "Deep-Penetrating Primer, 5 L",
+                                    "Primer",
                                     0.024m,
                                     true,
                                     ProductQuantityBehavior.Proportional,
@@ -380,14 +385,14 @@ public sealed class ActivityCatalogSeedData(
                             2,
                             [
                                 new(
-                                    "LEKO Interin White Interior Paint, 15 L",
+                                    "Interior Paint",
                                     0.014m,
                                     true,
                                     ProductQuantityBehavior.Proportional,
                                     "Allows about 0.21 L of paint per measured m2 for two coats and minor waste.",
                                     0),
                                 new(
-                                    "Polyester Paint Roller, 12 cm",
+                                    "Paint Roller",
                                     1m,
                                     false,
                                     ProductQuantityBehavior.Fixed,
@@ -413,7 +418,7 @@ public sealed class ActivityCatalogSeedData(
                             0,
                             [
                                 new(
-                                    "Gun-Grade Polyurethane Foam, 750 ml",
+                                    "Polyurethane Foam",
                                     1m,
                                     true,
                                     ProductQuantityBehavior.Proportional,
@@ -427,7 +432,7 @@ public sealed class ActivityCatalogSeedData(
                             1,
                             [
                                 new(
-                                    "Ceresit CS 25 White Sanitary Silicone, 280 ml",
+                                    "Sanitary Silicone",
                                     1m,
                                     true,
                                     ProductQuantityBehavior.Proportional,
@@ -453,7 +458,7 @@ public sealed class ActivityCatalogSeedData(
                             0,
                             [
                                 new(
-                                    "Deep-Penetrating Primer, 5 L",
+                                    "Primer",
                                     0.024m,
                                     true,
                                     ProductQuantityBehavior.Proportional,
@@ -467,7 +472,7 @@ public sealed class ActivityCatalogSeedData(
                             1,
                             [
                                 new(
-                                    "Liquid Waterproofing Membrane, 5 kg",
+                                    "Waterproofing Membrane",
                                     0.3m,
                                     true,
                                     ProductQuantityBehavior.Proportional,
@@ -481,14 +486,14 @@ public sealed class ActivityCatalogSeedData(
                             2,
                             [
                                 new(
-                                    "Flexible Tile Adhesive, 25 kg",
+                                    "Tile Adhesive",
                                     0.16m,
                                     true,
                                     ProductQuantityBehavior.Proportional,
                                     "Allows about 4 kg of adhesive per measured m2 of tiled surface.",
                                     0),
                                 new(
-                                    "IZIDA Romani Beige Porcelain Tile, 30.3 x 60.6 cm, 1.84 m2",
+                                    "Porcelain Tile",
                                     0.5978m,
                                     true,
                                     ProductQuantityBehavior.Proportional,
@@ -502,7 +507,7 @@ public sealed class ActivityCatalogSeedData(
                             3,
                             [
                                 new(
-                                    "Ceresit CE 40 Jasmine Grout, 5 kg",
+                                    "Grout",
                                     0.08m,
                                     true,
                                     ProductQuantityBehavior.Proportional,
@@ -516,7 +521,7 @@ public sealed class ActivityCatalogSeedData(
                             4,
                             [
                                 new(
-                                    "Ceresit CS 25 White Sanitary Silicone, 280 ml",
+                                    "Sanitary Silicone",
                                     1m,
                                     true,
                                     ProductQuantityBehavior.Proportional,
@@ -542,7 +547,7 @@ public sealed class ActivityCatalogSeedData(
                             0,
                             [
                                 new(
-                                    "MODULATO MDF Interior Door Set, 80 x 200 x 7 cm, Left",
+                                    "Interior Door Set",
                                     1m,
                                     true,
                                     ProductQuantityBehavior.Proportional,
@@ -556,7 +561,7 @@ public sealed class ActivityCatalogSeedData(
                             1,
                             [
                                 new(
-                                    "Gun-Grade Polyurethane Foam, 750 ml",
+                                    "Polyurethane Foam",
                                     0.5m,
                                     true,
                                     ProductQuantityBehavior.Proportional,
@@ -587,7 +592,7 @@ public sealed class ActivityCatalogSeedData(
         IReadOnlyList<RequirementDefinition> Requirements);
 
     private sealed record RequirementDefinition(
-        string ProductTitle,
+        string ProductTypeName,
         decimal Quantity,
         bool IsRequired,
         ProductQuantityBehavior QuantityBehavior,

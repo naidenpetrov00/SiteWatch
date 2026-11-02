@@ -1,7 +1,7 @@
 @if (matrix().products.length === 0) {
   <div class="offer-pricing__empty">
     <mat-icon aria-hidden="true">price_check</mat-icon>
-    <p>Add Activity requirements before comparing retailer prices.</p>
+    <p>Select exact Products for Activity requirements before comparing retailer prices.</p>
   </div>
 } @else {
   <p id="offer-pricing-scroll-hint" class="offer-pricing__scroll-hint">
@@ -20,18 +20,18 @@
       </ng-container>
 
       <ng-container matColumnDef="product" sticky>
-        <th mat-header-cell *matHeaderCellDef>Product requirement</th>
+        <th mat-header-cell *matHeaderCellDef>Requirement &amp; Product</th>
         <td mat-cell *matCellDef="let displayRow" role="rowheader">
           @if (displayRow.kind === 'product') {
             @let row = displayRow.product;
             @let requirement = displayRow.requirement;
             <div class="offer-pricing__product">
+              <span>{{ row.categoryName }} · {{ row.productTypeName }}</span>
               <strong>#{{ row.productNumberId }} · {{ row.title }}</strong>
               @if (productIdentity(row)) { <span>{{ productIdentity(row) }}</span> }
               <span>{{ packageDescription(row) }}</span>
               <div class="offer-pricing__requirement-summary"><span class="offer-pricing__requirement-state" [class.offer-pricing__requirement-state--optional]="!requirement.isRequired">{{ requirement.isRequired ? 'Required' : 'Optional' }}</span><strong>Calculated requirement {{ formatQuantity(requirement.calculatedQuantity) }}</strong></div>
-              @if (displayRow.sharedRequirementCount > 1) { <span class="offer-pricing__shared-badge">Aggregate pricing shared across {{ displayRow.sharedRequirementCount }} requirements</span> }
-              <span class="offer-pricing__offer-totals">Offer totals · Required {{ formatQuantity(row.requiredQuantity) }} · Optional {{ formatQuantity(row.optionalQuantity) }}</span>
+              <span class="offer-pricing__offer-totals">Product Line quantity · Required {{ formatQuantity(row.requiredQuantity) }} · Optional {{ formatQuantity(row.optionalQuantity) }}</span>
               <details class="offer-pricing__calculation-details"><summary>Calculation details</summary><dl><div><dt>Configured</dt><dd>{{ formatQuantity(requirement.configuredQuantity) }}</dd></div><div><dt>Behavior</dt><dd>{{ requirement.quantityBehavior === 'fixed' ? 'Fixed' : 'Proportional' }}</dd></div><div><dt>Measurement</dt><dd>{{ formatQuantity(requirement.requestedMeasurement) }} / {{ formatQuantity(requirement.basisQuantity) }} {{ measurementUnit(requirement.measurementUnit) }}</dd></div></dl>@if (requirement.notes) { <p><strong>Notes:</strong> {{ requirement.notes }}</p> }</details>
               @if (row.selectedPrice; as selected) {
                 <div class="offer-pricing__selected-summary"><span>Selected {{ selected.retailerDisplayName }} · {{ formatCurrency(selected.amount) }} per {{ selected.basis }}</span>@if (selected.hasNewerObservation) { <span class="offer-pricing__newer">Newer price available</span> } @if (editable()) { <button mat-button type="button" [disabled]="isMutating()" (click)="selectionClearRequested.emit(row)">Clear selection</button> }</div>
@@ -53,10 +53,10 @@
                   @if (editable()) { <div class="offer-pricing__cell-actions"><button mat-button type="button" [disabled]="isMutating()" (click)="productLinkRequested.emit({ row, cell })">{{ cell.retailerListingId ? 'Edit product link' : 'Add product link' }}</button></div> }
                   @if (isEditing(displayRow, retailer.retailerId) && canEditCell(cell)) {
                     <form class="offer-pricing__edit-form" [formGroup]="formFor(row, cell)" (ngSubmit)="priceSaveRequested.emit({ row, cell, displayRowId: displayRow.id })">
-                      <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>EUR price</mat-label><input matInput type="number" min="0.01" step="0.01" formControlName="amount" /><span matTextPrefix>€&nbsp;</span>@if (formFor(row, cell).controls.amount.touched && formFor(row, cell).controls.amount.invalid) { <mat-error>Enter a positive price with at most two decimals.</mat-error> }</mat-form-field>
+                      <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>EUR price</mat-label><input [attr.name]="'offer-price-' + row.productId + '-retailer-' + retailer.retailerId + '-amount'" matInput type="number" min="0.01" step="0.01" formControlName="amount"  autocomplete="off"/><span matTextPrefix>€&nbsp;</span>@if (formFor(row, cell).controls.amount.touched && formFor(row, cell).controls.amount.invalid) { <mat-error>Enter a positive price with at most two decimals.</mat-error> }</mat-form-field>
                       <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Price basis</mat-label><mat-select formControlName="basis">@for (basis of allowedBases(row); track basis) { <mat-option [value]="basis">{{ basis === 'item' ? 'Individual item' : 'Package' }}</mat-option> }</mat-select></mat-form-field>
-                      <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Retailer product URL</mat-label><input matInput type="url" formControlName="productUrl" autocomplete="url" />@if (formFor(row, cell).controls.productUrl.touched && formFor(row, cell).controls.productUrl.invalid) { <mat-error>Enter an absolute HTTP or HTTPS URL.</mat-error> }</mat-form-field>
-                      <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Retailer product code</mat-label><input matInput formControlName="retailerProductCode" maxlength="100" /></mat-form-field>
+                      <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Retailer product URL</mat-label><input [attr.name]="'offer-price-' + row.productId + '-retailer-' + retailer.retailerId + '-product-url'" matInput type="url" formControlName="productUrl" autocomplete="url" />@if (formFor(row, cell).controls.productUrl.touched && formFor(row, cell).controls.productUrl.invalid) { <mat-error>Enter an absolute HTTP or HTTPS URL.</mat-error> }</mat-form-field>
+                      <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Retailer product code</mat-label><input [attr.name]="'offer-price-' + row.productId + '-retailer-' + retailer.retailerId + '-product-code'" matInput formControlName="retailerProductCode" maxlength="100"  autocomplete="off"/></mat-form-field>
                       <div class="offer-pricing__cell-actions"><button mat-flat-button color="primary" type="submit" [disabled]="formFor(row, cell).invalid || isMutating()">{{ isSaving(row, retailer.retailerId) ? 'Saving…' : 'Save' }}</button><button mat-button type="button" [disabled]="isMutating()" (click)="editCancelled.emit({ row, cell, displayRowId: displayRow.id })">Cancel</button></div>
                       @if (cellError(row, retailer.retailerId); as saveError) { <p class="offer-pricing__cell-error" role="alert">{{ saveError }}</p> }
                     </form>

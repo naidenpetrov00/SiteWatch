@@ -11,7 +11,7 @@ public abstract record ProductUpsertDto
     public string? Model { get; init; }
     public decimal? PackageQuantity { get; init; }
     public string? PackageUnit { get; init; }
-    public string Category { get; init; } = string.Empty;
+    public Guid ProductTypeId { get; init; }
     public string Status { get; init; } = ProductStatus.Active.ToString();
     public string? PrimarySearchPhrase { get; init; }
     public string[] AlternativeSearchPhrases { get; init; } = [];

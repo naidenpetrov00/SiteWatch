@@ -190,14 +190,14 @@
                     <button matChipRemove type="button" [attr.aria-label]="'Remove ' + host">×</button>
                   </mat-chip-row>
                 }
-                <input
+                <input name="retailer-extraction-hostname"
                   placeholder="shop.example.com"
                   [formControl]="hostInput"
                   [matChipInputFor]="hostGrid"
                   [matChipInputAddOnBlur]="true"
                   [matChipInputSeparatorKeyCodes]="hostSeparatorKeyCodes"
                   (matChipInputTokenEnd)="addHost($event)"
-                />
+                 autocomplete="off"/>
               </mat-chip-grid>
             </mat-form-field>
           } @else {
@@ -299,7 +299,7 @@
                     value="retailerListing"
                     [formField]="testForm.sourceType"
                     (change)="setTestSource('retailerListing')"
-                  />
+                   autocomplete="off"/>
                   Existing listing
                 </label>
                 <label>
@@ -308,7 +308,7 @@
                     value="manualUrl"
                     [formField]="testForm.sourceType"
                     (change)="setTestSource('manualUrl')"
-                  />
+                   autocomplete="off"/>
                   Manual URL
                 </label>
               </fieldset>
@@ -320,7 +320,7 @@
                     type="search"
                     placeholder="Product number or title"
                     [formField]="testForm.listingSearch"
-                  />
+                   autocomplete="off"/>
                 </label>
                 @if (testForm.listingSearch().touched() && testForm.listingSearch().errors().length) {
                   <p class="extraction__field-error">{{ testForm.listingSearch().errors()[0].message }}</p>
@@ -355,7 +355,7 @@
                     type="url"
                     placeholder="https://shop.example.com/product"
                     [formField]="testForm.manualUrl"
-                  />
+                   autocomplete="off"/>
                 </label>
                 @if (testForm.manualUrl().touched() && testForm.manualUrl().errors().length) {
                   <p class="extraction__field-error">{{ testForm.manualUrl().errors()[0].message }}</p>

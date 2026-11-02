@@ -169,6 +169,12 @@ public sealed class ProposalProductLineConfiguration
     {
         builder.ToTable("ProposalProductLines");
         builder.Property(line => line.Title).HasMaxLength(200).IsRequired();
+        builder.Property(line => line.ProductTypeName)
+            .HasMaxLength(ProductType.MaxNameLength)
+            .IsRequired();
+        builder.Property(line => line.CategoryName)
+            .HasMaxLength(Category.MaxNameLength)
+            .IsRequired();
         builder.Property(line => line.Brand).HasMaxLength(100);
         builder.Property(line => line.Model).HasMaxLength(100);
         builder.Property(line => line.PackageQuantity).HasPrecision(18, 4);
@@ -179,9 +185,6 @@ public sealed class ProposalProductLineConfiguration
         builder.Property(line => line.SelectedPriceCurrencyCode).HasMaxLength(3);
         builder.Property(line => line.RequiredTotal).HasPrecision(18, 2);
         builder.Property(line => line.OptionalTotal).HasPrecision(18, 2);
-        builder.Property(line => line.Category)
-            .HasConversion(category => category.ToCode(), value => ParseCategory(value))
-            .HasMaxLength(100);
         var packageUnitConverter = new ValueConverter<ProductPackageUnit?, string?>(
             unit => unit.HasValue ? unit.Value.ToCode() : null,
             value => value == null ? null : ParsePackageUnit(value));
@@ -200,12 +203,6 @@ public sealed class ProposalProductLineConfiguration
             .HasForeignKey(line => line.ProposalId)
             .OnDelete(DeleteBehavior.Cascade);
     }
-
-    private static ProductCategory ParseCategory(string value) =>
-        ProductCategoryCodes.TryParse(value, out var category)
-            ? category
-            : throw new InvalidOperationException(
-                $"Unsupported stored product category '{value}'.");
 
     private static ProductPackageUnit ParsePackageUnit(string value) =>
         ProductPackageUnitCodes.TryParse(value, out var unit)

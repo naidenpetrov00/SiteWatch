@@ -6,7 +6,8 @@ import {
   ChangeDetectionStrategy,
   Component,
   forwardRef,
-  signal
+  signal,
+  input
 } from '@angular/core';
 import {
   ControlValueAccessor,
@@ -43,6 +44,7 @@ import { PersonInputSanitizerDirective } from '../directives/person-input-saniti
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PersonPhoneInputComponent implements ControlValueAccessor {
+  readonly name = input.required<string>();
   readonly countryCodeOptions = PHONE_COUNTRY_CODE_OPTIONS;
   readonly selectedCountryCode = signal<AddPersonPhoneCountryCodeOption>(
     PHONE_COUNTRY_CODE_OPTIONS[0].value

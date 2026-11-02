@@ -20,15 +20,6 @@
   width: 100%;
 }
 
-.product-requirement-dialog__create-product {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  color: var(--mat-sys-on-surface-variant);
-  font-size: 0.875rem;
-}
-
 .product-requirement-dialog__product-summary {
   display: grid;
   gap: 0.25rem;
@@ -41,21 +32,6 @@
 
 .product-requirement-dialog__product-summary strong {
   color: var(--mat-sys-on-surface);
-}
-
-.product-requirement-dialog__status {
-  color: var(--mat-sys-error);
-  font-weight: 700;
-}
-
-.product-requirement-dialog__option-title,
-.product-requirement-dialog__option-detail {
-  display: block;
-}
-
-.product-requirement-dialog__option-detail {
-  color: var(--mat-sys-on-surface-variant);
-  font-size: 0.78rem;
 }
 
 .product-requirement-dialog__error {
@@ -75,8 +51,4 @@
     grid-column: auto;
   }
 
-  .product-requirement-dialog__create-product {
-    align-items: stretch;
-    flex-direction: column;
-  }
 }

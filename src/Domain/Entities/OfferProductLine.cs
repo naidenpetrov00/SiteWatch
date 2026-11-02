@@ -5,19 +5,22 @@ namespace Domain.Entities;
 
 public sealed class OfferProductLine : BaseEntity
 {
-    private readonly List<OfferProductContribution> _contributions = [];
-
     private OfferProductLine()
     {
     }
 
     public Guid OfferId { get; private set; }
     public Offer Offer { get; private set; } = null!;
+    public Guid OfferProductRequirementId { get; private set; }
+    public OfferProductRequirement OfferProductRequirement { get; private set; } = null!;
+    public Guid ProductTypeId { get; private set; }
+    public string ProductTypeName { get; private set; } = string.Empty;
+    public Guid CategoryId { get; private set; }
+    public string CategoryName { get; private set; } = string.Empty;
     public Guid ProductId { get; private set; }
     public Product Product { get; private set; } = null!;
     public int ProductNumberId { get; private set; }
     public string Title { get; private set; } = string.Empty;
-    public ProductCategory Category { get; private set; }
     public string? Brand { get; private set; }
     public string? Model { get; private set; }
     public decimal? PackageQuantity { get; private set; }
@@ -25,69 +28,74 @@ public sealed class OfferProductLine : BaseEntity
     public decimal RequiredQuantity { get; private set; }
     public decimal OptionalQuantity { get; private set; }
     public OfferProductPriceSelection? PriceSelection { get; private set; }
-    public IReadOnlyCollection<OfferProductContribution> Contributions => _contributions;
 
-    public static OfferProductLine Create(Offer offer, Product product)
+    internal static OfferProductLine Create(
+        Offer offer,
+        OfferProductRequirement requirement,
+        Product product)
     {
         ArgumentNullException.ThrowIfNull(offer);
+        ArgumentNullException.ThrowIfNull(requirement);
         ArgumentNullException.ThrowIfNull(product);
 
-        return new OfferProductLine
+        var line = new OfferProductLine
         {
             Id = Guid.NewGuid(),
             Offer = offer,
             OfferId = offer.Id,
-            Product = product,
-            ProductId = product.Id,
-            ProductNumberId = product.NumberId,
-            Title = product.Title,
-            Category = product.Category,
-            Brand = product.Brand,
-            Model = product.Model,
-            PackageQuantity = product.PackageQuantity,
-            PackageUnit = product.PackageUnit
+            OfferProductRequirement = requirement,
+            OfferProductRequirementId = requirement.Id
         };
+        line.ReplaceProduct(requirement, product);
+        return line;
     }
 
-    public OfferProductContribution AddContribution(
-        OfferActivitySection section,
-        ActivityProductRequirement sourceRequirement)
+    internal void ReplaceProduct(
+        OfferProductRequirement requirement,
+        Product product)
     {
-        if (sourceRequirement.ProductId != ProductId)
+        if (requirement.Id != OfferProductRequirementId)
         {
-            throw new InvalidOperationException("The requirement references another product.");
+            throw new InvalidOperationException("The product line belongs to another requirement.");
+        }
+        if (ProductId == product.Id)
+        {
+            return;
+        }
+        if (product.ProductTypeId != requirement.ProductTypeId)
+        {
+            throw new InvalidOperationException(
+                "The selected product does not belong to the requirement product type.");
         }
 
-        var contribution = OfferProductContribution.Create(
-            section,
-            this,
-            sourceRequirement);
-        _contributions.Add(contribution);
-        section.AddContribution(contribution);
-        RecalculateTotals();
-        return contribution;
-    }
-
-    public void RemoveContribution(OfferProductContribution contribution)
-    {
-        if (!_contributions.Remove(contribution))
+        var changed = ProductId != Guid.Empty;
+        Product = product;
+        ProductId = product.Id;
+        ProductTypeId = requirement.ProductTypeId;
+        ProductTypeName = requirement.ProductTypeName;
+        CategoryId = requirement.CategoryId;
+        CategoryName = requirement.CategoryName;
+        ProductNumberId = product.NumberId;
+        Title = product.Title;
+        Brand = product.Brand;
+        Model = product.Model;
+        PackageQuantity = product.PackageQuantity;
+        PackageUnit = product.PackageUnit;
+        SyncQuantity(requirement);
+        if (changed)
         {
-            throw new InvalidOperationException("The contribution does not belong to this product line.");
+            ClearPriceSelection();
         }
-
-        RecalculateTotals();
     }
 
-    public void RecalculateTotals()
+    internal void SyncQuantity(OfferProductRequirement requirement)
     {
-        RequiredQuantity = OfferQuantity.RoundCalculated(
-            _contributions
-                .Where(contribution => contribution.IsRequired)
-                .Sum(contribution => contribution.CalculatedQuantity));
-        OptionalQuantity = OfferQuantity.RoundCalculated(
-            _contributions
-                .Where(contribution => !contribution.IsRequired)
-                .Sum(contribution => contribution.CalculatedQuantity));
+        RequiredQuantity = requirement.IsRequired
+            ? OfferQuantity.RoundCalculated(requirement.CalculatedQuantity)
+            : 0m;
+        OptionalQuantity = requirement.IsRequired
+            ? 0m
+            : OfferQuantity.RoundCalculated(requirement.CalculatedQuantity);
     }
 
     internal void SelectPrice(
@@ -97,7 +105,8 @@ public sealed class OfferProductLine : BaseEntity
         DateTimeOffset selectedAt,
         string selectedBy)
     {
-        _ = CalculatePriceTotal(RequiredQuantity, observation.Amount, observation.Basis);
+        var quantity = RequiredQuantity > 0m ? RequiredQuantity : OptionalQuantity;
+        _ = CalculatePriceTotal(quantity, observation.Amount, observation.Basis);
         PriceSelection = OfferProductPriceSelection.Create(
             this,
             comparison,

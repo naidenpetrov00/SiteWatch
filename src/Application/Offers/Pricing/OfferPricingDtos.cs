@@ -25,10 +25,14 @@ public sealed record OfferPricingRetailerDto(
 /// <summary>Represents one Product row in an Offer pricing matrix.</summary>
 public sealed record OfferPricingProductRowDto(
     Guid OfferProductLineId,
+    Guid OfferProductRequirementId,
     Guid ProductId,
     int ProductNumberId,
     string Title,
-    string Category,
+    Guid ProductTypeId,
+    string ProductTypeName,
+    Guid CategoryId,
+    string CategoryName,
     string? Brand,
     string? Model,
     decimal? PackageQuantity,
@@ -41,7 +45,7 @@ public sealed record OfferPricingProductRowDto(
     OfferSelectedPriceDto? SelectedPrice,
     IReadOnlyList<OfferRetailerPriceCellDto> RetailerPrices);
 
-/// <summary>Explains one Activity requirement contributing to an aggregate Product row.</summary>
+/// <summary>Identifies the Activity requirement represented by one Product row.</summary>
 public sealed record OfferPricingRequirementDto(
     Guid Id,
     Guid OfferActivityId,

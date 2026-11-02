@@ -29,7 +29,6 @@ import {
   ActivityProductRequirement,
   ActivityRequirementSection
 } from '../../models/activity-catalog.models';
-import { PRODUCT_PACKAGE_UNIT_OPTIONS } from '../../../products/models/dashboard-product.models';
 import { ActivityCatalogService } from '../../services/activity-catalog.service';
 import { getActivityCatalogError } from '../../utils/activity-catalog-error';
 
@@ -90,9 +89,6 @@ export class ActivityRequirementsComponent {
       data: {
         activityId: activity.id,
         sectionId: section.id,
-        excludedProductIds: section.productRequirements.map(
-          (current) => current.productId
-        ),
         requirement
       }
     });
@@ -157,8 +153,8 @@ export class ActivityRequirementsComponent {
     const count = section.productRequirements.length;
     const confirmed = await this.confirm({
       title: 'Delete Requirement Section',
-      subtitle: `${count} product ${count === 1 ? 'relationship' : 'relationships'} will be removed.`,
-      message: `Delete ${this.sectionHeading(section)}? Product Catalog entries will not be deleted.`,
+      subtitle: `${count} Product Type ${count === 1 ? 'requirement' : 'requirements'} will be removed.`,
+      message: `Delete ${this.sectionHeading(section)}? Product Types will not be deleted.`,
       confirmLabel: 'Delete Section'
     });
     if (!confirmed) return;
@@ -174,10 +170,10 @@ export class ActivityRequirementsComponent {
     requirement: ActivityProductRequirement
   ): Promise<void> {
     const confirmed = await this.confirm({
-      title: 'Remove Product Requirement',
-      subtitle: 'The Product Catalog entry will be retained.',
-      message: `Remove #${requirement.productNumberId} — ${requirement.productTitle} from this section?`,
-      confirmLabel: 'Remove Product'
+      title: 'Remove Product Type Requirement',
+      subtitle: 'The Product Type will be retained.',
+      message: `Remove ${requirement.productTypeName} in ${requirement.categoryName} from this section?`,
+      confirmLabel: 'Remove Requirement'
     });
     if (!confirmed) return;
 
@@ -195,23 +191,6 @@ export class ActivityRequirementsComponent {
       section.measurementUnit,
       section.basisQuantity
     )}`;
-  }
-
-  productIdentity(requirement: ActivityProductRequirement): string {
-    return [requirement.brand, requirement.model].filter(Boolean).join(' · ');
-  }
-
-  packageDescription(requirement: ActivityProductRequirement): string {
-    if (
-      requirement.packageQuantity === null ||
-      requirement.packageUnit === null
-    ) {
-      return 'Package not specified';
-    }
-    const unit = PRODUCT_PACKAGE_UNIT_OPTIONS.find(
-      (option) => option.value === requirement.packageUnit
-    );
-    return `${requirement.packageQuantity} ${unit?.label ?? requirement.packageUnit}`;
   }
 
   private measurementSymbol(unitCode: string, quantity: number): string {

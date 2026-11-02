@@ -5,7 +5,7 @@
   </div>
   <mat-form-field appearance="outline" class="offer-pricing__retailer-search">
     <mat-label>Add retailer</mat-label>
-    <input matInput [formControl]="retailerSearch()" [matAutocomplete]="retailerAutocomplete" autocomplete="off" inputmode="search" placeholder="Search active retailers" />
+    <input name="offer-pricing-retailer-search" matInput [formControl]="retailerSearch()" [matAutocomplete]="retailerAutocomplete" autocomplete="off" inputmode="search" placeholder="Search active retailers" />
     <mat-hint>Choose which retailers become comparison columns.</mat-hint>
   </mat-form-field>
   <mat-autocomplete #retailerAutocomplete="matAutocomplete" [displayWith]="displayRetailer" (optionSelected)="selectRetailer($event)">

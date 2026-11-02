@@ -86,7 +86,7 @@ describe('DashboardProductsService', () => {
 function productRequest() {
   return {
     title: 'Cordless Drill', description: null, brand: 'Bosch', model: 'GSB 18V',
-    packageQuantity: 1, packageUnit: 'piece' as const, category: 'tools-equipment' as const,
+    packageQuantity: 1, packageUnit: 'piece' as const, productTypeId: 'product-type-1',
     status: 'Active' as const, primarySearchPhrase: null, alternativeSearchPhrases: [],
     requiredKeywords: [], excludedKeywords: []
   };

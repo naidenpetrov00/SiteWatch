@@ -16,7 +16,8 @@ public sealed partial class DashboardProductsQuery
     public string? NumberId { get; set; }
     public string? Id { get; set; }
     public string? Title { get; set; }
-    public string? Category { get; set; }
+    public string? CategoryId { get; set; }
+    public string? ProductTypeId { get; set; }
     public string? Brand { get; set; }
     public string? Model { get; set; }
     public string? PackageQuantity { get; set; }
@@ -33,6 +34,8 @@ public sealed class DashboardProductsQueryHandler(IApplicationDbContext dbContex
     {
         var result = await dbContext.Products
             .AsNoTracking()
+            .Include(product => product.ProductType)
+            .ThenInclude(productType => productType.Category)
             .ToPagedResultAsync<Product, Product, DashboardProductsQuery>(
                 request,
                 DashboardProductsQuery.Table,

@@ -12,6 +12,8 @@ public interface IApplicationDbContext
     DbSet<SiteVideo> SiteVideos { get; }
     DbSet<Camera> Cameras { get; }
     DbSet<Person> Persons { get; }
+    DbSet<Category> Categories { get; }
+    DbSet<ProductType> ProductTypes { get; }
     DbSet<Product> Products { get; }
     DbSet<Retailer> Retailers { get; }
     DbSet<RetailerListing> RetailerListings { get; }
@@ -31,7 +33,7 @@ public interface IApplicationDbContext
     DbSet<Offer> Offers { get; }
     DbSet<OfferActivity> OfferActivities { get; }
     DbSet<OfferActivitySection> OfferActivitySections { get; }
-    DbSet<OfferProductContribution> OfferProductContributions { get; }
+    DbSet<OfferProductRequirement> OfferProductRequirements { get; }
     DbSet<OfferProductLine> OfferProductLines { get; }
     DbSet<OfferRetailerComparison> OfferRetailerComparisons { get; }
     DbSet<OfferProductPriceSelection> OfferProductPriceSelections { get; }

@@ -32,6 +32,7 @@
               matInput
               type="email"
               formControlName="email"
+              name="login-email"
               autocomplete="email"
               inputmode="email"
             />
@@ -49,6 +50,7 @@
               matInput
               type="password"
               formControlName="password"
+              name="login-password"
               autocomplete="current-password"
             />
             @if (passwordControl.touched && passwordControl.hasError('required')) {

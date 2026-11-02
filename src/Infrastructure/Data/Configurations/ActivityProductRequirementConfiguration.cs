@@ -32,17 +32,12 @@ public sealed class ActivityProductRequirementConfiguration
             .WithMany(section => section.ProductRequirements)
             .HasForeignKey(requirement => requirement.SectionId)
             .OnDelete(DeleteBehavior.Cascade);
-        builder.HasOne(requirement => requirement.Product)
+        builder.HasOne(requirement => requirement.ProductType)
             .WithMany()
-            .HasForeignKey(requirement => requirement.ProductId)
+            .HasForeignKey(requirement => requirement.ProductTypeId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(requirement => new
-            {
-                requirement.SectionId,
-                requirement.ProductId
-            })
-            .IsUnique();
+        builder.HasIndex(requirement => requirement.ProductTypeId);
         builder.HasIndex(requirement => new
             {
                 requirement.SectionId,

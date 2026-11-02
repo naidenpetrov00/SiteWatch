@@ -8,7 +8,7 @@ import { DashboardSite } from '../../models/dashboard-site.model';
 import { DashboardSitesService } from '../../services/dashboard-sites.service';
 import { EditSiteDialogComponent } from './edit-site-dialog.component';
 
-const site: DashboardSite = { id: 'site-42', numberId: 42, name: 'House 42', address: '42 Main Street', managerId: 'manager-1', managerDisplayName: 'Ada Lovelace', startDate: '2026-03-03', endDate: null, status: 'Planning', mediaPolicy: { preset: 'HouseBuild', categories: ['Design', 'Foundation', 'Structure', 'Other'] } };
+const site: DashboardSite = { id: 'site-42', numberId: 42, name: 'House 42', address: '42 Main Street', managerId: 'manager-1', managerDisplayName: 'Ada Lovelace', startDate: '2026-03-03', endDate: null, status: 'Planning', isCompanyStock: false, mediaPolicy: { preset: 'HouseBuild', categories: ['Design', 'Foundation', 'Structure', 'Other'] } };
 
 describe('EditSiteDialogComponent', () => {
   const sitesService = { updateSiteMutation: { isPending: () => false }, updateSite: vi.fn() };
@@ -27,7 +27,7 @@ describe('EditSiteDialogComponent', () => {
     component.siteForm.patchValue({ status: 'Scheduled' });
     await component.saveSite();
     expect(component.savedCategories).toEqual(site.mediaPolicy.categories);
-    expect(sitesService.updateSite).toHaveBeenCalledWith({ id: 'site-42', name: 'House 42', address: '42 Main Street', managerId: 'manager-2', startDate: '2026-03-03', endDate: null, status: 'Scheduled', mediaPolicyPreset: 'HouseBuild', mediaCategoriesToAdd: ['HVAC Controls'] });
+    expect(sitesService.updateSite).toHaveBeenCalledWith({ id: 'site-42', name: 'House 42', address: '42 Main Street', managerId: 'manager-2', primaryClientUserId: null, startDate: '2026-03-03', endDate: null, status: 'Scheduled', isCompanyStock: false, mediaPolicyPreset: 'HouseBuild', mediaCategoriesToAdd: ['HVAC Controls'] });
     expect(dialogRef.close).toHaveBeenCalledWith(true);
   });
   it('renders the formatted policy and no remove control for saved categories', async () => {

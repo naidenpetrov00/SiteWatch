@@ -4,6 +4,7 @@ using Application.Offers.Finalization;
 using Application.Offers.Queries;
 using Application.Offers.Pricing;
 using Application.RetailerPriceCollections;
+using Application.Products.Queries;
 using Application.SeedWork.Models;
 using Application.SeedWork.Security;
 using MediatR;
@@ -72,6 +73,32 @@ public sealed class Offers : EndpointGroupBase
             .WithSummary("Replace every section measurement for a selected Offer activity")
             .Produces(StatusCodes.Status204NoContent)
             .ProducesValidationProblem()
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict);
+        group.MapGet(
+                "/{offerId:guid}/requirements/{offerRequirementId:guid}/product-candidates",
+                GetRequirementProductCandidates)
+            .WithName("GetOfferRequirementProductCandidates")
+            .WithSummary("Search active Products matching an Offer Product Requirement")
+            .Produces<IReadOnlyList<ProductLookupDto>>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict);
+        group.MapPut(
+                "/{offerId:guid}/requirements/{offerRequirementId:guid}/product-line",
+                SelectRequirementProduct)
+            .WithName("SelectOfferRequirementProduct")
+            .WithSummary("Select or replace the Product for an Offer Product Requirement")
+            .Produces<OfferProductLineDto>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict);
+        group.MapDelete(
+                "/{offerId:guid}/requirements/{offerRequirementId:guid}/product-line",
+                ClearRequirementProduct)
+            .WithName("ClearOfferRequirementProduct")
+            .WithSummary("Clear the Product selected for an Offer Product Requirement")
+            .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status409Conflict);
         group.MapPut(
@@ -301,6 +328,49 @@ public sealed class Offers : EndpointGroupBase
         command.OfferId = offerId;
         command.OfferActivityId = offerActivityId;
         await mediator.Send(command, cancellationToken);
+        return TypedResults.NoContent();
+    }
+
+    private static async Task<Ok<IReadOnlyList<ProductLookupDto>>>
+        GetRequirementProductCandidates(
+            IMediator mediator,
+            Guid siteId,
+            Guid offerId,
+            Guid offerRequirementId,
+            string? searchTerm,
+            CancellationToken cancellationToken) =>
+        TypedResults.Ok(await mediator.Send(
+            new OfferRequirementProductCandidatesQuery(
+                siteId,
+                offerId,
+                offerRequirementId,
+                searchTerm),
+            cancellationToken));
+
+    private static async Task<Ok<OfferProductLineDto>> SelectRequirementProduct(
+        IMediator mediator,
+        Guid siteId,
+        Guid offerId,
+        Guid offerRequirementId,
+        SelectOfferRequirementProductCommand command,
+        CancellationToken cancellationToken)
+    {
+        command.SiteId = siteId;
+        command.OfferId = offerId;
+        command.OfferRequirementId = offerRequirementId;
+        return TypedResults.Ok(await mediator.Send(command, cancellationToken));
+    }
+
+    private static async Task<NoContent> ClearRequirementProduct(
+        IMediator mediator,
+        Guid siteId,
+        Guid offerId,
+        Guid offerRequirementId,
+        CancellationToken cancellationToken)
+    {
+        await mediator.Send(
+            new ClearOfferRequirementProductCommand(siteId, offerId, offerRequirementId),
+            cancellationToken);
         return TypedResults.NoContent();
     }
 

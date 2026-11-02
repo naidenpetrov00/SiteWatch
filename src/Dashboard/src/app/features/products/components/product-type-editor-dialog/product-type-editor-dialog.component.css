@@ -1,0 +1,8 @@
+.product-type-editor { display: grid; gap: 1rem; padding-top: 1rem; }
+.product-type-editor mat-form-field { width: 100%; }
+.product-type-editor__category-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: .75rem; }
+.product-type-editor__category-row button { margin-top: .5rem; }
+.product-type-editor__warning { margin: 0; padding: .75rem; border-left: 4px solid #b45309; background: #fffbeb; color: #92400e; }
+.product-type-editor__error { color: #b91c1c; margin: 0; }
+.product-type-editor__status { margin: 0; color: rgba(15, 23, 42, .66); }
+@media (max-width: 38rem) { .product-type-editor__category-row { grid-template-columns: 1fr; } .product-type-editor__category-row button { margin-top: 0; } }

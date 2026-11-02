@@ -24,7 +24,7 @@
           <div class="issue-dialog__details">
             <mat-form-field appearance="outline">
               <mat-label>Site</mat-label>
-              <input
+              <input name="issue-site-search"
                 matInput
                 [formControl]="siteSearchControl"
                 [matAutocomplete]="siteAutocomplete"
@@ -50,7 +50,7 @@
 
             <mat-form-field appearance="outline">
               <mat-label>Title</mat-label>
-              <input matInput formControlName="title" maxlength="200" />
+              <input name="issue-dialog-title" matInput formControlName="title" maxlength="200"  autocomplete="off"/>
               @if (issueForm.controls.title.touched && issueForm.controls.title.invalid) {
                 <mat-error>Title is required and must be at most 200 characters.</mat-error>
               }
@@ -74,11 +74,13 @@
             </mat-form-field>
 
             <app-datepicker
+              name="issue-start-date"
               [control]="issueForm.controls.startDate"
               label="Start date"
               [showRequiredError]="false"
             />
             <app-datepicker
+              name="issue-end-date"
               [control]="issueForm.controls.endDate"
               label="End date"
               [showRequiredError]="false"
@@ -92,7 +94,7 @@
             <div class="issue-dialog__workers issue-dialog__full-width">
               <mat-form-field appearance="outline">
                 <mat-label>Assigned workers</mat-label>
-                <input
+                <input name="issue-worker-search"
                   matInput
                   [formControl]="workerSearchControl"
                   [matAutocomplete]="workerAutocomplete"

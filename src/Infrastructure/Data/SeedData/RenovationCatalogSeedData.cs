@@ -12,6 +12,21 @@ public sealed class RenovationCatalogSeedData(
     ILogger<RenovationCatalogSeedData> logger)
 {
     private const string SeededBy = "System";
+    private static readonly string[] CategoryNames =
+    [
+        "Building Construction",
+        "Tools Equipment",
+        "Electrical Lighting",
+        "Plumbing HVAC",
+        "Hardware Fasteners",
+        "Paints Finishes",
+        "Safety Security",
+        "Cleaning Maintenance",
+        "Fixtures Appliances",
+        "Outdoor Landscaping",
+        "Office General Supplies",
+        "Other"
+    ];
     private const decimal HistoricalPriceFactor = 0.80m;
     private static readonly DateTimeOffset BaselineObservedAt =
         new(2026, 6, 1, 9, 0, 0, TimeSpan.Zero);
@@ -21,6 +36,7 @@ public sealed class RenovationCatalogSeedData(
     public async Task SeedAsync()
     {
         var definitions = CreateDefinitions();
+        var productTypes = await EnsureProductTypesAsync(definitions);
         var retailerNameKeys = definitions
             .Select(definition => Retailer.NormalizeNameKey(definition.RetailerName))
             .Distinct(StringComparer.Ordinal)
@@ -71,7 +87,7 @@ public sealed class RenovationCatalogSeedData(
                         definition.Model,
                         definition.PackageQuantity,
                         definition.PackageUnit,
-                        definition.Category,
+                        productTypes[(definition.CategoryName, definition.ProductTypeName)],
                         ProductStatus.Active,
                         definition.SearchConfiguration);
                     ApplyAuditMetadata(product);
@@ -134,6 +150,51 @@ public sealed class RenovationCatalogSeedData(
             createdObservationCount);
     }
 
+    private async Task<Dictionary<(string CategoryName, string ProductTypeName), ProductType>>
+        EnsureProductTypesAsync(IReadOnlyCollection<CatalogDefinition> definitions)
+    {
+        var categories = await dbContext.Categories.ToListAsync();
+        foreach (var name in CategoryNames)
+        {
+            var normalized = name.ToUpperInvariant();
+            if (categories.Any(category => category.NormalizedName == normalized))
+            {
+                continue;
+            }
+
+            var category = Category.Create(name);
+            ApplyAuditMetadata(category);
+            dbContext.Categories.Add(category);
+            categories.Add(category);
+        }
+        await dbContext.SaveChangesAsync();
+
+        var productTypes = await dbContext.ProductTypes
+            .Include(productType => productType.Category)
+            .ToListAsync();
+        foreach (var definition in definitions
+                     .DistinctBy(item => (item.CategoryName, item.ProductTypeName)))
+        {
+            var category = categories.Single(item => item.Name == definition.CategoryName);
+            var normalizedName = definition.ProductTypeName.ToUpperInvariant();
+            if (productTypes.Any(item => item.CategoryId == category.Id
+                && item.NormalizedName == normalizedName))
+            {
+                continue;
+            }
+
+            var productType = ProductType.Create(category, definition.ProductTypeName);
+            ApplyAuditMetadata(productType);
+            dbContext.ProductTypes.Add(productType);
+            productTypes.Add(productType);
+        }
+        await dbContext.SaveChangesAsync();
+
+        return productTypes.ToDictionary(
+            item => (item.Category.Name, item.Name),
+            item => item);
+    }
+
     private static List<CatalogDefinition> CreateDefinitions() =>
     [
         new(
@@ -144,7 +205,8 @@ public sealed class RenovationCatalogSeedData(
             null,
             1m,
             ProductPackageUnit.Set,
-            ProductCategory.ToolsEquipment,
+            "Tools Equipment",
+            "Laminate Installation Kit",
             ProductSearchConfiguration.Create(
                 "KWB комплект за монтаж на паркет и ламинат",
                 ["KWB laminate parquet installation kit"],
@@ -161,7 +223,8 @@ public sealed class RenovationCatalogSeedData(
             "Aqua Treviso Oak EL2191",
             1.9948m,
             ProductPackageUnit.SquareMeter,
-            ProductCategory.BuildingConstruction,
+            "Building Construction",
+            "Laminate Flooring",
             ProductSearchConfiguration.Create(
                 "EGGER Aqua дъб Тревисо EL2191 ламинат 8 мм 1.9948 m2",
                 ["EGGER Aqua Treviso Oak EL2191 laminate pack"],
@@ -178,7 +241,8 @@ public sealed class RenovationCatalogSeedData(
             "5 mm / 15 m2",
             15m,
             ProductPackageUnit.SquareMeter,
-            ProductCategory.BuildingConstruction,
+            "Building Construction",
+            "Laminate Underlay",
             ProductSearchConfiguration.Create(
                 "полиетиленова подложка за ламинат 5 мм 15 m2 пакет",
                 ["laminate underlay 5 mm 15 m2 pack"],
@@ -195,7 +259,8 @@ public sealed class RenovationCatalogSeedData(
             null,
             1m,
             ProductPackageUnit.Piece,
-            ProductCategory.ToolsEquipment,
+            "Tools Equipment",
+            "Paint Roller",
             ProductSearchConfiguration.Create(
                 "Color Expert валяк полиестер 12 см 12 мм Ф30 мм",
                 ["Color Expert polyester paint roller 12 cm"],
@@ -212,7 +277,8 @@ public sealed class RenovationCatalogSeedData(
             "G1 41",
             15m,
             ProductPackageUnit.Kilogram,
-            ProductCategory.PaintsFinishes,
+            "Paints Finishes",
+            "Gypsum Filler",
             ProductSearchConfiguration.Create(
                 "GLOBUS G1 41 гипсова шпакловка 15 кг",
                 ["GLOBUS G1 41 gypsum filler 15 kg"],
@@ -229,7 +295,8 @@ public sealed class RenovationCatalogSeedData(
             "HydroBlocker WRC Coating",
             5m,
             ProductPackageUnit.Kilogram,
-            ProductCategory.BuildingConstruction,
+            "Building Construction",
+            "Waterproofing Membrane",
             ProductSearchConfiguration.Create(
                 "TKK HydroBlocker WRC Coating хидроизолация 5 kg",
                 ["TKK HydroBlocker WRC 5 kg waterproofing"],
@@ -246,7 +313,8 @@ public sealed class RenovationCatalogSeedData(
             "Romani Beige 30.3 x 60.6 cm",
             1.84m,
             ProductPackageUnit.SquareMeter,
-            ProductCategory.BuildingConstruction,
+            "Building Construction",
+            "Porcelain Tile",
             ProductSearchConfiguration.Create(
                 "IZIDA ROMANI BEIGE гранитогрес 30.3x60.6 1.84 m2",
                 ["IZIDA Romani Beige porcelain tile 30.3 x 60.6 cm"],
@@ -263,7 +331,8 @@ public sealed class RenovationCatalogSeedData(
             "CE 40 Jasmine 40",
             5m,
             ProductPackageUnit.Kilogram,
-            ProductCategory.BuildingConstruction,
+            "Building Construction",
+            "Grout",
             ProductSearchConfiguration.Create(
                 "Ceresit CE 40 жасмин 40 фугираща смес 5 кг",
                 ["Ceresit CE 40 Jasmine grout 5 kg"],
@@ -280,7 +349,8 @@ public sealed class RenovationCatalogSeedData(
             "80 x 200 x 7 cm Left",
             1m,
             ProductPackageUnit.Set,
-            ProductCategory.FixturesAppliances,
+            "Fixtures Appliances",
+            "Interior Door Set",
             ProductSearchConfiguration.Create(
                 "MODULATO MDF врата с каса 80x200x7 см лява",
                 ["MODULATO MDF interior door set 80 x 200 x 7 cm left"],
@@ -297,7 +367,8 @@ public sealed class RenovationCatalogSeedData(
             "G4 25 GRUND",
             5m,
             ProductPackageUnit.Liter,
-            ProductCategory.PaintsFinishes,
+            "Paints Finishes",
+            "Primer",
             ProductSearchConfiguration.Create(
                 "GLOBUS G4 25 GRUND дълбокопроникващ грунд 5 л",
                 ["GLOBUS G4 25 primer 5 L"],
@@ -314,7 +385,8 @@ public sealed class RenovationCatalogSeedData(
             "Интерин бял",
             15m,
             ProductPackageUnit.Liter,
-            ProductCategory.PaintsFinishes,
+            "Paints Finishes",
+            "Interior Paint",
             ProductSearchConfiguration.Create(
                 "Леко Интерин бял латекс 15 л",
                 ["LEKO Interin white interior paint 15 L"],
@@ -331,7 +403,8 @@ public sealed class RenovationCatalogSeedData(
             "G5 53",
             750m,
             ProductPackageUnit.Milliliter,
-            ProductCategory.BuildingConstruction,
+            "Building Construction",
+            "Polyurethane Foam",
             ProductSearchConfiguration.Create(
                 "GLOBUS G5 53 пистолетна полиуретанова пяна 750 мл",
                 ["GLOBUS G5 53 gun foam 750 ml"],
@@ -348,7 +421,8 @@ public sealed class RenovationCatalogSeedData(
             "G1 56 FLEX",
             25m,
             ProductPackageUnit.Kilogram,
-            ProductCategory.BuildingConstruction,
+            "Building Construction",
+            "Tile Adhesive",
             ProductSearchConfiguration.Create(
                 "GLOBUS G1 56 FLEX гъвкаво лепило за фаянс и керамика 25 кг",
                 ["GLOBUS FLEX tile adhesive 25 kg"],
@@ -365,7 +439,8 @@ public sealed class RenovationCatalogSeedData(
             "CM 11 Plus Gres",
             25m,
             ProductPackageUnit.Kilogram,
-            ProductCategory.BuildingConstruction,
+            "Building Construction",
+            "Tile Adhesive",
             ProductSearchConfiguration.Create(
                 "Ceresit CM 11 Plus Gres лепило за плочки 25 кг",
                 ["Ceresit CM 11 Plus tile adhesive 25 kg"],
@@ -382,7 +457,8 @@ public sealed class RenovationCatalogSeedData(
             "CM 11 Plus Gres",
             25m,
             ProductPackageUnit.Kilogram,
-            ProductCategory.BuildingConstruction,
+            "Building Construction",
+            "Tile Adhesive",
             ProductSearchConfiguration.Create(
                 "Ceresit CM 11 Plus Gres лепило за плочки 25 кг",
                 ["Ceresit CM 11 Plus tile adhesive 25 kg"],
@@ -399,7 +475,8 @@ public sealed class RenovationCatalogSeedData(
             "CS 25 White",
             280m,
             ProductPackageUnit.Milliliter,
-            ProductCategory.BuildingConstruction,
+            "Building Construction",
+            "Sanitary Silicone",
             ProductSearchConfiguration.Create(
                 "Ceresit CS 25 бял санитарен силикон 280 мл",
                 ["Ceresit CS 25 white sanitary silicone 280 ml"],
@@ -416,7 +493,8 @@ public sealed class RenovationCatalogSeedData(
             "CS 25 White",
             280m,
             ProductPackageUnit.Milliliter,
-            ProductCategory.BuildingConstruction,
+            "Building Construction",
+            "Sanitary Silicone",
             ProductSearchConfiguration.Create(
                 "Ceresit CS 25 бял санитарен силикон 280 мл",
                 ["Ceresit CS 25 white sanitary silicone 280 ml"],
@@ -444,7 +522,8 @@ public sealed class RenovationCatalogSeedData(
         string? Model,
         decimal PackageQuantity,
         ProductPackageUnit PackageUnit,
-        ProductCategory Category,
+        string CategoryName,
+        string ProductTypeName,
         ProductSearchConfiguration SearchConfiguration,
         string ProductUrl,
         string RetailerProductCode,

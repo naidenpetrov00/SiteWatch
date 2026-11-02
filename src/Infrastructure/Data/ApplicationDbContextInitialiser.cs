@@ -459,6 +459,12 @@ public class ApplicationDbContextInitialiser(
         return amounts;
     }
 
+    private async Task SeedProductAndActivityCatalogsAsync()
+    {
+        await renovationCatalogSeedData.SeedAsync();
+        await activityCatalogSeedData.SeedAsync();
+    }
+
     public async Task InitializeDatabaseAsync()
     {
         try
@@ -497,8 +503,7 @@ public class ApplicationDbContextInitialiser(
             await AddIssues();
             var persons = await personSeedData.SeedAsync();
             await retailerSeedData.SeedAsync(persons);
-            await renovationCatalogSeedData.SeedAsync();
-            await activityCatalogSeedData.SeedAsync();
+            await SeedProductAndActivityCatalogsAsync();
             await retailerExtractionProfileSeedData.SeedAsync(persons);
             var invoiceCount = blobInitializer.GetRequiredSeedInvoiceCount();
             await AddInvoices(persons, invoiceCount);

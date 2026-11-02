@@ -63,6 +63,17 @@ export class OfferWorkspacePage {
   readonly offerId = input.required<string>();
   readonly offer = computed(() => this.offersService.offerDetailsQuery.data());
   readonly pricing = computed(() => this.offersService.pricingMatrixQuery.data());
+  readonly pricingState = computed<'loading' | 'ready' | 'error'>(() => {
+    if (this.pricing()) return 'ready';
+    return this.offersService.pricingMatrixQuery.isError() ? 'error' : 'loading';
+  });
+  readonly selectedPriceByProductLineId = computed<ReadonlyMap<string, boolean>>(
+    () => new Map(
+      this.pricing()?.products.map(
+        (row) => [row.offerProductLineId, row.selectedPrice !== null] as const
+      ) ?? []
+    )
+  );
   readonly isDraft = computed(() => this.offer()?.status === 'Draft');
   readonly pricingMatrix = viewChild(OfferPricingMatrixComponent);
   readonly commercialSummary = viewChild(OfferCommercialSummaryComponent);
@@ -219,7 +230,9 @@ export class OfferWorkspacePage {
 
   onActivityAdded(): void {
     this.pageError.set(null);
-    this.pageMessage.set('Activity added and product requirements recalculated.');
+    this.pageMessage.set(
+      'Activity requirements were snapshotted. Select an exact Product for each requirement.'
+    );
   }
 
   async createProposal(): Promise<void> {
