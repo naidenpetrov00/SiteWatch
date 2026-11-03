@@ -16,6 +16,7 @@ public interface IApplicationDbContext
     DbSet<ProductType> ProductTypes { get; }
     DbSet<Product> Products { get; }
     DbSet<Retailer> Retailers { get; }
+    DbSet<DefaultOfferRetailer> DefaultOfferRetailers { get; }
     DbSet<RetailerListing> RetailerListings { get; }
     DbSet<RetailerPriceObservation> RetailerPriceObservations { get; }
     DbSet<RetailerExtractionProfile> RetailerExtractionProfiles { get; }

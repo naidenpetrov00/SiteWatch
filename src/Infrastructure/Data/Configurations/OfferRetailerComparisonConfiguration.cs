@@ -16,6 +16,7 @@ public sealed class OfferRetailerComparisonConfiguration
         builder.Property(comparison => comparison.RetailerBaseWebsiteUrl)
             .HasMaxLength(2048)
             .IsRequired();
+        builder.Property(comparison => comparison.SortOrder).IsRequired();
 
         builder.HasOne(comparison => comparison.Offer)
             .WithMany(offer => offer.RetailerComparisons)

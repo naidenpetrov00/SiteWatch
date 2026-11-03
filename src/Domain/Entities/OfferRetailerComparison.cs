@@ -14,11 +14,13 @@ public sealed class OfferRetailerComparison : BaseEntity
     public Retailer Retailer { get; private set; } = null!;
     public string RetailerDisplayName { get; private set; } = string.Empty;
     public string RetailerBaseWebsiteUrl { get; private set; } = string.Empty;
+    public int SortOrder { get; private set; }
 
-    public static OfferRetailerComparison Create(Offer offer, Retailer retailer)
+    public static OfferRetailerComparison Create(Offer offer, Retailer retailer, int sortOrder)
     {
         ArgumentNullException.ThrowIfNull(offer);
         ArgumentNullException.ThrowIfNull(retailer);
+        ArgumentOutOfRangeException.ThrowIfNegative(sortOrder);
 
         return new OfferRetailerComparison
         {
@@ -28,7 +30,8 @@ public sealed class OfferRetailerComparison : BaseEntity
             Retailer = retailer,
             RetailerId = retailer.Id,
             RetailerDisplayName = retailer.DisplayName,
-            RetailerBaseWebsiteUrl = retailer.BaseWebsiteUrl
+            RetailerBaseWebsiteUrl = retailer.BaseWebsiteUrl,
+            SortOrder = sortOrder
         };
     }
 }

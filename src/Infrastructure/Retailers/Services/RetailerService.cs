@@ -8,6 +8,7 @@ using Domain.SeedWork.Enums;
 using FluentValidation;
 using FluentValidation.Results;
 using Infrastructure.Data;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Retailers.Services;
@@ -77,6 +78,13 @@ public sealed class RetailerService(ApplicationDbContext dbContext) : IRetailerS
         ExecuteMutationAsync(
             async () =>
             {
+                List<DefaultOfferRetailer> defaultRetailers = isActive
+                    ? []
+                    : await dbContext.DefaultOfferRetailers
+                        .Include(item => item.Retailer)
+                        .OrderBy(item => item.SortOrder)
+                        .ThenBy(item => item.Id)
+                        .ToListAsync(cancellationToken);
                 var retailer = await dbContext.Retailers
                     .SingleOrDefaultAsync(item => item.Id == id, cancellationToken);
                 Guard.Against.NotFound(id, retailer);
@@ -88,6 +96,20 @@ public sealed class RetailerService(ApplicationDbContext dbContext) : IRetailerS
                 else
                 {
                     retailer.Deactivate();
+                    if (defaultRetailers.Any(item => item.RetailerId == id))
+                    {
+                        var remainingRetailers = defaultRetailers
+                            .Where(item => item.RetailerId != id && item.Retailer.IsActive)
+                            .Select(item => item.Retailer)
+                            .ToList();
+
+                        dbContext.DefaultOfferRetailers.RemoveRange(defaultRetailers);
+                        await dbContext.SaveChangesAsync(cancellationToken);
+
+                        dbContext.DefaultOfferRetailers.AddRange(
+                            remainingRetailers.Select((item, sortOrder) =>
+                                DefaultOfferRetailer.Create(item, sortOrder)));
+                    }
                 }
             },
             "The retailer status could not be changed.",
@@ -194,6 +216,11 @@ public sealed class RetailerService(ApplicationDbContext dbContext) : IRetailerS
             return result;
         }
         catch (DbUpdateException exception)
+        {
+            await transaction.RollbackAsync(CancellationToken.None);
+            throw new RetailerConflictException(persistenceConflictMessage, exception);
+        }
+        catch (SqlException exception) when (exception.Number is 1205 or 1222)
         {
             await transaction.RollbackAsync(CancellationToken.None);
             throw new RetailerConflictException(persistenceConflictMessage, exception);

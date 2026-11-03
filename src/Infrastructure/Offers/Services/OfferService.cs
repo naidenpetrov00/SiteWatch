@@ -31,7 +31,19 @@ public sealed class OfferService(ApplicationDbContext dbContext, IUser user) : I
             throw new NotFoundException(nameof(Site), siteId.ToString());
         }
 
+        var defaultRetailers = await dbContext.DefaultOfferRetailers
+            .Include(item => item.Retailer)
+            .Where(item => item.Retailer.IsActive)
+            .OrderBy(item => item.SortOrder)
+            .ThenBy(item => item.Id)
+            .ToListAsync(cancellationToken);
+
         var offer = Offer.Create(site);
+        foreach (var defaultRetailer in defaultRetailers)
+        {
+            offer.AddRetailer(defaultRetailer.Retailer);
+        }
+
         SetAuditValues(offer, isNew: true);
         dbContext.Offers.Add(offer);
         await dbContext.SaveChangesAsync(cancellationToken);

@@ -206,7 +206,10 @@ public sealed class Offer : BaseAuditableEntity, IHasNumberId, IAgregateRoot
             throw new InvalidOperationException("The retailer is already compared by this offer.");
         }
 
-        var comparison = OfferRetailerComparison.Create(this, retailer);
+        var sortOrder = _retailerComparisons.Count == 0
+            ? 0
+            : checked(_retailerComparisons.Max(item => item.SortOrder) + 1);
+        var comparison = OfferRetailerComparison.Create(this, retailer, sortOrder);
         _retailerComparisons.Add(comparison);
         return comparison;
     }

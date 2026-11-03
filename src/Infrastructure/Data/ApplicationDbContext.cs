@@ -22,6 +22,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<ProductType> ProductTypes => Set<ProductType>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Retailer> Retailers => Set<Retailer>();
+    public DbSet<DefaultOfferRetailer> DefaultOfferRetailers => Set<DefaultOfferRetailer>();
     public DbSet<RetailerListing> RetailerListings => Set<RetailerListing>();
     public DbSet<RetailerPriceObservation> RetailerPriceObservations =>
         Set<RetailerPriceObservation>();

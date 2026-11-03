@@ -107,6 +107,7 @@ public static class DependencyInjection
         services.AddScoped<IRetailerPriceCollectionProcessor, RetailerPriceCollectionProcessor>();
         services.AddScoped<IActivityCatalogService, ActivityCatalogService>();
         services.AddScoped<IActivityRequirementService, ActivityRequirementService>();
+        services.AddScoped<IDefaultOfferRetailerService, DefaultOfferRetailerService>();
         services.AddScoped<IOfferService, OfferService>();
         services.AddScoped<IOfferPricingService, OfferPricingService>();
         services.AddScoped<ProposalPdfRenderer>();

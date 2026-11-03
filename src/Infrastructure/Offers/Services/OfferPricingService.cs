@@ -361,7 +361,8 @@ public sealed class OfferPricingService(
         var listingsByPair = listings.ToDictionary(
             item => (item.ProductId, item.RetailerId));
         var retailers = offer.RetailerComparisons
-            .OrderBy(item => item.RetailerDisplayName)
+            .OrderBy(item => item.SortOrder)
+            .ThenBy(item => item.RetailerDisplayName)
             .ThenBy(item => item.RetailerId)
             .Select(item => new OfferPricingRetailerDto(
                 item.RetailerId,
