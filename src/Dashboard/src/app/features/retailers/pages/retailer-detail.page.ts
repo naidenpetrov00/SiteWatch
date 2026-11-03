@@ -25,6 +25,7 @@ import {
   RetailerStatusConfirmDialogData
 } from '../components/retailer-status-confirm-dialog/retailer-status-confirm-dialog.component';
 import { DashboardRetailersService } from '../services/dashboard-retailers.service';
+import { OfferDefaultRetailersService } from '../services/offer-default-retailers.service';
 import { getRetailerError } from '../utils/retailer-error';
 
 @Component({
@@ -42,6 +43,7 @@ import { getRetailerError } from '../utils/retailer-error';
 })
 export class RetailerDetailPage {
   private readonly retailersService = inject(DashboardRetailersService);
+  private readonly offerDefaultsService = inject(OfferDefaultRetailersService);
   private readonly dialog = inject(MatDialog);
 
   readonly retailerId = input.required<string>();
@@ -109,7 +111,15 @@ export class RetailerDetailPage {
       restoreFocus: true,
       width: '32rem',
       maxWidth: 'calc(100vw - 2rem)',
-      data: { displayName: retailer.displayName, activate }
+      data: {
+        displayName: retailer.displayName,
+        activate,
+        removesFromOfferDefaults:
+          !activate &&
+          (this.offerDefaultsService.defaultsQuery.data()?.some(
+            (defaultRetailer) => defaultRetailer.retailerId === retailer.id
+          ) ?? false)
+      }
     });
     if (!(await firstValueFrom(confirmRef.afterClosed()))) return;
 

@@ -1,0 +1,174 @@
+<section class="offer-defaults" aria-labelledby="offer-defaults-title">
+  <header class="offer-defaults__header">
+    <div>
+      <p class="offer-defaults__eyebrow">New Offers</p>
+      <h2 id="offer-defaults-title">Default Offer Retailers</h2>
+      <p class="offer-defaults__summary">
+        These ordered retailers are added when a new Offer is created. Changing defaults does not
+        change existing Offers, and retailers can still be added or removed in each Offer's pricing
+        matrix.
+      </p>
+    </div>
+    <p class="offer-defaults__count" role="status" aria-live="polite">
+      @if (defaultsService.defaultsQuery.isPending()) {
+        Loading configuration
+      } @else if (isInitialLoadError()) {
+        Configuration unavailable
+      } @else {
+        {{ configuredCount() }} of 3 configured
+      }
+    </p>
+  </header>
+
+  @if (defaultsService.defaultsQuery.isPending()) {
+    <div class="offer-defaults__loading" role="status" aria-live="polite">
+      <mat-spinner diameter="32" />
+      <span>Loading default Offer retailers…</span>
+    </div>
+  } @else if (isInitialLoadError()) {
+    <div class="offer-defaults__feedback offer-defaults__feedback--error" role="alert">
+      <span>Default Offer retailers could not be loaded. Retailer management remains available.</span>
+      <button mat-button type="button" (click)="retryLoad()">Retry</button>
+    </div>
+  } @else {
+    <form class="offer-defaults__form" novalidate (ngSubmit)="save()">
+      @if (serverStateChanged()) {
+        <div class="offer-defaults__feedback offer-defaults__feedback--warning" role="alert">
+          <span>The defaults changed while you were editing. Reload the current configuration before saving.</span>
+          <button mat-button type="button" (click)="reloadServerState()">Reload defaults</button>
+        </div>
+      }
+
+      <ol class="offer-defaults__slots" aria-label="Ordered default retailer slots">
+        @for (control of slotControls; track $index; let slotIndex = $index) {
+          <li class="offer-defaults__slot">
+            <div class="offer-defaults__slot-heading">
+              <div>
+                <span class="offer-defaults__slot-number">Slot {{ slotIndex + 1 }}</span>
+                <strong>{{ selectedAt(slotIndex)?.displayName ?? 'Not configured' }}</strong>
+              </div>
+              @if (selectedAt(slotIndex); as selected) {
+                <a
+                  class="offer-defaults__website"
+                  [href]="selected.baseWebsiteUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  [attr.aria-label]="'Open ' + selected.displayName + ' website in a new tab'"
+                >
+                  {{ selected.websiteHost }}
+                </a>
+              }
+            </div>
+
+            <mat-form-field appearance="outline" class="offer-defaults__search">
+              <mat-label>{{ selectedAt(slotIndex) ? 'Replace retailer' : 'Choose retailer' }}</mat-label>
+              <input
+                matInput
+                inputmode="search"
+                autocomplete="off"
+                [attr.name]="'default-offer-retailer-' + (slotIndex + 1)"
+                [formControl]="control"
+                [matAutocomplete]="retailerAutocomplete"
+                [readonly]="defaultsService.replaceMutation.isPending() || serverStateChanged()"
+                [placeholder]="control.disabled ? 'Configure the previous slot first' : 'Search active retailers'"
+                (blur)="restoreEmptyInput(slotIndex)"
+              />
+              <mat-hint>
+                @if (control.disabled) {
+                  Configure the previous slot first.
+                } @else {
+                  Search by retailer name or website.
+                }
+              </mat-hint>
+              @if (control.touched && control.invalid) {
+                <mat-error>Select an active retailer from the results.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-autocomplete
+              #retailerAutocomplete="matAutocomplete"
+              [displayWith]="displayRetailer"
+              [autoActiveFirstOption]="true"
+              (optionSelected)="onRetailerSelected(slotIndex, $event)"
+            >
+              @if (isSearchLoading(slotIndex)) {
+                <mat-option disabled>Searching active retailers…</mat-option>
+              } @else if (searchErrorAt(slotIndex)) {
+                <mat-option disabled>Active retailers could not be searched.</mat-option>
+              } @else if (hasSearchedAt(slotIndex) && resultsAt(slotIndex).length === 0) {
+                <mat-option disabled>No matching unselected active retailers found.</mat-option>
+              } @else {
+                @for (retailer of resultsAt(slotIndex); track retailer.id) {
+                  <mat-option [value]="retailer">
+                    <strong>{{ retailer.displayName }}</strong>
+                    <span class="offer-defaults__option-detail">{{ retailer.websiteHost }}</span>
+                  </mat-option>
+                }
+              }
+            </mat-autocomplete>
+
+            @if (searchErrorAt(slotIndex); as lookupError) {
+              <p class="offer-defaults__slot-error" role="alert">{{ lookupError }}</p>
+            }
+
+            <div class="offer-defaults__slot-actions">
+              <button
+                mat-button
+                type="button"
+                [disabled]="!canMoveUp(slotIndex) || defaultsService.replaceMutation.isPending() || serverStateChanged()"
+                [attr.aria-label]="'Move slot ' + (slotIndex + 1) + ' retailer up'"
+                (click)="move(slotIndex, -1)"
+              >
+                Move up
+              </button>
+              <button
+                mat-button
+                type="button"
+                [disabled]="!canMoveDown(slotIndex) || defaultsService.replaceMutation.isPending() || serverStateChanged()"
+                [attr.aria-label]="'Move slot ' + (slotIndex + 1) + ' retailer down'"
+                (click)="move(slotIndex, 1)"
+              >
+                Move down
+              </button>
+              <button
+                mat-button
+                type="button"
+                [disabled]="!selectedAt(slotIndex) || defaultsService.replaceMutation.isPending() || serverStateChanged()"
+                [attr.aria-label]="'Remove slot ' + (slotIndex + 1) + ' retailer'"
+                (click)="remove(slotIndex)"
+              >
+                Remove
+              </button>
+            </div>
+          </li>
+        }
+      </ol>
+
+      @if (saveMessage()) {
+        <p class="offer-defaults__feedback offer-defaults__feedback--success" role="status" aria-live="polite">
+          {{ saveMessage() }}
+        </p>
+      }
+      @if (saveError()) {
+        <p class="offer-defaults__feedback offer-defaults__feedback--error" role="alert">
+          {{ saveError() }}
+        </p>
+      }
+      @if (defaultsService.defaultsQuery.isError() && defaultsService.defaultsQuery.data()) {
+        <div class="offer-defaults__feedback offer-defaults__feedback--warning" role="alert">
+          <span>The latest defaults could not be refreshed. Refresh them before saving.</span>
+          <button mat-button type="button" (click)="retryLoad()">Retry</button>
+        </div>
+      }
+
+      <div class="offer-defaults__form-actions">
+        <button mat-flat-button type="submit" [disabled]="!canSave()">
+          {{ defaultsService.replaceMutation.isPending() ? 'Saving…' : 'Save defaults' }}
+        </button>
+        @if (hasChanges() && !serverStateChanged()) {
+          <span aria-live="polite">Unsaved changes</span>
+        }
+      </div>
+    </form>
+  }
+</section>

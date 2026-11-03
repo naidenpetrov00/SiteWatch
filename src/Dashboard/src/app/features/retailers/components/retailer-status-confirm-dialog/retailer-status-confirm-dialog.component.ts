@@ -7,6 +7,7 @@ import { DialogShellComponent } from '../../../../shared/ui/dialog-shell/dialog-
 export interface RetailerStatusConfirmDialogData {
   displayName: string;
   activate: boolean;
+  removesFromOfferDefaults: boolean;
 }
 
 @Component({
@@ -20,6 +21,11 @@ export class RetailerStatusConfirmDialogComponent {
     MatDialogRef<RetailerStatusConfirmDialogComponent>
   );
   readonly data = inject<RetailerStatusConfirmDialogData>(MAT_DIALOG_DATA);
+  readonly subtitle = this.data.activate
+    ? 'The retailer will become available to future listing and offer workflows.'
+    : this.data.removesFromOfferDefaults
+      ? 'The retailer will be removed from defaults for future Offers. Existing Offers remain unchanged.'
+      : 'The retailer remains available for historical references and administration.';
 
   cancel(): void {
     this.dialogRef.close(false);

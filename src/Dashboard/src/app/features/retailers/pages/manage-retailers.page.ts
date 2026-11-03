@@ -14,6 +14,7 @@ import {
   DataTableState
 } from '../../../shared/data-table/data-table.types';
 import { ActionButtonComponent } from '../../../shared/ui/action-button/action-button.component';
+import { DefaultOfferRetailersComponent } from '../components/default-offer-retailers/default-offer-retailers.component';
 import { RetailerDialogComponent } from '../components/retailer-dialog/retailer-dialog.component';
 import {
   RetailerStatusConfirmDialogComponent,
@@ -21,17 +22,24 @@ import {
 } from '../components/retailer-status-confirm-dialog/retailer-status-confirm-dialog.component';
 import { DashboardRetailer } from '../models/dashboard-retailer.models';
 import { DashboardRetailersService } from '../services/dashboard-retailers.service';
+import { OfferDefaultRetailersService } from '../services/offer-default-retailers.service';
 import { getRetailerError } from '../utils/retailer-error';
 
 @Component({
   selector: 'app-manage-retailers-page',
-  imports: [ActionButtonComponent, DataTableComponent, MatDialogModule],
+  imports: [
+    ActionButtonComponent,
+    DataTableComponent,
+    DefaultOfferRetailersComponent,
+    MatDialogModule
+  ],
   templateUrl: './manage-retailers.page.html',
   styleUrl: './manage-retailers.page.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ManageRetailersPage {
   private readonly retailersService = inject(DashboardRetailersService);
+  private readonly offerDefaultsService = inject(OfferDefaultRetailersService);
   private readonly dialog = inject(MatDialog);
 
   readonly retailers = signal<readonly DashboardRetailer[]>([]);
@@ -160,7 +168,15 @@ export class ManageRetailersPage {
       ariaLabel: `${activate ? 'Activate' : 'Deactivate'} ${retailer.displayName}`,
       width: '32rem',
       maxWidth: 'calc(100vw - 2rem)',
-      data: { displayName: retailer.displayName, activate }
+      data: {
+        displayName: retailer.displayName,
+        activate,
+        removesFromOfferDefaults:
+          !activate &&
+          (this.offerDefaultsService.defaultsQuery.data()?.some(
+            (defaultRetailer) => defaultRetailer.retailerId === retailer.id
+          ) ?? false)
+      }
     });
     if (!(await firstValueFrom(dialogRef.afterClosed()))) {
       return;

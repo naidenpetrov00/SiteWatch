@@ -19,6 +19,7 @@ import {
   UpdateDashboardRetailerRequest
 } from '../models/dashboard-retailer.models';
 import { retailerExtractionProfileKeys } from './retailer-extraction-profiles.service';
+import { offerDefaultRetailerKeys } from './offer-default-retailers.service';
 
 interface CreateDashboardRetailerResponse {
   id: string;
@@ -106,6 +107,10 @@ export class DashboardRetailersService {
       await Promise.all([
         this.invalidateRetailerLists(),
         this.queryClient.invalidateQueries({
+          queryKey: offerDefaultRetailerKeys.all,
+          exact: true
+        }),
+        this.queryClient.invalidateQueries({
           queryKey: ['retailers', 'detail', request.id],
           exact: true
         }),
@@ -138,6 +143,10 @@ export class DashboardRetailersService {
         : undefined;
       await Promise.all([
         this.invalidateRetailerLists(),
+        this.queryClient.invalidateQueries({
+          queryKey: offerDefaultRetailerKeys.all,
+          exact: true
+        }),
         this.queryClient.invalidateQueries({
           queryKey: ['retailers', 'detail', request.id],
           exact: true

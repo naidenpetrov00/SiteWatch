@@ -1,13 +1,17 @@
 <app-dialog-shell
   eyebrow="Retailer Status"
   [title]="data.activate ? 'Activate Retailer' : 'Deactivate Retailer'"
-  [subtitle]="data.activate
-    ? 'The retailer will become available to future listing and offer workflows.'
-    : 'The retailer remains available for historical references and administration.'"
+  [subtitle]="subtitle"
 >
   <p>
     {{ data.activate ? 'Activate' : 'Deactivate' }} {{ data.displayName }}?
   </p>
+
+  @if (!data.activate && data.removesFromOfferDefaults) {
+    <p>
+      Existing Offers retain their snapshotted retailer comparisons.
+    </p>
+  }
 
   <app-dialog-action-bar
     dialog-shell-actions
