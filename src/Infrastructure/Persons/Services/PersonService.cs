@@ -177,12 +177,19 @@ public sealed class PersonService(ApplicationDbContext dbContext) : IPersonServi
             person.AddAddress(
                 PersonAddress.Create(
                     person.Id,
-                    address.AddressLine,
-                    address.City,
-                    address.PostalCode,
                     address.Country,
-                    address.AdditionalLine,
-                    address.Details,
+                    address.Municipality,
+                    address.Settlement,
+                    address.District,
+                    address.Quarter,
+                    address.PostalCode,
+                    address.Street,
+                    address.Number,
+                    address.Building,
+                    address.Entrance,
+                    address.Floor,
+                    address.Apartment,
+                    address.AddressDetails,
                     address.IsPrimary,
                     address.IsActive
                 )
@@ -245,12 +252,19 @@ public sealed class PersonService(ApplicationDbContext dbContext) : IPersonServi
             addresses.Select(address =>
                 PersonAddress.Create(
                     personId,
-                    address.AddressLine,
-                    address.City,
-                    address.PostalCode,
                     address.Country,
-                    address.AdditionalLine,
-                    address.Details,
+                    address.Municipality,
+                    address.Settlement,
+                    address.District,
+                    address.Quarter,
+                    address.PostalCode,
+                    address.Street,
+                    address.Number,
+                    address.Building,
+                    address.Entrance,
+                    address.Floor,
+                    address.Apartment,
+                    address.AddressDetails,
                     address.IsPrimary,
                     address.IsActive
                 )

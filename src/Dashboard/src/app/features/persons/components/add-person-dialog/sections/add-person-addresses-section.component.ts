@@ -8,7 +8,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 
 import { AddPersonAddressesFormArray } from '../add-person-dialog.types';
-import { PersonInputSanitizerDirective } from '../directives/person-input-sanitizer.directive';
 
 @Component({
   selector: 'app-add-person-addresses-section',
@@ -19,8 +18,7 @@ import { PersonInputSanitizerDirective } from '../directives/person-input-saniti
     MatCheckboxModule,
     MatFormFieldModule,
     MatIconModule,
-    MatInputModule,
-    PersonInputSanitizerDirective
+    MatInputModule
   ],
   templateUrl: './add-person-addresses-section.component.html',
   styleUrl: './add-person-addresses-section.component.css',

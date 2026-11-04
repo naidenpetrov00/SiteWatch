@@ -39,83 +39,62 @@
           </div>
 
           <div class="add-person-addresses-section__grid" [formGroup]="addressGroup">
-            <mat-form-field
-              appearance="outline"
-              class="add-person-addresses-section__field add-person-addresses-section__field--full"
-            >
-              <mat-label>Address line</mat-label>
-                <input matInput formControlName="addressLine" name="person-address-line" autocomplete="street-address" maxlength="200" />
-              @if (addressGroup.controls.addressLine.touched && addressGroup.controls.addressLine.hasError('maxlength')) {
-                <mat-error>Address line must be at most 200 characters.</mat-error>
+            @for (field of [
+              { control: 'country', label: 'Country', autocomplete: 'country-name', maxlength: 100, size: 'full' },
+              { control: 'municipality', label: 'Municipality', autocomplete: 'off', maxlength: 100, size: 'third' },
+              { control: 'settlement', label: 'Settlement', autocomplete: 'address-level2', maxlength: 100, size: 'third' },
+              { control: 'postalCode', label: 'Postal code', autocomplete: 'postal-code', maxlength: 20, size: 'third' },
+              { control: 'district', label: 'District', autocomplete: 'off', maxlength: 100, size: 'half' },
+              { control: 'quarter', label: 'Quarter', autocomplete: 'off', maxlength: 100, size: 'half' },
+              { control: 'street', label: 'Street', autocomplete: 'street-address', maxlength: 200, size: 'eight' },
+              { control: 'number', label: 'Number', autocomplete: 'off', maxlength: 50, size: 'four' }
+            ]; track field.control) {
+              <mat-form-field
+                appearance="outline"
+                [class]="'add-person-addresses-section__field add-person-addresses-section__field--' + field.size"
+              >
+                <mat-label>{{ field.label }}</mat-label>
+                <input
+                  matInput
+                  [formControlName]="field.control"
+                  [attr.name]="'person-address-' + field.control + '-' + (index + 1)"
+                  [attr.autocomplete]="field.autocomplete"
+                  [attr.maxlength]="field.maxlength"
+                />
+                @if ($any(addressGroup.controls)[field.control].touched && $any(addressGroup.controls)[field.control].hasError('maxlength')) {
+                  <mat-error>{{ field.label }} must be at most {{ field.maxlength }} characters.</mat-error>
+                }
+              </mat-form-field>
+            }
+
+            <mat-form-field appearance="outline" class="add-person-addresses-section__field add-person-addresses-section__field--full">
+              <mat-label>Address details</mat-label>
+              <textarea matInput rows="3" formControlName="addressDetails" maxlength="500"></textarea>
+              @if (addressGroup.controls.addressDetails.touched && addressGroup.controls.addressDetails.hasError('maxlength')) {
+                <mat-error>Address details must be at most 500 characters.</mat-error>
               }
             </mat-form-field>
 
-            <mat-form-field
-              appearance="outline"
-              class="add-person-addresses-section__field add-person-addresses-section__field--full"
-            >
-              <mat-label>Additional line</mat-label>
-                <input matInput formControlName="additionalLine" name="person-address-additional-line" autocomplete="address-line2" minlength="1" maxlength="200" />
-              @if (addressGroup.controls.additionalLine.touched && addressGroup.controls.additionalLine.hasError('maxlength')) {
-                <mat-error>Additional line must be at most 200 characters.</mat-error>
-              }
-            </mat-form-field>
-
-            <mat-form-field
-              appearance="outline"
-              class="add-person-addresses-section__field add-person-addresses-section__field--third"
-            >
-              <mat-label>City</mat-label>
-                <input matInput formControlName="city" name="person-address-city" autocomplete="address-level2" minlength="1" maxlength="100" />
-              @if (addressGroup.controls.city.touched && addressGroup.controls.city.hasError('maxlength')) {
-                <mat-error>City must be at most 100 characters.</mat-error>
-              }
-            </mat-form-field>
-
-            <mat-form-field
-              appearance="outline"
-              class="add-person-addresses-section__field add-person-addresses-section__field--third"
-            >
-              <mat-label>Postal code</mat-label>
-              <input
-                matInput
-                appPersonInputSanitizer="digits"
-                formControlName="postalCode"
-                [attr.name]="'person-address-postal-code-' + (index + 1)"
-                autocomplete="postal-code"
-                inputmode="numeric"
-                minlength="1"
-                maxlength="20"
-              />
-              @if (addressGroup.controls.postalCode.touched && addressGroup.controls.postalCode.hasError('digitsOnly')) {
-                <mat-error>Postal code must contain digits only.</mat-error>
-              }
-              @if (addressGroup.controls.postalCode.touched && addressGroup.controls.postalCode.hasError('maxlength')) {
-                <mat-error>Postal code must be at most 20 digits.</mat-error>
-              }
-            </mat-form-field>
-
-            <mat-form-field
-              appearance="outline"
-              class="add-person-addresses-section__field add-person-addresses-section__field--third"
-            >
-              <mat-label>Country</mat-label>
-                <input matInput formControlName="country" name="person-address-country" autocomplete="country-name" minlength="1" maxlength="100" />
-              @if (addressGroup.controls.country.touched && addressGroup.controls.country.hasError('maxlength')) {
-                <mat-error>Country must be at most 100 characters.</mat-error>
-              }
-            </mat-form-field>
-
-            <mat-form-field
-              appearance="outline"
-              class="add-person-addresses-section__field add-person-addresses-section__field--full"
-            >
-              <mat-label>Details</mat-label>
-              <textarea matInput rows="3" formControlName="details" minlength="1" maxlength="500"></textarea>
-              @if (addressGroup.controls.details.touched && addressGroup.controls.details.hasError('maxlength')) {
-                <mat-error>Details must be at most 500 characters.</mat-error>
-              }
-            </mat-form-field>
+            @for (field of [
+              { control: 'building', label: 'Building', maxlength: 50 },
+              { control: 'entrance', label: 'Entrance', maxlength: 50 },
+              { control: 'floor', label: 'Floor', maxlength: 50 },
+              { control: 'apartment', label: 'Apartment', maxlength: 50 }
+            ]; track field.control) {
+              <mat-form-field appearance="outline" class="add-person-addresses-section__field add-person-addresses-section__field--third">
+                <mat-label>{{ field.label }}</mat-label>
+                <input
+                  matInput
+                  [formControlName]="field.control"
+                  [attr.name]="'person-address-' + field.control + '-' + (index + 1)"
+                  autocomplete="off"
+                  [attr.maxlength]="field.maxlength"
+                />
+                @if ($any(addressGroup.controls)[field.control].touched && $any(addressGroup.controls)[field.control].hasError('maxlength')) {
+                  <mat-error>{{ field.label }} must be at most {{ field.maxlength }} characters.</mat-error>
+                }
+              </mat-form-field>
+            }
 
             <div class="add-person-addresses-section__field add-person-addresses-section__field--checkbox">
               <mat-checkbox formControlName="isPrimary">Primary address</mat-checkbox>

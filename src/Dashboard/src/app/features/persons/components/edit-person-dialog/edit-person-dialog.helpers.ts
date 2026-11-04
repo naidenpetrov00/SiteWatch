@@ -81,26 +81,44 @@ export function createEditPersonAddressGroup(
   initialValue: DashboardPersonDetails['addresses'][number] | null = null
 ): AddPersonAddressFormGroup {
   return formBuilder.nonNullable.group({
-    addressLine: formBuilder.nonNullable.control(initialValue?.addressLine ?? '', {
-      validators: [Validators.maxLength(ADD_PERSON_VALIDATION_LIMITS.addressLine)]
-    }),
-    additionalLine: formBuilder.nonNullable.control(initialValue?.additionalLine ?? '', {
-      validators: [Validators.maxLength(ADD_PERSON_VALIDATION_LIMITS.additionalLine)]
-    }),
-    city: formBuilder.nonNullable.control(initialValue?.city ?? '', {
-      validators: [Validators.maxLength(ADD_PERSON_VALIDATION_LIMITS.city)]
-    }),
-    postalCode: formBuilder.nonNullable.control(initialValue?.postalCode ?? '', {
-      validators: [
-        digitsOnlyValidator(),
-        Validators.maxLength(ADD_PERSON_VALIDATION_LIMITS.postalCode)
-      ]
-    }),
-    country: formBuilder.nonNullable.control(initialValue?.country ?? '', {
+    country: formBuilder.nonNullable.control(initialValue?.country ?? 'Bulgaria', {
       validators: [Validators.maxLength(ADD_PERSON_VALIDATION_LIMITS.country)]
     }),
-    details: formBuilder.nonNullable.control(initialValue?.details ?? '', {
-      validators: [Validators.maxLength(ADD_PERSON_VALIDATION_LIMITS.details)]
+    municipality: formBuilder.nonNullable.control(initialValue?.municipality ?? '', {
+      validators: [Validators.maxLength(ADD_PERSON_VALIDATION_LIMITS.municipality)]
+    }),
+    settlement: formBuilder.nonNullable.control(initialValue?.settlement ?? '', {
+      validators: [Validators.maxLength(ADD_PERSON_VALIDATION_LIMITS.settlement)]
+    }),
+    district: formBuilder.nonNullable.control(initialValue?.district ?? '', {
+      validators: [Validators.maxLength(ADD_PERSON_VALIDATION_LIMITS.district)]
+    }),
+    quarter: formBuilder.nonNullable.control(initialValue?.quarter ?? '', {
+      validators: [Validators.maxLength(ADD_PERSON_VALIDATION_LIMITS.quarter)]
+    }),
+    postalCode: formBuilder.nonNullable.control(initialValue?.postalCode ?? '', {
+      validators: [Validators.maxLength(ADD_PERSON_VALIDATION_LIMITS.postalCode)]
+    }),
+    street: formBuilder.nonNullable.control(initialValue?.street ?? '', {
+      validators: [Validators.maxLength(ADD_PERSON_VALIDATION_LIMITS.street)]
+    }),
+    number: formBuilder.nonNullable.control(initialValue?.number ?? '', {
+      validators: [Validators.maxLength(ADD_PERSON_VALIDATION_LIMITS.number)]
+    }),
+    building: formBuilder.nonNullable.control(initialValue?.building ?? '', {
+      validators: [Validators.maxLength(ADD_PERSON_VALIDATION_LIMITS.building)]
+    }),
+    entrance: formBuilder.nonNullable.control(initialValue?.entrance ?? '', {
+      validators: [Validators.maxLength(ADD_PERSON_VALIDATION_LIMITS.entrance)]
+    }),
+    floor: formBuilder.nonNullable.control(initialValue?.floor ?? '', {
+      validators: [Validators.maxLength(ADD_PERSON_VALIDATION_LIMITS.floor)]
+    }),
+    apartment: formBuilder.nonNullable.control(initialValue?.apartment ?? '', {
+      validators: [Validators.maxLength(ADD_PERSON_VALIDATION_LIMITS.apartment)]
+    }),
+    addressDetails: formBuilder.nonNullable.control(initialValue?.addressDetails ?? '', {
+      validators: [Validators.maxLength(ADD_PERSON_VALIDATION_LIMITS.addressDetails)]
     }),
     isPrimary: formBuilder.nonNullable.control(initialValue?.isPrimary ?? false),
     isActive: formBuilder.nonNullable.control(initialValue?.isActive ?? true)
