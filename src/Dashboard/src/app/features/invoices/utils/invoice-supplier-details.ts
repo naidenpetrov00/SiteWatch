@@ -60,11 +60,19 @@ function pickSupplierAddress(supplier: DashboardPersonDetails): string | null {
 
   for (const address of addresses) {
     const parts = [
-      address.addressLine,
-      address.additionalLine ?? '',
-      address.city ?? '',
+      address.street ?? '',
+      address.number ?? '',
+      address.building ?? '',
+      address.entrance ?? '',
+      address.floor ?? '',
+      address.apartment ?? '',
+      address.quarter ?? '',
+      address.district ?? '',
+      address.settlement ?? '',
+      address.municipality ?? '',
       address.postalCode ?? '',
-      address.country ?? ''
+      address.country,
+      address.addressDetails ?? ''
     ]
       .map((part) => part.trim())
       .filter((part) => part.length > 0);

@@ -10,23 +10,23 @@ public class PersonAddressConfiguration : IEntityTypeConfiguration<PersonAddress
     {
         builder.ToTable("PersonAddresses");
 
-        builder.Property(address => address.AddressLine)
-            .HasMaxLength(200)
+        builder.Property(address => address.Country)
+            .HasMaxLength(100)
             .IsRequired();
 
-        builder.Property(address => address.AdditionalLine)
-            .HasMaxLength(200);
+        builder.Property(address => address.Municipality).HasMaxLength(100);
+        builder.Property(address => address.Settlement).HasMaxLength(100);
+        builder.Property(address => address.District).HasMaxLength(100);
+        builder.Property(address => address.Quarter).HasMaxLength(100);
+        builder.Property(address => address.PostalCode).HasMaxLength(20);
+        builder.Property(address => address.Street).HasMaxLength(200);
+        builder.Property(address => address.Number).HasMaxLength(50);
+        builder.Property(address => address.Building).HasMaxLength(50);
+        builder.Property(address => address.Entrance).HasMaxLength(50);
+        builder.Property(address => address.Floor).HasMaxLength(50);
+        builder.Property(address => address.Apartment).HasMaxLength(50);
 
-        builder.Property(address => address.City)
-            .HasMaxLength(100);
-
-        builder.Property(address => address.PostalCode)
-            .HasMaxLength(20);
-
-        builder.Property(address => address.Country)
-            .HasMaxLength(100);
-
-        builder.Property(address => address.Details)
+        builder.Property(address => address.AddressDetails)
             .HasMaxLength(500);
     }
 }

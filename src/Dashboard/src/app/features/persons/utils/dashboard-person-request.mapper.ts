@@ -16,12 +16,19 @@ import { DashboardPersonDetails } from '../models/dashboard-person-details.model
 import { UpdateDashboardPersonRequest } from '../models/update-dashboard-person-request.model';
 
 const ADDRESS_ROW_DEFAULTS = {
-  addressLine: '',
-  additionalLine: '',
-  city: '',
+  country: 'Bulgaria',
+  municipality: '',
+  settlement: '',
+  district: '',
+  quarter: '',
   postalCode: '',
-  country: '',
-  details: '',
+  street: '',
+  number: '',
+  building: '',
+  entrance: '',
+  floor: '',
+  apartment: '',
+  addressDetails: '',
   isPrimary: false,
   isActive: true
 } as const;
@@ -122,12 +129,19 @@ function buildAddressRequests(
     }
 
     requests.push({
-      addressLine: address.addressLine,
-      additionalLine: address.additionalLine,
-      city: address.city,
-      postalCode: address.postalCode,
       country: address.country,
-      details: address.details,
+      municipality: address.municipality,
+      settlement: address.settlement,
+      district: address.district,
+      quarter: address.quarter,
+      postalCode: address.postalCode,
+      street: address.street,
+      number: address.number,
+      building: address.building,
+      entrance: address.entrance,
+      floor: address.floor,
+      apartment: address.apartment,
+      addressDetails: address.addressDetails,
       isPrimary: address.isPrimary,
       isActive: address.isActive
     });

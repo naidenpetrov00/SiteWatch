@@ -65,19 +65,19 @@ public sealed class PersonSeedData(
             PersonType.Individual,
             "8001011234",
             () => Person.CreateIndividual("Ivan", "Petrov", "8001011234", "BG8001011234"),
-            new AddressDefinition("Vitosha Boulevard 1", "Sofia", "1000"),
+            new AddressDefinition("Vitosha Boulevard", "1", "Sofia", "1000"),
             "BG80BNBG96611020345678"),
         new(
             PersonType.Individual,
             "8502022345",
             () => Person.CreateIndividual("Maria", "Georgieva", "8502022345", "BG8502022345"),
-            new AddressDefinition("Tsarigradsko Shose 115", "Sofia", "1784"),
+            new AddressDefinition("Tsarigradsko Shose", "115", "Sofia", "1784"),
             "BG18RZBB91550123456789"),
         new(
             PersonType.Company,
             "123456789",
             () => Person.CreateCompany("SiteWatch Services", null, "123456789", "BG123456789"),
-            new AddressDefinition("Dondukov 11", "Sofia", "1000"),
+            new AddressDefinition("Dondukov", "11", "Sofia", "1000"),
             "BG03UNCR70001512345678"),
         new(
             PersonType.Company,
@@ -98,10 +98,11 @@ public sealed class PersonSeedData(
 
         var address = PersonAddress.Create(
             person.Id,
-            definition.AddressLine,
-            definition.City,
-            definition.PostalCode,
             "Bulgaria",
+            settlement: definition.Settlement,
+            postalCode: definition.PostalCode,
+            street: definition.Street,
+            number: definition.Number,
             isPrimary: true,
             isActive: true);
         ApplyAuditMetadata(address);
@@ -141,7 +142,8 @@ public sealed class PersonSeedData(
         string? Iban = null);
 
     private sealed record AddressDefinition(
-        string AddressLine,
-        string City,
+        string Street,
+        string Number,
+        string Settlement,
         string PostalCode);
 }
