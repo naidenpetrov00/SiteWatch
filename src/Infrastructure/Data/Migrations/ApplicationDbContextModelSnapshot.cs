@@ -693,6 +693,32 @@ namespace Infrastructure.Data.Migrations
                     b.ToTable("Categories", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.DefaultOfferRetailer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RetailerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RetailerId")
+                        .IsUnique();
+
+                    b.HasIndex("SortOrder")
+                        .IsUnique();
+
+                    b.ToTable("DefaultOfferRetailers", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_DefaultOfferRetailers_SortOrder", "[SortOrder] >= 0 AND [SortOrder] < 3");
+                        });
+                });
+
             modelBuilder.Entity("Domain.Entities.Invoice", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1336,6 +1362,9 @@ namespace Infrastructure.Data.Migrations
 
                     b.Property<Guid>("RetailerId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -3267,6 +3296,17 @@ namespace Infrastructure.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Site");
+                });
+
+            modelBuilder.Entity("Domain.Entities.DefaultOfferRetailer", b =>
+                {
+                    b.HasOne("Domain.Entities.Retailer", "Retailer")
+                        .WithMany()
+                        .HasForeignKey("RetailerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Retailer");
                 });
 
             modelBuilder.Entity("Domain.Entities.Invoice", b =>
