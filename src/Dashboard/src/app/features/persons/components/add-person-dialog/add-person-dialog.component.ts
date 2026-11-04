@@ -236,28 +236,44 @@ export class AddPersonDialogComponent implements OnInit {
   private createAddressGroup(): AddPersonAddressFormGroup {
     return this.formBuilder.nonNullable.group(
       {
-        addressLine: this.formBuilder.nonNullable.control('', {
-          validators: [Validators.maxLength(this.validationLimits.addressLine)]
-        }),
-        additionalLine: this.formBuilder.nonNullable.control('', {
-          validators: [
-            Validators.maxLength(this.validationLimits.additionalLine)
-          ]
-        }),
-        city: this.formBuilder.nonNullable.control('', {
-          validators: [Validators.maxLength(this.validationLimits.city)]
-        }),
-        postalCode: this.formBuilder.nonNullable.control('', {
-          validators: [
-            digitsOnlyValidator(),
-            Validators.maxLength(this.validationLimits.postalCode)
-          ]
-        }),
-        country: this.formBuilder.nonNullable.control('', {
+        country: this.formBuilder.nonNullable.control('Bulgaria', {
           validators: [Validators.maxLength(this.validationLimits.country)]
         }),
-        details: this.formBuilder.nonNullable.control('', {
-          validators: [Validators.maxLength(this.validationLimits.details)]
+        municipality: this.formBuilder.nonNullable.control('', {
+          validators: [Validators.maxLength(this.validationLimits.municipality)]
+        }),
+        settlement: this.formBuilder.nonNullable.control('', {
+          validators: [Validators.maxLength(this.validationLimits.settlement)]
+        }),
+        district: this.formBuilder.nonNullable.control('', {
+          validators: [Validators.maxLength(this.validationLimits.district)]
+        }),
+        quarter: this.formBuilder.nonNullable.control('', {
+          validators: [Validators.maxLength(this.validationLimits.quarter)]
+        }),
+        postalCode: this.formBuilder.nonNullable.control('', {
+          validators: [Validators.maxLength(this.validationLimits.postalCode)]
+        }),
+        street: this.formBuilder.nonNullable.control('', {
+          validators: [Validators.maxLength(this.validationLimits.street)]
+        }),
+        number: this.formBuilder.nonNullable.control('', {
+          validators: [Validators.maxLength(this.validationLimits.number)]
+        }),
+        building: this.formBuilder.nonNullable.control('', {
+          validators: [Validators.maxLength(this.validationLimits.building)]
+        }),
+        entrance: this.formBuilder.nonNullable.control('', {
+          validators: [Validators.maxLength(this.validationLimits.entrance)]
+        }),
+        floor: this.formBuilder.nonNullable.control('', {
+          validators: [Validators.maxLength(this.validationLimits.floor)]
+        }),
+        apartment: this.formBuilder.nonNullable.control('', {
+          validators: [Validators.maxLength(this.validationLimits.apartment)]
+        }),
+        addressDetails: this.formBuilder.nonNullable.control('', {
+          validators: [Validators.maxLength(this.validationLimits.addressDetails)]
         }),
         isPrimary: this.formBuilder.nonNullable.control(false),
         isActive: this.formBuilder.nonNullable.control(true)

@@ -20,12 +20,19 @@ public abstract record PersonUpsertDto
 
 public sealed record PersonAddressDto : IPrimaryState
 {
-    public string AddressLine { get; init; } = string.Empty;
-    public string? AdditionalLine { get; init; }
-    public string? City { get; init; }
+    public string Country { get; init; } = "Bulgaria";
+    public string? Municipality { get; init; }
+    public string? Settlement { get; init; }
+    public string? District { get; init; }
+    public string? Quarter { get; init; }
     public string? PostalCode { get; init; }
-    public string? Country { get; init; }
-    public string? Details { get; init; }
+    public string? Street { get; init; }
+    public string? Number { get; init; }
+    public string? Building { get; init; }
+    public string? Entrance { get; init; }
+    public string? Floor { get; init; }
+    public string? Apartment { get; init; }
+    public string? AddressDetails { get; init; }
     public bool IsActive { get; init; } = true;
     public bool IsPrimary { get; init; }
 }

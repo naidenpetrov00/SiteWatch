@@ -88,6 +88,18 @@
   grid-column: span 4;
 }
 
+.add-person-addresses-section__field--half {
+  grid-column: span 6;
+}
+
+.add-person-addresses-section__field--four {
+  grid-column: span 4;
+}
+
+.add-person-addresses-section__field--eight {
+  grid-column: span 8;
+}
+
 .add-person-addresses-section__field--checkbox {
   display: flex;
   align-items: center;
@@ -110,6 +122,9 @@
   }
 
   .add-person-addresses-section__field--third,
+  .add-person-addresses-section__field--half,
+  .add-person-addresses-section__field--four,
+  .add-person-addresses-section__field--eight,
   .add-person-addresses-section__field--checkbox {
     grid-column: span 12;
   }
@@ -122,6 +137,9 @@
 
   .add-person-addresses-section__field--full,
   .add-person-addresses-section__field--third,
+  .add-person-addresses-section__field--half,
+  .add-person-addresses-section__field--four,
+  .add-person-addresses-section__field--eight,
   .add-person-addresses-section__field--checkbox {
     grid-column: auto;
   }

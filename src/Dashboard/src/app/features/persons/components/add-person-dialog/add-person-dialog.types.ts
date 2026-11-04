@@ -37,12 +37,19 @@ export type AddPersonPhoneCountryCodeOption = '359' | '1' | '44' | '49';
 export type AddPersonWizardTabId = 'primary-info' | 'addresses' | 'contacts' | 'bank-accounts';
 
 export interface AddPersonAddressFormControls {
-  addressLine: FormControl<string>;
-  additionalLine: FormControl<string>;
-  city: FormControl<string>;
-  postalCode: FormControl<string>;
   country: FormControl<string>;
-  details: FormControl<string>;
+  municipality: FormControl<string>;
+  settlement: FormControl<string>;
+  district: FormControl<string>;
+  quarter: FormControl<string>;
+  postalCode: FormControl<string>;
+  street: FormControl<string>;
+  number: FormControl<string>;
+  building: FormControl<string>;
+  entrance: FormControl<string>;
+  floor: FormControl<string>;
+  apartment: FormControl<string>;
+  addressDetails: FormControl<string>;
   isPrimary: FormControl<boolean>;
   isActive: FormControl<boolean>;
 }

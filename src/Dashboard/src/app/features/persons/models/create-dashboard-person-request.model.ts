@@ -2,12 +2,19 @@ export type CreateDashboardPersonType = 0 | 1;
 export type CreateDashboardContactType = 0 | 1 | 2 | 3;
 
 export interface CreateDashboardPersonAddressRequest {
-  addressLine: string;
-  additionalLine?: string;
-  city?: string;
+  country: string;
+  municipality?: string;
+  settlement?: string;
+  district?: string;
+  quarter?: string;
   postalCode?: string;
-  country?: string;
-  details?: string;
+  street?: string;
+  number?: string;
+  building?: string;
+  entrance?: string;
+  floor?: string;
+  apartment?: string;
+  addressDetails?: string;
   isPrimary: boolean;
   isActive: boolean;
 }

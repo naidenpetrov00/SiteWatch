@@ -363,11 +363,19 @@ public sealed class InvoiceService(ApplicationDbContext dbContext, IMapper mappe
                 Address = address,
                 Parts = new[]
                 {
-                    address.AddressLine,
-                    address.AdditionalLine,
-                    address.City,
+                    address.Street,
+                    address.Number,
+                    address.Building,
+                    address.Entrance,
+                    address.Floor,
+                    address.Apartment,
+                    address.Quarter,
+                    address.District,
+                    address.Settlement,
+                    address.Municipality,
                     address.PostalCode,
-                    address.Country
+                    address.Country,
+                    address.AddressDetails
                 }
                     .Select(value => value?.Trim())
                     .Where(value => !string.IsNullOrWhiteSpace(value))
