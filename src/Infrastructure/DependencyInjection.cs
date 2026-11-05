@@ -24,6 +24,7 @@ using Infrastructure.Proposals;
 using Infrastructure.SeedWork.Options;
 using Infrastructure.Sites.Services;
 using Infrastructure.Storage;
+using Infrastructure.TerritorialStructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -96,6 +97,7 @@ public static class DependencyInjection
         services.AddScoped<IPersonService, PersonService>();
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<IProductCatalogService, ProductCatalogService>();
+        services.AddScoped<ITerritorialStructureService, TerritorialStructureService>();
         services.AddScoped<IRetailerService, RetailerService>();
         services.AddScoped<RetailerListingWriter>();
         services.AddScoped<IRetailerListingService, RetailerListingService>();

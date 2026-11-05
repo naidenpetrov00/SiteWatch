@@ -14,10 +14,10 @@ public class PersonAddressConfiguration : IEntityTypeConfiguration<PersonAddress
             .HasMaxLength(100)
             .IsRequired();
 
-        builder.Property(address => address.Municipality).HasMaxLength(100);
-        builder.Property(address => address.Settlement).HasMaxLength(100);
-        builder.Property(address => address.District).HasMaxLength(100);
-        builder.Property(address => address.Quarter).HasMaxLength(100);
+        builder.HasOne(address => address.Municipality).WithMany().HasForeignKey(address => address.MunicipalityId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(address => address.Settlement).WithMany().HasForeignKey(address => address.SettlementId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(address => address.District).WithMany().HasForeignKey(address => address.DistrictId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(address => address.Quarter).WithMany().HasForeignKey(address => address.QuarterId).OnDelete(DeleteBehavior.Restrict);
         builder.Property(address => address.PostalCode).HasMaxLength(20);
         builder.Property(address => address.Street).HasMaxLength(200);
         builder.Property(address => address.Number).HasMaxLength(50);

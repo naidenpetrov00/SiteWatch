@@ -693,6 +693,48 @@ namespace Infrastructure.Data.Migrations
                     b.ToTable("Categories", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.District", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset>("LastModified")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("SettlementId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SettlementId", "NormalizedName")
+                        .IsUnique();
+
+                    b.ToTable("Districts", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Entities.Invoice", b =>
                 {
                     b.Property<Guid>("Id")
@@ -910,6 +952,45 @@ namespace Infrastructure.Data.Migrations
                     b.HasIndex("IssueId", "Created");
 
                     b.ToTable("IssueAttachments");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Municipality", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset>("LastModified")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique();
+
+                    b.ToTable("Municipalities", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.Offer", b =>
@@ -1460,9 +1541,8 @@ namespace Infrastructure.Data.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("District")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<Guid?>("DistrictId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Entrance")
                         .HasMaxLength(50)
@@ -1484,9 +1564,8 @@ namespace Infrastructure.Data.Migrations
                     b.Property<string>("LastModifiedBy")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Municipality")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<Guid?>("MunicipalityId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Number")
                         .HasMaxLength(50)
@@ -1499,13 +1578,11 @@ namespace Infrastructure.Data.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<string>("Quarter")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<Guid?>("QuarterId")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Settlement")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<Guid?>("SettlementId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Street")
                         .HasMaxLength(200)
@@ -1513,7 +1590,15 @@ namespace Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DistrictId");
+
+                    b.HasIndex("MunicipalityId");
+
                     b.HasIndex("PersonId");
+
+                    b.HasIndex("QuarterId");
+
+                    b.HasIndex("SettlementId");
 
                     b.ToTable("PersonAddresses", (string)null);
                 });
@@ -2151,6 +2236,48 @@ namespace Infrastructure.Data.Migrations
                     b.ToTable("ProposalProductLines", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.Quarter", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset>("LastModified")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("SettlementId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SettlementId", "NormalizedName")
+                        .IsUnique();
+
+                    b.ToTable("Quarters", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Entities.Retailer", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2682,6 +2809,48 @@ namespace Infrastructure.Data.Migrations
                         {
                             t.HasCheckConstraint("CK_RetailerPriceObservations_ExtractionProvenance", "([Source] = N'manual' AND [ExtractionProfileId] IS NULL AND [MatchedExtractionRuleId] IS NULL) OR ([Source] = N'automated' AND [ExtractionProfileId] IS NOT NULL AND [MatchedExtractionRuleId] IS NOT NULL)");
                         });
+                });
+
+            modelBuilder.Entity("Domain.Entities.Settlement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset>("LastModified")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("MunicipalityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MunicipalityId", "NormalizedName")
+                        .IsUnique();
+
+                    b.ToTable("Settlements", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.Site", b =>
@@ -3297,6 +3466,17 @@ namespace Infrastructure.Data.Migrations
                     b.Navigation("Site");
                 });
 
+            modelBuilder.Entity("Domain.Entities.District", b =>
+                {
+                    b.HasOne("Domain.Entities.Settlement", "Settlement")
+                        .WithMany()
+                        .HasForeignKey("SettlementId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Settlement");
+                });
+
             modelBuilder.Entity("Domain.Entities.Invoice", b =>
                 {
                     b.HasOne("Domain.Entities.Site", "SubmittedFromSite")
@@ -3478,13 +3658,41 @@ namespace Infrastructure.Data.Migrations
 
             modelBuilder.Entity("Domain.Entities.PersonAddress", b =>
                 {
+                    b.HasOne("Domain.Entities.District", "District")
+                        .WithMany()
+                        .HasForeignKey("DistrictId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Domain.Entities.Municipality", "Municipality")
+                        .WithMany()
+                        .HasForeignKey("MunicipalityId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Domain.Entities.Person", "Person")
                         .WithMany("Addresses")
                         .HasForeignKey("PersonId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Domain.Entities.Quarter", "Quarter")
+                        .WithMany()
+                        .HasForeignKey("QuarterId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Domain.Entities.Settlement", "Settlement")
+                        .WithMany()
+                        .HasForeignKey("SettlementId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("District");
+
+                    b.Navigation("Municipality");
+
                     b.Navigation("Person");
+
+                    b.Navigation("Quarter");
+
+                    b.Navigation("Settlement");
                 });
 
             modelBuilder.Entity("Domain.Entities.PersonBankAccount", b =>
@@ -3592,6 +3800,17 @@ namespace Infrastructure.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Proposal");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Quarter", b =>
+                {
+                    b.HasOne("Domain.Entities.Settlement", "Settlement")
+                        .WithMany()
+                        .HasForeignKey("SettlementId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Settlement");
                 });
 
             modelBuilder.Entity("Domain.Entities.Retailer", b =>
@@ -3741,6 +3960,17 @@ namespace Infrastructure.Data.Migrations
                     b.Navigation("MatchedExtractionRule");
 
                     b.Navigation("RetailerListing");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Settlement", b =>
+                {
+                    b.HasOne("Domain.Entities.Municipality", "Municipality")
+                        .WithMany()
+                        .HasForeignKey("MunicipalityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Municipality");
                 });
 
             modelBuilder.Entity("Domain.Entities.Site", b =>

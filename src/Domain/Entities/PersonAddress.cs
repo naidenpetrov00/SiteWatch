@@ -11,10 +11,10 @@ public sealed class PersonAddress : BaseAuditableEntity
     public static PersonAddress Create(
         Guid personId,
         string? country = null,
-        string? municipality = null,
-        string? settlement = null,
-        string? district = null,
-        string? quarter = null,
+        Guid? municipalityId = null,
+        Guid? settlementId = null,
+        Guid? districtId = null,
+        Guid? quarterId = null,
         string? postalCode = null,
         string? street = null,
         string? number = null,
@@ -31,10 +31,10 @@ public sealed class PersonAddress : BaseAuditableEntity
             Id = Guid.NewGuid(),
             PersonId = personId,
             Country = string.IsNullOrWhiteSpace(country) ? "Bulgaria" : country.Trim(),
-            Municipality = Normalize(municipality),
-            Settlement = Normalize(settlement),
-            District = Normalize(district),
-            Quarter = Normalize(quarter),
+            MunicipalityId = municipalityId,
+            SettlementId = settlementId,
+            DistrictId = districtId,
+            QuarterId = quarterId,
             PostalCode = Normalize(postalCode),
             Street = Normalize(street),
             Number = Normalize(number),
@@ -50,10 +50,14 @@ public sealed class PersonAddress : BaseAuditableEntity
 
     public Guid PersonId { get; private set; }
     public string Country { get; private set; } = null!;
-    public string? Municipality { get; private set; }
-    public string? Settlement { get; private set; }
-    public string? District { get; private set; }
-    public string? Quarter { get; private set; }
+    public Guid? MunicipalityId { get; private set; }
+    public Municipality? Municipality { get; private set; }
+    public Guid? SettlementId { get; private set; }
+    public Settlement? Settlement { get; private set; }
+    public Guid? DistrictId { get; private set; }
+    public District? District { get; private set; }
+    public Guid? QuarterId { get; private set; }
+    public Quarter? Quarter { get; private set; }
     public string? PostalCode { get; private set; }
     public string? Street { get; private set; }
     public string? Number { get; private set; }
