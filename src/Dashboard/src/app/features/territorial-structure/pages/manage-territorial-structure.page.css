@@ -6,14 +6,14 @@
 .territorial-page__error { margin: 0; color: var(--mat-sys-error); }
 .territorial-workspace { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(18rem, .65fr); min-height: 33rem; overflow: hidden; border: 1px solid var(--mat-sys-outline-variant); border-radius: .75rem; background: var(--mat-sys-surface); }
 .territorial-tree-panel { padding: .75rem; overflow: auto; }
-.territorial-tree, .territorial-tree__group { margin: 0; padding: 0; list-style: none; }
-.territorial-tree__item { margin: .125rem 0; }
-.territorial-tree__row { display: flex; align-items: center; min-height: 3.25rem; padding-left: calc(var(--depth) * 1.25rem); border-radius: .375rem; }
+.territorial-tree { display: block; background: transparent; }
+.territorial-tree__row { display: flex; flex: 1; align-items: center; min-width: 0; min-height: 3.25rem; border-radius: .375rem; cursor: pointer; }
+.territorial-tree__row:hover { background: var(--mat-sys-surface-container-low); }
+.territorial-tree__row:focus-within { outline: 2px solid var(--mat-sys-primary); outline-offset: -2px; }
 .territorial-tree__row--selected { background: var(--mat-sys-secondary-container); }
 .territorial-tree__row--inactive { opacity: .62; }
 .territorial-tree__expand, .territorial-tree__indent { flex: 0 0 2.5rem; width: 2.5rem; height: 2.5rem; }
-.territorial-tree__select { display: grid; flex: 1; gap: .125rem; padding: .5rem .75rem; border: 0; border-radius: .25rem; background: transparent; color: inherit; text-align: left; cursor: pointer; }
-.territorial-tree__select:hover { background: color-mix(in srgb, var(--mat-sys-secondary-container) 50%, transparent); }
+.territorial-tree__select { display: grid; flex: 1; min-width: 0; gap: .125rem; padding: .5rem .75rem; color: inherit; }
 .territorial-tree__select span { font-weight: 600; }
 .territorial-tree__select small { color: var(--mat-sys-on-surface-variant); }
 .territorial-details-panel { display: grid; align-content: start; gap: 1rem; padding: 1.5rem; border-left: 1px solid var(--mat-sys-outline-variant); background: var(--mat-sys-surface-container-low); }

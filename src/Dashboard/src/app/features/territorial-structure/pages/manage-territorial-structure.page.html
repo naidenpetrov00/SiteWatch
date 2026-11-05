@@ -11,11 +11,51 @@
 
   <section class="territorial-workspace">
     <section class="territorial-tree-panel" aria-label="Territorial structure">
-      @if (root(); as rootNode) {
-        <ul class="territorial-tree" role="tree" aria-label="Territorial structure">
-          <ng-container [ngTemplateOutlet]="treeNode" [ngTemplateOutletContext]="{ node: rootNode, depth: 0 }"></ng-container>
-        </ul>
-      }
+      <mat-tree
+        #territorialTree
+        class="territorial-tree"
+        aria-label="Territorial structure"
+        [dataSource]="treeNodes()"
+        [childrenAccessor]="childrenAccessor"
+        [expansionKey]="expansionKey"
+        [trackBy]="trackBy"
+      >
+        <mat-tree-node
+          *matTreeNodeDef="let node"
+          matTreeNodePadding
+          [cdkTreeNodeTypeaheadLabel]="node.name"
+          [attr.aria-selected]="selectedNodeId() === node.id"
+          (activation)="selectNode(node)"
+          (expandedChange)="expansionChanged(node, $event)"
+        >
+          <div
+            class="territorial-tree__row"
+            [class.territorial-tree__row--selected]="selectedNodeId() === node.id"
+            [class.territorial-tree__row--inactive]="node.kind !== 'country' && !node.isActive"
+            (click)="selectNode(node)"
+          >
+            @if (canExpand(node)) {
+              <button
+                mat-icon-button
+                matTreeNodeToggle
+                type="button"
+                class="territorial-tree__expand"
+                [disabled]="node.childrenLoading"
+                [attr.aria-label]="(isExpanded(node) ? 'Collapse ' : 'Expand ') + node.name"
+                (click)="$event.stopPropagation()"
+              >
+                <mat-icon>{{ node.childrenLoading ? 'hourglass_empty' : isExpanded(node) ? 'expand_more' : 'chevron_right' }}</mat-icon>
+              </button>
+            } @else {
+              <span class="territorial-tree__indent" aria-hidden="true"></span>
+            }
+            <span class="territorial-tree__select">
+              <span>{{ node.name }}</span>
+              <small>{{ typeLabel(node.kind) }}</small>
+            </span>
+          </div>
+        </mat-tree-node>
+      </mat-tree>
     </section>
 
     <aside class="territorial-details-panel" aria-live="polite">
@@ -57,19 +97,3 @@
     </aside>
   </section>
 </main>
-
-<ng-template #treeNode let-node="node" let-depth="depth">
-  <li class="territorial-tree__item" role="treeitem" [attr.aria-level]="depth + 1" [attr.aria-selected]="selectedNodeId() === node.id" [attr.aria-expanded]="node.children.length ? isExpanded(node) : null">
-    <div class="territorial-tree__row" [class.territorial-tree__row--selected]="selectedNodeId() === node.id" [class.territorial-tree__row--inactive]="node.kind !== 'country' && !node.isActive" [style.--depth]="depth">
-      @if (node.children.length) {
-        <button mat-icon-button type="button" class="territorial-tree__expand" [attr.aria-label]="(isExpanded(node) ? 'Collapse ' : 'Expand ') + node.name" (click)="toggleExpanded(node)"><mat-icon>{{ isExpanded(node) ? 'expand_more' : 'chevron_right' }}</mat-icon></button>
-      } @else { <span class="territorial-tree__indent" aria-hidden="true"></span> }
-      <button type="button" class="territorial-tree__select" (click)="selectNode(node)"><span>{{ node.name }}</span><small>{{ typeLabel(node.kind) }}</small></button>
-    </div>
-    @if (node.children.length && isExpanded(node)) {
-      <ul role="group" class="territorial-tree__group">
-        @for (child of node.children; track child.id) { <ng-container [ngTemplateOutlet]="treeNode" [ngTemplateOutletContext]="{ node: child, depth: depth + 1 }"></ng-container> }
-      </ul>
-    }
-  </li>
-</ng-template>
