@@ -38,10 +38,10 @@ export type AddPersonWizardTabId = 'primary-info' | 'addresses' | 'contacts' | '
 
 export interface AddPersonAddressFormControls {
   country: FormControl<string>;
-  municipality: FormControl<string>;
-  settlement: FormControl<string>;
-  district: FormControl<string>;
-  quarter: FormControl<string>;
+  municipalityId: FormControl<string>;
+  settlementId: FormControl<string>;
+  districtId: FormControl<string>;
+  quarterId: FormControl<string>;
   postalCode: FormControl<string>;
   street: FormControl<string>;
   number: FormControl<string>;

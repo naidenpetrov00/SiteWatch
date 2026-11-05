@@ -132,6 +132,15 @@
       <a
         cdkMenuItem
         class="dashboard-shell__menu-item"
+        routerLink="/territorial-structure"
+        routerLinkActive="dashboard-shell__menu-item--active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        Territorial Structure
+      </a>
+      <a
+        cdkMenuItem
+        class="dashboard-shell__menu-item"
         routerLink="/manage-products"
         routerLinkActive="dashboard-shell__menu-item--active"
         [routerLinkActiveOptions]="{ exact: true }"

@@ -45,7 +45,11 @@ public sealed record PersonDetailsDto
                 )
                 .ForMember(d => d.LegalForm, o => o.MapFrom(s => s.LegalForm == null ? null : s.LegalForm.ToString()));
 
-            CreateMap<PersonAddress, PersonAddressDto>();
+            CreateMap<PersonAddress, PersonAddressDto>()
+                .ForMember(d => d.MunicipalityName, o => o.MapFrom(s => s.Municipality == null ? null : s.Municipality.Name))
+                .ForMember(d => d.SettlementName, o => o.MapFrom(s => s.Settlement == null ? null : s.Settlement.Name))
+                .ForMember(d => d.DistrictName, o => o.MapFrom(s => s.District == null ? null : s.District.Name))
+                .ForMember(d => d.QuarterName, o => o.MapFrom(s => s.Quarter == null ? null : s.Quarter.Name));
             CreateMap<PersonContact, PersonContactDto>();
             CreateMap<PersonBankAccount, PersonBankAccountDto>();
             CreateMap<Retailer, PersonRetailerSummaryDto>()

@@ -17,10 +17,10 @@ import { UpdateDashboardPersonRequest } from '../models/update-dashboard-person-
 
 const ADDRESS_ROW_DEFAULTS = {
   country: 'Bulgaria',
-  municipality: '',
-  settlement: '',
-  district: '',
-  quarter: '',
+  municipalityId: '',
+  settlementId: '',
+  districtId: '',
+  quarterId: '',
   postalCode: '',
   street: '',
   number: '',
@@ -130,10 +130,10 @@ function buildAddressRequests(
 
     requests.push({
       country: address.country,
-      municipality: address.municipality,
-      settlement: address.settlement,
-      district: address.district,
-      quarter: address.quarter,
+      municipalityId: address.municipalityId || undefined,
+      settlementId: address.settlementId || undefined,
+      districtId: address.districtId || undefined,
+      quarterId: address.quarterId || undefined,
       postalCode: address.postalCode,
       street: address.street,
       number: address.number,

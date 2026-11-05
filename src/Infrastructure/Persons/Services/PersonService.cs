@@ -14,6 +14,7 @@ public sealed class PersonService(ApplicationDbContext dbContext) : IPersonServi
 {
     public async Task<Guid> CreateAsync(PersonUpsertDto request, CancellationToken cancellationToken)
     {
+        await ValidateTerritorialAddressesAsync(request.Addresses, cancellationToken);
         var person = CreatePerson(request);
         ApplyChildCollections(person, request);
 
@@ -59,6 +60,7 @@ public sealed class PersonService(ApplicationDbContext dbContext) : IPersonServi
 
         if (request.Addresses is not null)
         {
+            await ValidateTerritorialAddressesAsync(request.Addresses, cancellationToken);
             await ReplaceAddressesAsync(person.Id, request.Addresses, cancellationToken);
         }
 
@@ -158,6 +160,39 @@ public sealed class PersonService(ApplicationDbContext dbContext) : IPersonServi
         return parsed;
     }
 
+    private async Task ValidateTerritorialAddressesAsync(
+        IEnumerable<PersonAddressDto>? addresses,
+        CancellationToken cancellationToken)
+    {
+        if (addresses is null) return;
+
+        foreach (var address in addresses)
+        {
+            if (address.MunicipalityId.HasValue && !await dbContext.Municipalities.AnyAsync(
+                    x => x.Id == address.MunicipalityId.Value, cancellationToken))
+                throw new PersonConflictException("The selected Municipality does not exist.");
+
+            if (!address.SettlementId.HasValue && (address.DistrictId.HasValue || address.QuarterId.HasValue))
+                throw new PersonConflictException("A District or Quarter requires a Settlement.");
+
+            if (address.SettlementId.HasValue)
+            {
+                var settlement = await dbContext.Settlements.AsNoTracking().SingleOrDefaultAsync(
+                    x => x.Id == address.SettlementId.Value, cancellationToken);
+                if (settlement is null || !address.MunicipalityId.HasValue || settlement.MunicipalityId != address.MunicipalityId.Value)
+                    throw new PersonConflictException("The selected Settlement does not belong to the selected Municipality.");
+            }
+
+            if (address.DistrictId.HasValue && !await dbContext.Districts.AnyAsync(
+                    x => x.Id == address.DistrictId.Value && x.SettlementId == address.SettlementId, cancellationToken))
+                throw new PersonConflictException("The selected District does not belong to the selected Settlement.");
+
+            if (address.QuarterId.HasValue && !await dbContext.Quarters.AnyAsync(
+                    x => x.Id == address.QuarterId.Value && x.SettlementId == address.SettlementId, cancellationToken))
+                throw new PersonConflictException("The selected Quarter does not belong to the selected Settlement.");
+        }
+    }
+
     private static void ApplyChildCollections(Person person, PersonUpsertDto request)
     {
         AddAddresses(person, request);
@@ -178,10 +213,10 @@ public sealed class PersonService(ApplicationDbContext dbContext) : IPersonServi
                 PersonAddress.Create(
                     person.Id,
                     address.Country,
-                    address.Municipality,
-                    address.Settlement,
-                    address.District,
-                    address.Quarter,
+                    address.MunicipalityId,
+                    address.SettlementId,
+                    address.DistrictId,
+                    address.QuarterId,
                     address.PostalCode,
                     address.Street,
                     address.Number,
@@ -253,10 +288,10 @@ public sealed class PersonService(ApplicationDbContext dbContext) : IPersonServi
                 PersonAddress.Create(
                     personId,
                     address.Country,
-                    address.Municipality,
-                    address.Settlement,
-                    address.District,
-                    address.Quarter,
+                    address.MunicipalityId,
+                    address.SettlementId,
+                    address.DistrictId,
+                    address.QuarterId,
                     address.PostalCode,
                     address.Street,
                     address.Number,

@@ -3,6 +3,7 @@ using Application.ActivityCatalog;
 using Application.Cameras;
 using Application.Persons;
 using Application.Retailers;
+using Application.TerritorialStructure;
 using Application.SeedWork.Exceptions;
 using FluentValidation;
 using FluentValidation.Results;
@@ -91,6 +92,28 @@ public sealed class ExceptionMiddlewareTests
         Assert.Contains("Activity catalog conflict", payload);
         Assert.Contains("Only empty activity folders can be deleted.", payload);
         Assert.Contains("/activity-folders/folder-42", payload);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_returns_a_territorial_conflict_problem_with_the_request_path()
+    {
+        var middleware = new ExceptionMiddleware(
+            _ => Task.FromException(new TerritorialStructureConflictException(
+                "This Municipality has Settlements. Delete its child entries first, or deactivate it.")),
+            NullLogger<ExceptionMiddleware>.Instance);
+        var context = new DefaultHttpContext();
+        context.Request.Path = "/territorial-structure/entry-42";
+        context.Response.Body = new MemoryStream();
+
+        await middleware.InvokeAsync(context);
+
+        context.Response.Body.Position = 0;
+        var payload = await new StreamReader(context.Response.Body, Encoding.UTF8).ReadToEndAsync();
+        Assert.Equal(StatusCodes.Status409Conflict, context.Response.StatusCode);
+        Assert.Equal("application/problem+json", context.Response.ContentType);
+        Assert.Contains("Territorial structure conflict", payload);
+        Assert.Contains("This Municipality has Settlements.", payload);
+        Assert.Contains("/territorial-structure/entry-42", payload);
     }
 
     [Theory]

@@ -99,7 +99,6 @@ public sealed class PersonSeedData(
         var address = PersonAddress.Create(
             person.Id,
             "Bulgaria",
-            settlement: definition.Settlement,
             postalCode: definition.PostalCode,
             street: definition.Street,
             number: definition.Number,

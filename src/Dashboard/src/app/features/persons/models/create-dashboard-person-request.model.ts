@@ -3,10 +3,14 @@ export type CreateDashboardContactType = 0 | 1 | 2 | 3;
 
 export interface CreateDashboardPersonAddressRequest {
   country: string;
-  municipality?: string;
-  settlement?: string;
-  district?: string;
-  quarter?: string;
+  municipalityId?: string;
+  settlementId?: string;
+  districtId?: string;
+  quarterId?: string;
+  municipalityName?: string;
+  settlementName?: string;
+  districtName?: string;
+  quarterName?: string;
   postalCode?: string;
   street?: string;
   number?: string;

@@ -22,10 +22,10 @@ internal sealed class PersonAddressDtoValidator : AbstractValidator<PersonAddres
     public PersonAddressDtoValidator()
     {
         RuleFor(x => x.Country).NotEmpty().MaximumLength(100);
-        RuleFor(x => x.Municipality).MaximumLength(100);
-        RuleFor(x => x.Settlement).MaximumLength(100);
-        RuleFor(x => x.District).MaximumLength(100);
-        RuleFor(x => x.Quarter).MaximumLength(100);
+        RuleFor(x => x.MunicipalityId).NotEqual(Guid.Empty).When(x => x.MunicipalityId.HasValue);
+        RuleFor(x => x.SettlementId).NotEqual(Guid.Empty).When(x => x.SettlementId.HasValue);
+        RuleFor(x => x.DistrictId).NotEqual(Guid.Empty).When(x => x.DistrictId.HasValue);
+        RuleFor(x => x.QuarterId).NotEqual(Guid.Empty).When(x => x.QuarterId.HasValue);
         RuleFor(x => x.PostalCode).MaximumLength(20);
         RuleFor(x => x.Street).MaximumLength(200);
         RuleFor(x => x.Number).MaximumLength(50);
