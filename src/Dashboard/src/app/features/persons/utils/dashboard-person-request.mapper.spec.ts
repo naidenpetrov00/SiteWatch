@@ -45,13 +45,15 @@ describe('dashboard person territorial address mapping', () => {
       districtId: 'district-1',
       quarterId: 'quarter-1'
     });
-    expect(toUpdateDashboardPersonRequest(person, form).addresses[0]).toMatchObject({
-      country: 'Bulgaria',
-      municipalityId: 'municipality-1',
-      settlementId: 'settlement-1',
-      districtId: 'district-1',
-      quarterId: 'quarter-1'
-    });
+    expect(toUpdateDashboardPersonRequest(person, form).addresses).toEqual([
+      expect.objectContaining({
+        country: 'Bulgaria',
+        municipalityId: 'municipality-1',
+        settlementId: 'settlement-1',
+        districtId: 'district-1',
+        quarterId: 'quarter-1'
+      })
+    ]);
   });
 });
 
