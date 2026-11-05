@@ -18,6 +18,10 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<SiteVideo> SiteVideos => Set<SiteVideo>();
     public DbSet<Camera> Cameras => Set<Camera>();
     public DbSet<Person> Persons => Set<Person>();
+    public DbSet<Municipality> Municipalities => Set<Municipality>();
+    public DbSet<Settlement> Settlements => Set<Settlement>();
+    public DbSet<District> Districts => Set<District>();
+    public DbSet<Quarter> Quarters => Set<Quarter>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<ProductType> ProductTypes => Set<ProductType>();
     public DbSet<Product> Products => Set<Product>();

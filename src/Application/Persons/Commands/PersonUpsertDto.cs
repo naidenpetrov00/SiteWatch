@@ -21,10 +21,14 @@ public abstract record PersonUpsertDto
 public sealed record PersonAddressDto : IPrimaryState
 {
     public string Country { get; init; } = "Bulgaria";
-    public string? Municipality { get; init; }
-    public string? Settlement { get; init; }
-    public string? District { get; init; }
-    public string? Quarter { get; init; }
+    public Guid? MunicipalityId { get; init; }
+    public Guid? SettlementId { get; init; }
+    public Guid? DistrictId { get; init; }
+    public Guid? QuarterId { get; init; }
+    public string? MunicipalityName { get; init; }
+    public string? SettlementName { get; init; }
+    public string? DistrictName { get; init; }
+    public string? QuarterName { get; init; }
     public string? PostalCode { get; init; }
     public string? Street { get; init; }
     public string? Number { get; init; }

@@ -321,6 +321,13 @@ public sealed class InvoiceService(ApplicationDbContext dbContext, IMapper mappe
     {
         var supplier = await dbContext.Persons
             .Include(person => person.Addresses)
+            .ThenInclude(address => address.Municipality)
+            .Include(person => person.Addresses)
+            .ThenInclude(address => address.Settlement)
+            .Include(person => person.Addresses)
+            .ThenInclude(address => address.District)
+            .Include(person => person.Addresses)
+            .ThenInclude(address => address.Quarter)
             .Include(person => person.Contacts)
             .SingleOrDefaultAsync(person => person.Id == supplierId, cancellationToken);
 
@@ -369,10 +376,10 @@ public sealed class InvoiceService(ApplicationDbContext dbContext, IMapper mappe
                     address.Entrance,
                     address.Floor,
                     address.Apartment,
-                    address.Quarter,
-                    address.District,
-                    address.Settlement,
-                    address.Municipality,
+                    address.Quarter?.Name,
+                    address.District?.Name,
+                    address.Settlement?.Name,
+                    address.Municipality?.Name,
                     address.PostalCode,
                     address.Country,
                     address.AddressDetails

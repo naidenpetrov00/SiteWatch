@@ -239,18 +239,10 @@ export class AddPersonDialogComponent implements OnInit {
         country: this.formBuilder.nonNullable.control('Bulgaria', {
           validators: [Validators.maxLength(this.validationLimits.country)]
         }),
-        municipality: this.formBuilder.nonNullable.control('', {
-          validators: [Validators.maxLength(this.validationLimits.municipality)]
-        }),
-        settlement: this.formBuilder.nonNullable.control('', {
-          validators: [Validators.maxLength(this.validationLimits.settlement)]
-        }),
-        district: this.formBuilder.nonNullable.control('', {
-          validators: [Validators.maxLength(this.validationLimits.district)]
-        }),
-        quarter: this.formBuilder.nonNullable.control('', {
-          validators: [Validators.maxLength(this.validationLimits.quarter)]
-        }),
+        municipalityId: this.formBuilder.nonNullable.control(''),
+        settlementId: this.formBuilder.nonNullable.control(''),
+        districtId: this.formBuilder.nonNullable.control(''),
+        quarterId: this.formBuilder.nonNullable.control(''),
         postalCode: this.formBuilder.nonNullable.control('', {
           validators: [Validators.maxLength(this.validationLimits.postalCode)]
         }),

@@ -40,14 +40,7 @@
 
           <div class="add-person-addresses-section__grid" [formGroup]="addressGroup">
             @for (field of [
-              { control: 'country', label: 'Country', autocomplete: 'country-name', maxlength: 100, size: 'full' },
-              { control: 'municipality', label: 'Municipality', autocomplete: 'off', maxlength: 100, size: 'third' },
-              { control: 'settlement', label: 'Settlement', autocomplete: 'address-level2', maxlength: 100, size: 'third' },
-              { control: 'postalCode', label: 'Postal code', autocomplete: 'postal-code', maxlength: 20, size: 'third' },
-              { control: 'district', label: 'District', autocomplete: 'off', maxlength: 100, size: 'half' },
-              { control: 'quarter', label: 'Quarter', autocomplete: 'off', maxlength: 100, size: 'half' },
-              { control: 'street', label: 'Street', autocomplete: 'street-address', maxlength: 200, size: 'eight' },
-              { control: 'number', label: 'Number', autocomplete: 'off', maxlength: 50, size: 'four' }
+              { control: 'country', label: 'Country / Държава', autocomplete: 'country-name', maxlength: 100, size: 'full' }
             ]; track field.control) {
               <mat-form-field
                 appearance="outline"
@@ -61,6 +54,28 @@
                   [attr.autocomplete]="field.autocomplete"
                   [attr.maxlength]="field.maxlength"
                 />
+                @if ($any(addressGroup.controls)[field.control].touched && $any(addressGroup.controls)[field.control].hasError('maxlength')) {
+                  <mat-error>{{ field.label }} must be at most {{ field.maxlength }} characters.</mat-error>
+                }
+              </mat-form-field>
+            }
+
+            <app-territorial-selector class="add-person-addresses-section__field add-person-addresses-section__field--third" formControlName="municipalityId" [kind]="0" label="Municipality / Община" />
+            <app-territorial-selector class="add-person-addresses-section__field add-person-addresses-section__field--third" formControlName="settlementId" [kind]="1" [parentId]="addressGroup.controls.municipalityId.value || null" [available]="!!addressGroup.controls.municipalityId.value" label="Settlement / Населено място" />
+            <app-territorial-selector class="add-person-addresses-section__field add-person-addresses-section__field--half" formControlName="districtId" [kind]="2" [parentId]="addressGroup.controls.settlementId.value || null" [available]="!!addressGroup.controls.settlementId.value" label="District / Район" />
+            <app-territorial-selector class="add-person-addresses-section__field add-person-addresses-section__field--half" formControlName="quarterId" [kind]="3" [parentId]="addressGroup.controls.settlementId.value || null" [available]="!!addressGroup.controls.settlementId.value" label="Quarter / Квартал" />
+
+            @for (field of [
+              { control: 'postalCode', label: 'Postal code / Пощенски код', autocomplete: 'postal-code', maxlength: 20, size: 'third' },
+              { control: 'street', label: 'Street', autocomplete: 'street-address', maxlength: 200, size: 'eight' },
+              { control: 'number', label: 'Number', autocomplete: 'off', maxlength: 50, size: 'four' }
+            ]; track field.control) {
+              <mat-form-field
+                appearance="outline"
+                [class]="'add-person-addresses-section__field add-person-addresses-section__field--' + field.size"
+              >
+                <mat-label>{{ field.label }}</mat-label>
+                <input matInput [formControlName]="field.control" [attr.name]="'person-address-' + field.control + '-' + (index + 1)" [attr.autocomplete]="field.autocomplete" [attr.maxlength]="field.maxlength" />
                 @if ($any(addressGroup.controls)[field.control].touched && $any(addressGroup.controls)[field.control].hasError('maxlength')) {
                   <mat-error>{{ field.label }} must be at most {{ field.maxlength }} characters.</mat-error>
                 }

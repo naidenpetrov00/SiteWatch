@@ -8,6 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 
 import { AddPersonAddressesFormArray } from '../add-person-dialog.types';
+import { TerritorialSelectorComponent } from '../../../../../shared/territorial-structure/territorial-selector.component';
 
 @Component({
   selector: 'app-add-person-addresses-section',
@@ -18,7 +19,8 @@ import { AddPersonAddressesFormArray } from '../add-person-dialog.types';
     MatCheckboxModule,
     MatFormFieldModule,
     MatIconModule,
-    MatInputModule
+    MatInputModule,
+    TerritorialSelectorComponent
   ],
   templateUrl: './add-person-addresses-section.component.html',
   styleUrl: './add-person-addresses-section.component.css',

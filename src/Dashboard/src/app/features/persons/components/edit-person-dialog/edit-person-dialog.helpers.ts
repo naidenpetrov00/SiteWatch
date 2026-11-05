@@ -84,18 +84,10 @@ export function createEditPersonAddressGroup(
     country: formBuilder.nonNullable.control(initialValue?.country ?? 'Bulgaria', {
       validators: [Validators.maxLength(ADD_PERSON_VALIDATION_LIMITS.country)]
     }),
-    municipality: formBuilder.nonNullable.control(initialValue?.municipality ?? '', {
-      validators: [Validators.maxLength(ADD_PERSON_VALIDATION_LIMITS.municipality)]
-    }),
-    settlement: formBuilder.nonNullable.control(initialValue?.settlement ?? '', {
-      validators: [Validators.maxLength(ADD_PERSON_VALIDATION_LIMITS.settlement)]
-    }),
-    district: formBuilder.nonNullable.control(initialValue?.district ?? '', {
-      validators: [Validators.maxLength(ADD_PERSON_VALIDATION_LIMITS.district)]
-    }),
-    quarter: formBuilder.nonNullable.control(initialValue?.quarter ?? '', {
-      validators: [Validators.maxLength(ADD_PERSON_VALIDATION_LIMITS.quarter)]
-    }),
+    municipalityId: formBuilder.nonNullable.control(initialValue?.municipalityId ?? ''),
+    settlementId: formBuilder.nonNullable.control(initialValue?.settlementId ?? ''),
+    districtId: formBuilder.nonNullable.control(initialValue?.districtId ?? ''),
+    quarterId: formBuilder.nonNullable.control(initialValue?.quarterId ?? ''),
     postalCode: formBuilder.nonNullable.control(initialValue?.postalCode ?? '', {
       validators: [Validators.maxLength(ADD_PERSON_VALIDATION_LIMITS.postalCode)]
     }),

@@ -117,6 +117,14 @@ export const routes: Routes = [
           )
       },
       {
+        path: 'territorial-structure',
+        title: 'Manage Territorial Structure',
+        loadComponent: () =>
+          import('./features/territorial-structure/pages/manage-territorial-structure.page').then(
+            (m) => m.ManageTerritorialStructurePage
+          )
+      },
+      {
         path: 'manage-products/:productId',
         title: 'Product Retailer Listings',
         loadComponent: () =>

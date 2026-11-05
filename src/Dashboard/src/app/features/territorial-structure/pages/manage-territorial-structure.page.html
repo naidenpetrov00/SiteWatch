@@ -1,0 +1,99 @@
+<main class="territorial-page">
+  <header class="territorial-page__header">
+    <div>
+      <p class="territorial-page__eyebrow">Administration</p>
+      <h1>Territorial structure</h1>
+      <p class="territorial-page__summary">Maintain the administrative hierarchy used by person addresses.</p>
+    </div>
+  </header>
+
+  @if (pageError(); as message) { <p class="territorial-page__error" role="alert">{{ message }}</p> }
+
+  <section class="territorial-workspace">
+    <section class="territorial-tree-panel" aria-label="Territorial structure">
+      <mat-tree
+        #territorialTree
+        class="territorial-tree"
+        aria-label="Territorial structure"
+        [dataSource]="treeNodes()"
+        [childrenAccessor]="childrenAccessor"
+        [expansionKey]="expansionKey"
+        [trackBy]="trackBy"
+      >
+        <mat-tree-node
+          *matTreeNodeDef="let node"
+          matTreeNodePadding
+          [cdkTreeNodeTypeaheadLabel]="node.name"
+          [attr.aria-selected]="selectedNodeId() === node.id"
+          (activation)="selectNode(node)"
+          (expandedChange)="expansionChanged(node, $event)"
+        >
+          <div
+            class="territorial-tree__row"
+            [class.territorial-tree__row--selected]="selectedNodeId() === node.id"
+            [class.territorial-tree__row--inactive]="node.kind !== 'country' && !node.isActive"
+            (click)="selectNode(node)"
+          >
+            @if (canExpand(node)) {
+              <button
+                mat-icon-button
+                matTreeNodeToggle
+                type="button"
+                class="territorial-tree__expand"
+                [disabled]="node.childrenLoading"
+                [attr.aria-label]="(isExpanded(node) ? 'Collapse ' : 'Expand ') + node.name"
+                (click)="$event.stopPropagation()"
+              >
+                <mat-icon>{{ node.childrenLoading ? 'hourglass_empty' : isExpanded(node) ? 'expand_more' : 'chevron_right' }}</mat-icon>
+              </button>
+            } @else {
+              <span class="territorial-tree__indent" aria-hidden="true"></span>
+            }
+            <span class="territorial-tree__select">
+              <span>{{ node.name }}</span>
+              <small>{{ typeLabel(node.kind) }}</small>
+            </span>
+          </div>
+        </mat-tree-node>
+      </mat-tree>
+    </section>
+
+    <aside class="territorial-details-panel" aria-live="polite">
+      @if (editor()) {
+        <form [formGroup]="entryForm" (ngSubmit)="save()" class="territorial-editor">
+          <p class="territorial-details-panel__eyebrow">{{ editorTitle() }}</p>
+          <h2>{{ editorTitle() }}</h2>
+          <mat-form-field appearance="outline">
+            <mat-label>Name</mat-label>
+            <input matInput formControlName="name" maxlength="100" autocomplete="off" />
+            @if (entryForm.controls.name.touched && entryForm.controls.name.hasError('required')) { <mat-error>A name is required.</mat-error> }
+          </mat-form-field>
+          <div class="territorial-editor__actions">
+            <button mat-button type="button" (click)="cancelEditor()">Cancel</button>
+            <button mat-flat-button type="submit">Save</button>
+          </div>
+        </form>
+      } @else if (selectedNode(); as node) {
+        <p class="territorial-details-panel__eyebrow">{{ typeLabel(node.kind) }}</p>
+        <div class="territorial-details-panel__heading">
+          <h2>{{ node.name }}</h2>
+          @if (node.kind !== 'country' && !node.isActive) { <span class="status-pill">Inactive</span> }
+        </div>
+        <p class="territorial-details-panel__description">
+          @if (node.kind === 'country') { Bulgaria is fixed as the address country. Add municipalities below it. }
+          @else { Manage this entry or add items that belong beneath it. }
+        </p>
+        <div class="territorial-details-panel__actions">
+          @for (action of childActions(node); track action.kind) {
+            <button mat-flat-button type="button" (click)="openCreate(action.kind, node.kind === 'country' ? null : node.id)"><mat-icon>add</mat-icon>{{ action.label }}</button>
+          }
+          @if (node.kind !== 'country') {
+            <button mat-stroked-button type="button" (click)="openRename(node)"><mat-icon>edit</mat-icon>Rename</button>
+            <button mat-stroked-button type="button" (click)="toggleActive(node)"><mat-icon>{{ node.isActive ? 'block' : 'check_circle' }}</mat-icon>{{ node.isActive ? 'Deactivate' : 'Activate' }}</button>
+            <button mat-stroked-button type="button" class="delete-action" (click)="deleteNode(node)"><mat-icon>delete</mat-icon>Delete</button>
+          }
+        </div>
+      } @else { <p>Select an item in the hierarchy.</p> }
+    </aside>
+  </section>
+</main>
