@@ -37,7 +37,10 @@
   } @else {
     @for (result of results(); track result.id) {
       <mat-option [value]="result">
-        @if (isProductType(result)) { <strong>{{ result.name }}</strong><span> · {{ result.categoryName }}</span> }
+        @if (isProductType(result)) {
+          <span class="catalog-selector__option-title"><strong>{{ result.name }}</strong><span> · {{ result.categoryName }}</span></span>
+          @if (result.description) { <span class="catalog-selector__option-description">{{ result.description }}</span> }
+        }
         @else { {{ result.name }} }
       </mat-option>
     }

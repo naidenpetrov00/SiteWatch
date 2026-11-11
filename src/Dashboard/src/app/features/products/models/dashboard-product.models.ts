@@ -43,6 +43,7 @@ export interface DashboardProduct {
 
 export interface DashboardProductDetails extends DashboardProduct {
   description: string | null;
+  productTypeDescription?: string | null;
   primarySearchPhrase: string | null;
   effectivePrimarySearchPhrase: string;
   alternativeSearchPhrases: readonly string[];

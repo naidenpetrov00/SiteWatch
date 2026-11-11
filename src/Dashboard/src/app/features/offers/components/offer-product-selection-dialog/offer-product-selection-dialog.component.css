@@ -29,6 +29,14 @@
   gap: 0.15rem;
 }
 
+.offer-product-selection__product-type-description {
+  grid-column: 1 / -1;
+}
+
+.offer-product-selection__product-type-description strong {
+  white-space: pre-wrap;
+}
+
 .offer-product-selection__requirement span,
 .offer-product-selection__option span {
   color: var(--mat-sys-on-surface-variant);

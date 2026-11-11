@@ -100,13 +100,20 @@ public sealed class ProductCatalogService(ApplicationDbContext dbContext, IUser 
         return new PagedResult<CategoryDto>(items, filtered, total);
     }
 
+    public Task<Guid> CreateProductTypeAsync(
+        Guid categoryId,
+        string name,
+        CancellationToken cancellationToken) =>
+        CreateProductTypeAsync(categoryId, name, null, cancellationToken);
+
     public async Task<Guid> CreateProductTypeAsync(
         Guid categoryId,
         string name,
+        string? description,
         CancellationToken cancellationToken)
     {
         var category = await LoadCategoryAsync(categoryId, cancellationToken);
-        var productType = ProductType.Create(category, name);
+        var productType = ProductType.Create(category, name, description);
         SetCreatedAudit(productType);
         dbContext.ProductTypes.Add(productType);
         await SaveAsync(
@@ -115,10 +122,18 @@ public sealed class ProductCatalogService(ApplicationDbContext dbContext, IUser 
         return productType.Id;
     }
 
+    public Task UpdateProductTypeAsync(
+        Guid id,
+        Guid categoryId,
+        string name,
+        CancellationToken cancellationToken) =>
+        UpdateProductTypeAsync(id, categoryId, name, null, cancellationToken);
+
     public async Task UpdateProductTypeAsync(
         Guid id,
         Guid categoryId,
         string name,
+        string? description,
         CancellationToken cancellationToken)
     {
         var productType = await dbContext.ProductTypes
@@ -126,7 +141,7 @@ public sealed class ProductCatalogService(ApplicationDbContext dbContext, IUser 
             .SingleOrDefaultAsync(current => current.Id == id, cancellationToken);
         Guard.Against.NotFound(id, productType);
         var category = await LoadCategoryAsync(categoryId, cancellationToken);
-        productType.Update(category, name);
+        productType.Update(category, name, description);
         SetModifiedAudit(productType);
 
         var products = await dbContext.Products
@@ -256,7 +271,8 @@ public sealed class ProductCatalogService(ApplicationDbContext dbContext, IUser 
         productType.Id,
         productType.Name,
         productType.CategoryId,
-        productType.Category.Name);
+        productType.Category.Name,
+        productType.Description);
 
     private static string NormalizeSearch(string? value) => string.Join(
         " ",

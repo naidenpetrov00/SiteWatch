@@ -12,6 +12,12 @@
       <span>Product Type</span>
       <strong>{{ data.requirement.productTypeName }}</strong>
     </div>
+    @if (data.requirement.productTypeDescription) {
+      <div class="offer-product-selection__product-type-description">
+        <span>Product Type Description</span>
+        <strong>{{ data.requirement.productTypeDescription }}</strong>
+      </div>
+    }
     <div>
       <span>Requirement</span>
       <strong>

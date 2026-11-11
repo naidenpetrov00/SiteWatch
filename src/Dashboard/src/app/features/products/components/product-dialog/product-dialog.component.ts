@@ -51,6 +51,7 @@ export class ProductDialogComponent {
     this.product ? {
       id: this.product.productTypeId,
       name: this.product.productTypeName,
+      description: this.product.productTypeDescription,
       categoryId: this.product.categoryId,
       categoryName: this.product.categoryName
     } : null

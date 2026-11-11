@@ -5,6 +5,7 @@ export interface SaveCategoryRequest {
 export interface SaveProductTypeRequest {
   name: string;
   categoryId: string;
+  description?: string | null;
 }
 
 interface CreatedResponse {

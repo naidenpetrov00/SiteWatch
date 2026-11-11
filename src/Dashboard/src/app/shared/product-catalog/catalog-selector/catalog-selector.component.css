@@ -1,4 +1,7 @@
 :host { display: block; }
 .catalog-selector { width: 100%; }
+.catalog-selector__option-title,
+.catalog-selector__option-description { display: block; }
+.catalog-selector__option-description { color: var(--mat-sys-on-surface-variant); font-size: .82rem; white-space: normal; }
 .catalog-selector__error { margin: -.75rem 0 0; color: #b91c1c; font-size: .875rem; }
 .catalog-selector__status { margin: -.75rem 0 0; color: rgba(15, 23, 42, .66); font-size: .875rem; }

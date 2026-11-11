@@ -5,7 +5,8 @@
 .product-type-management__category-filter { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: .5rem; }
 .product-type-management__category-filter > button { margin-top: .5rem; }
 .product-type-management__table-shell { overflow: auto; border: 1px solid rgba(15,23,42,.14); border-radius: .5rem; }
-.product-type-management table { width: 100%; min-width: 38rem; }
+.product-type-management table { width: 100%; min-width: 52rem; }
+.product-type-management__description { display: -webkit-box; max-width: 28rem; overflow: hidden; color: var(--mat-sys-on-surface-variant); -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .product-type-management__actions { display: flex; gap: .5rem; }
 .product-type-management__error { color: #b91c1c; }
 @media (max-width: 48rem) { .product-type-management__toolbar { grid-template-columns: 1fr; } .product-type-management__toolbar button { margin-top: 0; } .product-type-management__category-filter { grid-template-columns: 1fr; } }

@@ -10,7 +10,10 @@
             <button mat-stroked-button type="button" [disabled]="isSaving()" (click)="createProductType()">Create Product Type</button>
           </div>
           @if (productTypeControl.touched && productForm.controls.productTypeId.invalid) { <p class="product-dialog__error product-dialog__wide-field" role="alert">Select a Product Type.</p> }
-          @if (selectedProductType(); as productType) { <p class="product-dialog__derived-category"><span>Category</span><strong>{{ productType.categoryName }}</strong></p> }
+          @if (selectedProductType(); as productType) {
+            <p class="product-dialog__derived-category"><span>Category</span><strong>{{ productType.categoryName }}</strong></p>
+            @if (productType.description) { <p class="product-dialog__product-type-description">{{ productType.description }}</p> }
+          }
           <mat-form-field appearance="outline"><mat-label>Status</mat-label><mat-select formControlName="status">@for (status of statuses; track status) { <mat-option [value]="status">{{ status }}</mat-option> }</mat-select></mat-form-field>
           <mat-form-field appearance="outline"><mat-label>Brand</mat-label><input matInput formControlName="brand" name="product-brand" autocomplete="off" maxlength="100" placeholder="e.g. Ceresit" /></mat-form-field>
           <mat-form-field appearance="outline"><mat-label>Model</mat-label><input matInput formControlName="model" name="product-model" autocomplete="off" maxlength="100" placeholder="e.g. CM 11" /></mat-form-field>

@@ -51,6 +51,7 @@
 }
 
 .product-dialog__lookup-status { color: rgba(15, 23, 42, 0.66); }
+.product-dialog__product-type-description { grid-column: 1 / -1; margin: -.5rem 0 0; color: rgba(15, 23, 42, 0.72); white-space: pre-wrap; }
 
 .product-dialog__preview {
   display: grid;

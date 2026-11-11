@@ -9,6 +9,7 @@
         <div class="product-requirement-dialog__product-summary">
           <strong>{{ productType.name }}</strong>
           <span>Category · {{ productType.categoryName }}</span>
+          @if (productType.description) { <p>{{ productType.description }}</p> }
         </div>
       }
     </div>

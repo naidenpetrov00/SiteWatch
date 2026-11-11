@@ -16,10 +16,21 @@ public interface IProductCatalogService
         Guid categoryId,
         string name,
         CancellationToken cancellationToken);
+    Task<Guid> CreateProductTypeAsync(
+        Guid categoryId,
+        string name,
+        string? description,
+        CancellationToken cancellationToken);
     Task UpdateProductTypeAsync(
         Guid id,
         Guid categoryId,
         string name,
+        CancellationToken cancellationToken);
+    Task UpdateProductTypeAsync(
+        Guid id,
+        Guid categoryId,
+        string name,
+        string? description,
         CancellationToken cancellationToken);
     Task DeleteProductTypeAsync(Guid id, CancellationToken cancellationToken);
     Task<ProductTypeDto> GetProductTypeAsync(Guid id, CancellationToken cancellationToken);

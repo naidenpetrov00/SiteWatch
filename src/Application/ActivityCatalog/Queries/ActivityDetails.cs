@@ -65,7 +65,8 @@ public sealed record ActivityProductRequirementDto(
     bool IsRequired,
     string QuantityBehavior,
     string? Notes,
-    int SortOrder);
+    int SortOrder,
+    string? ProductTypeDescription = null);
 
 public sealed class ActivityDetailsQueryValidator : AbstractValidator<ActivityDetailsQuery>
 {
@@ -125,7 +126,8 @@ public sealed class ActivityDetailsHandler(IApplicationDbContext dbContext)
                             requirement.IsRequired,
                             requirement.QuantityBehavior.ToCode(),
                             requirement.Notes,
-                            requirement.SortOrder))
+                            requirement.SortOrder,
+                            requirement.ProductType.Description))
                         .ToList()))
                 .ToList());
     }

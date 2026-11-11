@@ -77,6 +77,10 @@ export class ProductTypeEditorDialogComponent {
     categoryId: this.formBuilder.nonNullable.control(
       this.data.productType?.categoryId ?? '',
       [Validators.required]
+    ),
+    description: this.formBuilder.nonNullable.control(
+      this.data.productType?.description ?? '',
+      [Validators.maxLength(2000)]
     )
   });
 
@@ -126,7 +130,10 @@ export class ProductTypeEditorDialogComponent {
     try {
       const request = {
         name: this.form.controls.name.value.trim(),
-        categoryId: this.form.controls.categoryId.value
+        categoryId: this.form.controls.categoryId.value,
+        ...(this.form.controls.description.value.trim()
+          ? { description: this.form.controls.description.value.trim() }
+          : {})
       };
       const productType = this.data.productType
         ? await this.catalogService.updateProductType(this.data.productType.id, request)

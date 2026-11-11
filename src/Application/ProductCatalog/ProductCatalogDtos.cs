@@ -8,4 +8,5 @@ public sealed record ProductTypeDto(
     Guid Id,
     string Name,
     Guid CategoryId,
-    string CategoryName);
+    string CategoryName,
+    string? Description = null);

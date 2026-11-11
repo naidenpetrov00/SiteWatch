@@ -24,7 +24,10 @@ public sealed record DeleteCategoryCommand(Guid Id) : IRequest;
 
 /// <summary>Creates a Product Type within a Category.</summary>
 [Authorize(Roles = UserRoles.Administrator)]
-public sealed record CreateProductTypeCommand(Guid CategoryId, string Name) : IRequest<Guid>;
+public sealed record CreateProductTypeCommand(
+    Guid CategoryId,
+    string Name,
+    string? Description = null) : IRequest<Guid>;
 
 /// <summary>Updates a Product Type name and Category.</summary>
 [Authorize(Roles = UserRoles.Administrator)]
@@ -33,6 +36,7 @@ public sealed record UpdateProductTypeCommand : IRequest
     public Guid Id { get; set; }
     public Guid CategoryId { get; init; }
     public string Name { get; init; } = string.Empty;
+    public string? Description { get; init; }
 }
 
 /// <summary>Deletes an unreferenced Product Type.</summary>
@@ -57,14 +61,27 @@ public sealed class ProductCatalogCommandHandler(IProductCatalogService service)
         service.DeleteCategoryAsync(request.Id, cancellationToken);
 
     public Task<Guid> Handle(CreateProductTypeCommand request, CancellationToken cancellationToken) =>
-        service.CreateProductTypeAsync(request.CategoryId, request.Name, cancellationToken);
+        request.Description is null
+            ? service.CreateProductTypeAsync(request.CategoryId, request.Name, cancellationToken)
+            : service.CreateProductTypeAsync(
+                request.CategoryId,
+                request.Name,
+                request.Description,
+                cancellationToken);
 
     public Task Handle(UpdateProductTypeCommand request, CancellationToken cancellationToken) =>
-        service.UpdateProductTypeAsync(
-            request.Id,
-            request.CategoryId,
-            request.Name,
-            cancellationToken);
+        request.Description is null
+            ? service.UpdateProductTypeAsync(
+                request.Id,
+                request.CategoryId,
+                request.Name,
+                cancellationToken)
+            : service.UpdateProductTypeAsync(
+                request.Id,
+                request.CategoryId,
+                request.Name,
+                request.Description,
+                cancellationToken);
 
     public Task Handle(DeleteProductTypeCommand request, CancellationToken cancellationToken) =>
         service.DeleteProductTypeAsync(request.Id, cancellationToken);
@@ -96,6 +113,7 @@ public sealed class CreateProductTypeValidator : AbstractValidator<CreateProduct
     {
         RuleFor(request => request.CategoryId).NotEmpty();
         RuleFor(request => request.Name).NotEmpty().MaximumLength(ProductType.MaxNameLength);
+        RuleFor(request => request.Description).MaximumLength(ProductType.MaxDescriptionLength);
     }
 }
 
@@ -106,6 +124,7 @@ public sealed class UpdateProductTypeValidator : AbstractValidator<UpdateProduct
         RuleFor(request => request.Id).NotEmpty();
         RuleFor(request => request.CategoryId).NotEmpty();
         RuleFor(request => request.Name).NotEmpty().MaximumLength(ProductType.MaxNameLength);
+        RuleFor(request => request.Description).MaximumLength(ProductType.MaxDescriptionLength);
     }
 }
 
