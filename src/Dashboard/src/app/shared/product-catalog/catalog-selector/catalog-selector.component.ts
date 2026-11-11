@@ -3,6 +3,7 @@ import {
   Component,
   ElementRef,
   OnChanges,
+  OnDestroy,
   SimpleChanges,
   ViewChild,
   forwardRef,
@@ -55,13 +56,17 @@ export type CatalogSelection = ProductCatalogCategory | ProductCatalogProductTyp
     }
   ]
 })
-export class CatalogSelectorComponent implements ControlValueAccessor, OnChanges {
+export class CatalogSelectorComponent
+  implements ControlValueAccessor, OnChanges, OnDestroy
+{
   @ViewChild('selectorInput') private selectorInput?: ElementRef<HTMLInputElement>;
   @ViewChild(MatAutocompleteTrigger)
   private autocompleteTrigger?: MatAutocompleteTrigger;
 
   private readonly catalogLookupService = inject(ProductCatalogLookupService);
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
+  private panelOpenTimer: ReturnType<typeof setTimeout> | null = null;
+  private panelOpenRequested = false;
   private searchRevision = 0;
   private onChange: (value: CatalogSelection | null) => void = () => undefined;
   private onTouched: () => void = () => undefined;
@@ -93,8 +98,16 @@ export class CatalogSelectorComponent implements ControlValueAccessor, OnChanges
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!changes['categoryId'] || this.kind() !== 'product-type') return;
+    const panelWasOpen = this.autocompleteTrigger?.panelOpen ?? false;
     this.invalidateLookup();
-    if (this.autocompleteTrigger?.panelOpen) this.loadOptions('');
+    if (panelWasOpen) {
+      this.panelOpenRequested = true;
+      void this.loadOptions('');
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.stopPendingWork();
   }
 
   writeValue(value: CatalogSelection | null): void {
@@ -111,16 +124,26 @@ export class CatalogSelectorComponent implements ControlValueAccessor, OnChanges
 
   setDisabledState(isDisabled: boolean): void {
     this.disabled.set(isDisabled);
-    if (isDisabled) this.inputControl.disable({ emitEvent: false });
-    else this.inputControl.enable({ emitEvent: false });
+    if (isDisabled) {
+      this.stopPanelOpen();
+      this.autocompleteTrigger?.closePanel();
+      this.inputControl.disable({ emitEvent: false });
+    } else {
+      this.inputControl.enable({ emitEvent: false });
+    }
   }
 
   focus(): void {
-    this.selectorInput?.nativeElement.focus();
-    this.loadOptions('');
+    const input = this.selectorInput?.nativeElement;
+    if (!input) return;
+    input.focus();
+    if (input.ownerDocument.activeElement === input && !this.loading()) {
+      this.onClick();
+    }
   }
 
   onInput(value: string): void {
+    this.panelOpenRequested = true;
     this.invalidateLookup();
     this.inputControl.setValue(value, { emitEvent: false });
     this.publishSelection(null);
@@ -128,35 +151,53 @@ export class CatalogSelectorComponent implements ControlValueAccessor, OnChanges
   }
 
   onFocus(): void {
+    if (this.isSelection(this.inputControl.value)) return;
+    this.openOptionsForCurrentValue();
+  }
+
+  onClick(): void {
+    this.openOptionsForCurrentValue();
+  }
+
+  private openOptionsForCurrentValue(): void {
+    this.panelOpenRequested = true;
     if (this.loading()) return;
     const value = this.inputControl.value;
     this.loadOptions(typeof value === 'string' ? value : '');
   }
 
   onKeyboardOpen(): void {
+    this.panelOpenRequested = true;
     if (!this.hasLoaded() && !this.loading()) this.loadOptions('');
   }
 
   onOpened(): void {
+    this.panelOpenRequested = true;
     if (this.loading() || this.hasLoaded()) return;
     const value = this.inputControl.value;
     this.loadOptions(typeof value === 'string' ? value : '');
   }
 
   onBlur(): void {
+    this.stopPanelOpen();
     this.onTouched();
+  }
+
+  onPanelDismissed(): void {
+    this.stopPanelOpen();
   }
 
   onOptionSelected(event: MatAutocompleteSelectedEvent): void {
     const selection = event.option.value as CatalogSelection;
+    this.stopPanelOpen();
     this.invalidateLookup();
     this.inputControl.setValue(selection, { emitEvent: false });
     this.publishSelection(selection);
+    this.autocompleteTrigger?.closePanel();
   }
 
   retry(): void {
-    const value = this.inputControl.value;
-    this.loadOptions(typeof value === 'string' ? value : '');
+    this.focus();
   }
 
   private async loadOptions(searchTerm: string): Promise<void> {
@@ -167,7 +208,7 @@ export class CatalogSelectorComponent implements ControlValueAccessor, OnChanges
     this.loading.set(true);
     this.lookupError.set(null);
     this.hasLoaded.set(true);
-    this.openPanelSoon();
+    this.openPanelSoon(revision);
 
     try {
       const response =
@@ -183,7 +224,7 @@ export class CatalogSelectorComponent implements ControlValueAccessor, OnChanges
             });
       if (revision !== this.searchRevision) return;
       this.results.set(response.items);
-      this.openPanelSoon();
+      this.openPanelSoon(revision);
     } catch {
       if (revision !== this.searchRevision) return;
       this.lookupError.set(
@@ -212,13 +253,52 @@ export class CatalogSelectorComponent implements ControlValueAccessor, OnChanges
     }
   }
 
+  private clearPanelOpenTimer(): void {
+    if (this.panelOpenTimer !== null) {
+      clearTimeout(this.panelOpenTimer);
+      this.panelOpenTimer = null;
+    }
+  }
+
+  private stopPanelOpen(): void {
+    this.panelOpenRequested = false;
+    this.clearPanelOpenTimer();
+  }
+
+  private stopPendingWork(): void {
+    this.stopPanelOpen();
+    this.clearSearchTimer();
+    this.searchRevision += 1;
+  }
+
   private publishSelection(selection: CatalogSelection | null): void {
     this.onChange(selection);
     this.selectionChange.emit(selection);
   }
 
-  private openPanelSoon(): void {
-    setTimeout(() => this.autocompleteTrigger?.openPanel());
+  private isSelection(
+    value: string | CatalogSelection | null
+  ): value is CatalogSelection {
+    return value !== null && typeof value !== 'string';
+  }
+
+  private openPanelSoon(revision: number): void {
+    this.clearPanelOpenTimer();
+    this.panelOpenTimer = setTimeout(() => {
+      this.panelOpenTimer = null;
+      const input = this.selectorInput?.nativeElement;
+      if (
+        revision !== this.searchRevision ||
+        !this.panelOpenRequested ||
+        this.disabled() ||
+        !input ||
+        input.ownerDocument.activeElement !== input
+      ) {
+        return;
+      }
+
+      this.autocompleteTrigger?.openPanel();
+    });
   }
 
   isProductType(

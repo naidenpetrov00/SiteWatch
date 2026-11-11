@@ -11,8 +11,9 @@
     inputmode="search"
     (input)="onInput($any($event.target).value)"
     (focus)="onFocus()"
-    (click)="onFocus()"
+    (click)="onClick()"
     (keydown.arrowdown)="onKeyboardOpen()"
+    (keydown.escape)="onPanelDismissed()"
     (blur)="onBlur()"
   />
   @if (hint(); as selectorHint) { <mat-hint>{{ selectorHint }}</mat-hint> }
