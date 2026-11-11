@@ -1498,9 +1498,15 @@ namespace Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Egn");
+                    b.HasIndex("Egn")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Persons_Egn")
+                        .HasFilter("[Egn] IS NOT NULL");
 
-                    b.HasIndex("Eik");
+                    b.HasIndex("Eik")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Persons_Eik")
+                        .HasFilter("[Eik] IS NOT NULL");
 
                     b.HasIndex("NumberId")
                         .IsUnique();

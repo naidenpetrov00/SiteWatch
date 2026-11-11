@@ -1,6 +1,25 @@
 <section class="add-person-primary-info-section">
   <mat-card class="add-person-primary-info-section__card">
     <mat-card-content class="add-person-primary-info-section__content" [formGroup]="personForm()">
+      <mat-autocomplete
+        #personNameMatches="matAutocomplete"
+        aria-label="Existing persons matching the entered name"
+        [autoActiveFirstOption]="false"
+      >
+        @if (showNameMatches()) {
+          @for (person of nameMatches(); track person.id) {
+            <mat-option [disabled]="true">
+              <span class="add-person-primary-info-section__match-title">
+                {{ formatNameMatchLabel(person) }}
+              </span>
+              <span class="add-person-primary-info-section__match-subtitle">
+                {{ formatNameMatchSubtitle(person) }}
+              </span>
+            </mat-option>
+          }
+        }
+      </mat-autocomplete>
+
       <div class="add-person-primary-info-section__block">
         <div class="add-person-primary-info-section__block-heading">
           <p class="add-person-primary-info-section__eyebrow">Person type</p>
@@ -35,6 +54,7 @@
                 matInput
                 appPersonInputSanitizer="letters"
                 formControlName="firstName"
+                [matAutocomplete]="personNameMatches"
                 name="person-first-name"
                 autocomplete="given-name"
                 minlength="1"
@@ -60,6 +80,7 @@
                 matInput
                 appPersonInputSanitizer="letters"
                 formControlName="middleName"
+                [matAutocomplete]="personNameMatches"
                 name="person-middle-name"
                 autocomplete="additional-name"
                 minlength="1"
@@ -82,6 +103,7 @@
                 matInput
                 appPersonInputSanitizer="letters"
                 formControlName="lastName"
+                [matAutocomplete]="personNameMatches"
                 name="person-last-name"
                 autocomplete="family-name"
                 minlength="1"
@@ -138,6 +160,7 @@
                 matInput
                 appPersonInputSanitizer="company"
                 formControlName="companyName"
+                [matAutocomplete]="personNameMatches"
                 name="person-company-name"
                 autocomplete="organization"
                 minlength="1"
@@ -230,6 +253,7 @@
           </div>
         }
       </div>
+
     </mat-card-content>
   </mat-card>
 </section>

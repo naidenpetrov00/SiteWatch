@@ -93,6 +93,23 @@ export class DashboardPersonsService {
     }
   }));
 
+  readonly deletePersonMutation = injectMutation<void, Error, string>(() => ({
+    mutationKey: ['persons', 'delete'],
+    mutationFn: async (personId: string) =>
+      firstValueFrom(this.http.delete<void>(buildApiUrl(`/persons/${personId}`))),
+    onSuccess: async (_data, personId) => {
+      await Promise.all([
+        this.queryClient.invalidateQueries({
+          queryKey: ['persons', 'dashboard']
+        }),
+        this.queryClient.invalidateQueries({
+          queryKey: ['persons', 'detail', personId],
+          exact: true
+        })
+      ]);
+    }
+  }));
+
   setTableState(state: DataTableState<DashboardPerson>): void {
     const nextState = this.toQueryState(state);
 
@@ -105,6 +122,10 @@ export class DashboardPersonsService {
 
   createPerson(request: CreateDashboardPersonRequest): Promise<CreateDashboardPersonResponse> {
     return this.createPersonMutation.mutateAsync(request);
+  }
+
+  deletePerson(personId: string): Promise<void> {
+    return this.deletePersonMutation.mutateAsync(personId);
   }
 
   getPersonById(personId: string): Promise<DashboardPersonDetails> {
