@@ -32,7 +32,8 @@ public sealed class RetailerService(ApplicationDbContext dbContext) : IRetailerS
                     request.DisplayName,
                     companyPerson,
                     request.BaseWebsiteUrl,
-                    request.Notes);
+                    request.Notes,
+                    request.IsDefaultForOffers);
                 dbContext.Retailers.Add(retailer);
                 return retailer.Id;
             },
@@ -65,7 +66,8 @@ public sealed class RetailerService(ApplicationDbContext dbContext) : IRetailerS
                     request.DisplayName,
                     companyPerson,
                     request.BaseWebsiteUrl,
-                    request.Notes);
+                    request.Notes,
+                    request.IsDefaultForOffers);
             },
             "A retailer with this display name already exists.",
             cancellationToken);

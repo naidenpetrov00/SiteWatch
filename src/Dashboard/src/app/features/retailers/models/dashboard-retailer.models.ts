@@ -8,6 +8,7 @@ export interface DashboardRetailer {
   baseWebsiteUrl: string;
   websiteHost: string;
   isActive: boolean;
+  isDefaultForOffers: boolean;
 }
 
 export interface DashboardRetailerDetails {
@@ -18,6 +19,7 @@ export interface DashboardRetailerDetails {
   websiteHost: string;
   notes: string | null;
   isActive: boolean;
+  isDefaultForOffers: boolean;
 }
 
 export interface DashboardRetailerLookup {
@@ -38,6 +40,7 @@ export interface CreateDashboardRetailerRequest {
   companyPersonId: string;
   baseWebsiteUrl: string;
   notes: string | null;
+  isDefaultForOffers?: boolean;
 }
 
 export interface UpdateDashboardRetailerRequest
