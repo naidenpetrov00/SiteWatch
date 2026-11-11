@@ -1363,6 +1363,10 @@ namespace Infrastructure.Data.Migrations
                     b.Property<Guid>("OfferActivitySectionId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("ProductTypeDescription")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
                     b.Property<Guid>("ProductTypeId")
                         .HasColumnType("uniqueidentifier");
 
@@ -1799,6 +1803,10 @@ namespace Infrastructure.Data.Migrations
 
                     b.Property<string>("CreatedBy")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.Property<DateTimeOffset>("LastModified")
                         .HasColumnType("datetimeoffset");
