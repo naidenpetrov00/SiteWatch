@@ -17,6 +17,11 @@ export interface ProductCatalogProductType {
   categoryName: string;
 }
 
+export interface ProductCatalogBrand {
+  id: string;
+  name: string;
+}
+
 export interface ProductCatalogPageRequest {
   searchTerm?: string;
   pageIndex?: number;

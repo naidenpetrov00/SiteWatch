@@ -24,6 +24,7 @@ public sealed class ProductByIdQueryHandler(IApplicationDbContext dbContext)
             .AsNoTracking()
             .Include(product => product.ProductType)
             .ThenInclude(productType => productType.Category)
+            .Include(product => product.ProductBrand)
             .SingleOrDefaultAsync(product => product.Id == request.ProductId, cancellationToken);
 
         Guard.Against.NotFound(request.ProductId, product);

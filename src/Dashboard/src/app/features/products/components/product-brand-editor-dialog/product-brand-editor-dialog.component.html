@@ -1,0 +1,37 @@
+<app-dialog-shell
+  eyebrow="Catalog"
+  [title]="isEdit ? 'Edit Product Brand' : 'Create Product Brand'"
+  subtitle="Product Brands are reused across concrete Products."
+  [closeDisabled]="saving()"
+>
+  <form [id]="formId" class="product-brand-editor" [formGroup]="form" novalidate (ngSubmit)="save()">
+    <mat-autocomplete #brandMatches="matAutocomplete" aria-label="Existing Product Brands matching the entered name" [autoActiveFirstOption]="false">
+      @for (brand of matches(); track brand.id) {
+        <mat-option [disabled]="true">{{ brand.name }}</mat-option>
+      }
+    </mat-autocomplete>
+    <mat-form-field appearance="outline">
+      <mat-label>Product Brand name</mat-label>
+      <input matInput formControlName="name" name="product-brand-name" maxlength="100" autocomplete="off" [matAutocomplete]="brandMatches" />
+      @if (form.controls.name.touched && form.controls.name.invalid) {
+        <mat-error>Enter a Product Brand name of no more than 100 characters.</mat-error>
+      }
+    </mat-form-field>
+    @if (exactDuplicate()) {
+      <p class="product-brand-editor__error" role="alert">A Product Brand with this name already exists.</p>
+    }
+    @if (matches().length > 0 && !exactDuplicate()) {
+      <p class="product-brand-editor__hint">Check the suggested existing Brands before creating another one.</p>
+    }
+    @if (saveError()) { <p class="product-brand-editor__error" role="alert">{{ saveError() }}</p> }
+  </form>
+  <app-dialog-action-bar
+    dialog-shell-actions
+    [cancelDisabled]="saving()"
+    [submitDisabled]="form.invalid || exactDuplicate() || saving()"
+    [submitLabel]="saving() ? 'Saving…' : isEdit ? 'Save Product Brand' : 'Create Product Brand'"
+    [submitFormId]="formId"
+    submitButtonType="submit"
+    (cancel)="close()"
+  />
+</app-dialog-shell>

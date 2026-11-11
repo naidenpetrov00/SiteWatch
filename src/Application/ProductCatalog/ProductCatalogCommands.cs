@@ -43,13 +43,32 @@ public sealed record UpdateProductTypeCommand : IRequest
 [Authorize(Roles = UserRoles.Administrator)]
 public sealed record DeleteProductTypeCommand(Guid Id) : IRequest;
 
+/// <summary>Creates a Product Brand.</summary>
+[Authorize(Roles = UserRoles.Administrator)]
+public sealed record CreateProductBrandCommand(string Name) : IRequest<Guid>;
+
+/// <summary>Updates a Product Brand name.</summary>
+[Authorize(Roles = UserRoles.Administrator)]
+public sealed record UpdateProductBrandCommand : IRequest
+{
+    public Guid Id { get; set; }
+    public string Name { get; init; } = string.Empty;
+}
+
+/// <summary>Deletes an unreferenced Product Brand.</summary>
+[Authorize(Roles = UserRoles.Administrator)]
+public sealed record DeleteProductBrandCommand(Guid Id) : IRequest;
+
 public sealed class ProductCatalogCommandHandler(IProductCatalogService service)
     : IRequestHandler<CreateCategoryCommand, Guid>,
       IRequestHandler<UpdateCategoryCommand>,
       IRequestHandler<DeleteCategoryCommand>,
       IRequestHandler<CreateProductTypeCommand, Guid>,
       IRequestHandler<UpdateProductTypeCommand>,
-      IRequestHandler<DeleteProductTypeCommand>
+      IRequestHandler<DeleteProductTypeCommand>,
+      IRequestHandler<CreateProductBrandCommand, Guid>,
+      IRequestHandler<UpdateProductBrandCommand>,
+      IRequestHandler<DeleteProductBrandCommand>
 {
     public Task<Guid> Handle(CreateCategoryCommand request, CancellationToken cancellationToken) =>
         service.CreateCategoryAsync(request.Name, cancellationToken);
@@ -85,6 +104,21 @@ public sealed class ProductCatalogCommandHandler(IProductCatalogService service)
 
     public Task Handle(DeleteProductTypeCommand request, CancellationToken cancellationToken) =>
         service.DeleteProductTypeAsync(request.Id, cancellationToken);
+
+    public Task<Guid> Handle(
+        CreateProductBrandCommand request,
+        CancellationToken cancellationToken) =>
+        service.CreateProductBrandAsync(request.Name, cancellationToken);
+
+    public Task Handle(
+        UpdateProductBrandCommand request,
+        CancellationToken cancellationToken) =>
+        service.UpdateProductBrandAsync(request.Id, request.Name, cancellationToken);
+
+    public Task Handle(
+        DeleteProductBrandCommand request,
+        CancellationToken cancellationToken) =>
+        service.DeleteProductBrandAsync(request.Id, cancellationToken);
 }
 
 public sealed class CreateCategoryValidator : AbstractValidator<CreateCategoryCommand>
@@ -131,4 +165,24 @@ public sealed class UpdateProductTypeValidator : AbstractValidator<UpdateProduct
 public sealed class DeleteProductTypeValidator : AbstractValidator<DeleteProductTypeCommand>
 {
     public DeleteProductTypeValidator() => RuleFor(request => request.Id).NotEmpty();
+}
+
+public sealed class CreateProductBrandValidator : AbstractValidator<CreateProductBrandCommand>
+{
+    public CreateProductBrandValidator() => RuleFor(request => request.Name)
+        .NotEmpty().MaximumLength(ProductBrand.MaxNameLength);
+}
+
+public sealed class UpdateProductBrandValidator : AbstractValidator<UpdateProductBrandCommand>
+{
+    public UpdateProductBrandValidator()
+    {
+        RuleFor(request => request.Id).NotEmpty();
+        RuleFor(request => request.Name).NotEmpty().MaximumLength(ProductBrand.MaxNameLength);
+    }
+}
+
+public sealed class DeleteProductBrandValidator : AbstractValidator<DeleteProductBrandCommand>
+{
+    public DeleteProductBrandValidator() => RuleFor(request => request.Id).NotEmpty();
 }

@@ -34,6 +34,7 @@ export interface DashboardProduct {
   productTypeName: string;
   categoryId: string;
   categoryName: string;
+  brandId: string | null;
   brand: string | null;
   model: string | null;
   packageQuantity: number | null;
@@ -59,6 +60,7 @@ export interface DashboardProductLookupResponse {
   productTypeName: string;
   categoryId: string;
   categoryName: string;
+  brandId: string | null;
   brand: string | null;
   model: string | null;
   packageQuantity: number | null;
@@ -76,7 +78,7 @@ export interface DashboardProductsResponse {
 export interface CreateDashboardProductRequest {
   title: string;
   description: string | null;
-  brand: string | null;
+  brandId: string | null;
   model: string | null;
   packageQuantity: number | null;
   packageUnit: ProductPackageUnit | null;

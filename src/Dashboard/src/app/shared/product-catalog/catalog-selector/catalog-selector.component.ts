@@ -28,13 +28,15 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 
 import {
+  ProductCatalogBrand,
   ProductCatalogCategory,
+  ProductCatalogPage,
   ProductCatalogProductType
 } from '../product-catalog.models';
 import { ProductCatalogLookupService } from '../product-catalog-lookup.service';
 
-export type CatalogSelectorKind = 'category' | 'product-type';
-export type CatalogSelection = ProductCatalogCategory | ProductCatalogProductType;
+export type CatalogSelectorKind = 'category' | 'product-type' | 'brand';
+export type CatalogSelection = ProductCatalogCategory | ProductCatalogProductType | ProductCatalogBrand;
 
 @Component({
   selector: 'app-catalog-selector',
@@ -211,15 +213,19 @@ export class CatalogSelectorComponent
     this.openPanelSoon(revision);
 
     try {
-      const response =
-        this.kind() === 'category'
-          ? await this.catalogLookupService.getCategories({
+      const response: ProductCatalogPage<CatalogSelection> = this.kind() === 'category'
+        ? await this.catalogLookupService.getCategories({
               searchTerm: normalizedSearchTerm,
               pageSize: 20
             })
-          : await this.catalogLookupService.getProductTypes({
+        : this.kind() === 'product-type'
+          ? await this.catalogLookupService.getProductTypes({
               searchTerm: normalizedSearchTerm,
               categoryId: this.categoryId(),
+              pageSize: 20
+            })
+          : await this.catalogLookupService.getProductBrands({
+              searchTerm: normalizedSearchTerm,
               pageSize: 20
             });
       if (revision !== this.searchRevision) return;
@@ -227,11 +233,7 @@ export class CatalogSelectorComponent
       this.openPanelSoon(revision);
     } catch {
       if (revision !== this.searchRevision) return;
-      this.lookupError.set(
-        this.kind() === 'category'
-          ? 'Categories could not be loaded. Try again.'
-          : 'Product Types could not be loaded. Try again.'
-      );
+      this.lookupError.set(`${this.pluralLabel()} could not be loaded. Try again.`);
     } finally {
       if (revision === this.searchRevision) this.loading.set(false);
     }
@@ -305,5 +307,11 @@ export class CatalogSelectorComponent
     selection: CatalogSelection
   ): selection is ProductCatalogProductType {
     return 'categoryId' in selection;
+  }
+
+  pluralLabel(): string {
+    if (this.kind() === 'category') return 'Categories';
+    if (this.kind() === 'product-type') return 'Product Types';
+    return 'Product Brands';
   }
 }

@@ -37,4 +37,11 @@ public interface IProductCatalogService
     Task<PagedResult<ProductTypeDto>> GetProductTypesAsync(
         ProductTypesQuery request,
         CancellationToken cancellationToken);
+    Task<Guid> CreateProductBrandAsync(string name, CancellationToken cancellationToken);
+    Task UpdateProductBrandAsync(Guid id, string name, CancellationToken cancellationToken);
+    Task DeleteProductBrandAsync(Guid id, CancellationToken cancellationToken);
+    Task<ProductBrandDto> GetProductBrandAsync(Guid id, CancellationToken cancellationToken);
+    Task<PagedResult<ProductBrandDto>> GetProductBrandsAsync(
+        ProductBrandsQuery request,
+        CancellationToken cancellationToken);
 }

@@ -12,7 +12,7 @@ describe('ProductDialogComponent', () => {
     createProduct: vi.fn(), updateProduct: vi.fn()
   };
   const dialogRef = { close: vi.fn() };
-  const catalogLookupService = { getProductTypes: vi.fn(), getCategories: vi.fn() };
+  const catalogLookupService = { getProductTypes: vi.fn(), getCategories: vi.fn(), getProductBrands: vi.fn() };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -43,8 +43,9 @@ describe('ProductDialogComponent', () => {
     productsService.createProduct.mockResolvedValue({ id: 'product-1' });
     const component = TestBed.createComponent(ProductDialogComponent).componentInstance;
     component.productTypeControl.setValue({ id: 'product-type-1', name: 'Tools Equipment', categoryId: 'category-1', categoryName: 'Tools' });
+    component.productBrandControl.setValue({ id: 'brand-1', name: 'Bosch' });
     component.productForm.patchValue({
-      title: '  Cordless   Drill ', brand: ' Bosch ', model: ' GSB ',
+      title: '  Cordless   Drill ', model: ' GSB ',
       status: 'Active', packageQuantity: 1, packageUnit: 'piece', primarySearchPhrase: ' '
     });
     component.addSearchEntry('alternativeSearchPhrases');
@@ -55,7 +56,7 @@ describe('ProductDialogComponent', () => {
     await component.submitProduct();
 
     expect(productsService.createProduct).toHaveBeenCalledWith(expect.objectContaining({
-      title: 'Cordless   Drill', brand: 'Bosch', model: 'GSB', primarySearchPhrase: null,
+      title: 'Cordless   Drill', brandId: 'brand-1', model: 'GSB', primarySearchPhrase: null,
       alternativeSearchPhrases: ['Drill Driver']
     }));
     expect(dialogRef.close).toHaveBeenCalledWith({ createdProductId: 'product-1' });

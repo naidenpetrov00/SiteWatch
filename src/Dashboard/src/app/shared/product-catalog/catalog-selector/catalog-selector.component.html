@@ -29,11 +29,11 @@
   (optionSelected)="onOptionSelected($event)"
 >
   @if (loading()) {
-    <mat-option disabled>Loading {{ kind() === 'category' ? 'Categories' : 'Product Types' }}…</mat-option>
+    <mat-option disabled>Loading {{ pluralLabel() }}…</mat-option>
   } @else if (lookupError()) {
     <mat-option disabled>{{ lookupError() }}</mat-option>
   } @else if (hasLoaded() && results().length === 0) {
-    <mat-option disabled>No {{ kind() === 'category' ? 'Categories' : 'Product Types' }} found.</mat-option>
+    <mat-option disabled>No {{ pluralLabel() }} found.</mat-option>
   } @else {
     @for (result of results(); track result.id) {
       <mat-option [value]="result">
@@ -53,5 +53,5 @@
   </p>
 }
 @if (loading()) {
-  <p class="catalog-selector__status" aria-live="polite">Loading {{ kind() === 'category' ? 'Categories' : 'Product Types' }}…</p>
+  <p class="catalog-selector__status" aria-live="polite">Loading {{ pluralLabel() }}…</p>
 }

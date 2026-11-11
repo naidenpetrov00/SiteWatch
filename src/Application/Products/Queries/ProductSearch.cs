@@ -33,6 +33,7 @@ public sealed class ProductSearchQueryHandler(IApplicationDbContext dbContext)
             .AsNoTracking()
             .Include(product => product.ProductType)
             .ThenInclude(productType => productType.Category)
+            .Include(product => product.ProductBrand)
             .Where(product =>
                 product.Status == ProductStatus.Active
                 && (!request.ProductTypeId.HasValue

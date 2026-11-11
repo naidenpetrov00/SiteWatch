@@ -1,0 +1,37 @@
+<h2 mat-dialog-title>Manage Product Brands</h2>
+<mat-dialog-content class="product-brand-management">
+  <p>Maintain reusable Product Brands.</p>
+  <div class="product-brand-management__toolbar">
+    <mat-form-field appearance="outline">
+      <mat-label>Search Product Brands</mat-label>
+      <input matInput [formControl]="searchControl" name="product-brand-search" autocomplete="off" inputmode="search" />
+    </mat-form-field>
+    <button mat-flat-button color="primary" type="button" (click)="createProductBrand()">Create Product Brand</button>
+  </div>
+  @if (pageError()) {
+    <p class="product-brand-management__error" role="alert">{{ pageError() }} <button mat-button type="button" (click)="retry()">Retry</button></p>
+  }
+  @if (productBrandsQuery.isPending()) {
+    <p aria-live="polite">Loading Product Brands…</p>
+  } @else if (productBrandsQuery.isError()) {
+    <p class="product-brand-management__error" role="alert">Product Brands could not be loaded.</p>
+  } @else if (productBrandsQuery.data(); as response) {
+    @if (response.items.length === 0) {
+      <p>No Product Brands match the current search.</p>
+    } @else {
+      <ul class="product-brand-management__list" aria-label="Product Brands">
+        @for (brand of response.items; track brand.id) {
+          <li>
+            <span>{{ brand.name }}</span>
+            <span class="product-brand-management__actions">
+              <button mat-stroked-button type="button" [disabled]="deletingId() === brand.id" (click)="editProductBrand(brand)">Rename</button>
+              <button mat-stroked-button color="warn" type="button" [disabled]="deletingId() === brand.id" (click)="deleteProductBrand(brand)">{{ deletingId() === brand.id ? 'Deleting…' : 'Delete' }}</button>
+            </span>
+          </li>
+        }
+      </ul>
+    }
+    <mat-paginator [length]="response.filteredCount" [pageIndex]="pageIndex()" [pageSize]="pageSize()" [pageSizeOptions]="[25, 50, 100]" [showFirstLastButtons]="true" (page)="onPageChange($event)" />
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end"><button mat-button mat-dialog-close type="button">Close</button></mat-dialog-actions>

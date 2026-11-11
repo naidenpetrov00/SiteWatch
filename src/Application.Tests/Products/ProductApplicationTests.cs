@@ -120,7 +120,7 @@ public sealed class ProductApplicationTests
 
     private static CreateProductCommand ValidCreate() => new()
     {
-        Title = "Cordless Drill", ProductTypeId = Guid.NewGuid(), Status = "Active",
+        Title = "Cordless Drill", ProductTypeId = Guid.NewGuid(), BrandId = Guid.NewGuid(), Status = "Active",
         PackageQuantity = 1, PackageUnit = "piece", AlternativeSearchPhrases = [],
         RequiredKeywords = [], ExcludedKeywords = []
     };

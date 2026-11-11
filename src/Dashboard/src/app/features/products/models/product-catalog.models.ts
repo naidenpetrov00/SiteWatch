@@ -8,9 +8,14 @@ export interface SaveProductTypeRequest {
   description?: string | null;
 }
 
+export interface SaveProductBrandRequest {
+  name: string;
+}
+
 interface CreatedResponse {
   id: string;
 }
 
 export type CategoryCreatedResponse = CreatedResponse;
 export type ProductTypeCreatedResponse = CreatedResponse;
+export type ProductBrandCreatedResponse = CreatedResponse;

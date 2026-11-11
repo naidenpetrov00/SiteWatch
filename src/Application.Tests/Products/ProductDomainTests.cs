@@ -11,7 +11,7 @@ public sealed class ProductDomainTests
     public void Product_normalizes_details_and_builds_a_search_identity_from_its_effective_phrase()
     {
         var product = Product.Create(
-            "  Cordless   Drill  ", "  Brushless   drill ", " Bosch ", " GSB 18V ",
+            "  Cordless   Drill  ", "  Brushless   drill ", ProductBrand.Create(" Bosch "), " GSB 18V ",
             1, ProductPackageUnit.Piece, CreateProductType(), ProductStatus.Active,
             ProductSearchConfiguration.Create(null));
 
@@ -28,7 +28,7 @@ public sealed class ProductDomainTests
     {
         var configuration = ProductSearchConfiguration.Create("  Bosch drill  ", [" Drill Driver "]);
         var product = Product.Create(
-            "Cordless Drill", null, "Bosch", "GSB", null, null,
+            "Cordless Drill", null, ProductBrand.Create("Bosch"), "GSB", null, null,
             CreateProductType(), ProductStatus.Unavailable, configuration);
 
         var details = ProductDetailsDto.From(product);

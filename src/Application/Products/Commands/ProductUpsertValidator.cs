@@ -11,7 +11,9 @@ public abstract class ProductUpsertValidator<TRequest> : AbstractValidator<TRequ
     {
         RuleFor(request => request.Title).NotEmpty().MaximumLength(200);
         RuleFor(request => request.Description).MaximumLength(2000);
-        RuleFor(request => request.Brand).MaximumLength(100);
+        RuleFor(request => request.BrandId)
+            .NotEqual(Guid.Empty)
+            .When(request => request.BrandId.HasValue);
         RuleFor(request => request.Model).MaximumLength(100);
         RuleFor(request => request.PackageUnit)
             .Must(value => string.IsNullOrWhiteSpace(value)
