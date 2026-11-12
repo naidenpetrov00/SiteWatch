@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 
 import { ActionButtonComponent } from '../../../shared/ui/action-button/action-button.component';
 import { DataTableComponent } from '../../../shared/data-table/data-table.component';
@@ -15,8 +16,10 @@ import {
   DataTableState
 } from '../../../shared/data-table/data-table.types';
 import { AddPersonDialogComponent } from '../components/add-person-dialog/add-person-dialog.component';
+import { DeletePersonDialogComponent } from '../components/delete-person-dialog/delete-person-dialog.component';
 import { DashboardPerson } from '../models/dashboard-person.model';
 import { DashboardPersonsService } from '../services/dashboard-persons.service';
+import { getPersonError } from '../utils/person-error';
 
 const PERSON_COLUMNS: readonly DataTableColumn<DashboardPerson>[] = [
   {
@@ -88,6 +91,13 @@ const PERSON_COLUMNS: readonly DataTableColumn<DashboardPerson>[] = [
     label: 'VAT Number',
     sortable: true,
     filter: { kind: 'text', placeholder: 'Filter VAT Number' }
+  },
+  {
+    key: 'deleteAction',
+    label: 'Delete',
+    cellType: 'button',
+    sortable: false,
+    valueAccessor: () => 'Delete'
   }
 ] as const;
 
@@ -110,6 +120,7 @@ export class ManagePersonsPage {
   readonly persons = signal<readonly DashboardPerson[]>([]);
   readonly personsFilteredCount = signal(0);
   readonly personsTotalCount = signal(0);
+  readonly deleteError = signal<string | null>(null);
   readonly tableState = signal<DataTableState<DashboardPerson> | null>(null);
   readonly columns = PERSON_COLUMNS;
   readonly pageSize = 50;
@@ -151,7 +162,40 @@ export class ManagePersonsPage {
     });
   }
 
-  onNumberIdClick(person: DashboardPerson): void {
-    void this.router.navigate(['/manage-persons', person.id]);
+  async onCellButtonClicked(event: {
+    row: DashboardPerson;
+    column: DataTableColumn<DashboardPerson>;
+  }): Promise<void> {
+    if (event.column.key === 'numberId') {
+      void this.router.navigate(['/manage-persons', event.row.id]);
+      return;
+    }
+
+    if (event.column.key !== 'deleteAction') {
+      return;
+    }
+
+    const confirmed = await firstValueFrom(
+      this.dialog.open(DeletePersonDialogComponent, {
+        autoFocus: false,
+        width: '28rem',
+        maxWidth: 'calc(100vw - 2rem)',
+        data: {
+          displayName: event.row.displayName,
+          numberId: event.row.numberId
+        }
+      }).afterClosed()
+    );
+
+    if (confirmed !== true) {
+      return;
+    }
+
+    this.deleteError.set(null);
+    try {
+      await this.dashboardPersonsService.deletePerson(event.row.id);
+    } catch (error) {
+      this.deleteError.set(getPersonError(error, 'The person could not be deleted. Please try again.'));
+    }
   }
 }

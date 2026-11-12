@@ -16,14 +16,32 @@ public interface IProductCatalogService
         Guid categoryId,
         string name,
         CancellationToken cancellationToken);
+    Task<Guid> CreateProductTypeAsync(
+        Guid categoryId,
+        string name,
+        string? description,
+        CancellationToken cancellationToken);
     Task UpdateProductTypeAsync(
         Guid id,
         Guid categoryId,
         string name,
         CancellationToken cancellationToken);
+    Task UpdateProductTypeAsync(
+        Guid id,
+        Guid categoryId,
+        string name,
+        string? description,
+        CancellationToken cancellationToken);
     Task DeleteProductTypeAsync(Guid id, CancellationToken cancellationToken);
     Task<ProductTypeDto> GetProductTypeAsync(Guid id, CancellationToken cancellationToken);
     Task<PagedResult<ProductTypeDto>> GetProductTypesAsync(
         ProductTypesQuery request,
+        CancellationToken cancellationToken);
+    Task<Guid> CreateProductBrandAsync(string name, CancellationToken cancellationToken);
+    Task UpdateProductBrandAsync(Guid id, string name, CancellationToken cancellationToken);
+    Task DeleteProductBrandAsync(Guid id, CancellationToken cancellationToken);
+    Task<ProductBrandDto> GetProductBrandAsync(Guid id, CancellationToken cancellationToken);
+    Task<PagedResult<ProductBrandDto>> GetProductBrandsAsync(
+        ProductBrandsQuery request,
         CancellationToken cancellationToken);
 }

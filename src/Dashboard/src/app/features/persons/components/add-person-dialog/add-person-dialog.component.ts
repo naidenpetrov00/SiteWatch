@@ -44,6 +44,7 @@ import {
   websiteValidator
 } from './add-person-dialog.validators';
 import { toCreateDashboardPersonRequest } from '../../utils/dashboard-person-request.mapper';
+import { getPersonError } from '../../utils/person-error';
 
 @Component({
   selector: 'app-add-person-dialog',
@@ -73,6 +74,7 @@ export class AddPersonDialogComponent implements OnInit {
   readonly dialogSubtitle =
     'Capture the primary identity first, then move through addresses, contacts, and bank accounts.';
   readonly selectedTabId = signal<AddPersonWizardTabId>(this.wizardTabs[0].id);
+  readonly saveError = signal<string | null>(null);
   readonly isCreatingPerson = () => this.dashboardPersonsService.createPersonMutation.isPending();
   readonly personTypes = PERSON_TYPES;
   readonly validationLimits = ADD_PERSON_VALIDATION_LIMITS;
@@ -93,12 +95,14 @@ export class AddPersonDialogComponent implements OnInit {
       return;
     }
 
+    this.saveError.set(null);
+
     try {
       const request = toCreateDashboardPersonRequest(this.personForm);
       await this.dashboardPersonsService.createPerson(request);
       this.dialogRef.close(true);
-    } catch {
-      // Keep the dialog open and let the form state remain intact.
+    } catch (error) {
+      this.saveError.set(getPersonError(error, 'The person could not be created. Please try again.'));
     }
   }
 

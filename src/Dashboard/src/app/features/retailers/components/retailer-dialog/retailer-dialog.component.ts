@@ -19,6 +19,7 @@ import {
   MatAutocompleteModule,
   MatAutocompleteSelectedEvent
 } from '@angular/material/autocomplete';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -40,6 +41,7 @@ import { getRetailerError } from '../../utils/retailer-error';
   imports: [
     ReactiveFormsModule,
     MatAutocompleteModule,
+    MatCheckboxModule,
     MatFormFieldModule,
     MatInputModule,
     DialogActionBarComponent,
@@ -87,7 +89,10 @@ export class RetailerDialogComponent implements OnInit {
     ),
     notes: this.formBuilder.nonNullable.control(this.retailer?.notes ?? '', [
       Validators.maxLength(2000)
-    ])
+    ]),
+    isDefaultForOffers: this.formBuilder.nonNullable.control(
+      this.retailer?.isDefaultForOffers ?? false
+    )
   });
 
   readonly formId = this.retailer
@@ -206,7 +211,8 @@ export class RetailerDialogComponent implements OnInit {
       displayName: value.displayName.trim().replace(/\s+/g, ' '),
       companyPersonId: value.companyPersonId!,
       baseWebsiteUrl: value.baseWebsiteUrl.trim(),
-      notes: value.notes.trim() || null
+      notes: value.notes.trim() || null,
+      ...(value.isDefaultForOffers ? { isDefaultForOffers: true } : {})
     };
   }
 }

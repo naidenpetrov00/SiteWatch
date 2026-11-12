@@ -5,14 +5,17 @@ import { firstValueFrom } from 'rxjs';
 
 import { buildApiUrl } from '../../../core/api/api-url';
 import {
+  ProductCatalogBrand,
   ProductCatalogCategory,
   ProductCatalogProductType
 } from '../../../shared/product-catalog/product-catalog.models';
 import { ProductCatalogLookupService } from '../../../shared/product-catalog/product-catalog-lookup.service';
 import {
   CategoryCreatedResponse,
+  ProductBrandCreatedResponse,
   ProductTypeCreatedResponse,
   SaveCategoryRequest,
+  SaveProductBrandRequest,
   SaveProductTypeRequest
 } from '../models/product-catalog.models';
 
@@ -57,6 +60,34 @@ export class ProductCatalogService {
 
   async deleteProductType(productTypeId: string): Promise<void> {
     await firstValueFrom(this.http.delete<void>(buildApiUrl(`/product-types/${productTypeId}`)));
+    await this.invalidateCatalog();
+  }
+
+  async createProductBrand(request: SaveProductBrandRequest): Promise<ProductCatalogBrand> {
+    const created = await firstValueFrom(
+      this.http.post<ProductBrandCreatedResponse>(buildApiUrl('/product-brands'), request)
+    );
+    const brand = await this.catalogLookupService.getProductBrandById(created.id);
+    await this.invalidateCatalog();
+    return brand;
+  }
+
+  async updateProductBrand(
+    productBrandId: string,
+    request: SaveProductBrandRequest
+  ): Promise<ProductCatalogBrand> {
+    await firstValueFrom(
+      this.http.put<void>(buildApiUrl(`/product-brands/${productBrandId}`), request)
+    );
+    const brand = await this.catalogLookupService.getProductBrandById(productBrandId);
+    await this.invalidateCatalogAndProductPresentation();
+    return brand;
+  }
+
+  async deleteProductBrand(productBrandId: string): Promise<void> {
+    await firstValueFrom(
+      this.http.delete<void>(buildApiUrl(`/product-brands/${productBrandId}`))
+    );
     await this.invalidateCatalog();
   }
 

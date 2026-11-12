@@ -20,7 +20,11 @@ public sealed partial class DashboardRetailersQuery
                     query => query.WebsiteHost,
                     retailer => retailer.NormalizedWebsiteHost),
                 TableFilterDescriptor<Retailer, DashboardRetailersQuery>.BooleanEquals(
-                    "isActive", query => query.IsActive, retailer => retailer.IsActive)
+                    "isActive", query => query.IsActive, retailer => retailer.IsActive),
+                TableFilterDescriptor<Retailer, DashboardRetailersQuery>.BooleanEquals(
+                    "isDefaultForOffers",
+                    query => query.IsDefaultForOffers,
+                    retailer => retailer.IsDefaultForOffers)
             ],
             Sorts: new Dictionary<string, TableSortDescriptor<Retailer, DashboardRetailersQuery>>(
                 StringComparer.OrdinalIgnoreCase)
@@ -34,7 +38,9 @@ public sealed partial class DashboardRetailersQuery
                 ["websiteHost"] = TableSortDescriptor<Retailer, DashboardRetailersQuery>.Create(
                     "websiteHost", retailer => retailer.NormalizedWebsiteHost, retailer => retailer.Id),
                 ["isActive"] = TableSortDescriptor<Retailer, DashboardRetailersQuery>.Create(
-                    "isActive", retailer => retailer.IsActive, retailer => retailer.Id)
+                    "isActive", retailer => retailer.IsActive, retailer => retailer.Id),
+                ["isDefaultForOffers"] = TableSortDescriptor<Retailer, DashboardRetailersQuery>.Create(
+                    "isDefaultForOffers", retailer => retailer.IsDefaultForOffers, retailer => retailer.Id)
             },
             DefaultSort: query =>
                 query.OrderBy(retailer => retailer.DisplayName).ThenBy(retailer => retailer.Id));

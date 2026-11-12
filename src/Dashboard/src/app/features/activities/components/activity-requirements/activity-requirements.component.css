@@ -147,6 +147,11 @@
   font-size: 0.82rem;
 }
 
+.product-requirement__identity .product-requirement__description {
+  margin-top: 0.2rem;
+  white-space: pre-wrap;
+}
+
 .product-requirement__settings {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }

@@ -10,12 +10,14 @@ public sealed record ProductDetailsDto
     public int NumberId { get; init; }
     public string Title { get; init; } = string.Empty;
     public string? Description { get; init; }
+    public Guid? BrandId { get; init; }
     public string? Brand { get; init; }
     public string? Model { get; init; }
     public decimal? PackageQuantity { get; init; }
     public string? PackageUnit { get; init; }
     public Guid ProductTypeId { get; init; }
     public string ProductTypeName { get; init; } = string.Empty;
+    public string? ProductTypeDescription { get; init; }
     public Guid CategoryId { get; init; }
     public string CategoryName { get; init; } = string.Empty;
     public string Status { get; init; } = string.Empty;
@@ -32,12 +34,14 @@ public sealed record ProductDetailsDto
             NumberId = product.NumberId,
             Title = product.Title,
             Description = product.Description,
+            BrandId = product.ProductBrandId,
             Brand = product.Brand,
             Model = product.Model,
             PackageQuantity = product.PackageQuantity,
             PackageUnit = product.PackageUnit?.ToCode(),
             ProductTypeId = product.ProductTypeId,
             ProductTypeName = product.ProductType.Name,
+            ProductTypeDescription = product.ProductType.Description,
             CategoryId = product.ProductType.CategoryId,
             CategoryName = product.ProductType.Category.Name,
             Status = product.Status.ToString(),

@@ -20,7 +20,7 @@
     <div class="add-person-dialog__content">
       @switch (selectedTabId()) {
         @case ('primary-info') {
-          <app-add-person-primary-info-section [personForm]="personForm" />
+          <app-add-person-primary-info-section [personForm]="personForm" [showNameMatches]="true" />
         }
         @case ('addresses') {
           <app-add-person-addresses-section
@@ -45,6 +45,10 @@
         }
       }
     </div>
+
+    @if (saveError()) {
+      <p class="add-person-dialog__error" role="alert">{{ saveError() }}</p>
+    }
   </form>
 
   <app-dialog-action-bar

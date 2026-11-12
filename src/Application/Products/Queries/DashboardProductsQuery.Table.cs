@@ -23,7 +23,10 @@ public sealed partial class DashboardProductsQuery
                 TableFilterDescriptorExtensions.GuidEquals<Product, DashboardProductsQuery>(
                     "productTypeId", query => query.ProductTypeId, product => product.ProductTypeId),
                 TableFilterDescriptor<Product, DashboardProductsQuery>.TextContains(
-                    "brand", query => query.Brand, product => product.Brand ?? string.Empty),
+                    "brand", query => query.Brand,
+                    product => product.ProductBrand != null
+                        ? product.ProductBrand.Name
+                        : product.LegacyBrandName ?? string.Empty),
                 TableFilterDescriptor<Product, DashboardProductsQuery>.TextContains(
                     "model", query => query.Model, product => product.Model ?? string.Empty),
                 new TableFilterDescriptor<Product, DashboardProductsQuery>(
@@ -52,7 +55,11 @@ public sealed partial class DashboardProductsQuery
                 ["productTypeName"] = TableSortDescriptor<Product, DashboardProductsQuery>.Create(
                     "productTypeName", product => product.ProductType.Name, product => product.Id),
                 ["brand"] = TableSortDescriptor<Product, DashboardProductsQuery>.Create(
-                    "brand", product => product.Brand ?? string.Empty, product => product.Id),
+                    "brand",
+                    product => product.ProductBrand != null
+                        ? product.ProductBrand.Name
+                        : product.LegacyBrandName ?? string.Empty,
+                    product => product.Id),
                 ["model"] = TableSortDescriptor<Product, DashboardProductsQuery>.Create(
                     "model", product => product.Model ?? string.Empty, product => product.Id),
                 ["packageQuantity"] = TableSortDescriptor<Product, DashboardProductsQuery>.Create(

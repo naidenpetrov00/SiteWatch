@@ -104,7 +104,8 @@ public sealed record OfferDetailsDto(
         requirement.Notes,
         requirement.SortOrder,
         requirement.CalculatedQuantity,
-        requirement.ProductLine is null ? null : ToProductLineDto(requirement.ProductLine));
+        requirement.ProductLine is null ? null : ToProductLineDto(requirement.ProductLine),
+        requirement.ProductTypeDescription);
 
     public static OfferProductLineDto ToProductLineDto(OfferProductLine line) => new(
         line.Id,
@@ -175,7 +176,8 @@ public sealed record OfferProductRequirementDto(
     string? Notes,
     int SortOrder,
     decimal CalculatedQuantity,
-    OfferProductLineDto? ProductLine);
+    OfferProductLineDto? ProductLine,
+    string? ProductTypeDescription = null);
 
 /// <summary>Represents the concrete Product selected for one Offer Product Requirement.</summary>
 public sealed record OfferProductLineDto(

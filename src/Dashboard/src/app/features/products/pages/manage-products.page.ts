@@ -14,6 +14,7 @@ import {
 import { ActionButtonComponent } from '../../../shared/ui/action-button/action-button.component';
 import { CategoryManagementDialogComponent } from '../components/category-management-dialog/category-management-dialog.component';
 import { ProductDialogComponent } from '../components/product-dialog/product-dialog.component';
+import { ProductBrandManagementDialogComponent } from '../components/product-brand-management-dialog/product-brand-management-dialog.component';
 import { ProductTypeManagementDialogComponent } from '../components/product-type-management-dialog/product-type-management-dialog.component';
 import { DashboardProduct, PRODUCT_PACKAGE_UNIT_OPTIONS, PRODUCT_STATUSES } from '../models/dashboard-product.models';
 import { DashboardProductsService } from '../services/dashboard-products.service';
@@ -114,6 +115,10 @@ export class ManageProductsPage {
 
   openProductTypeManagement(): void {
     this.dialog.open(ProductTypeManagementDialogComponent, { autoFocus: false, restoreFocus: true, width: '72rem', maxWidth: 'calc(100vw - 2rem)' });
+  }
+
+  openProductBrandManagement(): void {
+    this.dialog.open(ProductBrandManagementDialogComponent, { autoFocus: false, restoreFocus: true, width: '48rem', maxWidth: 'calc(100vw - 2rem)' });
   }
 
   async onCellButtonClicked(event: { row: DashboardProduct; column: DataTableColumn<DashboardProduct> }): Promise<void> {

@@ -148,6 +148,9 @@
                     <div class="product-requirement__identity">
                       <strong>{{ requirement.productTypeName }}</strong>
                       <span>Category · {{ requirement.categoryName }}</span>
+                      @if (requirement.productTypeDescription) {
+                        <span class="product-requirement__description">{{ requirement.productTypeDescription }}</span>
+                      }
                     </div>
 
                     <div class="product-requirement__settings">

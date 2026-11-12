@@ -62,6 +62,7 @@ export interface OfferProductRequirement {
   sourceRequirementId: string;
   productTypeId: string;
   productTypeName: string;
+  productTypeDescription?: string | null;
   categoryId: string;
   categoryName: string;
   configuredQuantity: number;

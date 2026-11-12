@@ -37,6 +37,7 @@ public sealed class RenovationCatalogSeedData(
     {
         var definitions = CreateDefinitions();
         var productTypes = await EnsureProductTypesAsync(definitions);
+        var productBrands = await EnsureProductBrandsAsync(definitions);
         var retailerNameKeys = definitions
             .Select(definition => Retailer.NormalizeNameKey(definition.RetailerName))
             .Distinct(StringComparer.Ordinal)
@@ -70,20 +71,24 @@ public sealed class RenovationCatalogSeedData(
                     && candidate.RetailerProductCode == definition.RetailerProductCode);
             if (listing is null)
             {
+                var productBrand = string.IsNullOrWhiteSpace(definition.Brand)
+                    ? null
+                    : productBrands[NormalizeCatalogName(definition.Brand)];
+                var productBrandId = productBrand?.Id;
                 var product = dbContext.Products.Local.FirstOrDefault(candidate =>
                         candidate.Title == definition.Title
-                        && candidate.Brand == definition.Brand
+                        && candidate.ProductBrandId == productBrandId
                         && candidate.Model == definition.Model)
                     ?? await dbContext.Products.FirstOrDefaultAsync(candidate =>
                         candidate.Title == definition.Title
-                        && candidate.Brand == definition.Brand
+                        && candidate.ProductBrandId == productBrandId
                         && candidate.Model == definition.Model);
                 if (product is null)
                 {
                     product = Product.Create(
                         definition.Title,
                         definition.Description,
-                        definition.Brand,
+                        productBrand,
                         definition.Model,
                         definition.PackageQuantity,
                         definition.PackageUnit,
@@ -194,6 +199,40 @@ public sealed class RenovationCatalogSeedData(
             item => (item.Category.Name, item.Name),
             item => item);
     }
+
+    private async Task<Dictionary<string, ProductBrand>> EnsureProductBrandsAsync(
+        IReadOnlyCollection<CatalogDefinition> definitions)
+    {
+        var productBrands = await dbContext.ProductBrands.ToListAsync();
+        foreach (var brandName in definitions
+                     .Select(definition => definition.Brand)
+                     .Where(name => !string.IsNullOrWhiteSpace(name))
+                     .Select(name => name!)
+                     .DistinctBy(NormalizeCatalogName))
+        {
+            var normalizedName = NormalizeCatalogName(brandName);
+            if (productBrands.Any(brand => brand.NormalizedName == normalizedName))
+            {
+                continue;
+            }
+
+            var productBrand = ProductBrand.Create(brandName);
+            ApplyAuditMetadata(productBrand);
+            dbContext.ProductBrands.Add(productBrand);
+            productBrands.Add(productBrand);
+        }
+        await dbContext.SaveChangesAsync();
+
+        return productBrands.ToDictionary(
+            brand => brand.NormalizedName,
+            brand => brand,
+            StringComparer.Ordinal);
+    }
+
+    private static string NormalizeCatalogName(string name) => string.Join(
+        " ",
+        name.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))
+        .ToUpperInvariant();
 
     private static List<CatalogDefinition> CreateDefinitions() =>
     [

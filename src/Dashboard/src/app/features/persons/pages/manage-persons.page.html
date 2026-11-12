@@ -17,6 +17,10 @@
     </div>
   </header>
 
+  @if (deleteError()) {
+    <p class="manage-persons-page__error" role="alert">{{ deleteError() }}</p>
+  }
+
   <app-data-table
     tableEyebrow="Persons"
     tableLabel="Manage Persons"
@@ -29,6 +33,6 @@
     [pageSize]="pageSize"
     [pageSizeOptions]="pageSizeOptions"
     (tableStateChange)="onTableStateChange($event)"
-    (cellButtonClicked)="onNumberIdClick($event.row)"
+    (cellButtonClicked)="onCellButtonClicked($event)"
   />
 </main>

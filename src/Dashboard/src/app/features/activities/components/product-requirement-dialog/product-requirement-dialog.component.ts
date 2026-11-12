@@ -35,6 +35,7 @@ export class ProductRequirementDialogComponent {
   readonly selectedProductType = signal<ProductCatalogProductType | null>(this.data.requirement ? {
     id: this.data.requirement.productTypeId,
     name: this.data.requirement.productTypeName,
+    description: this.data.requirement.productTypeDescription,
     categoryId: this.data.requirement.categoryId,
     categoryName: this.data.requirement.categoryName
   } : null);

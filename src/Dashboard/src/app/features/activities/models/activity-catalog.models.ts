@@ -64,6 +64,7 @@ export interface ActivityProductRequirement {
   id: string;
   productTypeId: string;
   productTypeName: string;
+  productTypeDescription?: string | null;
   categoryId: string;
   categoryName: string;
   quantity: number;

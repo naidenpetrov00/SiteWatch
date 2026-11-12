@@ -13,6 +13,7 @@ public sealed record RetailerDetailsDto
     public string WebsiteHost { get; init; } = string.Empty;
     public string? Notes { get; init; }
     public bool IsActive { get; init; }
+    public bool IsDefaultForOffers { get; init; }
 
     public static RetailerDetailsDto From(Retailer retailer) =>
         new()
@@ -23,7 +24,8 @@ public sealed record RetailerDetailsDto
             BaseWebsiteUrl = retailer.BaseWebsiteUrl,
             WebsiteHost = retailer.NormalizedWebsiteHost,
             Notes = retailer.Notes,
-            IsActive = retailer.IsActive
+            IsActive = retailer.IsActive,
+            IsDefaultForOffers = retailer.IsDefaultForOffers
         };
 }
 
@@ -37,6 +39,7 @@ public sealed record RetailerTableDto
     public string BaseWebsiteUrl { get; init; } = string.Empty;
     public string WebsiteHost { get; init; } = string.Empty;
     public bool IsActive { get; init; }
+    public bool IsDefaultForOffers { get; init; }
 
     public static RetailerTableDto From(Retailer retailer) =>
         new()
@@ -47,7 +50,8 @@ public sealed record RetailerTableDto
             CompanyDisplayName = retailer.CompanyPerson.DisplayName,
             BaseWebsiteUrl = retailer.BaseWebsiteUrl,
             WebsiteHost = retailer.NormalizedWebsiteHost,
-            IsActive = retailer.IsActive
+            IsActive = retailer.IsActive,
+            IsDefaultForOffers = retailer.IsDefaultForOffers
         };
 }
 

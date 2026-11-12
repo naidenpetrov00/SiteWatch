@@ -82,6 +82,10 @@
       <mat-hint align="end">{{ retailerForm.controls.notes.value.length }}/2000</mat-hint>
     </mat-form-field>
 
+    <mat-checkbox formControlName="isDefaultForOffers">
+      Add to new offers by default
+    </mat-checkbox>
+
     @if (retailer; as currentRetailer) {
       <p class="retailer-dialog__status">
         Current status: <strong>{{ currentRetailer.isActive ? 'Active' : 'Inactive' }}</strong>.

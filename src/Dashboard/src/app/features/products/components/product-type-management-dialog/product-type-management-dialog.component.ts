@@ -57,7 +57,7 @@ export class ProductTypeManagementDialogComponent {
   private readonly catalogService = inject(ProductCatalogService);
   private readonly catalogLookupService = inject(ProductCatalogLookupService);
 
-  readonly displayedColumns = ['name', 'categoryName', 'actions'];
+  readonly displayedColumns = ['name', 'categoryName', 'description', 'actions'];
   readonly nameSearchControl = this.formBuilder.nonNullable.control('');
   readonly categoryFilterControl = this.formBuilder.control<ProductCatalogCategory | null>(null);
   readonly searchTerm = signal('');

@@ -15,6 +15,8 @@ public sealed class ProductTypeConfiguration : IEntityTypeConfiguration<ProductT
         builder.Property(productType => productType.NormalizedName)
             .HasMaxLength(ProductType.MaxNameLength)
             .IsRequired();
+        builder.Property(productType => productType.Description)
+            .HasMaxLength(ProductType.MaxDescriptionLength);
         builder.HasOne(productType => productType.Category)
             .WithMany()
             .HasForeignKey(productType => productType.CategoryId)

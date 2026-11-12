@@ -24,6 +24,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<Quarter> Quarters => Set<Quarter>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<ProductType> ProductTypes => Set<ProductType>();
+    public DbSet<ProductBrand> ProductBrands => Set<ProductBrand>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Retailer> Retailers => Set<Retailer>();
     public DbSet<RetailerListing> RetailerListings => Set<RetailerListing>();

@@ -17,6 +17,8 @@ public sealed class ProductCatalog : EndpointGroupBase
             .RequireAuthorization(AuthorizationPolicies.Administrator);
         var productTypes = app.MapGroupCustom(customGroupName: "product-types")
             .RequireAuthorization(AuthorizationPolicies.Administrator);
+        var productBrands = app.MapGroupCustom(customGroupName: "product-brands")
+            .RequireAuthorization(AuthorizationPolicies.Administrator);
 
         categories.MapPost(string.Empty, CreateCategory)
             .WithName("CreateCategory")
@@ -75,6 +77,36 @@ public sealed class ProductCatalog : EndpointGroupBase
         productTypes.MapDelete("/{productTypeId:guid}", DeleteProductType)
             .WithName("DeleteProductType")
             .WithSummary("Delete an unreferenced Product Type")
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict);
+
+        productBrands.MapPost(string.Empty, CreateProductBrand)
+            .WithName("CreateProductBrand")
+            .WithSummary("Create a Product Brand")
+            .Produces<ProductBrandCreatedResponse>(StatusCodes.Status201Created)
+            .ProducesValidationProblem()
+            .Produces(StatusCodes.Status409Conflict);
+        productBrands.MapGet(string.Empty, GetProductBrands)
+            .WithName("GetProductBrands")
+            .WithSummary("Get a paged list of Product Brands")
+            .Produces<PagedResult<ProductBrandDto>>(StatusCodes.Status200OK)
+            .ProducesValidationProblem();
+        productBrands.MapGet("/{productBrandId:guid}", GetProductBrand)
+            .WithName("GetProductBrand")
+            .WithSummary("Get a Product Brand by ID")
+            .Produces<ProductBrandDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
+        productBrands.MapPut("/{productBrandId:guid}", UpdateProductBrand)
+            .WithName("UpdateProductBrand")
+            .WithSummary("Update a Product Brand")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesValidationProblem()
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict);
+        productBrands.MapDelete("/{productBrandId:guid}", DeleteProductBrand)
+            .WithName("DeleteProductBrand")
+            .WithSummary("Delete an unreferenced Product Brand")
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status409Conflict);
@@ -164,9 +196,57 @@ public sealed class ProductCatalog : EndpointGroupBase
         return TypedResults.NoContent();
     }
 
+    private static async Task<Created<ProductBrandCreatedResponse>> CreateProductBrand(
+        IMediator mediator,
+        CreateProductBrandCommand command,
+        CancellationToken cancellationToken)
+    {
+        var id = await mediator.Send(command, cancellationToken);
+        return TypedResults.Created(
+            $"/product-brands/{id}",
+            new ProductBrandCreatedResponse(id));
+    }
+
+    private static async Task<Ok<PagedResult<ProductBrandDto>>> GetProductBrands(
+        IMediator mediator,
+        [AsParameters] ProductBrandsQuery query,
+        CancellationToken cancellationToken) =>
+        TypedResults.Ok(await mediator.Send(query, cancellationToken));
+
+    private static async Task<Ok<ProductBrandDto>> GetProductBrand(
+        IMediator mediator,
+        Guid productBrandId,
+        CancellationToken cancellationToken) =>
+        TypedResults.Ok(await mediator.Send(
+            new ProductBrandByIdQuery(productBrandId),
+            cancellationToken));
+
+    private static async Task<NoContent> UpdateProductBrand(
+        IMediator mediator,
+        Guid productBrandId,
+        UpdateProductBrandCommand command,
+        CancellationToken cancellationToken)
+    {
+        command.Id = productBrandId;
+        await mediator.Send(command, cancellationToken);
+        return TypedResults.NoContent();
+    }
+
+    private static async Task<NoContent> DeleteProductBrand(
+        IMediator mediator,
+        Guid productBrandId,
+        CancellationToken cancellationToken)
+    {
+        await mediator.Send(new DeleteProductBrandCommand(productBrandId), cancellationToken);
+        return TypedResults.NoContent();
+    }
+
     /// <summary>Represents the identifier of a newly created Category.</summary>
     public sealed record CategoryCreatedResponse(Guid Id);
 
     /// <summary>Represents the identifier of a newly created Product Type.</summary>
     public sealed record ProductTypeCreatedResponse(Guid Id);
+
+    /// <summary>Represents the identifier of a newly created Product Brand.</summary>
+    public sealed record ProductBrandCreatedResponse(Guid Id);
 }

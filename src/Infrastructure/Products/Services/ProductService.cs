@@ -28,6 +28,7 @@ public sealed class ProductService(ApplicationDbContext dbContext) : IProductSer
         var product = await dbContext.Products
             .Include(current => current.ProductType)
             .ThenInclude(productType => productType.Category)
+            .Include(current => current.ProductBrand)
             .SingleOrDefaultAsync(product => product.Id == request.Id, cancellationToken);
 
         Guard.Against.NotFound(request.Id, product);
@@ -35,7 +36,7 @@ public sealed class ProductService(ApplicationDbContext dbContext) : IProductSer
         product.UpdateDetails(
             request.Title,
             request.Description,
-            request.Brand,
+            await LoadProductBrandAsync(request.BrandId, cancellationToken),
             request.Model,
             request.PackageQuantity,
             ParsePackageUnit(request.PackageUnit),
@@ -52,7 +53,7 @@ public sealed class ProductService(ApplicationDbContext dbContext) : IProductSer
         Product.Create(
             request.Title,
             request.Description,
-            request.Brand,
+            await LoadProductBrandAsync(request.BrandId, cancellationToken),
             request.Model,
             request.PackageQuantity,
             ParsePackageUnit(request.PackageUnit),
@@ -103,5 +104,21 @@ public sealed class ProductService(ApplicationDbContext dbContext) : IProductSer
             .SingleOrDefaultAsync(current => current.Id == productTypeId, cancellationToken);
         Guard.Against.NotFound(productTypeId, productType);
         return productType;
+    }
+
+    private async Task<ProductBrand?> LoadProductBrandAsync(
+        Guid? productBrandId,
+        CancellationToken cancellationToken)
+    {
+        if (!productBrandId.HasValue)
+        {
+            return null;
+        }
+
+        var productBrand = await dbContext.ProductBrands.SingleOrDefaultAsync(
+            current => current.Id == productBrandId.Value,
+            cancellationToken);
+        Guard.Against.NotFound(productBrandId.Value, productBrand);
+        return productBrand;
     }
 }

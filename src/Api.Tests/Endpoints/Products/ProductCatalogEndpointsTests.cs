@@ -15,20 +15,27 @@ public sealed class ProductCatalogEndpointsTests
         await using var factory = new SiteWatchApiFactory();
         var categoryId = Guid.Parse("11111111-1111-1111-1111-111111111111");
         var productTypeId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        var productBrandId = Guid.Parse("55555555-5555-5555-5555-555555555555");
         factory.Mediator.Send(Arg.Any<CreateCategoryCommand>(), Arg.Any<CancellationToken>())
             .Returns(categoryId);
         factory.Mediator.Send(Arg.Any<CreateProductTypeCommand>(), Arg.Any<CancellationToken>())
             .Returns(productTypeId);
+        factory.Mediator.Send(Arg.Any<CreateProductBrandCommand>(), Arg.Any<CancellationToken>())
+            .Returns(productBrandId);
         factory.Mediator.Send(Arg.Any<CategoriesQuery>(), Arg.Any<CancellationToken>())
             .Returns(new PagedResult<CategoryDto>([new(categoryId, "Adhesives")], 1, 1));
         factory.Mediator.Send(Arg.Any<ProductTypesQuery>(), Arg.Any<CancellationToken>())
             .Returns(new PagedResult<ProductTypeDto>([new(productTypeId, "Tile Adhesive", categoryId, "Adhesives")], 1, 1));
+        factory.Mediator.Send(Arg.Any<ProductBrandsQuery>(), Arg.Any<CancellationToken>())
+            .Returns(new PagedResult<ProductBrandDto>([new(productBrandId, "Ceresit")], 1, 1));
         using var client = factory.CreateHttpsClient();
 
         var createCategory = await client.PostAsJsonAsync("/categories", new { name = "Adhesives" });
         var createType = await client.PostAsJsonAsync("/product-types", new { categoryId, name = "Tile Adhesive" });
         var categories = await client.GetAsync("/categories?searchTerm=adh&pageIndex=0&pageSize=20");
         var types = await client.GetAsync($"/product-types?categoryId={categoryId}&searchTerm=tile&pageIndex=0&pageSize=20");
+        var createBrand = await client.PostAsJsonAsync("/product-brands", new { name = "Ceresit" });
+        var brands = await client.GetAsync("/product-brands?searchTerm=cer&pageIndex=0&pageSize=5");
 
         Assert.Equal(HttpStatusCode.Created, createCategory.StatusCode);
         Assert.Equal($"/categories/{categoryId}", createCategory.Headers.Location?.OriginalString);
@@ -36,6 +43,9 @@ public sealed class ProductCatalogEndpointsTests
         Assert.Equal($"/product-types/{productTypeId}", createType.Headers.Location?.OriginalString);
         Assert.Equal(HttpStatusCode.OK, categories.StatusCode);
         Assert.Equal(HttpStatusCode.OK, types.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, createBrand.StatusCode);
+        Assert.Equal($"/product-brands/{productBrandId}", createBrand.Headers.Location?.OriginalString);
+        Assert.Equal(HttpStatusCode.OK, brands.StatusCode);
         await factory.Mediator.Received(1).Send(
             Arg.Is<CreateCategoryCommand>(command => command.Name == "Adhesives"),
             Arg.Any<CancellationToken>());
@@ -47,6 +57,9 @@ public sealed class ProductCatalogEndpointsTests
             Arg.Is<ProductTypesQuery>(query =>
                 query.CategoryId == categoryId && query.SearchTerm == "tile" && query.PageSize == 20),
             Arg.Any<CancellationToken>());
+        await factory.Mediator.Received(1).Send(
+            Arg.Is<ProductBrandsQuery>(query => query.SearchTerm == "cer" && query.PageSize == 5),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -55,6 +68,7 @@ public sealed class ProductCatalogEndpointsTests
         await using var factory = new SiteWatchApiFactory();
         var categoryId = Guid.Parse("33333333-3333-3333-3333-333333333333");
         var productTypeId = Guid.Parse("44444444-4444-4444-4444-444444444444");
+        var productBrandId = Guid.Parse("66666666-6666-6666-6666-666666666666");
         factory.Mediator.Send(Arg.Any<UpdateCategoryCommand>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         factory.Mediator.Send(Arg.Any<UpdateProductTypeCommand>(), Arg.Any<CancellationToken>())
@@ -63,13 +77,19 @@ public sealed class ProductCatalogEndpointsTests
             .Returns(Task.CompletedTask);
         factory.Mediator.Send(Arg.Any<DeleteProductTypeCommand>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
+        factory.Mediator.Send(Arg.Any<UpdateProductBrandCommand>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        factory.Mediator.Send(Arg.Any<DeleteProductBrandCommand>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
         using var client = factory.CreateHttpsClient();
 
         var responses = await Task.WhenAll(
             client.PutAsJsonAsync($"/categories/{categoryId}", new { id = Guid.NewGuid(), name = "Coatings" }),
             client.PutAsJsonAsync($"/product-types/{productTypeId}", new { id = Guid.NewGuid(), categoryId, name = "Interior Paint" }),
+            client.PutAsJsonAsync($"/product-brands/{productBrandId}", new { id = Guid.NewGuid(), name = "Bosch" }),
             client.DeleteAsync($"/categories/{categoryId}"),
-            client.DeleteAsync($"/product-types/{productTypeId}"));
+            client.DeleteAsync($"/product-types/{productTypeId}"),
+            client.DeleteAsync($"/product-brands/{productBrandId}"));
 
         Assert.All(responses, response => Assert.Equal(HttpStatusCode.NoContent, response.StatusCode));
         await factory.Mediator.Received(1).Send(
@@ -78,6 +98,10 @@ public sealed class ProductCatalogEndpointsTests
         await factory.Mediator.Received(1).Send(
             Arg.Is<UpdateProductTypeCommand>(command =>
                 command.Id == productTypeId && command.CategoryId == categoryId && command.Name == "Interior Paint"),
+            Arg.Any<CancellationToken>());
+        await factory.Mediator.Received(1).Send(
+            Arg.Is<UpdateProductBrandCommand>(command =>
+                command.Id == productBrandId && command.Name == "Bosch"),
             Arg.Any<CancellationToken>());
     }
 }

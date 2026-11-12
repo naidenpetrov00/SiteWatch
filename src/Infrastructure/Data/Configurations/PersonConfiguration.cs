@@ -54,8 +54,14 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
             .IsUnique();
         builder.HasIndex(person => person.SearchName);
         builder.HasIndex(person => person.SearchTaxIdentifier);
-        builder.HasIndex(person => person.Egn);
-        builder.HasIndex(person => person.Eik);
+        builder.HasIndex(person => person.Egn)
+            .HasDatabaseName("UX_Persons_Egn")
+            .HasFilter("[Egn] IS NOT NULL")
+            .IsUnique();
+        builder.HasIndex(person => person.Eik)
+            .HasDatabaseName("UX_Persons_Eik")
+            .HasFilter("[Eik] IS NOT NULL")
+            .IsUnique();
 
         builder.HasMany(person => person.Addresses)
             .WithOne(address => address.Person)

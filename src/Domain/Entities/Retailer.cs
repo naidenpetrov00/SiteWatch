@@ -23,18 +23,25 @@ public sealed class Retailer : BaseAuditableEntity, IAgregateRoot
     public string NormalizedWebsiteHost { get; private set; } = null!;
     public string? Notes { get; private set; }
     public bool IsActive { get; private set; }
+    public bool IsDefaultForOffers { get; private set; }
     public static Retailer Create(
         string displayName,
         Person companyPerson,
         string baseWebsiteUrl,
-        string? notes)
+        string? notes,
+        bool isDefaultForOffers = false)
     {
         var retailer = new Retailer
         {
             Id = Guid.NewGuid(),
             IsActive = true
         };
-        retailer.UpdateDetails(displayName, companyPerson, baseWebsiteUrl, notes);
+        retailer.UpdateDetails(
+            displayName,
+            companyPerson,
+            baseWebsiteUrl,
+            notes,
+            isDefaultForOffers);
         return retailer;
     }
 
@@ -42,7 +49,8 @@ public sealed class Retailer : BaseAuditableEntity, IAgregateRoot
         string displayName,
         Person companyPerson,
         string baseWebsiteUrl,
-        string? notes)
+        string? notes,
+        bool isDefaultForOffers = false)
     {
         var normalizedDisplayName = NormalizeDisplayName(displayName);
         var website = RetailerWebsite.Create(baseWebsiteUrl);
@@ -53,6 +61,7 @@ public sealed class Retailer : BaseAuditableEntity, IAgregateRoot
         BaseWebsiteUrl = website.BaseUrl;
         NormalizedWebsiteHost = website.NormalizedHost;
         Notes = NormalizeNotes(notes);
+        IsDefaultForOffers = isDefaultForOffers;
     }
 
     public void Activate() => IsActive = true;

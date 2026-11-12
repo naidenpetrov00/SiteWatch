@@ -26,6 +26,7 @@ public sealed class RetailerConfiguration : IEntityTypeConfiguration<Retailer>
         builder.Property(retailer => retailer.Notes)
             .HasMaxLength(Retailer.MaxNotesLength);
         builder.Property(retailer => retailer.IsActive).IsRequired();
+        builder.Property(retailer => retailer.IsDefaultForOffers).IsRequired();
 
         builder.HasIndex(retailer => retailer.NormalizedName).IsUnique();
         builder.HasIndex(retailer => retailer.NormalizedWebsiteHost);

@@ -13,6 +13,7 @@ public sealed record ProductTableDto
     public string ProductTypeName { get; init; } = string.Empty;
     public Guid CategoryId { get; init; }
     public string CategoryName { get; init; } = string.Empty;
+    public Guid? BrandId { get; init; }
     public string? Brand { get; init; }
     public string? Model { get; init; }
     public decimal? PackageQuantity { get; init; }
@@ -29,6 +30,7 @@ public sealed record ProductTableDto
             ProductTypeName = product.ProductType.Name,
             CategoryId = product.ProductType.CategoryId,
             CategoryName = product.ProductType.Category.Name,
+            BrandId = product.ProductBrandId,
             Brand = product.Brand,
             Model = product.Model,
             PackageQuantity = product.PackageQuantity,

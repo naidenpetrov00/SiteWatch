@@ -36,6 +36,7 @@ public sealed class DashboardProductsQueryHandler(IApplicationDbContext dbContex
             .AsNoTracking()
             .Include(product => product.ProductType)
             .ThenInclude(productType => productType.Category)
+            .Include(product => product.ProductBrand)
             .ToPagedResultAsync<Product, Product, DashboardProductsQuery>(
                 request,
                 DashboardProductsQuery.Table,
