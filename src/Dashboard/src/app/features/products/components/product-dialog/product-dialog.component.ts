@@ -132,7 +132,7 @@ export class ProductDialogComponent {
     const productBrand = await firstValueFrom(dialogRef.afterClosed());
     if (!productBrand) return;
     this.productBrandControl.setValue(productBrand);
-    setTimeout(() => this.productBrandSelector?.focus());
+    setTimeout(() => this.productBrandSelector?.focus(false));
   }
 
   addSearchEntry(collectionName: SearchCollectionName): void {

@@ -135,10 +135,15 @@ export class CatalogSelectorComponent
     }
   }
 
-  focus(): void {
+  focus(openOptions = true): void {
     const input = this.selectorInput?.nativeElement;
     if (!input) return;
     input.focus();
+    if (!openOptions) {
+      this.stopPanelOpen();
+      this.autocompleteTrigger?.closePanel();
+      return;
+    }
     if (input.ownerDocument.activeElement === input && !this.loading()) {
       this.onClick();
     }
