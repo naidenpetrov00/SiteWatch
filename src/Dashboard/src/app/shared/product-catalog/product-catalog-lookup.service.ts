@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { buildApiUrl } from '../../core/api/api-url';
 import {
   ProductCatalogCategory,
+  ProductCatalogBrand,
   ProductCatalogPage,
   ProductCatalogPageRequest,
   ProductCatalogProductType,
@@ -49,6 +50,25 @@ export class ProductCatalogLookupService {
     return firstValueFrom(
       this.http.get<ProductCatalogProductType>(
         buildApiUrl(`/product-types/${productTypeId}`)
+      )
+    );
+  }
+
+  getProductBrands(
+    request: ProductCatalogPageRequest = {}
+  ): Promise<ProductCatalogPage<ProductCatalogBrand>> {
+    return firstValueFrom(
+      this.http.get<ProductCatalogPage<ProductCatalogBrand>>(
+        buildApiUrl('/product-brands'),
+        { params: this.pageParams(request) }
+      )
+    );
+  }
+
+  getProductBrandById(productBrandId: string): Promise<ProductCatalogBrand> {
+    return firstValueFrom(
+      this.http.get<ProductCatalogBrand>(
+        buildApiUrl(`/product-brands/${productBrandId}`)
       )
     );
   }

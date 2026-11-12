@@ -29,6 +29,7 @@ public sealed class ProductEndpointsTests
         Assert.Equal(productId, payload.GetProperty("id").GetGuid());
         Assert.Equal("Cordless Drill", captured?.Title);
         Assert.Equal(ProductTypeId, captured?.ProductTypeId);
+        Assert.Equal(ProductBrandId, captured?.BrandId);
     }
 
     [Fact]
@@ -79,7 +80,7 @@ public sealed class ProductEndpointsTests
 
     private static object ProductRequest() => new
     {
-        title = "Cordless Drill", description = "Brushless drill", brand = "Bosch", model = "GSB 18V",
+        title = "Cordless Drill", description = "Brushless drill", brandId = ProductBrandId, model = "GSB 18V",
         packageQuantity = 1, packageUnit = "piece", productTypeId = ProductTypeId, status = "Active",
         primarySearchPhrase = (string?)null, alternativeSearchPhrases = Array.Empty<string>(),
         requiredKeywords = Array.Empty<string>(), excludedKeywords = Array.Empty<string>()
@@ -98,4 +99,5 @@ public sealed class ProductEndpointsTests
 
     private static readonly Guid CategoryId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     private static readonly Guid ProductTypeId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+    private static readonly Guid ProductBrandId = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc");
 }

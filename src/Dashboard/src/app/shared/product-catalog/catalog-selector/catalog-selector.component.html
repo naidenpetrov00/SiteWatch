@@ -11,8 +11,9 @@
     inputmode="search"
     (input)="onInput($any($event.target).value)"
     (focus)="onFocus()"
-    (click)="onFocus()"
+    (click)="onClick()"
     (keydown.arrowdown)="onKeyboardOpen()"
+    (keydown.escape)="onPanelDismissed()"
     (blur)="onBlur()"
   />
   @if (hint(); as selectorHint) { <mat-hint>{{ selectorHint }}</mat-hint> }
@@ -28,15 +29,18 @@
   (optionSelected)="onOptionSelected($event)"
 >
   @if (loading()) {
-    <mat-option disabled>Loading {{ kind() === 'category' ? 'Categories' : 'Product Types' }}…</mat-option>
+    <mat-option disabled>Loading {{ pluralLabel() }}…</mat-option>
   } @else if (lookupError()) {
     <mat-option disabled>{{ lookupError() }}</mat-option>
   } @else if (hasLoaded() && results().length === 0) {
-    <mat-option disabled>No {{ kind() === 'category' ? 'Categories' : 'Product Types' }} found.</mat-option>
+    <mat-option disabled>No {{ pluralLabel() }} found.</mat-option>
   } @else {
     @for (result of results(); track result.id) {
       <mat-option [value]="result">
-        @if (isProductType(result)) { <strong>{{ result.name }}</strong><span> · {{ result.categoryName }}</span> }
+        @if (isProductType(result)) {
+          <span class="catalog-selector__option-title"><strong>{{ result.name }}</strong><span> · {{ result.categoryName }}</span></span>
+          @if (result.description) { <span class="catalog-selector__option-description">{{ result.description }}</span> }
+        }
         @else { {{ result.name }} }
       </mat-option>
     }
@@ -49,5 +53,5 @@
   </p>
 }
 @if (loading()) {
-  <p class="catalog-selector__status" aria-live="polite">Loading {{ kind() === 'category' ? 'Categories' : 'Product Types' }}…</p>
+  <p class="catalog-selector__status" aria-live="polite">Loading {{ pluralLabel() }}…</p>
 }

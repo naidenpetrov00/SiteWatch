@@ -12,8 +12,14 @@ export interface ProductCatalogCategory {
 export interface ProductCatalogProductType {
   id: string;
   name: string;
+  description?: string | null;
   categoryId: string;
   categoryName: string;
+}
+
+export interface ProductCatalogBrand {
+  id: string;
+  name: string;
 }
 
 export interface ProductCatalogPageRequest {

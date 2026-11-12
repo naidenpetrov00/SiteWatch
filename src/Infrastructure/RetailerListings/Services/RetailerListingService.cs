@@ -276,8 +276,11 @@ public sealed class RetailerListingService(
                         && listing.RetailerProductCode.Contains(search)))
                 : filtered.Where(listing =>
                     listing.Product.Title.Contains(search)
-                    || (listing.Product.Brand != null
-                        && listing.Product.Brand.Contains(search))
+                    || (listing.Product.ProductBrand != null
+                        && listing.Product.ProductBrand.Name.Contains(search))
+                    || (listing.Product.ProductBrand == null
+                        && listing.Product.LegacyBrandName != null
+                        && listing.Product.LegacyBrandName.Contains(search))
                     || (listing.Product.Model != null
                         && listing.Product.Model.Contains(search))
                     || (listing.RetailerProductCode != null
@@ -451,7 +454,9 @@ public sealed class RetailerListingService(
             listing.Product.NumberId,
             listing.Product.Title,
             listing.Product.Status,
-            listing.Product.Brand,
+            listing.Product.ProductBrand != null
+                ? listing.Product.ProductBrand.Name
+                : listing.Product.LegacyBrandName,
             listing.Product.Model,
             listing.Product.PackageQuantity,
             listing.Product.PackageUnit,

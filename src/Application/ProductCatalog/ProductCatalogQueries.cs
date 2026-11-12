@@ -1,6 +1,7 @@
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models;
 using Application.SeedWork.Security;
+using Domain.Entities;
 using FluentValidation;
 using MediatR;
 
@@ -33,11 +34,26 @@ public sealed record ProductTypesQuery : IRequest<PagedResult<ProductTypeDto>>
     public int PageSize { get; init; } = 100;
 }
 
+/// <summary>Gets one Product Brand.</summary>
+[Authorize(Roles = UserRoles.Administrator)]
+public sealed record ProductBrandByIdQuery(Guid Id) : IRequest<ProductBrandDto>;
+
+/// <summary>Gets a page of Product Brands.</summary>
+[Authorize(Roles = UserRoles.Administrator)]
+public sealed record ProductBrandsQuery : IRequest<PagedResult<ProductBrandDto>>
+{
+    public string? SearchTerm { get; init; }
+    public int PageIndex { get; init; }
+    public int PageSize { get; init; } = 100;
+}
+
 public sealed class ProductCatalogQueryHandler(IProductCatalogService service)
     : IRequestHandler<CategoryByIdQuery, CategoryDto>,
       IRequestHandler<CategoriesQuery, PagedResult<CategoryDto>>,
       IRequestHandler<ProductTypeByIdQuery, ProductTypeDto>,
-      IRequestHandler<ProductTypesQuery, PagedResult<ProductTypeDto>>
+      IRequestHandler<ProductTypesQuery, PagedResult<ProductTypeDto>>,
+      IRequestHandler<ProductBrandByIdQuery, ProductBrandDto>,
+      IRequestHandler<ProductBrandsQuery, PagedResult<ProductBrandDto>>
 {
     public Task<CategoryDto> Handle(CategoryByIdQuery request, CancellationToken cancellationToken) =>
         service.GetCategoryAsync(request.Id, cancellationToken);
@@ -56,6 +72,16 @@ public sealed class ProductCatalogQueryHandler(IProductCatalogService service)
         ProductTypesQuery request,
         CancellationToken cancellationToken) =>
         service.GetProductTypesAsync(request, cancellationToken);
+
+    public Task<ProductBrandDto> Handle(
+        ProductBrandByIdQuery request,
+        CancellationToken cancellationToken) =>
+        service.GetProductBrandAsync(request.Id, cancellationToken);
+
+    public Task<PagedResult<ProductBrandDto>> Handle(
+        ProductBrandsQuery request,
+        CancellationToken cancellationToken) =>
+        service.GetProductBrandsAsync(request, cancellationToken);
 }
 
 public sealed class CategoriesQueryValidator : AbstractValidator<CategoriesQuery>
@@ -89,4 +115,19 @@ public sealed class ProductTypesQueryValidator : AbstractValidator<ProductTypesQ
 public sealed class ProductTypeByIdQueryValidator : AbstractValidator<ProductTypeByIdQuery>
 {
     public ProductTypeByIdQueryValidator() => RuleFor(request => request.Id).NotEmpty();
+}
+
+public sealed class ProductBrandsQueryValidator : AbstractValidator<ProductBrandsQuery>
+{
+    public ProductBrandsQueryValidator()
+    {
+        RuleFor(request => request.SearchTerm).MaximumLength(ProductBrand.MaxNameLength);
+        RuleFor(request => request.PageIndex).GreaterThanOrEqualTo(0);
+        RuleFor(request => request.PageSize).InclusiveBetween(1, 1000);
+    }
+}
+
+public sealed class ProductBrandByIdQueryValidator : AbstractValidator<ProductBrandByIdQuery>
+{
+    public ProductBrandByIdQueryValidator() => RuleFor(request => request.Id).NotEmpty();
 }

@@ -16,10 +16,18 @@ public sealed class PersonService(ApplicationDbContext dbContext) : IPersonServi
     {
         await ValidateTerritorialAddressesAsync(request.Addresses, cancellationToken);
         var person = CreatePerson(request);
+        await EnsureIdentifierIsUniqueAsync(person, cancellationToken);
         ApplyChildCollections(person, request);
 
         dbContext.Persons.Add(person);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException exception)
+        {
+            throw new PersonConflictException(GetDuplicateIdentifierMessage(person), exception);
+        }
 
         return person.Id;
     }
@@ -147,6 +155,27 @@ public sealed class PersonService(ApplicationDbContext dbContext) : IPersonServi
         ),
         _ => throw new InvalidOperationException("Person type is required.")
     };
+
+    private async Task EnsureIdentifierIsUniqueAsync(Person person, CancellationToken cancellationToken)
+    {
+        var duplicateExists = person.Type == PersonType.Company
+            ? await dbContext.Persons.AsNoTracking().AnyAsync(
+                existing => existing.Eik == person.Eik,
+                cancellationToken)
+            : await dbContext.Persons.AsNoTracking().AnyAsync(
+                existing => existing.Egn == person.Egn,
+                cancellationToken);
+
+        if (duplicateExists)
+        {
+            throw new PersonConflictException(GetDuplicateIdentifierMessage(person));
+        }
+    }
+
+    private static string GetDuplicateIdentifierMessage(Person person) =>
+        person.Type == PersonType.Company
+            ? "A person with this EIK already exists."
+            : "A person with this EGN already exists.";
 
     private static CompanyLegalForm? ParseLegalForm(string? legalForm)
     {

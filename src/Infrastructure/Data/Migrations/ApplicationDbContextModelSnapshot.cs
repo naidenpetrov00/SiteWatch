@@ -1363,6 +1363,10 @@ namespace Infrastructure.Data.Migrations
                     b.Property<Guid>("OfferActivitySectionId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("ProductTypeDescription")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
                     b.Property<Guid>("ProductTypeId")
                         .HasColumnType("uniqueidentifier");
 
@@ -1498,9 +1502,15 @@ namespace Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Egn");
+                    b.HasIndex("Egn")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Persons_Egn")
+                        .HasFilter("[Egn] IS NOT NULL");
 
-                    b.HasIndex("Eik");
+                    b.HasIndex("Eik")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Persons_Eik")
+                        .HasFilter("[Eik] IS NOT NULL");
 
                     b.HasIndex("NumberId")
                         .IsUnique();
@@ -1706,10 +1716,6 @@ namespace Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Brand")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.Property<DateTimeOffset>("Created")
                         .HasColumnType("datetimeoffset");
 
@@ -1725,6 +1731,11 @@ namespace Infrastructure.Data.Migrations
 
                     b.Property<string>("LastModifiedBy")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LegacyBrandName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("Brand");
 
                     b.Property<string>("Model")
                         .HasMaxLength(100)
@@ -1742,6 +1753,9 @@ namespace Infrastructure.Data.Migrations
                     b.Property<string>("PackageUnit")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid?>("ProductBrandId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("ProductTypeId")
                         .HasColumnType("uniqueidentifier");
@@ -1770,6 +1784,8 @@ namespace Infrastructure.Data.Migrations
                     b.HasIndex("NumberId")
                         .IsUnique();
 
+                    b.HasIndex("ProductBrandId");
+
                     b.HasIndex("ProductTypeId");
 
                     b.HasIndex("Status");
@@ -1777,6 +1793,42 @@ namespace Infrastructure.Data.Migrations
                     b.HasIndex("Title");
 
                     b.ToTable("Products", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.ProductBrand", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("Created")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("LastModified")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique();
+
+                    b.ToTable("ProductBrands", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.ProductType", b =>
@@ -1793,6 +1845,10 @@ namespace Infrastructure.Data.Migrations
 
                     b.Property<string>("CreatedBy")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.Property<DateTimeOffset>("LastModified")
                         .HasColumnType("datetimeoffset");
@@ -2304,6 +2360,9 @@ namespace Infrastructure.Data.Migrations
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDefaultForOffers")
                         .HasColumnType("bit");
 
                     b.Property<DateTimeOffset>("LastModified")
@@ -3719,11 +3778,18 @@ namespace Infrastructure.Data.Migrations
 
             modelBuilder.Entity("Domain.Entities.Product", b =>
                 {
+                    b.HasOne("Domain.Entities.ProductBrand", "ProductBrand")
+                        .WithMany()
+                        .HasForeignKey("ProductBrandId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Domain.Entities.ProductType", "ProductType")
                         .WithMany()
                         .HasForeignKey("ProductTypeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("ProductBrand");
 
                     b.Navigation("ProductType");
                 });

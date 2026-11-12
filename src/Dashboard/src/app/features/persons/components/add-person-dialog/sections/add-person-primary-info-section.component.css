@@ -100,6 +100,20 @@
   min-width: 0;
 }
 
+.add-person-primary-info-section__match-title,
+.add-person-primary-info-section__match-subtitle {
+  display: block;
+}
+
+.add-person-primary-info-section__match-title {
+  font-weight: 600;
+}
+
+.add-person-primary-info-section__match-subtitle {
+  margin-top: 0.2rem;
+  font-size: 0.8rem;
+}
+
 @media (max-width: 48rem) {
   .add-person-primary-info-section__field--half,
   .add-person-primary-info-section__field--third {

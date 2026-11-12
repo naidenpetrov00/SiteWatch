@@ -88,6 +88,20 @@ export class ManageRetailersPage {
           : `Activate ${retailer.displayName}`,
       buttonDisabledPredicate: () =>
         this.retailersService.setRetailerStatusMutation.isPending()
+    },
+    {
+      key: 'isDefaultForOffers',
+      label: 'Default for Offers',
+      sortable: true,
+      filter: {
+        kind: 'select',
+        placeholder: 'Filter Default',
+        options: [
+          { label: 'Yes', value: 'true' },
+          { label: 'No', value: 'false' }
+        ]
+      },
+      displayFormatter: (value) => (value ? 'Yes' : 'No')
     }
   ];
 

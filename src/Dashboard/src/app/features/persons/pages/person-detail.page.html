@@ -16,8 +16,15 @@
         <button mat-stroked-button type="button" (click)="editPerson()">
           Edit Person
         </button>
+        <button mat-stroked-button color="warn" type="button" [disabled]="isDeleting()" (click)="deletePerson()">
+          {{ isDeleting() ? 'Deleting…' : 'Delete Person' }}
+        </button>
       </div>
     </header>
+
+    @if (deleteError()) {
+      <p class="catalog-detail__error" role="alert">{{ deleteError() }}</p>
+    }
 
     <dl class="catalog-detail__facts">
       <div><dt>Type</dt><dd>{{ person.type }}</dd></div>

@@ -12,7 +12,8 @@ import { DialogShellComponent } from '../../../../shared/ui/dialog-shell/dialog-
 import { DialogWizardTabsComponent } from '../../../../shared/ui/dialog-wizard-tabs/dialog-wizard-tabs.component';
 import { DialogWizardTabDefinition } from '../../../../shared/ui/dialog-wizard-tabs/dialog-wizard-tabs.types';
 import { CatalogSelectorComponent } from '../../../../shared/product-catalog/catalog-selector/catalog-selector.component';
-import { ProductCatalogProductType } from '../../../../shared/product-catalog/product-catalog.models';
+import { ProductCatalogBrand, ProductCatalogProductType } from '../../../../shared/product-catalog/product-catalog.models';
+import { ProductBrandEditorDialogComponent, ProductBrandEditorDialogData } from '../product-brand-editor-dialog/product-brand-editor-dialog.component';
 import { ProductTypeEditorDialogComponent, ProductTypeEditorDialogData } from '../product-type-editor-dialog/product-type-editor-dialog.component';
 import { CreateDashboardProductRequest, DashboardProductDetails, PRODUCT_PACKAGE_UNIT_OPTIONS, PRODUCT_STATUSES, ProductPackageUnit, ProductStatus } from '../../models/dashboard-product.models';
 import { DashboardProductsService } from '../../services/dashboard-products.service';
@@ -35,7 +36,8 @@ const PRODUCT_DIALOG_TABS = [
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProductDialogComponent {
-  @ViewChild(CatalogSelectorComponent) private productTypeSelector?: CatalogSelectorComponent;
+  @ViewChild('productTypeSelector') private productTypeSelector?: CatalogSelectorComponent;
+  @ViewChild('productBrandSelector') private productBrandSelector?: CatalogSelectorComponent;
 
   private readonly formBuilder = inject(FormBuilder);
   private readonly dialog = inject(MatDialog);
@@ -51,11 +53,18 @@ export class ProductDialogComponent {
     this.product ? {
       id: this.product.productTypeId,
       name: this.product.productTypeName,
+      description: this.product.productTypeDescription,
       categoryId: this.product.categoryId,
       categoryName: this.product.categoryName
     } : null
   );
+  readonly selectedProductBrand = signal<ProductCatalogBrand | null>(
+    this.product?.brandId && this.product.brand
+      ? { id: this.product.brandId, name: this.product.brand }
+      : null
+  );
   readonly productTypeControl = this.formBuilder.control<ProductCatalogProductType | null>(this.selectedProductType(), [Validators.required]);
+  readonly productBrandControl = this.formBuilder.control<ProductCatalogBrand | null>(this.selectedProductBrand());
   readonly saveError = signal<string | null>(null);
   readonly formId = this.product ? 'edit-product-dialog-form' : 'add-product-dialog-form';
   readonly dialogTitle = this.product ? 'Edit Product' : 'Add Product';
@@ -66,7 +75,7 @@ export class ProductDialogComponent {
   readonly productForm = this.formBuilder.group({
     title: this.formBuilder.nonNullable.control(this.product?.title ?? '', [Validators.required, Validators.maxLength(200)]),
     description: this.formBuilder.nonNullable.control(this.product?.description ?? '', [Validators.maxLength(2000)]),
-    brand: this.formBuilder.nonNullable.control(this.product?.brand ?? '', [Validators.maxLength(100)]),
+    brandId: this.formBuilder.control<string | null>(this.product?.brandId ?? null),
     model: this.formBuilder.nonNullable.control(this.product?.model ?? '', [Validators.maxLength(100)]),
     packageQuantity: this.formBuilder.control<number | null>(this.product?.packageQuantity ?? null, [Validators.min(Number.MIN_VALUE)]),
     packageUnit: this.formBuilder.control<ProductPackageUnit | null>(this.product?.packageUnit ?? null),
@@ -85,6 +94,10 @@ export class ProductDialogComponent {
     this.productTypeControl.valueChanges.subscribe((productType) => {
       this.selectedProductType.set(productType);
       this.productForm.controls.productTypeId.setValue(productType?.id ?? '');
+    });
+    this.productBrandControl.valueChanges.subscribe((productBrand) => {
+      this.selectedProductBrand.set(productBrand);
+      this.productForm.controls.brandId.setValue(productBrand?.id ?? null);
     });
   }
 
@@ -107,6 +120,21 @@ export class ProductDialogComponent {
     setTimeout(() => this.productTypeSelector?.focus());
   }
 
+  async createProductBrand(): Promise<void> {
+    if (this.isSaving()) return;
+    const dialogRef = this.dialog.open<ProductBrandEditorDialogComponent, ProductBrandEditorDialogData, ProductCatalogBrand | null>(ProductBrandEditorDialogComponent, {
+      autoFocus: 'input[formControlName="name"]',
+      restoreFocus: true,
+      width: '30rem',
+      maxWidth: 'calc(100vw - 2rem)',
+      data: { productBrand: null }
+    });
+    const productBrand = await firstValueFrom(dialogRef.afterClosed());
+    if (!productBrand) return;
+    this.productBrandControl.setValue(productBrand);
+    setTimeout(() => this.productBrandSelector?.focus(false));
+  }
+
   addSearchEntry(collectionName: SearchCollectionName): void {
     const collection = this.productForm.controls[collectionName];
     if (collection.length < 20) collection.push(this.createSearchEntry());
@@ -119,7 +147,7 @@ export class ProductDialogComponent {
   effectivePrimarySearchPhrase(): string {
     const customPhrase = this.productForm.controls.primarySearchPhrase.value.trim();
     if (customPhrase) return customPhrase;
-    return [this.productForm.controls.title.value, this.productForm.controls.brand.value, this.productForm.controls.model.value]
+    return [this.productForm.controls.title.value, this.selectedProductBrand()?.name ?? '', this.productForm.controls.model.value]
       .map((value) => value.trim()).filter(Boolean).join(' ');
   }
 
@@ -156,7 +184,7 @@ export class ProductDialogComponent {
   private toRequest(): CreateDashboardProductRequest {
     const value = this.productForm.getRawValue();
     return {
-      title: value.title.trim(), description: this.emptyToNull(value.description), brand: this.emptyToNull(value.brand),
+      title: value.title.trim(), description: this.emptyToNull(value.description), brandId: value.brandId,
       model: this.emptyToNull(value.model), packageQuantity: value.packageQuantity, packageUnit: value.packageUnit,
       productTypeId: value.productTypeId, status: value.status, primarySearchPhrase: this.emptyToNull(value.primarySearchPhrase),
       alternativeSearchPhrases: this.normalizeCollection(value.alternativeSearchPhrases),

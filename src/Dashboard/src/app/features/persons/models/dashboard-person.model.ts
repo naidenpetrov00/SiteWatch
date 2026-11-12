@@ -11,4 +11,5 @@ export interface DashboardPerson {
   egn: string | null;
   eik: string | null;
   vatNumber: string;
+  deleteAction?: null;
 }

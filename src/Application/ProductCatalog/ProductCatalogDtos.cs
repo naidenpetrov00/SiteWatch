@@ -8,4 +8,8 @@ public sealed record ProductTypeDto(
     Guid Id,
     string Name,
     Guid CategoryId,
-    string CategoryName);
+    string CategoryName,
+    string? Description = null);
+
+/// <summary>Represents an administrator-managed Product Brand.</summary>
+public sealed record ProductBrandDto(Guid Id, string Name);

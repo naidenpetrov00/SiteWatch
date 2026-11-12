@@ -1,0 +1,7 @@
+.product-brand-management { display: grid; gap: 1rem; min-width: min(36rem, calc(100vw - 4rem)); }
+.product-brand-management__toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: .75rem; }
+.product-brand-management__list { display: grid; gap: .5rem; margin: 0; padding: 0; list-style: none; }
+.product-brand-management__list li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .75rem; border: 1px solid rgba(15, 23, 42, .12); border-radius: .5rem; }
+.product-brand-management__actions { display: flex; gap: .5rem; }
+.product-brand-management__error { margin: 0; color: #b91c1c; }
+@media (max-width: 40rem) { .product-brand-management__toolbar { grid-template-columns: 1fr; } .product-brand-management__list li { align-items: stretch; flex-direction: column; } }

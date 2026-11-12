@@ -7,4 +7,5 @@ public abstract record RetailerUpsertDto
     public Guid CompanyPersonId { get; init; }
     public string BaseWebsiteUrl { get; init; } = string.Empty;
     public string? Notes { get; init; }
+    public bool IsDefaultForOffers { get; init; }
 }

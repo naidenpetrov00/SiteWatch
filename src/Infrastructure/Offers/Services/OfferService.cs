@@ -32,6 +32,16 @@ public sealed class OfferService(ApplicationDbContext dbContext, IUser user) : I
         }
 
         var offer = Offer.Create(site);
+        var defaultRetailers = await dbContext.Retailers
+            .Where(retailer => retailer.IsActive && retailer.IsDefaultForOffers)
+            .OrderBy(retailer => retailer.DisplayName)
+            .ThenBy(retailer => retailer.Id)
+            .ToListAsync(cancellationToken);
+        foreach (var retailer in defaultRetailers)
+        {
+            dbContext.OfferRetailerComparisons.Add(offer.AddRetailer(retailer));
+        }
+
         SetAuditValues(offer, isNew: true);
         dbContext.Offers.Add(offer);
         await dbContext.SaveChangesAsync(cancellationToken);

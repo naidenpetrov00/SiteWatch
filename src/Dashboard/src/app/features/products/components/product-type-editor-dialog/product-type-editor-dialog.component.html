@@ -25,6 +25,14 @@
         Changing this Category changes the derived Category for every Product assigned to this Product Type.
       </p>
     }
+    <mat-form-field appearance="outline">
+      <mat-label>Description</mat-label>
+      <textarea matInput formControlName="description" maxlength="2000" rows="4"></textarea>
+      <mat-hint align="end">{{ form.controls.description.value.length }}/2000</mat-hint>
+      @if (form.controls.description.touched && form.controls.description.invalid) {
+        <mat-error>Description cannot exceed 2,000 characters.</mat-error>
+      }
+    </mat-form-field>
     @if (saveError()) { <p class="product-type-editor__error" role="alert">{{ saveError() }}</p> }
   </form>
   <app-dialog-action-bar

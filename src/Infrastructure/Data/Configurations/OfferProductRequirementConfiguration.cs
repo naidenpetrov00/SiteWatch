@@ -15,6 +15,8 @@ public sealed class OfferProductRequirementConfiguration
         builder.Property(requirement => requirement.ProductTypeName)
             .HasMaxLength(ProductType.MaxNameLength)
             .IsRequired();
+        builder.Property(requirement => requirement.ProductTypeDescription)
+            .HasMaxLength(ProductType.MaxDescriptionLength);
         builder.Property(requirement => requirement.CategoryName)
             .HasMaxLength(Category.MaxNameLength)
             .IsRequired();

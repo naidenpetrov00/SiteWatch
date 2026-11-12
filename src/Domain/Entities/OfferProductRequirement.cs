@@ -14,6 +14,7 @@ public sealed class OfferProductRequirement : BaseEntity
     public Guid SourceRequirementId { get; private set; }
     public Guid ProductTypeId { get; private set; }
     public string ProductTypeName { get; private set; } = string.Empty;
+    public string? ProductTypeDescription { get; private set; }
     public Guid CategoryId { get; private set; }
     public string CategoryName { get; private set; } = string.Empty;
     public decimal ConfiguredQuantity { get; private set; }
@@ -39,6 +40,7 @@ public sealed class OfferProductRequirement : BaseEntity
             SourceRequirementId = sourceRequirement.Id,
             ProductTypeId = sourceRequirement.ProductTypeId,
             ProductTypeName = sourceRequirement.ProductType.Name,
+            ProductTypeDescription = sourceRequirement.ProductType.Description,
             CategoryId = sourceRequirement.ProductType.CategoryId,
             CategoryName = sourceRequirement.ProductType.Category.Name,
             ConfiguredQuantity = sourceRequirement.Quantity,

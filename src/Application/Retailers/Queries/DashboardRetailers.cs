@@ -18,6 +18,7 @@ public sealed partial class DashboardRetailersQuery
     public string? CompanyDisplayName { get; set; }
     public string? WebsiteHost { get; set; }
     public bool? IsActive { get; set; }
+    public bool? IsDefaultForOffers { get; set; }
 }
 
 public sealed class DashboardRetailersQueryHandler(IApplicationDbContext dbContext)

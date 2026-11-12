@@ -23,7 +23,9 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
             .HasMaxLength(200)
             .IsRequired();
         builder.Property(product => product.Description).HasMaxLength(2000);
-        builder.Property(product => product.Brand).HasMaxLength(100);
+        builder.Property(product => product.LegacyBrandName)
+            .HasColumnName("Brand")
+            .HasMaxLength(ProductBrand.MaxNameLength);
         builder.Property(product => product.Model).HasMaxLength(100);
         builder.Property(product => product.PackageQuantity).HasPrecision(18, 4);
         var packageUnitConverter = new ValueConverter<ProductPackageUnit, string>(
@@ -58,10 +60,15 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.HasIndex(product => product.NumberId).IsUnique();
         builder.HasIndex(product => product.Title);
         builder.HasIndex(product => product.ProductTypeId);
+        builder.HasIndex(product => product.ProductBrandId);
         builder.HasIndex(product => product.Status);
         builder.HasOne(product => product.ProductType)
             .WithMany()
             .HasForeignKey(product => product.ProductTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(product => product.ProductBrand)
+            .WithMany()
+            .HasForeignKey(product => product.ProductBrandId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 

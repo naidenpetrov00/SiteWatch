@@ -15,7 +15,9 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
     public int NumberId { get; private set; }
     public string Title { get; private set; } = null!;
     public string? Description { get; private set; }
-    public string? Brand { get; private set; }
+    public string? LegacyBrandName { get; private set; }
+    public Guid? ProductBrandId { get; private set; }
+    public ProductBrand? ProductBrand { get; private set; }
     public string? Model { get; private set; }
     public decimal? PackageQuantity { get; private set; }
     public ProductPackageUnit? PackageUnit { get; private set; }
@@ -26,13 +28,16 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
     public string SearchIdentity { get; private set; } = null!;
 
     [NotMapped]
+    public string? Brand => ProductBrand?.Name ?? LegacyBrandName;
+
+    [NotMapped]
     public string EffectivePrimarySearchPhrase =>
         SearchConfiguration.ResolvePrimarySearchPhrase(Title, Brand, Model);
 
     public static Product Create(
         string title,
         string? description,
-        string? brand,
+        ProductBrand? productBrand,
         string? model,
         decimal? packageQuantity,
         ProductPackageUnit? packageUnit,
@@ -44,7 +49,7 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
         product.UpdateDetails(
             title,
             description,
-            brand,
+            productBrand,
             model,
             packageQuantity,
             packageUnit,
@@ -57,7 +62,7 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
     public void UpdateDetails(
         string title,
         string? description,
-        string? brand,
+        ProductBrand? productBrand,
         string? model,
         decimal? packageQuantity,
         ProductPackageUnit? packageUnit,
@@ -77,7 +82,9 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
 
         Title = NormalizeRequired(title, nameof(title));
         Description = NormalizeOptional(description);
-        Brand = NormalizeOptional(brand);
+        ProductBrand = productBrand;
+        ProductBrandId = productBrand?.Id;
+        LegacyBrandName = productBrand?.Name;
         Model = NormalizeOptional(model);
         PackageQuantity = packageQuantity;
         PackageUnit = packageUnit;
@@ -102,6 +109,12 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
                     Model,
                     EffectivePrimarySearchPhrase
                 }.Where(value => !string.IsNullOrWhiteSpace(value))));
+    }
+
+    public void SynchronizeBrandName()
+    {
+        LegacyBrandName = ProductBrand?.Name;
+        RefreshSearchIdentity();
     }
 
     private static void ValidatePackagePair(

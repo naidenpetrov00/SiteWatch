@@ -5,6 +5,11 @@ export interface SaveCategoryRequest {
 export interface SaveProductTypeRequest {
   name: string;
   categoryId: string;
+  description?: string | null;
+}
+
+export interface SaveProductBrandRequest {
+  name: string;
 }
 
 interface CreatedResponse {
@@ -13,3 +18,4 @@ interface CreatedResponse {
 
 export type CategoryCreatedResponse = CreatedResponse;
 export type ProductTypeCreatedResponse = CreatedResponse;
+export type ProductBrandCreatedResponse = CreatedResponse;
