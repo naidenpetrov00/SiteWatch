@@ -218,6 +218,7 @@ public sealed class RetailerExtractionProfileService(
                 dbContext.RetailerExtractionAllowedHosts.RemoveRange(profile.AllowedHosts);
                 await dbContext.SaveChangesAsync(cancellationToken);
                 TryLifecycle(() => profile.ReplaceAllowedHosts(allowedHosts));
+                dbContext.RetailerExtractionAllowedHosts.AddRange(profile.AllowedHosts);
                 SetModifiedAudit(profile);
                 return profile;
             },
