@@ -269,6 +269,8 @@ public sealed class RetailerPriceCollectionProcessor(
                     .ThenInclude(profile => profile.Rules)
             .Include(candidate => candidate.RetailerListing)
                 .ThenInclude(listing => listing.Retailer)
+            .Include(candidate => candidate.RetailerListing)
+                .ThenInclude(listing => listing.Product)
             .SingleAsync(candidate => candidate.Id == itemId, cancellationToken);
         return new WorkSnapshot(
             item.Run.CompanyPersonId,
@@ -299,6 +301,18 @@ public sealed class RetailerPriceCollectionProcessor(
         {
             return ("listingInactive", "The retailer listing became inactive after the run was created.");
         }
+        if (!listing.OnlinePriceBasis.HasValue)
+        {
+            return (
+                "missingOnlinePriceBasis",
+                "The retailer listing no longer has a configured online price basis.");
+        }
+        if (!listing.HasValidOnlinePriceBasis())
+        {
+            return (
+                "invalidOnlinePriceBasis",
+                "The retailer listing's online price basis is no longer compatible with the Product package metadata.");
+        }
         return null;
     }
 
@@ -324,6 +338,7 @@ public sealed class RetailerPriceCollectionProcessor(
                 .SingleAsync(candidate => candidate.Id == item.RunId, cancellationToken);
             var listing = await dbContext.RetailerListings
                 .Include(candidate => candidate.Retailer)
+                .Include(candidate => candidate.Product)
                 .SingleAsync(candidate => candidate.Id == item.RetailerListingId, cancellationToken);
             var eligibilityFailure = GetEligibilityFailure(run.CompanyPersonId, listing);
             if (eligibilityFailure is not null)
@@ -350,7 +365,6 @@ public sealed class RetailerPriceCollectionProcessor(
             var recordedAt = DateTimeOffset.UtcNow;
             var observation = listing.RecordAutomatedPrice(
                 match.Amount,
-                matchedRule.PriceBasis,
                 result.ExtractedAt,
                 recordedAt,
                 result.FinalUrl,
@@ -421,6 +435,7 @@ public sealed class RetailerPriceCollectionProcessor(
                     .SingleAsync(cancellationToken);
                 var listing = await dbContext.RetailerListings
                     .Include(candidate => candidate.Retailer)
+                    .Include(candidate => candidate.Product)
                     .SingleAsync(
                         candidate => candidate.Id == item.RetailerListingId,
                         cancellationToken);

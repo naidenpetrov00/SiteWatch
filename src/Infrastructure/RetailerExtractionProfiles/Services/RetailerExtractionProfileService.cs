@@ -499,7 +499,6 @@ public sealed class RetailerExtractionProfileService(
                 extraction = new RetailerExtractionSuccessDto(
                     runnerResult.Match.Amount,
                     RetailerExtractionRule.EuroCurrencyCode,
-                    matchedRule.PriceBasis.ToCode(),
                     current.Id,
                     matchedRule.Id,
                     matchedRule.Name,
@@ -658,8 +657,7 @@ public sealed class RetailerExtractionProfileService(
                 out var decimalSeparator)
             || !RetailerExtractionCodes.TryParseThousandsSeparator(
                 request.ThousandsSeparator,
-                out var thousandsSeparator)
-            || !PriceBasisCodes.TryParse(request.PriceBasis, out var priceBasis))
+                out var thousandsSeparator))
         {
             throw new RetailerExtractionProfileConflictException(
                 "The extraction rule contains unsupported configuration values.");
@@ -692,7 +690,6 @@ public sealed class RetailerExtractionProfileService(
             decimalSeparator,
             thousandsSeparator,
             request.ExpectedCurrencyCode,
-            priceBasis,
             request.MinimumValue,
             request.MaximumValue);
     }
@@ -873,7 +870,6 @@ public sealed class RetailerExtractionProfileService(
             rule.DecimalSeparator.ToCode(),
             rule.ThousandsSeparator.ToCode(),
             rule.ExpectedCurrencyCode,
-            rule.PriceBasis.ToCode(),
             rule.MinimumValue,
             rule.MaximumValue);
 

@@ -154,13 +154,19 @@ export class RetailerListingsTableComponent {
       },
       {
         key: 'productPackageUnit',
-        label: 'Basis',
+        label: 'Latest price basis',
         sortable: false,
         valueAccessor: (listing) => listing.latestObservation?.basis ?? null,
         displayFormatter: (_, listing) =>
           listing.latestObservation
             ? 'per ' + listing.latestObservation.basis
             : '—'
+      },
+      {
+        key: 'onlinePriceBasis',
+        label: 'Online basis',
+        sortable: false,
+        displayFormatter: (value) => value ? String(value) : 'Not configured'
       },
       {
         key: 'lastModified',

@@ -268,9 +268,6 @@ public abstract class RetailerExtractionRuleRequestValidator<TRequest>
         RuleFor(request => request.ExpectedCurrencyCode)
             .Equal(RetailerExtractionRule.EuroCurrencyCode)
             .WithMessage("ExpectedCurrencyCode must be EUR.");
-        RuleFor(request => request.PriceBasis)
-            .Must(value => PriceBasisCodes.TryParse(value, out _))
-            .WithMessage("PriceBasis must be item or package.");
         RuleFor(request => request.MinimumValue)
             .Must(BeValidOptionalAmount)
             .WithMessage("MinimumValue must be positive and have at most two decimal places.");

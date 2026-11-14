@@ -92,7 +92,25 @@
         <mat-label>Retailer product code</mat-label>
         <input name="retailer-listing-dialog-retailer-product-code" matInput formControlName="retailerProductCode" maxlength="100"  autocomplete="off"/>
       </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Online price basis</mat-label>
+        <mat-select formControlName="onlinePriceBasis">
+          <mat-option [value]="null">Not configured</mat-option>
+          @for (basis of allowedBases(); track basis) {
+            <mat-option [value]="basis">
+              {{ basis === 'item' ? 'Individual item' : 'Package' }}
+            </mat-option>
+          }
+        </mat-select>
+        <mat-hint>Used for prices collected from the retailer product URL.</mat-hint>
+      </mat-form-field>
     </div>
+    @if (form.touched && form.hasError('onlinePriceBasisRequired')) {
+      <p class="listing-dialog__error" role="alert">
+        Select an online price basis when a retailer product URL is supplied.
+      </p>
+    }
 
     @if (!isMetadataOnly()) {
     <fieldset class="listing-dialog__price">
@@ -129,7 +147,7 @@
           }
         </mat-form-field>
         <mat-form-field appearance="outline">
-          <mat-label>Price basis</mat-label>
+          <mat-label>Manual price basis</mat-label>
           <mat-select formControlName="basis">
             <mat-option [value]="null">No new price</mat-option>
             @for (basis of allowedBases(); track basis) {

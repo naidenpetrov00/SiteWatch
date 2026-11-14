@@ -19,6 +19,7 @@ public sealed class RetailerListingWriter(
         Guid retailerId,
         string? productUrl,
         string? retailerProductCode,
+        PriceBasis? onlinePriceBasis,
         RetailerListingPriceInput? price,
         CancellationToken cancellationToken)
     {
@@ -50,7 +51,8 @@ public sealed class RetailerListingWriter(
                 product,
                 retailer,
                 productUrl,
-                retailerProductCode);
+                retailerProductCode,
+                onlinePriceBasis);
         }
         catch (ArgumentException exception)
         {
@@ -90,6 +92,7 @@ public sealed class RetailerListingWriter(
                 retailerId,
                 productUrl,
                 retailerProductCode,
+                string.IsNullOrWhiteSpace(productUrl) ? null : price.Basis,
                 price,
                 cancellationToken);
         }
@@ -98,6 +101,8 @@ public sealed class RetailerListingWriter(
             listing,
             productUrl,
             retailerProductCode,
+            listing.OnlinePriceBasis
+                ?? (string.IsNullOrWhiteSpace(productUrl) ? null : price.Basis),
             price,
             cancellationToken);
         return listing;
@@ -107,12 +112,13 @@ public sealed class RetailerListingWriter(
         RetailerListing listing,
         string? productUrl,
         string? retailerProductCode,
+        PriceBasis? onlinePriceBasis,
         RetailerListingPriceInput? price,
         CancellationToken cancellationToken)
     {
         try
         {
-            listing.UpdateMetadata(productUrl, retailerProductCode);
+            listing.UpdateMetadata(productUrl, retailerProductCode, onlinePriceBasis);
         }
         catch (ArgumentException exception)
         {
@@ -214,11 +220,7 @@ public sealed class RetailerListingWriter(
 
     private static void EnsureSupportedBasis(Product product, PriceBasis basis)
     {
-        var supported = product.PackageQuantity.HasValue
-            ? product.PackageUnit == ProductPackageUnit.Piece
-                || basis == PriceBasis.Package
-            : basis == PriceBasis.Item;
-        if (!supported)
+        if (!product.SupportsPriceBasis(basis))
         {
             throw new RetailerListingConflictException(
                 product.PackageQuantity.HasValue

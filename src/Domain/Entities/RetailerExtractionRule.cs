@@ -16,7 +16,6 @@ public sealed record RetailerExtractionRuleConfiguration(
     RetailerExtractionDecimalSeparator DecimalSeparator,
     RetailerExtractionThousandsSeparator ThousandsSeparator,
     string ExpectedCurrencyCode,
-    PriceBasis PriceBasis,
     decimal? MinimumValue,
     decimal? MaximumValue);
 
@@ -49,7 +48,6 @@ public sealed class RetailerExtractionRule : BaseEntity
     public RetailerExtractionDecimalSeparator DecimalSeparator { get; private set; }
     public RetailerExtractionThousandsSeparator ThousandsSeparator { get; private set; }
     public string ExpectedCurrencyCode { get; private set; } = EuroCurrencyCode;
-    public PriceBasis PriceBasis { get; private set; }
     public decimal? MinimumValue { get; private set; }
     public decimal? MaximumValue { get; private set; }
 
@@ -94,7 +92,6 @@ public sealed class RetailerExtractionRule : BaseEntity
                 DecimalSeparator,
                 ThousandsSeparator,
                 ExpectedCurrencyCode,
-                PriceBasis,
                 MinimumValue,
                 MaximumValue));
 
@@ -127,8 +124,7 @@ public sealed class RetailerExtractionRule : BaseEntity
 
         if (!Enum.IsDefined(configuration.RuleType)
             || !Enum.IsDefined(configuration.DecimalSeparator)
-            || !Enum.IsDefined(configuration.ThousandsSeparator)
-            || !Enum.IsDefined(configuration.PriceBasis))
+            || !Enum.IsDefined(configuration.ThousandsSeparator))
         {
             throw new ArgumentOutOfRangeException(nameof(configuration));
         }
@@ -206,7 +202,6 @@ public sealed class RetailerExtractionRule : BaseEntity
         DecimalSeparator = configuration.DecimalSeparator;
         ThousandsSeparator = configuration.ThousandsSeparator;
         ExpectedCurrencyCode = EuroCurrencyCode;
-        PriceBasis = configuration.PriceBasis;
         MinimumValue = configuration.MinimumValue;
         MaximumValue = configuration.MaximumValue;
     }

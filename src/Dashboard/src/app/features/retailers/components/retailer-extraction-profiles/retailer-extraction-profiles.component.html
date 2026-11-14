@@ -235,7 +235,7 @@
                   <div>
                     <h5>{{ rule.name }}</h5>
                     <p>
-                      {{ ruleTypeLabel(rule) }} · {{ rule.priceBasis }} · EUR ·
+                      {{ ruleTypeLabel(rule) }} · EUR ·
                       {{ rule.isEnabled ? 'Enabled' : 'Disabled' }}
                     </p>
                     @if (rule.ruleType === 'jsonLd') {
@@ -391,7 +391,6 @@
                 @if (result.extraction; as extraction) {
                   <dl class="extraction__result-grid">
                     <div><dt>EUR amount</dt><dd>€{{ formatAmount(extraction.amount) }}</dd></div>
-                    <div><dt>Price basis</dt><dd>{{ extraction.priceBasis }}</dd></div>
                     <div><dt>Matched rule</dt><dd>{{ extraction.ruleName }}</dd></div>
                     <div><dt>Priority</dt><dd>{{ extraction.rulePriority }}</dd></div>
                     <div class="extraction__result-wide"><dt>Raw value</dt><dd>{{ extraction.rawValue }}</dd></div>

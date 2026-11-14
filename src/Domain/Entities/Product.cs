@@ -117,6 +117,18 @@ public sealed class Product : BaseAuditableEntity, IHasNumberId, IAgregateRoot
         RefreshSearchIdentity();
     }
 
+    public bool SupportsPriceBasis(PriceBasis basis)
+    {
+        if (!Enum.IsDefined(basis))
+        {
+            return false;
+        }
+
+        return PackageQuantity.HasValue
+            ? PackageUnit == ProductPackageUnit.Piece || basis == PriceBasis.Package
+            : basis == PriceBasis.Item;
+    }
+
     private static void ValidatePackagePair(
         decimal? packageQuantity,
         ProductPackageUnit? packageUnit)

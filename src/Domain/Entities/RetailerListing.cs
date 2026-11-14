@@ -21,6 +21,7 @@ public sealed class RetailerListing : BaseAuditableEntity, IAgregateRoot
     public string? ProductUrl { get; private set; }
     public bool IsActive { get; private set; }
     public string? RetailerProductCode { get; private set; }
+    public PriceBasis? OnlinePriceBasis { get; private set; }
     public IReadOnlyCollection<RetailerPriceObservation> PriceObservations =>
         _priceObservations;
 
@@ -28,7 +29,8 @@ public sealed class RetailerListing : BaseAuditableEntity, IAgregateRoot
         Product product,
         Retailer retailer,
         string? productUrl,
-        string? retailerProductCode)
+        string? retailerProductCode,
+        PriceBasis? onlinePriceBasis = null)
     {
         ArgumentNullException.ThrowIfNull(product);
         ArgumentNullException.ThrowIfNull(retailer);
@@ -42,18 +44,28 @@ public sealed class RetailerListing : BaseAuditableEntity, IAgregateRoot
             RetailerId = retailer.Id,
             IsActive = true
         };
-        listing.UpdateMetadata(productUrl, retailerProductCode);
+        listing.UpdateMetadata(productUrl, retailerProductCode, onlinePriceBasis);
         return listing;
     }
 
-    public void UpdateMetadata(string? productUrl, string? retailerProductCode)
+    public void UpdateMetadata(
+        string? productUrl,
+        string? retailerProductCode,
+        PriceBasis? onlinePriceBasis = null)
     {
-        ProductUrl = NormalizeProductUrl(productUrl);
+        var normalizedProductUrl = NormalizeProductUrl(productUrl);
+        ValidateOnlinePriceBasis(Product, normalizedProductUrl, onlinePriceBasis);
+
+        ProductUrl = normalizedProductUrl;
         RetailerProductCode = NormalizeOptional(
             retailerProductCode,
             MaxRetailerProductCodeLength,
             nameof(retailerProductCode));
+        OnlinePriceBasis = onlinePriceBasis;
     }
+
+    public bool HasValidOnlinePriceBasis() =>
+        OnlinePriceBasis.HasValue && Product.SupportsPriceBasis(OnlinePriceBasis.Value);
 
     public RetailerPriceObservation RecordPrice(
         decimal amount,
@@ -85,7 +97,6 @@ public sealed class RetailerListing : BaseAuditableEntity, IAgregateRoot
 
     public RetailerPriceObservation RecordAutomatedPrice(
         decimal amount,
-        PriceBasis basis,
         DateTimeOffset observedAt,
         DateTimeOffset recordedAt,
         string sourceReference,
@@ -98,11 +109,16 @@ public sealed class RetailerListing : BaseAuditableEntity, IAgregateRoot
             throw new InvalidOperationException(
                 "Prices cannot be recorded for an inactive retailer listing.");
         }
+        if (!HasValidOnlinePriceBasis())
+        {
+            throw new InvalidOperationException(
+                "Automated prices require a valid online price basis on the retailer listing.");
+        }
 
         var observation = RetailerPriceObservation.Create(
             this,
             amount,
-            basis,
+            OnlinePriceBasis!.Value,
             observedAt,
             recordedAt,
             PriceObservationSource.Automated,
@@ -117,6 +133,28 @@ public sealed class RetailerListing : BaseAuditableEntity, IAgregateRoot
     public void Activate() => IsActive = true;
 
     public void Deactivate() => IsActive = false;
+
+    private static void ValidateOnlinePriceBasis(
+        Product product,
+        string? productUrl,
+        PriceBasis? onlinePriceBasis)
+    {
+        if (!string.IsNullOrWhiteSpace(productUrl) && !onlinePriceBasis.HasValue)
+        {
+            throw new ArgumentException(
+                "An online price basis is required when a retailer product URL is supplied.",
+                nameof(onlinePriceBasis));
+        }
+
+        if (onlinePriceBasis.HasValue && !product.SupportsPriceBasis(onlinePriceBasis.Value))
+        {
+            throw new ArgumentException(
+                product.PackageQuantity.HasValue
+                    ? "Item pricing is supported only for packages measured in pieces."
+                    : "Package pricing requires Product package metadata.",
+                nameof(onlinePriceBasis));
+        }
+    }
 
     private static string? NormalizeProductUrl(string? value)
     {
