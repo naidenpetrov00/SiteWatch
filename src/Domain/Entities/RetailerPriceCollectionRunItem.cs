@@ -59,6 +59,20 @@ public sealed class RetailerPriceCollectionRunItem : BaseEntity
         {
             item.Skip(createdAt, "missingProductUrl", "The retailer listing did not have a saved product URL.");
         }
+        else if (!listing.OnlinePriceBasis.HasValue)
+        {
+            item.Skip(
+                createdAt,
+                "missingOnlinePriceBasis",
+                "The retailer listing did not have a configured online price basis.");
+        }
+        else if (!listing.HasValidOnlinePriceBasis())
+        {
+            item.Skip(
+                createdAt,
+                "invalidOnlinePriceBasis",
+                "The retailer listing's online price basis was incompatible with the Product package metadata.");
+        }
 
         return item;
     }

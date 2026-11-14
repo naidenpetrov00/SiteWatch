@@ -1,5 +1,4 @@
 using Domain.Entities;
-using Domain.SeedWork.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -60,12 +59,6 @@ public sealed class RetailerExtractionRuleConfiguration
         builder.Property(rule => rule.ExpectedCurrencyCode)
             .HasMaxLength(3)
             .IsRequired();
-        builder.Property(rule => rule.PriceBasis)
-            .HasConversion(
-                basis => basis.ToCode(),
-                value => ParseBasis(value))
-            .HasMaxLength(16)
-            .IsRequired();
         builder.Property(rule => rule.MinimumValue).HasPrecision(18, 2);
         builder.Property(rule => rule.MaximumValue).HasPrecision(18, 2);
 
@@ -77,10 +70,4 @@ public sealed class RetailerExtractionRuleConfiguration
             .HasForeignKey(rule => rule.ExtractionProfileId)
             .OnDelete(DeleteBehavior.Cascade);
     }
-
-    private static PriceBasis ParseBasis(string value) =>
-        PriceBasisCodes.TryParse(value, out var basis)
-            ? basis
-            : throw new InvalidOperationException(
-                $"Unsupported stored price basis '{value}'.");
 }

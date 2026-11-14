@@ -15,6 +15,7 @@ public sealed record CreateRetailerListingCommand : IRequest<RetailerListingDto>
     public Guid RetailerId { get; init; }
     public string? ProductUrl { get; init; }
     public string? RetailerProductCode { get; init; }
+    public string? OnlinePriceBasis { get; init; }
     public decimal? Amount { get; init; }
     public string? Basis { get; init; }
 }
@@ -26,6 +27,7 @@ public sealed record UpdateRetailerListingCommand : IRequest<RetailerListingDto>
     public Guid ListingId { get; set; }
     public string? ProductUrl { get; init; }
     public string? RetailerProductCode { get; init; }
+    public string? OnlinePriceBasis { get; init; }
     public decimal? Amount { get; init; }
     public string? Basis { get; init; }
 }
@@ -112,6 +114,14 @@ internal static class RetailerListingValidation
         validator.RuleFor(command => ReadRetailerProductCode(command))
             .MaximumLength(RetailerListing.MaxRetailerProductCodeLength)
             .WithName(nameof(CreateRetailerListingCommand.RetailerProductCode));
+        validator.RuleFor(command => ReadOnlinePriceBasis(command))
+            .Must((command, basis) =>
+                PriceBasisCodes.TryParse(basis, out _)
+                || (string.IsNullOrWhiteSpace(basis)
+                    && string.IsNullOrWhiteSpace(ReadProductUrl(command))))
+            .WithName(nameof(CreateRetailerListingCommand.OnlinePriceBasis))
+            .WithMessage(
+                "OnlinePriceBasis must be item or package when a ProductUrl is supplied.");
         validator.RuleFor(command => ReadAmount(command))
             .GreaterThan(0m)
             .LessThanOrEqualTo(MaximumAmount)
@@ -149,6 +159,14 @@ internal static class RetailerListingValidation
         {
             CreateRetailerListingCommand create => create.Amount,
             UpdateRetailerListingCommand update => update.Amount,
+            _ => null
+        };
+
+    private static string? ReadOnlinePriceBasis<TCommand>(TCommand command) =>
+        command switch
+        {
+            CreateRetailerListingCommand create => create.OnlinePriceBasis,
+            UpdateRetailerListingCommand update => update.OnlinePriceBasis,
             _ => null
         };
 

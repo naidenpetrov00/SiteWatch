@@ -54,7 +54,6 @@ public sealed class RetailerExtractionProfileSeedData(
                 DecimalSeparator: RetailerExtractionDecimalSeparator.Dot,
                 ThousandsSeparator: RetailerExtractionThousandsSeparator.None,
                 ExpectedCurrencyCode: RetailerExtractionRule.EuroCurrencyCode,
-                PriceBasis: PriceBasis.Package,
                 MinimumValue: 0.01m,
                 MaximumValue: 100000m));
             ApplyAuditMetadata(profile);

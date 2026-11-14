@@ -35,7 +35,6 @@ public sealed record RetailerExtractionRuleDto(
     string DecimalSeparator,
     string ThousandsSeparator,
     string ExpectedCurrencyCode,
-    string PriceBasis,
     decimal? MinimumValue,
     decimal? MaximumValue);
 
@@ -89,7 +88,6 @@ public abstract record RetailerExtractionRuleRequest
     public string DecimalSeparator { get; init; } = "comma";
     public string ThousandsSeparator { get; init; } = "space";
     public string ExpectedCurrencyCode { get; init; } = "EUR";
-    public string PriceBasis { get; init; } = "item";
     public decimal? MinimumValue { get; init; }
     public decimal? MaximumValue { get; init; }
 }
@@ -115,7 +113,6 @@ public sealed record RetailerExtractionRuleDiagnosticDto(
 public sealed record RetailerExtractionSuccessDto(
     decimal Amount,
     string CurrencyCode,
-    string PriceBasis,
     Guid ProfileId,
     Guid RuleId,
     string RuleName,

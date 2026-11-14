@@ -151,6 +151,7 @@ public sealed class OfferOnlinePriceCollectionService(
                 cancellationToken);
             var listings = await dbContext.RetailerListings
                 .Include(listing => listing.Retailer)
+                .Include(listing => listing.Product)
                 .Where(listing => eligibleListingIds.Contains(listing.Id))
                 .OrderBy(listing => listing.Retailer.DisplayName)
                 .ThenBy(listing => listing.ProductId)
@@ -275,6 +276,7 @@ public sealed class OfferOnlinePriceCollectionService(
             ? []
             : await dbContext.RetailerListings
                 .AsNoTracking()
+                .Include(listing => listing.Product)
                 .Where(listing => retailerIds.Contains(listing.RetailerId)
                     && productIds.Contains(listing.ProductId))
                 .ToListAsync(cancellationToken);
@@ -361,13 +363,17 @@ public sealed class OfferOnlinePriceCollectionService(
                 && comparison.Retailer.IsActive)
             .Select(comparison => comparison.RetailerId)
             .ToList();
-        return await dbContext.RetailerListings
+        var listings = await dbContext.RetailerListings
+            .Include(listing => listing.Product)
             .Where(listing => productIds.Contains(listing.ProductId)
                 && retailerIds.Contains(listing.RetailerId)
                 && listing.IsActive
                 && listing.ProductUrl != null)
-            .Select(listing => listing.Id)
             .ToListAsync(cancellationToken);
+        return listings
+            .Where(listing => listing.HasValidOnlinePriceBasis())
+            .Select(listing => listing.Id)
+            .ToList();
     }
 
     private static (string Code, string Message)? GetEligibilityFailure(
@@ -389,6 +395,18 @@ public sealed class OfferOnlinePriceCollectionService(
         if (string.IsNullOrWhiteSpace(listing.ProductUrl))
         {
             return ("missingProductUrl", "The retailer listing has no saved product URL.");
+        }
+        if (!listing.OnlinePriceBasis.HasValue)
+        {
+            return (
+                "missingOnlinePriceBasis",
+                "The retailer listing has no configured online price basis.");
+        }
+        if (!listing.HasValidOnlinePriceBasis())
+        {
+            return (
+                "invalidOnlinePriceBasis",
+                "The retailer listing's online price basis is incompatible with the Product package metadata.");
         }
         return null;
     }

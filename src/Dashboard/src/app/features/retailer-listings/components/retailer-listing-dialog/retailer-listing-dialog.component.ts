@@ -111,13 +111,19 @@ export class RetailerListingDialogComponent {
         this.data.listing?.retailerProductCode ?? '',
         [Validators.maxLength(100)]
       ),
+      onlinePriceBasis: this.formBuilder.control<RetailerPriceBasis | null>(
+        initialOnlinePriceBasis(
+          this.data.listing?.onlinePriceBasis ?? null,
+          this.selectedProduct()
+        )
+      ),
       amount: this.formBuilder.control<number | null>(null, [
         Validators.min(0.01),
         maximumTwoDecimalsValidator()
       ]),
       basis: this.formBuilder.control<RetailerPriceBasis | null>(null)
     },
-    { validators: [optionalPricePairValidator()] }
+    { validators: [onlinePriceConfigurationValidator(), optionalPricePairValidator()] }
   );
 
   readonly isEditing = computed(() => this.listing() !== null);
@@ -137,12 +143,7 @@ export class RetailerListingDialogComponent {
   });
   readonly allowedBases = computed<readonly RetailerPriceBasis[]>(() => {
     const product = this.selectedProduct();
-    const packageQuantity =
-      product?.packageQuantity ?? this.listing()?.productPackageQuantity ?? null;
-    const packageUnit =
-      product?.packageUnit ?? this.listing()?.productPackageUnit ?? null;
-    if (packageQuantity === null) return ['item'];
-    return packageUnit === 'piece' ? ['item', 'package'] : ['package'];
+    return allowedOnlinePriceBases(product);
   });
   readonly displayCounterpart = (
     value: string | DashboardProductLookup | DashboardRetailerLookup | null
@@ -202,6 +203,11 @@ export class RetailerListingDialogComponent {
       this.selectedRetailer.set(value);
     }
     const bases = this.allowedBases();
+    if (!bases.includes(this.form.controls.onlinePriceBasis.value!)) {
+      this.form.controls.onlinePriceBasis.setValue(
+        bases.length === 1 ? bases[0] : null
+      );
+    }
     if (
       this.form.controls.amount.value !== null &&
       !bases.includes(this.form.controls.basis.value!)
@@ -278,6 +284,7 @@ export class RetailerListingDialogComponent {
             listingId: current.id,
             productUrl: normalizeOptional(value.productUrl),
             retailerProductCode: normalizeOptional(value.retailerProductCode),
+            onlinePriceBasis: value.onlinePriceBasis,
             amount,
             basis
           })
@@ -286,6 +293,7 @@ export class RetailerListingDialogComponent {
             retailerId: this.selectedRetailer()!.id,
             productUrl: normalizeOptional(value.productUrl),
             retailerProductCode: normalizeOptional(value.retailerProductCode),
+            onlinePriceBasis: value.onlinePriceBasis,
             amount,
             basis
           });
@@ -394,6 +402,31 @@ export class RetailerListingDialogComponent {
 function normalizeOptional(value: string): string | null {
   const normalized = value.trim();
   return normalized || null;
+}
+
+function allowedOnlinePriceBases(
+  product: RetailerListingFixedProduct | null
+): readonly RetailerPriceBasis[] {
+  if (!product) return [];
+  if (product.packageQuantity === null) return ['item'];
+  return product.packageUnit === 'piece' ? ['item', 'package'] : ['package'];
+}
+
+function initialOnlinePriceBasis(
+  current: RetailerPriceBasis | null,
+  product: RetailerListingFixedProduct | null
+): RetailerPriceBasis | null {
+  const allowed = allowedOnlinePriceBases(product);
+  if (current !== null && allowed.includes(current)) return current;
+  return allowed.length === 1 ? allowed[0] : null;
+}
+
+function onlinePriceConfigurationValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const productUrl = String(control.get('productUrl')?.value ?? '').trim();
+    const onlinePriceBasis = control.get('onlinePriceBasis')?.value;
+    return productUrl && !onlinePriceBasis ? { onlinePriceBasisRequired: true } : null;
+  };
 }
 
 function optionalPricePairValidator(): ValidatorFn {

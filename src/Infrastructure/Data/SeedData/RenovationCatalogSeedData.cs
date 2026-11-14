@@ -104,7 +104,8 @@ public sealed class RenovationCatalogSeedData(
                     product,
                     retailer,
                     definition.ProductUrl,
-                    definition.RetailerProductCode);
+                    definition.RetailerProductCode,
+                    PriceBasis.Package);
                 ApplyAuditMetadata(listing);
                 dbContext.RetailerListings.Add(listing);
                 createdListingCount++;

@@ -7,8 +7,6 @@ export type RetailerExtractionThousandsSeparator =
   | 'dot'
   | 'comma'
   | 'space';
-export type RetailerExtractionPriceBasis = 'item' | 'package';
-
 export interface RetailerExtractionProfileSummary {
   id: string;
   companyPersonId: string;
@@ -43,7 +41,6 @@ export interface RetailerExtractionRule {
   decimalSeparator: RetailerExtractionDecimalSeparator;
   thousandsSeparator: RetailerExtractionThousandsSeparator;
   expectedCurrencyCode: 'EUR';
-  priceBasis: RetailerExtractionPriceBasis;
   minimumValue: number | null;
   maximumValue: number | null;
 }
@@ -96,7 +93,6 @@ export interface SaveRetailerExtractionRuleRequest {
   decimalSeparator: RetailerExtractionDecimalSeparator;
   thousandsSeparator: RetailerExtractionThousandsSeparator;
   expectedCurrencyCode: 'EUR';
-  priceBasis: RetailerExtractionPriceBasis;
   minimumValue: number | null;
   maximumValue: number | null;
 }
@@ -121,7 +117,6 @@ export interface RetailerExtractionRuleDiagnostic {
 export interface RetailerExtractionSuccess {
   amount: number;
   currencyCode: 'EUR';
-  priceBasis: RetailerExtractionPriceBasis;
   profileId: string;
   ruleId: string;
   ruleName: string;

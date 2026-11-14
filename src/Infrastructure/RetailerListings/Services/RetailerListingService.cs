@@ -118,6 +118,7 @@ public sealed class RetailerListingService(
         CancellationToken cancellationToken)
     {
         var price = ParsePrice(request.Amount, request.Basis);
+        var onlinePriceBasis = ParseOnlinePriceBasis(request.OnlinePriceBasis);
         var listingId = await ExecuteMutationAsync(
             async () =>
             {
@@ -126,6 +127,7 @@ public sealed class RetailerListingService(
                     request.RetailerId,
                     request.ProductUrl,
                     request.RetailerProductCode,
+                    onlinePriceBasis,
                     price,
                     cancellationToken);
                 return listing.Id;
@@ -140,6 +142,7 @@ public sealed class RetailerListingService(
         CancellationToken cancellationToken)
     {
         var price = ParsePrice(request.Amount, request.Basis);
+        var onlinePriceBasis = ParseOnlinePriceBasis(request.OnlinePriceBasis);
         await ExecuteMutationAsync(
             async () =>
             {
@@ -150,6 +153,7 @@ public sealed class RetailerListingService(
                     listing,
                     request.ProductUrl,
                     request.RetailerProductCode,
+                    onlinePriceBasis,
                     price,
                     cancellationToken);
                 return true;
@@ -399,6 +403,22 @@ public sealed class RetailerListingService(
                 cancellationToken)
         ?? throw new NotFoundException(nameof(RetailerListing), listingId.ToString());
 
+    private static PriceBasis? ParseOnlinePriceBasis(string? basis)
+    {
+        if (string.IsNullOrWhiteSpace(basis))
+        {
+            return null;
+        }
+
+        if (!PriceBasisCodes.TryParse(basis, out var parsedBasis))
+        {
+            throw new RetailerListingConflictException(
+                "OnlinePriceBasis must be item or package.");
+        }
+
+        return parsedBasis;
+    }
+
     private static RetailerListingPriceInput? ParsePrice(
         decimal? amount,
         string? basis)
@@ -467,6 +487,7 @@ public sealed class RetailerListingService(
             listing.IsActive,
             listing.ProductUrl,
             listing.RetailerProductCode,
+            listing.OnlinePriceBasis,
             listing.Created,
             listing.LastModified,
             listing.PriceObservations
@@ -503,6 +524,7 @@ public sealed class RetailerListingService(
             listing.IsActive,
             listing.ProductUrl,
             listing.RetailerProductCode,
+            listing.OnlinePriceBasis?.ToCode(),
             listing.Created,
             listing.LastModified,
             listing.LatestObservation is null
@@ -552,6 +574,7 @@ public sealed class RetailerListingService(
         bool IsActive,
         string? ProductUrl,
         string? RetailerProductCode,
+        PriceBasis? OnlinePriceBasis,
         DateTimeOffset Created,
         DateTimeOffset LastModified,
         ObservationProjection? LatestObservation);

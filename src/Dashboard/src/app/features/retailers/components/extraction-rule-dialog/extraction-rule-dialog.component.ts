@@ -86,9 +86,6 @@ export class ExtractionRuleDialogComponent {
       thousandsSeparator: this.formBuilder.nonNullable.control<
         'none' | 'dot' | 'comma' | 'space'
       >(this.rule?.thousandsSeparator ?? 'space'),
-      priceBasis: this.formBuilder.nonNullable.control<'item' | 'package'>(
-        this.rule?.priceBasis ?? 'item'
-      ),
       minimumValue: this.formBuilder.control<number | null>(
         this.rule?.minimumValue ?? null,
         [Validators.min(0.01), maximumTwoDecimals()]
@@ -131,7 +128,6 @@ export class ExtractionRuleDialogComponent {
       decimalSeparator: value.decimalSeparator,
       thousandsSeparator: value.thousandsSeparator,
       expectedCurrencyCode: 'EUR',
-      priceBasis: value.priceBasis,
       minimumValue: value.minimumValue,
       maximumValue: value.maximumValue
     });

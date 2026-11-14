@@ -57,6 +57,7 @@ public sealed class RetailerPriceCollectionService(
 
             var listings = await dbContext.RetailerListings
                 .Include(listing => listing.Retailer)
+                .Include(listing => listing.Product)
                 .Where(listing => listing.Retailer.CompanyPersonId == companyPersonId)
                 .OrderBy(listing => listing.Retailer.DisplayName)
                 .ThenBy(listing => listing.ProductId)

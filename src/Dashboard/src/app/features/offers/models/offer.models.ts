@@ -425,7 +425,13 @@ export interface OfferOnlinePriceCollectionExclusion {
   productTitle: string;
   retailerId: string;
   retailerDisplayName: string;
-  code: 'missingListing' | 'missingProductUrl' | 'retailerInactive' | 'listingInactive';
+  code:
+    | 'missingListing'
+    | 'missingProductUrl'
+    | 'missingOnlinePriceBasis'
+    | 'invalidOnlinePriceBasis'
+    | 'retailerInactive'
+    | 'listingInactive';
   message: string;
 }
 

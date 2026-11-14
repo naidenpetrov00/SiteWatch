@@ -30,6 +30,7 @@ export interface RetailerListing {
   isActive: boolean;
   productUrl: string | null;
   retailerProductCode: string | null;
+  onlinePriceBasis: RetailerPriceBasis | null;
   created: string;
   lastModified: string;
   latestObservation: RetailerPriceObservation | null;
@@ -69,6 +70,7 @@ export interface SaveRetailerListingRequest {
   retailerId: string;
   productUrl: string | null;
   retailerProductCode: string | null;
+  onlinePriceBasis: RetailerPriceBasis | null;
   amount: number | null;
   basis: RetailerPriceBasis | null;
 }
@@ -77,6 +79,7 @@ export interface UpdateRetailerListingRequest {
   listingId: string;
   productUrl: string | null;
   retailerProductCode: string | null;
+  onlinePriceBasis: RetailerPriceBasis | null;
   amount: number | null;
   basis: RetailerPriceBasis | null;
 }

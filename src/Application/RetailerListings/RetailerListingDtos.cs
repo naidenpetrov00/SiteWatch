@@ -30,6 +30,7 @@ public sealed record RetailerListingDto(
     bool IsActive,
     string? ProductUrl,
     string? RetailerProductCode,
+    string? OnlinePriceBasis,
     DateTimeOffset Created,
     DateTimeOffset LastModified,
     RetailerPriceObservationDto? LatestObservation);
