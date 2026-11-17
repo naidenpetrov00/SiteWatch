@@ -340,12 +340,12 @@ BEGIN TRY
     (
         SELECT 1
         FROM @Import AS import
-        INNER JOIN @Plan AS plan
-            ON plan.PersonId = import.PersonId
+        INNER JOIN @Plan AS importPlan
+            ON importPlan.PersonId = import.PersonId
         INNER JOIN dbo.Retailers AS existingRetailer WITH (UPDLOCK, HOLDLOCK)
             ON existingRetailer.NormalizedName = import.NormalizedName
            AND existingRetailer.CompanyPersonId <> import.PersonId
-        WHERE plan.RetailerExists = 0
+        WHERE importPlan.RetailerExists = 0
     )
     BEGIN
         SELECT
@@ -354,12 +354,12 @@ BEGIN TRY
             existingRetailer.CompanyPersonId AS ConflictingCompanyPersonId,
             existingRetailer.DisplayName AS ConflictingRetailerName
         FROM @Import AS import
-        INNER JOIN @Plan AS plan
-            ON plan.PersonId = import.PersonId
+        INNER JOIN @Plan AS importPlan
+            ON importPlan.PersonId = import.PersonId
         INNER JOIN dbo.Retailers AS existingRetailer WITH (UPDLOCK, HOLDLOCK)
             ON existingRetailer.NormalizedName = import.NormalizedName
            AND existingRetailer.CompanyPersonId <> import.PersonId
-        WHERE plan.RetailerExists = 0
+        WHERE importPlan.RetailerExists = 0
         ORDER BY import.ImportOrder;
 
         THROW 51012, N'A requested normalized retailer name is already owned by another company Person.', 1;
@@ -382,7 +382,7 @@ BEGIN TRY
         LastModifiedBy
     )
     SELECT
-        plan.NewRetailerId,
+        importPlan.NewRetailerId,
         import.DisplayName,
         import.NormalizedName,
         import.PersonId,
@@ -396,9 +396,9 @@ BEGIN TRY
         @ImportedAt,
         @AuditActor
     FROM @Import AS import
-    INNER JOIN @Plan AS plan
-        ON plan.PersonId = import.PersonId
-    WHERE plan.RetailerExists = 0;
+    INNER JOIN @Plan AS importPlan
+        ON importPlan.PersonId = import.PersonId
+    WHERE importPlan.RetailerExists = 0;
 
     INSERT INTO dbo.RetailerExtractionProfiles
     (
@@ -419,7 +419,7 @@ BEGIN TRY
         LastModifiedBy
     )
     SELECT
-        plan.NewProfileId,
+        importPlan.NewProfileId,
         import.PersonId,
         1,
         N'Draft',
@@ -435,9 +435,9 @@ BEGIN TRY
         @ImportedAt,
         @AuditActor
     FROM @Import AS import
-    INNER JOIN @Plan AS plan
-        ON plan.PersonId = import.PersonId
-    WHERE plan.ProfileExists = 0;
+    INNER JOIN @Plan AS importPlan
+        ON importPlan.PersonId = import.PersonId
+    WHERE importPlan.ProfileExists = 0;
 
     INSERT INTO dbo.RetailerExtractionAllowedHosts
     (
@@ -447,18 +447,18 @@ BEGIN TRY
     )
     SELECT
         NEWID(),
-        plan.NewProfileId,
+        importPlan.NewProfileId,
         allowedHost.NormalizedHost
     FROM @Import AS import
-    INNER JOIN @Plan AS plan
-        ON plan.PersonId = import.PersonId
+    INNER JOIN @Plan AS importPlan
+        ON importPlan.PersonId = import.PersonId
     CROSS APPLY
     (
         VALUES
             (import.AllowedHost1),
             (import.AllowedHost2)
     ) AS allowedHost(NormalizedHost)
-    WHERE plan.ProfileExists = 0;
+    WHERE importPlan.ProfileExists = 0;
 
     INSERT INTO dbo.RetailerExtractionRules
     (
@@ -481,8 +481,8 @@ BEGIN TRY
         MaximumValue
     )
     SELECT
-        plan.NewRuleId,
-        plan.NewProfileId,
+        importPlan.NewRuleId,
+        importPlan.NewProfileId,
         import.RuleName,
         1,
         1,
@@ -499,23 +499,23 @@ BEGIN TRY
         import.MinimumValue,
         import.MaximumValue
     FROM @Import AS import
-    INNER JOIN @Plan AS plan
-        ON plan.PersonId = import.PersonId
-    WHERE plan.ProfileExists = 0;
+    INNER JOIN @Plan AS importPlan
+        ON importPlan.PersonId = import.PersonId
+    WHERE importPlan.ProfileExists = 0;
 
     IF EXISTS
     (
         SELECT 1
-        FROM @Plan AS plan
+        FROM @Plan AS importPlan
         INNER JOIN @Import AS import
-            ON import.PersonId = plan.PersonId
-        WHERE plan.RetailerExists = 0
+            ON import.PersonId = importPlan.PersonId
+        WHERE importPlan.RetailerExists = 0
           AND NOT EXISTS
           (
               SELECT 1
               FROM dbo.Retailers AS retailer
-              WHERE retailer.Id = plan.NewRetailerId
-                AND retailer.CompanyPersonId = plan.PersonId
+              WHERE retailer.Id = importPlan.NewRetailerId
+                AND retailer.CompanyPersonId = importPlan.PersonId
                 AND retailer.DisplayName = import.DisplayName
                 AND retailer.NormalizedName = import.NormalizedName
                 AND retailer.BaseWebsiteUrl = import.BaseWebsiteUrl
@@ -529,16 +529,16 @@ BEGIN TRY
     IF EXISTS
     (
         SELECT 1
-        FROM @Plan AS plan
-        WHERE plan.ProfileExists = 0
+        FROM @Plan AS importPlan
+        WHERE importPlan.ProfileExists = 0
           AND
           (
               NOT EXISTS
               (
                   SELECT 1
                   FROM dbo.RetailerExtractionProfiles AS profile
-                  WHERE profile.Id = plan.NewProfileId
-                    AND profile.CompanyPersonId = plan.PersonId
+                  WHERE profile.Id = importPlan.NewProfileId
+                    AND profile.CompanyPersonId = importPlan.PersonId
                     AND profile.Version = 1
                     AND profile.Status = N'Draft'
                     AND profile.IsActive = 0
@@ -553,13 +553,13 @@ BEGIN TRY
               (
                   SELECT COUNT_BIG(*)
                   FROM dbo.RetailerExtractionAllowedHosts AS allowedHost
-                  WHERE allowedHost.ExtractionProfileId = plan.NewProfileId
+                  WHERE allowedHost.ExtractionProfileId = importPlan.NewProfileId
               ) <> 2
               OR
               (
                   SELECT COUNT_BIG(*)
                   FROM dbo.RetailerExtractionRules AS extractionRule
-                  WHERE extractionRule.ExtractionProfileId = plan.NewProfileId
+                  WHERE extractionRule.ExtractionProfileId = importPlan.NewProfileId
                     AND extractionRule.IsEnabled = 1
                     AND extractionRule.Priority = 1
               ) <> 1
@@ -585,12 +585,12 @@ BEGIN TRY
         import.DisplayName,
         N'RETAILER',
         CASE
-            WHEN plan.RetailerExists = 1 THEN N'SKIPPED_EXISTING_RETAILER'
+            WHEN importPlan.RetailerExists = 1 THEN N'SKIPPED_EXISTING_RETAILER'
             WHEN @Apply = 0 THEN N'WOULD_CREATE_RETAILER'
             ELSE N'CREATED_RETAILER'
         END,
         CASE
-            WHEN plan.RetailerExists = 1
+            WHEN importPlan.RetailerExists = 1
                 THEN N'At least one retailer already exists for this company Person; all existing retailer data was preserved.'
             WHEN @Apply = 0
                 THEN N'Would create one active retailer with IsDefaultForOffers = 0.'
@@ -598,8 +598,8 @@ BEGIN TRY
         END,
         import.TestUrl
     FROM @Import AS import
-    INNER JOIN @Plan AS plan
-        ON plan.PersonId = import.PersonId
+    INNER JOIN @Plan AS importPlan
+        ON importPlan.PersonId = import.PersonId
 
     UNION ALL
 
@@ -610,12 +610,12 @@ BEGIN TRY
         import.DisplayName,
         N'PROFILE',
         CASE
-            WHEN plan.ProfileExists = 1 THEN N'SKIPPED_EXISTING_PROFILE'
+            WHEN importPlan.ProfileExists = 1 THEN N'SKIPPED_EXISTING_PROFILE'
             WHEN @Apply = 0 THEN N'WOULD_CREATE_DRAFT'
             ELSE N'CREATED_DRAFT'
         END,
         CASE
-            WHEN plan.ProfileExists = 1
+            WHEN importPlan.ProfileExists = 1
                 THEN N'At least one extraction-profile version already exists; all existing profiles, hosts, and rules were preserved.'
             WHEN @Apply = 0
                 THEN CONCAT(N'Would create draft version 1 with two allowed hosts, enabled rule ', import.RuleCode, N', and ConfigurationRevision = 2.')
@@ -623,8 +623,8 @@ BEGIN TRY
         END,
         import.TestUrl
     FROM @Import AS import
-    INNER JOIN @Plan AS plan
-        ON plan.PersonId = import.PersonId;
+    INNER JOIN @Plan AS importPlan
+        ON importPlan.PersonId = import.PersonId;
 
     IF (SELECT COUNT_BIG(*) FROM @ActionReport) <> 38
         THROW 51015, N'The action report must contain exactly two rows for each import definition.', 1;
