@@ -297,6 +297,255 @@ This only extracts files into a temporary directory. It does not restore or
 modify the live database. Inspect the printed directory and remove that exact
 temporary directory manually after verification.
 
+## Import researched retailers and extraction-profile drafts
+
+The reviewed import is stored at:
+
+```text
+deploy/import-retailers-and-extraction-drafts.sql
+```
+
+It contains 19 company configurations. House of Sport is intentionally absent
+because the current extraction-rule model accepts only EUR prices.
+
+For each company, the script validates that the referenced `Person` exists and
+is a company. It then applies these independent rules:
+
+- If any retailer already exists for the company, every existing retailer is
+  preserved and no retailer is inserted for that company.
+- Otherwise, one active retailer is inserted with `IsDefaultForOffers = 0`.
+- If any extraction-profile version already exists for the company, every
+  existing profile, host, and rule is preserved and no profile data is inserted.
+- Otherwise, draft version 1 is inserted with two allowed hosts, one enabled
+  rule, and `ConfigurationRevision = 2`.
+
+The script never updates or deletes a retailer, profile, host, rule,
+observation, or listing. New profiles are inactive drafts with no publication
+or successful-test metadata. Test URLs are printed for later UI testing but are
+not stored in the database.
+
+### 1. Validate the production Compose configuration
+
+```bash
+cd /opt/sitewatch
+
+sudo docker compose \
+  --env-file .env.production \
+  --file compose.production.yaml \
+  config --quiet
+```
+
+### 2. Preview the complete transaction
+
+`APPLY=0` executes the guarded insert path inside one transaction, prints the
+simulated retailer, profile, host, and rule results, and then rolls back. It
+finishes with a 38-row action report: one retailer action and one profile action
+for each of the 19 companies.
+
+```bash
+sudo docker compose \
+  --env-file .env.production \
+  --file compose.production.yaml \
+  exec --no-TTY database \
+  bash -euo pipefail -c '
+    export SQLCMDPASSWORD="${MSSQL_SA_PASSWORD}"
+
+    /opt/mssql-tools18/bin/sqlcmd \
+      -S localhost \
+      -U sa \
+      -C \
+      -b \
+      -d "${MSSQL_DATABASE}" \
+      -v APPLY=0 \
+      -i /dev/stdin
+  ' < ./deploy/import-retailers-and-extraction-drafts.sql
+```
+
+Stop if the preview returns a nonzero exit code or reports an unexpected action.
+The schema guard requires migration
+`20261114100024_MovePriceBasisToRetailerListing`, the removed rule
+`PriceBasis` column, and the replacement listing `OnlinePriceBasis` column.
+
+Expected preview statuses are:
+
+```text
+WOULD_CREATE_RETAILER
+SKIPPED_EXISTING_RETAILER
+WOULD_CREATE_DRAFT
+SKIPPED_EXISTING_PROFILE
+```
+
+Maxxmart will normally report skipped actions because it may already have a
+retailer and profile. Always trust the report from the current database rather
+than assuming which companies are new.
+
+### 3. Create and verify a fresh backup
+
+```bash
+sudo ./deploy/backup-database.sh
+```
+
+Do not apply the import unless the command creates and verifies the SQL Server
+backup and completes the encrypted off-server Borg archive successfully.
+
+### 4. Apply the import
+
+Use the same command with `APPLY=1`:
+
+```bash
+sudo docker compose \
+  --env-file .env.production \
+  --file compose.production.yaml \
+  exec --no-TTY database \
+  bash -euo pipefail -c '
+    export SQLCMDPASSWORD="${MSSQL_SA_PASSWORD}"
+
+    /opt/mssql-tools18/bin/sqlcmd \
+      -S localhost \
+      -U sa \
+      -C \
+      -b \
+      -d "${MSSQL_DATABASE}" \
+      -v APPLY=1 \
+      -i /dev/stdin
+  ' < ./deploy/import-retailers-and-extraction-drafts.sql
+```
+
+Expected apply statuses are:
+
+```text
+CREATED_RETAILER
+SKIPPED_EXISTING_RETAILER
+CREATED_DRAFT
+SKIPPED_EXISTING_PROFILE
+```
+
+A successful repeated run should report only skipped actions and must not alter
+any existing configuration.
+
+### 5. Verify the persisted data without changing it
+
+This command is read-only. It displays every retailer, profile, allowed host,
+and rule associated with the 19 company Persons.
+
+```bash
+sudo docker compose \
+  --env-file .env.production \
+  --file compose.production.yaml \
+  exec --no-TTY database \
+  bash -euo pipefail -c '
+    export SQLCMDPASSWORD="${MSSQL_SA_PASSWORD}"
+
+    /opt/mssql-tools18/bin/sqlcmd \
+      -S localhost \
+      -U sa \
+      -C \
+      -b \
+      -d "${MSSQL_DATABASE}" \
+      -i /dev/stdin
+  ' <<'SQL'
+DECLARE @AffectedCompanies TABLE
+(
+    SortOrder int NOT NULL,
+    PersonId uniqueidentifier NOT NULL
+);
+
+INSERT INTO @AffectedCompanies (SortOrder, PersonId)
+VALUES
+    (1, '034c567a-76ae-4d9c-bb9b-a4becb5053ec'),
+    (2, 'f3b11722-2748-4d3b-a9b0-d3bfb42429c6'),
+    (3, 'aa1a8433-eeae-44e6-bb14-dbe8054366e7'),
+    (4, 'f62ad111-dfb8-42eb-825f-ffbd6c14f047'),
+    (5, 'a50fa825-634e-4a0c-a1f0-c1b1c4353ba0'),
+    (6, '569459b2-4a65-43ea-ab79-2f3f6176bf12'),
+    (7, 'c1241830-7377-4d32-bbd9-8f8ad77a74f8'),
+    (8, '376b37b7-21a0-43b8-a5ac-932b0cd42e6e'),
+    (9, '8f7e9641-5559-46e6-a85f-5141daf0e51a'),
+    (10, 'd8479494-ad9b-4ed0-b477-b46520e59b52'),
+    (11, '6301c610-6512-454e-ae5d-786ca84f1ce7'),
+    (12, '0f4400ab-de38-4a2c-a683-09ce82363df5'),
+    (13, '9afdc138-e7fd-4dbb-a345-a479eb68ad6a'),
+    (14, '4ce57854-b2d8-4b95-b7db-52b0ed571ad2'),
+    (15, '60f4cf9a-0afe-4db4-b4e0-ae124ac85199'),
+    (16, 'c64f0130-933a-4535-bd3a-9f7f33f0414c'),
+    (17, '29f0246e-c469-4a11-90dd-1d21a60b7c41'),
+    (18, '51f4e65f-271f-45e4-b3fa-c14e540bdd3a'),
+    (19, '76ba2290-1d14-4028-8aa8-dda8574fbcaf');
+
+SELECT
+    affected.PersonId AS CompanyPersonId,
+    retailer.Id AS RetailerId,
+    retailer.DisplayName,
+    retailer.BaseWebsiteUrl,
+    retailer.NormalizedWebsiteHost,
+    retailer.IsActive,
+    retailer.IsDefaultForOffers
+FROM @AffectedCompanies AS affected
+LEFT JOIN Retailers AS retailer
+    ON retailer.CompanyPersonId = affected.PersonId
+ORDER BY affected.SortOrder, retailer.DisplayName, retailer.Id;
+
+SELECT
+    affected.PersonId AS CompanyPersonId,
+    profile.Id AS ProfileId,
+    profile.Version,
+    profile.Status,
+    profile.IsActive,
+    profile.ConfigurationRevision,
+    profile.ValidatedConfigurationRevision,
+    profile.PublishedAt,
+    profile.PublishedBy,
+    profile.LastSuccessfulTestAt,
+    profile.LastSuccessfulTestRuleId
+FROM @AffectedCompanies AS affected
+LEFT JOIN RetailerExtractionProfiles AS profile
+    ON profile.CompanyPersonId = affected.PersonId
+ORDER BY affected.SortOrder, profile.Version, profile.Id;
+
+SELECT
+    affected.PersonId AS CompanyPersonId,
+    profile.Id AS ProfileId,
+    allowedHost.Id AS AllowedHostId,
+    allowedHost.NormalizedHost
+FROM @AffectedCompanies AS affected
+LEFT JOIN RetailerExtractionProfiles AS profile
+    ON profile.CompanyPersonId = affected.PersonId
+LEFT JOIN RetailerExtractionAllowedHosts AS allowedHost
+    ON allowedHost.ExtractionProfileId = profile.Id
+ORDER BY affected.SortOrder, profile.Version, allowedHost.NormalizedHost;
+
+SELECT
+    affected.PersonId AS CompanyPersonId,
+    profile.Id AS ProfileId,
+    extractionRule.Id AS RuleId,
+    extractionRule.Name,
+    extractionRule.Priority,
+    extractionRule.IsEnabled,
+    extractionRule.RuleType,
+    extractionRule.JsonLdObjectType,
+    extractionRule.JsonLdPricePath,
+    extractionRule.JsonLdCurrencyPath,
+    extractionRule.CssSelector,
+    extractionRule.CssValueSource,
+    extractionRule.CssAttributeName,
+    extractionRule.DecimalSeparator,
+    extractionRule.ThousandsSeparator,
+    extractionRule.ExpectedCurrencyCode,
+    extractionRule.MinimumValue,
+    extractionRule.MaximumValue
+FROM @AffectedCompanies AS affected
+LEFT JOIN RetailerExtractionProfiles AS profile
+    ON profile.CompanyPersonId = affected.PersonId
+LEFT JOIN RetailerExtractionRules AS extractionRule
+    ON extractionRule.ExtractionProfileId = profile.Id
+ORDER BY affected.SortOrder, profile.Version, extractionRule.Priority, extractionRule.Id;
+SQL
+```
+
+Every newly created draft must still be tested with its reported test URL and
+then explicitly published through the application UI. The import does not
+fabricate successful-test metadata or publish/activate any profile.
+
 ## Exceptional procedure: recreate an empty production database
 
 Use this procedure only while production contains no data that must be retained.
