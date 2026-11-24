@@ -6,6 +6,10 @@ import { injectMutation, injectQuery, QueryClient } from '@tanstack/angular-quer
 import { buildApiUrl } from '../../../core/api/api-url';
 import { DataTableState } from '../../../shared/data-table/data-table.types';
 import { CameraRequest, UpdateCameraRequest } from '../models/camera-request.model';
+import {
+  CameraStreamAccessResponse,
+  DashboardSiteCamera
+} from '../models/camera-stream.models';
 import { DashboardCamera } from '../models/dashboard-camera.model';
 import { DashboardCameraDetails } from '../models/dashboard-camera-details.model';
 import { DashboardCamerasResponse } from '../models/dashboard-cameras-response.model';
@@ -79,6 +83,26 @@ export class DashboardCamerasService {
   deleteCamera(id: string): Promise<void> { return this.deleteCameraMutation.mutateAsync(id); }
   getCameraById(id: string): Promise<DashboardCameraDetails> {
     return firstValueFrom(this.http.get<DashboardCameraDetails>(buildApiUrl(`/dashboard/cameras/${id}`)));
+  }
+
+  getCamerasBySite(siteId: string): Promise<readonly DashboardSiteCamera[]> {
+    return firstValueFrom(
+      this.http.get<readonly DashboardSiteCamera[]>(
+        buildApiUrl(`/dashboard/sites/${siteId}/cameras`)
+      )
+    );
+  }
+
+  requestStreamAccess(
+    siteId: string,
+    cameraId: string
+  ): Promise<CameraStreamAccessResponse> {
+    return firstValueFrom(
+      this.http.post<CameraStreamAccessResponse>(
+        buildApiUrl(`/dashboard/sites/${siteId}/cameras/${cameraId}/stream-access`),
+        { profile: 'sub' }
+      )
+    );
   }
 
   private invalidateDashboardCameras(): Promise<void> {

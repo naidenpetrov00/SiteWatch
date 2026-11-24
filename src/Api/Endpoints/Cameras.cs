@@ -72,6 +72,17 @@ public class Cameras : EndpointGroupBase
             .RequireAuthorization(AuthorizationPolicies.AdministratorOrWorker);
         dashboardGroup.MapGet("/cameras", GetDashboardCameras);
         dashboardGroup.MapGet("/cameras/{cameraId:guid}", GetDashboardCamera);
+        dashboardGroup.MapGet(
+                "/sites/{siteId:guid}/cameras",
+                GetDashboardSiteCameras)
+            .WithName("GetDashboardSiteCameras")
+            .WithSummary("Get safe camera identity details for a dashboard site")
+            .WithDescription(
+                "Returns camera identity fields without credentials or connection details.")
+            .Produces<IReadOnlyList<DashboardSiteCameraDto>>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces(StatusCodes.Status404NotFound);
         dashboardGroup.MapPost(
                 "/sites/{siteId:guid}/cameras/{cameraId:guid}/stream-access",
                 GetDashboardCameraStreamAccess)
@@ -279,6 +290,17 @@ public class Cameras : EndpointGroupBase
     {
         var camera = await mediator.Send(new DashboardCameraByIdQuery(cameraId), cancellationToken);
         return TypedResults.Ok(camera);
+    }
+
+    private static async Task<Ok<IReadOnlyList<DashboardSiteCameraDto>>> GetDashboardSiteCameras(
+        IMediator mediator,
+        Guid siteId,
+        CancellationToken cancellationToken)
+    {
+        var cameras = await mediator.Send(
+            new DashboardSiteCamerasQuery(siteId),
+            cancellationToken);
+        return TypedResults.Ok(cameras);
     }
 
     private static async Task<Ok<CameraStreamAccessResponse>> GetDashboardCameraStreamAccess(

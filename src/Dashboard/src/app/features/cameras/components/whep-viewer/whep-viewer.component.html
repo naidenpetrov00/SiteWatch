@@ -1,0 +1,51 @@
+<section
+  class="whep-viewer"
+  [attr.aria-label]="'Live view of ' + camera().name"
+  [attr.aria-busy]="isBusy()"
+>
+  <div class="whep-viewer__surface">
+    <video
+      #video
+      autoplay
+      controls
+      playsinline
+      [muted]="true"
+      [attr.aria-label]="'Live video from ' + camera().name"
+      (playing)="playbackStarted()"
+    >
+      Your browser cannot play this live video.
+    </video>
+
+    @if (state().kind !== 'live') {
+      <div class="whep-viewer__overlay">
+        @if (isBusy()) {
+          <mat-spinner diameter="36" />
+        }
+        <strong>{{ camera().name }}</strong>
+        <span>{{ statusMessage() }}</span>
+      </div>
+    }
+  </div>
+
+  <div class="whep-viewer__details">
+    <div>
+      <strong>{{ camera().name }}</strong>
+      <span>Camera #{{ camera().numberId }} · {{ camera().brand }} {{ camera().model }}</span>
+    </div>
+
+    <div class="whep-viewer__actions">
+      @if (state().kind === 'failed') {
+        <button mat-stroked-button type="button" (click)="retry()">Retry</button>
+      }
+      <button mat-button type="button" (click)="stop()">Stop live view</button>
+    </div>
+  </div>
+
+  <p
+    class="whep-viewer__status"
+    [attr.role]="state().kind === 'failed' ? 'alert' : 'status'"
+    aria-live="polite"
+  >
+    {{ statusMessage() }}
+  </p>
+</section>
