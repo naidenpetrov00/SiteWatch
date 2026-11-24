@@ -44,10 +44,14 @@ services:
     container_name: mediamtx.sitewatch
     init: true
     environment:
+      MTX_AUTHMETHOD: http
+      MTX_AUTHHTTPADDRESS: ${MEDIAMTX_AUTH_HTTP_ADDRESS:-http://host.docker.internal:5293/internal/mediamtx/auth}
       MTX_WEBRTCLOCALUDPADDRESS: ":${MEDIAMTX_WEBRTC_MEDIA_PORT:-8189}"
       MTX_WEBRTCADDITIONALHOSTS: ${MEDIAMTX_WEBRTC_ADVERTISED_HOSTS:-127.0.0.1}
       MTX_WEBRTCALLOWORIGINS: ${MEDIAMTX_WEBRTC_ALLOWED_ORIGINS:-http://localhost:4200,http://127.0.0.1:4200}
       MTX_WEBRTCIPSFROMINTERFACES: "false"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "127.0.0.1:${MEDIAMTX_WEBRTC_SIGNALING_PORT:-8889}:8889"
       - "${MEDIAMTX_WEBRTC_BIND_ADDRESS:-127.0.0.1}:${MEDIAMTX_WEBRTC_MEDIA_PORT:-8189}:${MEDIAMTX_WEBRTC_MEDIA_PORT:-8189}/udp"

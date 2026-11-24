@@ -31,8 +31,7 @@ deploy/mediamtx.yml
 ```
 
 MediaMTX has no persistent data directory. Camera paths and active sessions are
-runtime state that the API will recreate after a restart once the Step 2
-integration exists.
+runtime state that the API recreates lazily after a restart.
 
 The attached Hetzner Volume stores persistent data under:
 
@@ -213,7 +212,14 @@ MEDIAMTX_WEBRTC_MEDIA_PORT       -> MTX_WEBRTCLOCALUDPADDRESS
 MEDIAMTX_WEBRTC_ADVERTISED_HOSTS -> MTX_WEBRTCADDITIONALHOSTS
 https://DASHBOARD_DOMAIN         -> MTX_WEBRTCALLOWORIGINS
 false                            -> MTX_WEBRTCIPSFROMINTERFACES
+http                             -> MTX_AUTHMETHOD
+http://api:8080/internal/mediamtx/auth -> MTX_AUTHHTTPADDRESS
 ```
+
+Compose also supplies the API with `MediaMtx__ControlApiBaseUrl` set to
+`http://mediamtx:9997` and `MediaMtx__PublicWhepBaseUrl` set to
+`https://STREAM_DOMAIN`. These are internal deployment settings derived from
+the Compose topology and do not contain secrets.
 
 The host and container UDP media ports intentionally use the same value. Do not
 change only one side of the mapping: MediaMTX advertises its listener port in
@@ -242,16 +248,50 @@ an iframe using MediaMTX's built-in page.
 
 ### Authorization and Control API
 
-Step 1 has an empty MediaMTX internal-user list and no static paths. Therefore
-no caller has `read`, `publish`, or `api` permission and the gateway is
-intentionally non-playable.
+MediaMTX uses SiteWatch's external HTTP authorization callback at
+`http://api:8080/internal/mediamtx/auth`. Caddy returns `404` for
+`/internal/mediamtx` and every descendant on the public API hostname; only the
+direct container route reaches the callback.
+
+An administrator requests stream access through:
+
+```text
+POST /dashboard/sites/{siteId}/cameras/{cameraId}/stream-access
+```
+
+The API verifies the camera/site relationship, lazily reconciles the MediaMTX
+path, and returns an absolute WHEP URL, an opaque bearer ticket, and a connection
+deadline. The viewer ticket is valid for two minutes and covers only WebRTC
+`read` access to its exact path. The callback rechecks that the camera still
+belongs to the site and that the ticketed user remains an administrator. It
+does not return MediaMTX's `expireAt`, so an established session may continue
+until disconnected.
+
+Every Control API request uses a separate, 30-second Data Protection ticket.
+Both ticket payloads contain the absolute expiry used by the time-limited data
+protector, and the callback explicitly validates that expiry. No action is
+excluded from HTTP authorization: `publish`, `playback`, `metrics`, `pprof`,
+unknown actions, invalid paths, and invalid or expired tickets are denied.
 
 Production does not publish Control API port `9997` on the host, and Caddy never
 proxies it. MediaMTX joins both the `frontend` and `backend` networks, however,
 so containers on either network may be able to reach the listener. Docker
-network placement is not the sole authorization boundary. Before Step 2 is
-implemented, choose one concrete HTTP or JWT authorization design that covers
-both path-specific `read` permission and every `api` operation.
+network placement is not the sole authorization boundary; the private callback
+must approve the `api` action for every request.
+
+SiteWatch is the sole writer of paths named
+`camera-{cameraId:N}-main` and `camera-{cameraId:N}-sub`. Do not add, patch,
+replace, or delete these paths manually or from another service. MediaMTX 1.21.4
+redacts source credentials in Control API reads, so a credential-only external
+change cannot be detected while SiteWatch's in-memory source fingerprint is
+still valid. Change camera settings through SiteWatch instead. If an external
+credential-only change occurs accidentally, restart the API to clear the
+fingerprint cache; the next administrator access request performs one
+conservative path replacement.
+
+Path configuration is runtime-only. MediaMTX reconnects to its RTSP source only
+while at least one viewer is active, and the API recreates missing paths lazily
+after a restart.
 
 Never put camera credentials, credential-bearing RTSP URLs, tokens, or Control
 API request bodies in documentation or logs. Runtime path configurations can
@@ -266,8 +306,9 @@ The container health check runs:
 ```
 
 This checks the mounted configuration and `MTX_*` overrides. It does not prove
-that the running WebRTC or Control API listeners are responsive. Step 2 or Step
-5 should add a safe authenticated runtime probe after authorization exists.
+that the running WebRTC listener, Control API listener, or authorization
+callback is responsive. A safe authenticated runtime readiness probe remains a
+future deployment improvement.
 
 The initial `256m` memory limit must be measured later under the expected number,
 resolution, and bitrate of concurrent streams. Docker retains at most three
@@ -276,7 +317,7 @@ resolution, and bitrate of concurrent streams. Docker retains at most three
 MediaMTX passes camera media through without transcoding. H.264 cameras must use
 a browser-compatible profile without B-frames. H.265 is unavailable or
 conditional in many browsers. No FFmpeg, TURN server, TCP ICE listener,
-recording, or persistent MediaMTX storage is included in Step 1. Direct UDP
+recording, or persistent MediaMTX storage is included. Direct UDP
 media can therefore fail on restrictive client networks; TURN is a possible
 later requirement.
 

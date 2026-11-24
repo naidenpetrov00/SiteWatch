@@ -1,10 +1,11 @@
-# MediaMTX is intentionally non-playable until the API integration adds
-# authenticated, short-lived path registrations.
+# Camera paths are registered lazily by the authenticated SiteWatch API.
 logLevel: info
 logDestinations: [stdout]
 
 authMethod: internal
 authInternalUsers: []
+# No action, including Control API access, bypasses external HTTP authorization.
+authHTTPExclude: []
 
 api: true
 apiAddress: :9997
@@ -39,5 +40,5 @@ pathDefaults:
   rtspTransport: tcp
   record: false
 
-# Camera paths and credential-bearing source URLs are registered at runtime.
+# SiteWatch is the sole writer of this runtime path namespace.
 paths: {}

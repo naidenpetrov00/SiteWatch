@@ -6,9 +6,11 @@ x-api-build: &api-build
 
 x-api-environment: &api-environment
   ASPNETCORE_ENVIRONMENT: Production
-  AllowedHosts: ${API_DOMAIN:?Set API_DOMAIN in .env.production}
+  AllowedHosts: ${API_DOMAIN:?Set API_DOMAIN in .env.production};api
   Cors__AllowedOrigins__0: https://${DASHBOARD_DOMAIN:?Set DASHBOARD_DOMAIN in .env.production}
   DataProtection__KeysPath: /var/lib/sitewatch/data-protection
+  MediaMtx__ControlApiBaseUrl: http://mediamtx:9997
+  MediaMtx__PublicWhepBaseUrl: https://${STREAM_DOMAIN:?Set STREAM_DOMAIN in .env.production}
   Mssql__ConnectionStringDockerDb: Server=database,1433;Database=${MSSQL_DATABASE:?Set MSSQL_DATABASE in .env.production};User ID=sa;Password=${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in .env.production};Encrypt=True;TrustServerCertificate=True
   BlobStorage__ConnectionString: DefaultEndpointsProtocol=http;AccountName=${AZURITE_ACCOUNT_NAME:?Set AZURITE_ACCOUNT_NAME in .env.production};AccountKey=${AZURITE_ACCOUNT_KEY:?Set AZURITE_ACCOUNT_KEY in .env.production};BlobEndpoint=http://azurite:10000/${AZURITE_ACCOUNT_NAME}
   Jwt__Issuer: https://${API_DOMAIN:?Set API_DOMAIN in .env.production}
@@ -90,6 +92,8 @@ services:
     restart: unless-stopped
     init: true
     environment:
+      MTX_AUTHMETHOD: http
+      MTX_AUTHHTTPADDRESS: http://api:8080/internal/mediamtx/auth
       MTX_WEBRTCLOCALUDPADDRESS: ":${MEDIAMTX_WEBRTC_MEDIA_PORT:?Set MEDIAMTX_WEBRTC_MEDIA_PORT in .env.production}"
       MTX_WEBRTCADDITIONALHOSTS: ${MEDIAMTX_WEBRTC_ADVERTISED_HOSTS:?Set MEDIAMTX_WEBRTC_ADVERTISED_HOSTS in .env.production}
       MTX_WEBRTCALLOWORIGINS: https://${DASHBOARD_DOMAIN:?Set DASHBOARD_DOMAIN in .env.production}
