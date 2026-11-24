@@ -109,7 +109,7 @@ public sealed class TerritorialStructureService(ApplicationDbContext dbContext, 
     private async Task UpdateAsync(District entry, string name, bool active, CancellationToken ct) { entry.Rename(name); if (active) entry.Activate(); else entry.Deactivate(); StampModified(entry); await SaveAsync("A District with this name already exists.", ct); }
     private async Task UpdateAsync(Quarter entry, string name, bool active, CancellationToken ct) { entry.Rename(name); if (active) entry.Activate(); else entry.Deactivate(); StampModified(entry); await SaveAsync("A Quarter with this name already exists.", ct); }
 
-    private async Task<Municipality> MunicipalityAsync(Guid id, CancellationToken ct) { var entity = await dbContext.Municipalities.SingleOrDefaultAsync(x => x.Id == id, ct); return Guard.Against.NotFound(id, entity); }
+    private async Task<Municipality> MunicipalityAsync(Guid id, CancellationToken ct) { var entity = await dbContext.Municipalities.SingleOrDefaultAsync(x => x.Id == id, ct); return Guard.Aganst.NotFound(id, entity); }
     private async Task<Settlement> SettlementAsync(Guid id, CancellationToken ct) { var entity = await dbContext.Settlements.SingleOrDefaultAsync(x => x.Id == id, ct); return Guard.Against.NotFound(id, entity); }
     private async Task<District> DistrictAsync(Guid id, CancellationToken ct) { var entity = await dbContext.Districts.SingleOrDefaultAsync(x => x.Id == id, ct); return Guard.Against.NotFound(id, entity); }
     private async Task<Quarter> QuarterAsync(Guid id, CancellationToken ct) { var entity = await dbContext.Quarters.SingleOrDefaultAsync(x => x.Id == id, ct); return Guard.Against.NotFound(id, entity); }
