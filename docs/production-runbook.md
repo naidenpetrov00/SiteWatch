@@ -27,7 +27,12 @@ The production stack is defined by:
 ```text
 compose.production.yaml
 .env.production
+deploy/mediamtx.yml
 ```
+
+MediaMTX has no persistent data directory. Camera paths and active sessions are
+runtime state that the API will recreate after a restart once the Step 2
+integration exists.
 
 The attached Hetzner Volume stores persistent data under:
 
@@ -118,7 +123,7 @@ Before applying a production migration:
 sudo docker compose \
   --env-file .env.production \
   --file compose.production.yaml \
-  up --detach database azurite api web
+  up --detach database azurite mediamtx api web
 ```
 
 `up --detach` creates or replaces containers whose image or configuration
@@ -134,8 +139,8 @@ sudo docker compose \
   ps
 ```
 
-Expected services are `database`, `azurite`, `api`, and `web`. Services with a
-health check should report `healthy`.
+Expected services are `database`, `azurite`, `mediamtx`, `api`, and `web`.
+Services with a health check should report `healthy`.
 
 ## Stop only the public application
 
@@ -143,7 +148,7 @@ health check should report `healthy`.
 sudo docker compose \
   --env-file .env.production \
   --file compose.production.yaml \
-  stop web api
+  stop web api mediamtx
 ```
 
 This creates downtime but leaves SQL Server and Azurite running. It does not
@@ -158,8 +163,8 @@ sudo docker compose \
   logs --tail=150 api
 ```
 
-Replace `api` with `web`, `database`, or `azurite` to inspect another service.
-`--tail=150` limits the output to the most recent 150 lines.
+Replace `api` with `web`, `mediamtx`, `database`, or `azurite` to inspect
+another service. `--tail=150` limits the output to the most recent 150 lines.
 
 ## Verify the public endpoints
 
@@ -182,6 +187,103 @@ curl --silent --show-error \
 
 Expected results are HTTP `200` for the dashboard and API health endpoint and a
 redirect from `www` to the main domain.
+
+## MediaMTX WebRTC gateway
+
+Production uses a dedicated streaming hostname and a direct UDP media port:
+
+```text
+HTTPS WHEP signaling: https://STREAM_DOMAIN/<path>/whep
+WebRTC media:         MEDIAMTX_WEBRTC_MEDIA_PORT/udp
+Control API:          mediamtx:9997 inside Docker only
+```
+
+Set these values in `.env.production`:
+
+| Variable | Purpose |
+| --- | --- |
+| `STREAM_DOMAIN` | Public hostname where Caddy terminates signaling HTTPS |
+| `MEDIAMTX_WEBRTC_ADVERTISED_HOSTS` | Comma-separated public DNS names or IPs placed in ICE candidates |
+| `MEDIAMTX_WEBRTC_MEDIA_PORT` | Matching MediaMTX listener and public host UDP port |
+
+Compose maps these settings to MediaMTX as follows:
+
+```text
+MEDIAMTX_WEBRTC_MEDIA_PORT       -> MTX_WEBRTCLOCALUDPADDRESS
+MEDIAMTX_WEBRTC_ADVERTISED_HOSTS -> MTX_WEBRTCADDITIONALHOSTS
+https://DASHBOARD_DOMAIN         -> MTX_WEBRTCALLOWORIGINS
+false                            -> MTX_WEBRTCIPSFROMINTERFACES
+```
+
+The host and container UDP media ports intentionally use the same value. Do not
+change only one side of the mapping: MediaMTX advertises its listener port in
+ICE candidates.
+
+Create an `A` record for `STREAM_DOMAIN` pointing to the production host. Add an
+`AAAA` record only after verifying both HTTPS and direct UDP media over IPv6.
+Caddy obtains the HTTPS certificate automatically. Allow the configured media
+port as inbound UDP in both the Hetzner Cloud firewall and the host firewall.
+If another NAT device is present, forward the same UDP port to the host.
+
+MediaMTX must also have outbound RTSP/TCP connectivity to every camera. Cameras
+on a private remote network require an existing VPN or private route; do not
+expose raw RTSP publicly as a workaround.
+
+### Public signaling surface
+
+Caddy forwards only the WHEP negotiation endpoint `/<path>/whep` and its
+single-segment session subresources `/<path>/whep/<session-id>`. Only `OPTIONS`,
+`POST`, `PATCH`, and `DELETE` are proxied. Every other request on
+`STREAM_DOMAIN` receives `404`; the general MediaMTX HTTP interface and Control
+API are not public.
+
+The dashboard viewer planned for Step 3 must be a programmatic WHEP client, not
+an iframe using MediaMTX's built-in page.
+
+### Authorization and Control API
+
+Step 1 has an empty MediaMTX internal-user list and no static paths. Therefore
+no caller has `read`, `publish`, or `api` permission and the gateway is
+intentionally non-playable.
+
+Production does not publish Control API port `9997` on the host, and Caddy never
+proxies it. MediaMTX joins both the `frontend` and `backend` networks, however,
+so containers on either network may be able to reach the listener. Docker
+network placement is not the sole authorization boundary. Before Step 2 is
+implemented, choose one concrete HTTP or JWT authorization design that covers
+both path-specific `read` permission and every `api` operation.
+
+Never put camera credentials, credential-bearing RTSP URLs, tokens, or Control
+API request bodies in documentation or logs. Runtime path configurations can
+contain camera credentials and must be treated as sensitive.
+
+### Health, capacity, and media limitations
+
+The container health check runs:
+
+```text
+/mediamtx --validate-conf=/mediamtx.yml
+```
+
+This checks the mounted configuration and `MTX_*` overrides. It does not prove
+that the running WebRTC or Control API listeners are responsive. Step 2 or Step
+5 should add a safe authenticated runtime probe after authorization exists.
+
+The initial `256m` memory limit must be measured later under the expected number,
+resolution, and bitrate of concurrent streams. Docker retains at most three
+10 MB log files through the shared production logging policy.
+
+MediaMTX passes camera media through without transcoding. H.264 cameras must use
+a browser-compatible profile without B-frames. H.265 is unavailable or
+conditional in many browsers. No FFmpeg, TURN server, TCP ICE listener,
+recording, or persistent MediaMTX storage is included in Step 1. Direct UDP
+media can therefore fail on restrictive client networks; TURN is a possible
+later requirement.
+
+The configuration disables the inbound RTSP server while allowing MediaMTX to
+act as an outbound RTSP client. Configuration validation cannot prove that
+behavior; verify it later with an authenticated, dynamically registered test
+path and an actual camera source.
 
 ## Create an administrator
 

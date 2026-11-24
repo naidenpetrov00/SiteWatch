@@ -39,3 +39,24 @@ services:
     volumes:
       - ./azurelite-data/data:/data
     command: "azurite-blob --blobHost 0.0.0.0 -l /data"
+  mediamtx:
+    image: bluenviron/mediamtx:1.21.4
+    container_name: mediamtx.sitewatch
+    init: true
+    environment:
+      MTX_WEBRTCLOCALUDPADDRESS: ":${MEDIAMTX_WEBRTC_MEDIA_PORT:-8189}"
+      MTX_WEBRTCADDITIONALHOSTS: ${MEDIAMTX_WEBRTC_ADVERTISED_HOSTS:-127.0.0.1}
+      MTX_WEBRTCALLOWORIGINS: ${MEDIAMTX_WEBRTC_ALLOWED_ORIGINS:-http://localhost:4200,http://127.0.0.1:4200}
+      MTX_WEBRTCIPSFROMINTERFACES: "false"
+    ports:
+      - "127.0.0.1:${MEDIAMTX_WEBRTC_SIGNALING_PORT:-8889}:8889"
+      - "${MEDIAMTX_WEBRTC_BIND_ADDRESS:-127.0.0.1}:${MEDIAMTX_WEBRTC_MEDIA_PORT:-8189}:${MEDIAMTX_WEBRTC_MEDIA_PORT:-8189}/udp"
+      - "127.0.0.1:${MEDIAMTX_CONTROL_PORT:-9997}:9997"
+    volumes:
+      - ./deploy/mediamtx.yml:/mediamtx.yml:ro
+    healthcheck:
+      test: ["CMD", "/mediamtx", "--validate-conf=/mediamtx.yml"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 5s

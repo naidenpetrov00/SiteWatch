@@ -85,6 +85,31 @@ services:
       retries: 12
       start_period: 10s
 
+  mediamtx:
+    image: bluenviron/mediamtx:1.21.4
+    restart: unless-stopped
+    init: true
+    environment:
+      MTX_WEBRTCLOCALUDPADDRESS: ":${MEDIAMTX_WEBRTC_MEDIA_PORT:?Set MEDIAMTX_WEBRTC_MEDIA_PORT in .env.production}"
+      MTX_WEBRTCADDITIONALHOSTS: ${MEDIAMTX_WEBRTC_ADVERTISED_HOSTS:?Set MEDIAMTX_WEBRTC_ADVERTISED_HOSTS in .env.production}
+      MTX_WEBRTCALLOWORIGINS: https://${DASHBOARD_DOMAIN:?Set DASHBOARD_DOMAIN in .env.production}
+      MTX_WEBRTCIPSFROMINTERFACES: "false"
+    ports:
+      - "${MEDIAMTX_WEBRTC_MEDIA_PORT:?Set MEDIAMTX_WEBRTC_MEDIA_PORT in .env.production}:${MEDIAMTX_WEBRTC_MEDIA_PORT:?Set MEDIAMTX_WEBRTC_MEDIA_PORT in .env.production}/udp"
+    volumes:
+      - ./deploy/mediamtx.yml:/mediamtx.yml:ro
+    networks:
+      - frontend
+      - backend
+    mem_limit: 256m
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "/mediamtx", "--validate-conf=/mediamtx.yml"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
   api:
     image: sitewatch-api:local
     build: *api-build
@@ -165,6 +190,7 @@ services:
     environment:
       DASHBOARD_DOMAIN: ${DASHBOARD_DOMAIN:?Set DASHBOARD_DOMAIN in .env.production}
       API_DOMAIN: ${API_DOMAIN:?Set API_DOMAIN in .env.production}
+      STREAM_DOMAIN: ${STREAM_DOMAIN:?Set STREAM_DOMAIN in .env.production}
       ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in .env.production}
     ports:
       - "80:80"
