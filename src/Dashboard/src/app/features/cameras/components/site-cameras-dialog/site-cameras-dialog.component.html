@@ -1,7 +1,7 @@
 <app-dialog-shell
   eyebrow="Live cameras"
   [title]="data.siteName"
-  [subtitle]="'Site #' + data.siteNumberId + ' · Select one camera to start a secure sub-stream.'"
+  [subtitle]="'Site #' + data.siteNumberId + ' · Select one camera to start a secure live stream.'"
   closeAriaLabel="Close site cameras"
 >
   <div class="site-cameras-dialog">
@@ -24,6 +24,11 @@
           <span>No cameras are assigned to this site.</span>
         </div>
       } @else {
+        @if (recordingPending()) {
+          <p class="site-cameras-dialog__recording-guidance" role="status">
+            Stop recording before switching cameras.
+          </p>
+        }
         <div class="site-cameras-dialog__camera-list">
           @for (camera of cameras(); track camera.id) {
             <article
@@ -37,7 +42,7 @@
               <button
                 mat-stroked-button
                 type="button"
-                [disabled]="selectedCamera()?.id === camera.id"
+                [disabled]="recordingPending() || selectedCamera()?.id === camera.id"
                 [attr.aria-label]="'Open live view for ' + camera.name"
                 (click)="selectCamera(camera)"
               >
@@ -55,7 +60,8 @@
         <app-whep-viewer
           [siteId]="data.siteId"
           [camera]="camera"
-          (closed)="clearSelection()"
+          (recordingPendingChange)="onRecordingPendingChange($event)"
+          (closed)="onViewerClosed()"
         />
       } @else {
         <div class="site-cameras-dialog__viewer-empty">

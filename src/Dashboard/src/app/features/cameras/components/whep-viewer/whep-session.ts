@@ -28,6 +28,7 @@ export interface WhepSessionCallbacks {
   onLive: () => void;
   onFailure: (error: WhepSessionError) => void;
   onPlaybackBlocked: () => void;
+  onMediaStreamChange: (stream: MediaStream) => void;
 }
 
 export class WhepSession {
@@ -162,6 +163,8 @@ export class WhepSession {
 
     for (const track of this.mediaStream?.getTracks() ?? []) {
       track.onended = null;
+      track.onmute = null;
+      track.onunmute = null;
       track.stop();
     }
     this.mediaStream = null;
@@ -217,7 +220,6 @@ export class WhepSession {
         try {
           server.username = JSON.parse(`"${match[2]}"`) as string;
           server.credential = JSON.parse(`"${match[3]}"`) as string;
-          server.credentialType = 'password';
         } catch {
           throw new WhepSessionError('options');
         }
@@ -318,10 +320,14 @@ export class WhepSession {
       if (event.track.kind === 'video') {
         this.reportFailure('connection');
       }
+      this.callbacks.onMediaStreamChange(mediaStream);
     };
+    event.track.onmute = () => this.callbacks.onMediaStreamChange(mediaStream);
+    event.track.onunmute = () => this.callbacks.onMediaStreamChange(mediaStream);
     this.video.srcObject = mediaStream;
     this.video.muted = true;
     void this.video.play().catch(() => this.callbacks.onPlaybackBlocked());
+    this.callbacks.onMediaStreamChange(mediaStream);
     this.tryReportLive();
   }
 

@@ -7,6 +7,7 @@ import { buildApiUrl } from '../../../core/api/api-url';
 import { DataTableState } from '../../../shared/data-table/data-table.types';
 import { CameraRequest, UpdateCameraRequest } from '../models/camera-request.model';
 import {
+  CameraStreamProfile,
   CameraStreamAccessResponse,
   DashboardSiteCamera
 } from '../models/camera-stream.models';
@@ -95,12 +96,13 @@ export class DashboardCamerasService {
 
   requestStreamAccess(
     siteId: string,
-    cameraId: string
+    cameraId: string,
+    profile: CameraStreamProfile
   ): Promise<CameraStreamAccessResponse> {
     return firstValueFrom(
       this.http.post<CameraStreamAccessResponse>(
         buildApiUrl(`/dashboard/sites/${siteId}/cameras/${cameraId}/stream-access`),
-        { profile: 'sub' }
+        { profile }
       )
     );
   }

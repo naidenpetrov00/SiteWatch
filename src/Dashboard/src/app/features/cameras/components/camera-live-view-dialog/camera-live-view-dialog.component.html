@@ -1,0 +1,22 @@
+<app-dialog-shell
+  eyebrow="Live camera"
+  [title]="data.camera.name"
+  [subtitle]="'Camera #' + data.camera.numberId + ' · Secure live stream'"
+  [closeAriaLabel]="'Close live view for ' + data.camera.name"
+>
+  <div class="camera-live-view-dialog">
+    <app-whep-viewer
+      [siteId]="data.siteId"
+      [camera]="data.camera"
+      (recordingPendingChange)="onRecordingPendingChange($event)"
+      (closed)="onViewerClosed()"
+    />
+  </div>
+
+  <app-dialog-action-bar
+    dialog-shell-actions
+    cancelLabel="Close"
+    [showSubmit]="false"
+    (cancel)="closeDialog()"
+  />
+</app-dialog-shell>

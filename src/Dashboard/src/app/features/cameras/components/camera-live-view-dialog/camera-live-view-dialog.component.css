@@ -1,0 +1,9 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.camera-live-view-dialog {
+  width: min(100%, 60rem);
+  min-width: 0;
+}

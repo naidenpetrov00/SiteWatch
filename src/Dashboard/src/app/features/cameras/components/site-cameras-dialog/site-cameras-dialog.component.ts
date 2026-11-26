@@ -3,7 +3,8 @@ import {
   Component,
   DestroyRef,
   inject,
-  signal
+  signal,
+  viewChild
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
@@ -40,13 +41,16 @@ export class SiteCamerasDialogComponent {
   private readonly camerasService = inject(DashboardCamerasService);
   private readonly dialogRef = inject(MatDialogRef<SiteCamerasDialogComponent>);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly viewer = viewChild(WhepViewerComponent);
   private destroyed = false;
+  private closeAfterViewerStop = false;
 
   readonly data = inject<SiteCamerasDialogData>(MAT_DIALOG_DATA);
   readonly cameras = signal<readonly DashboardSiteCamera[]>([]);
   readonly selectedCamera = signal<DashboardSiteCamera | null>(null);
   readonly isLoading = signal(true);
   readonly loadFailed = signal(false);
+  readonly recordingPending = signal(false);
 
   constructor() {
     this.destroyRef.onDestroy(() => {
@@ -56,7 +60,7 @@ export class SiteCamerasDialogComponent {
   }
 
   selectCamera(camera: DashboardSiteCamera): void {
-    if (this.selectedCamera()?.id === camera.id) {
+    if (this.recordingPending() || this.selectedCamera()?.id === camera.id) {
       return;
     }
     this.selectedCamera.set(camera);
@@ -67,8 +71,37 @@ export class SiteCamerasDialogComponent {
   }
 
   closeDialog(): void {
-    this.selectedCamera.set(null);
     this.dialogRef.close();
+  }
+
+  canCloseDialog(): boolean {
+    if (!this.recordingPending()) {
+      return true;
+    }
+
+    const viewer = this.viewer();
+    if (!viewer) {
+      return true;
+    }
+
+    this.closeAfterViewerStop = true;
+    void viewer.stop();
+    return false;
+  }
+
+  onRecordingPendingChange(pending: boolean): void {
+    this.recordingPending.set(pending);
+  }
+
+  onViewerClosed(): void {
+    this.recordingPending.set(false);
+    if (this.closeAfterViewerStop) {
+      this.closeAfterViewerStop = false;
+      this.dialogRef.close();
+      return;
+    }
+
+    this.clearSelection();
   }
 
   private async loadCameras(): Promise<void> {

@@ -12,6 +12,8 @@ export interface CameraStreamAccessResponse {
   connectionDeadline: string;
 }
 
+export type CameraStreamProfile = 'sub' | 'main';
+
 export type WhepViewerState =
   | { kind: 'preparing' }
   | { kind: 'connecting' }
@@ -19,3 +21,11 @@ export type WhepViewerState =
   | { kind: 'failed'; message: string }
   | { kind: 'retrying' }
   | { kind: 'closed' };
+
+export type WhepRecordingState =
+  | { kind: 'idle' }
+  | { kind: 'recording' }
+  | { kind: 'finalizing' }
+  | { kind: 'unsupported'; message: string };
+
+export type WhepAudioState = 'unavailable' | 'available' | 'interrupted';

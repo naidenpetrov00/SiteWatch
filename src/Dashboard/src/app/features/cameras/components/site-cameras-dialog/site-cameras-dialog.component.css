@@ -30,6 +30,12 @@
   overflow: auto;
 }
 
+.site-cameras-dialog__recording-guidance {
+  margin: 0;
+  color: var(--mat-sys-error);
+  font-size: 0.875rem;
+}
+
 .site-camera {
   display: grid;
   gap: 0.75rem;

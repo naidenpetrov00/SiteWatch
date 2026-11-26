@@ -1,20 +1,38 @@
 <section
   class="whep-viewer"
   [attr.aria-label]="'Live view of ' + camera().name"
-  [attr.aria-busy]="isBusy()"
+  [attr.aria-busy]="isBusy() || recordingState().kind === 'finalizing'"
 >
   <div class="whep-viewer__surface">
     <video
       #video
       autoplay
-      controls
       playsinline
-      [muted]="true"
+      [muted]="!soundEnabled()"
       [attr.aria-label]="'Live video from ' + camera().name"
+      (loadeddata)="updateFrameAvailability()"
       (playing)="playbackStarted()"
+      (emptied)="updateFrameAvailability()"
+      (resize)="updateFrameAvailability()"
     >
       Your browser cannot play this live video.
     </video>
+
+    <div class="whep-viewer__badges" aria-label="Live stream status">
+      @if (state().kind === 'live') {
+        <span class="whep-viewer__badge whep-viewer__badge--live">Live</span>
+      }
+      <span class="whep-viewer__badge">
+        {{ profileLabel(selectedProfile()) }}
+      </span>
+      @if (recordingState().kind === 'recording' || recordingState().kind === 'finalizing') {
+        <span class="whep-viewer__badge whep-viewer__badge--recording">
+          <span class="whep-viewer__recording-dot" aria-hidden="true"></span>
+          {{ recordingState().kind === 'finalizing' ? 'Finalizing' : 'Recording' }}
+          {{ recordingElapsedLabel() }}
+        </span>
+      }
+    </div>
 
     @if (state().kind !== 'live') {
       <div class="whep-viewer__overlay">
@@ -23,29 +41,131 @@
         }
         <strong>{{ camera().name }}</strong>
         <span>{{ statusMessage() }}</span>
+        @if (state().kind === 'failed') {
+          <button
+            mat-stroked-button
+            type="button"
+            [attr.aria-label]="'Retry live view for ' + camera().name"
+            (click)="retry()"
+          >
+            Retry
+          </button>
+        }
       </div>
     }
   </div>
 
-  <div class="whep-viewer__details">
+  <div class="whep-viewer__identity">
     <div>
       <strong>{{ camera().name }}</strong>
       <span>Camera #{{ camera().numberId }} · {{ camera().brand }} {{ camera().model }}</span>
     </div>
-
-    <div class="whep-viewer__actions">
-      @if (state().kind === 'failed') {
-        <button mat-stroked-button type="button" (click)="retry()">Retry</button>
-      }
-      <button mat-button type="button" (click)="stop()">Stop live view</button>
-    </div>
+    <span class="whep-viewer__quality-status">
+      {{ profileLabel(liveProfile() ?? selectedProfile()) }} quality
+    </span>
   </div>
 
-  <p
-    class="whep-viewer__status"
-    [attr.role]="state().kind === 'failed' ? 'alert' : 'status'"
-    aria-live="polite"
-  >
-    {{ statusMessage() }}
-  </p>
+  <div class="whep-viewer__controls" aria-label="Live camera controls">
+    <div class="whep-viewer__control-group">
+      <button
+        mat-stroked-button
+        type="button"
+        [attr.aria-label]="(soundEnabled() ? 'Turn sound off for ' : 'Turn sound on for ') + camera().name"
+        [attr.aria-pressed]="soundEnabled()"
+        [attr.aria-describedby]="'whep-audio-status-' + camera().id"
+        [disabled]="state().kind !== 'live' || audioState() === 'unavailable'"
+        (click)="toggleSound()"
+      >
+        {{ soundEnabled() ? 'Sound Off' : 'Sound On' }}
+      </button>
+      <span [id]="'whep-audio-status-' + camera().id" class="whep-viewer__control-help">{{ audioMessage() }}</span>
+    </div>
+
+    <div
+      class="whep-viewer__quality-controls"
+      role="group"
+      [attr.aria-label]="'Video quality for ' + camera().name"
+    >
+      <button
+        mat-stroked-button
+        type="button"
+        [attr.aria-label]="'Switch ' + camera().name + ' to SD quality'"
+        [attr.aria-pressed]="selectedProfile() === 'sub'"
+        [disabled]="isQualityButtonDisabled('sub')"
+        (click)="switchQuality('sub')"
+      >
+        SD
+      </button>
+      <button
+        mat-stroked-button
+        type="button"
+        [attr.aria-label]="'Switch ' + camera().name + ' to HD quality'"
+        [attr.aria-pressed]="selectedProfile() === 'main'"
+        [disabled]="isQualityButtonDisabled('main')"
+        (click)="switchQuality('main')"
+      >
+        HD
+      </button>
+    </div>
+
+    <button
+      mat-stroked-button
+      type="button"
+      [attr.aria-label]="'Take a snapshot of ' + camera().name"
+      [disabled]="!canTakeSnapshot()"
+      (click)="takeSnapshot()"
+    >
+      Take Snapshot
+    </button>
+
+    @if (recordingState().kind === 'recording') {
+      <button
+        mat-flat-button
+        type="button"
+        class="whep-viewer__record-button whep-viewer__record-button--active"
+        [attr.aria-label]="'Stop recording ' + camera().name"
+        (click)="stopRecordingFromControl()"
+      >
+        Stop Recording
+      </button>
+    } @else {
+      <button
+        mat-flat-button
+        type="button"
+        class="whep-viewer__record-button"
+        [attr.aria-label]="'Start recording ' + camera().name"
+        [disabled]="!canStartRecording() || recordingState().kind === 'finalizing' || recordingState().kind === 'unsupported'"
+        (click)="startRecording()"
+      >
+        {{ recordingState().kind === 'finalizing' ? 'Finalizing…' : 'Start Recording' }}
+      </button>
+    }
+
+    <button
+      mat-button
+      type="button"
+      [attr.aria-label]="'Stop live view for ' + camera().name"
+      (click)="stop()"
+    >
+      Stop Live View
+    </button>
+  </div>
+
+  @if (recordingState(); as recording) {
+    @if (recording.kind === 'unsupported') {
+      <p class="whep-viewer__support-message">{{ recording.message }}</p>
+    }
+  }
+
+  <div class="whep-viewer__announcements" aria-live="polite" aria-atomic="true">
+    <p
+      class="whep-viewer__status"
+      [attr.role]="state().kind === 'failed' ? 'alert' : 'status'"
+    >
+      {{ statusMessage() }}
+    </p>
+    @if (mediaMessage()) {
+      <p class="whep-viewer__status">{{ mediaMessage() }}</p>
+    }
+  </div>
 </section>
