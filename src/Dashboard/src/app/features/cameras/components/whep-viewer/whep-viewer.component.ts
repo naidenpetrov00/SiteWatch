@@ -13,7 +13,9 @@ import {
   viewChild
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 import {
   CameraStreamAccessResponse,
@@ -24,6 +26,8 @@ import {
   WhepViewerState
 } from '../../models/camera-stream.models';
 import { DashboardCamerasService } from '../../services/dashboard-cameras.service';
+import { CameraPtzControlsComponent } from '../camera-ptz-controls/camera-ptz-controls.component';
+import { PtzSafetyState } from '../camera-ptz-controls/camera-ptz.types';
 import {
   LocalCameraRecording,
   LocalCameraRecordingError,
@@ -39,7 +43,13 @@ const CONNECTION_DEADLINE_MARGIN_MS = 15_000;
 
 @Component({
   selector: 'app-whep-viewer',
-  imports: [MatButtonModule, MatProgressSpinnerModule],
+  imports: [
+    CameraPtzControlsComponent,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+    MatTooltipModule
+  ],
   templateUrl: './whep-viewer.component.html',
   styleUrl: './whep-viewer.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -48,19 +58,26 @@ export class WhepViewerComponent {
   private readonly dashboardCamerasService = inject(DashboardCamerasService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly videoElement = viewChild<ElementRef<HTMLVideoElement>>('video');
+  private readonly ptzControls = viewChild(CameraPtzControlsComponent);
   private session: WhepSession | null = null;
   private remoteStream: MediaStream | null = null;
   private recording: LocalCameraRecording | null = null;
   private recordingStopPromise: Promise<void> | null = null;
   private viewerStopPromise: Promise<void> | null = null;
+  private forceClosePromise: Promise<void> | null = null;
   private teardownChain: Promise<void> = Promise.resolve();
   private connectionGeneration = 0;
   private destroyed = false;
+  private closeRequested = false;
+  private pendingProfile: CameraStreamProfile | null = null;
+  private retryAfterPtzStop = false;
 
   readonly siteId = input.required<string>();
   readonly camera = input.required<DashboardSiteCamera>();
   readonly closed = output<void>();
+  readonly forcedCloseReady = output<void>();
   readonly recordingPendingChange = output<boolean>();
+  readonly ptzSafetyChange = output<PtzSafetyState>();
 
   readonly selectedProfile = linkedSignal<CameraStreamProfile>(() => {
     this.camera().id;
@@ -82,6 +99,8 @@ export class WhepViewerComponent {
         }
   );
   readonly mediaMessage = signal<string | null>(null);
+  readonly ptzSafetyState = signal<PtzSafetyState>('clear');
+  readonly forceClosePending = signal(false);
 
   readonly isBusy = computed(() => {
     const kind = this.state().kind;
@@ -91,6 +110,9 @@ export class WhepViewerComponent {
     const kind = this.recordingState().kind;
     return kind === 'recording' || kind === 'finalizing';
   });
+  readonly transitionBlocked = computed(
+    () => this.ptzSafetyState() !== 'clear'
+  );
   readonly canTakeSnapshot = computed(
     () => this.state().kind === 'live' && this.frameAvailable()
   );
@@ -102,7 +124,7 @@ export class WhepViewerComponent {
       this.remoteStream?.getVideoTracks().some((track) => track.readyState === 'live') === true
   );
   readonly qualitySwitchDisabled = computed(
-    () => this.isBusy() || this.recordingPending()
+    () => this.isBusy() || this.recordingPending() || this.transitionBlocked()
   );
   readonly statusMessage = computed(() => {
     const state = this.state();
@@ -157,8 +179,12 @@ export class WhepViewerComponent {
         if (this.connectionGeneration === generation) {
           this.connectionGeneration += 1;
         }
+        const ptzCleanup = this.ensurePtzStopped();
         const recordingCleanup = this.stopRecording();
-        void this.closeCurrentSession(true, recordingCleanup);
+        const prerequisites = Promise.all([ptzCleanup, recordingCleanup]).then(
+          () => undefined
+        );
+        void this.closeCurrentSession(true, prerequisites);
       });
     });
 
@@ -182,6 +208,7 @@ export class WhepViewerComponent {
     this.destroyRef.onDestroy(() => {
       this.destroyed = true;
       this.connectionGeneration += 1;
+      void this.ensurePtzStopped();
       const recordingCleanup = this.stopRecording();
       void this.closeCurrentSession(true, recordingCleanup);
     });
@@ -190,6 +217,13 @@ export class WhepViewerComponent {
   retry(): void {
     const video = this.videoElement()?.nativeElement;
     if (!video || this.destroyed || this.recordingPending()) {
+      return;
+    }
+
+    if (this.transitionBlocked()) {
+      this.retryAfterPtzStop = true;
+      this.mediaMessage.set('Stop camera movement before retrying the live stream.');
+      void this.ensurePtzStopped();
       return;
     }
 
@@ -207,14 +241,78 @@ export class WhepViewerComponent {
   switchQuality(profile: CameraStreamProfile): void {
     if (
       profile === this.selectedProfile() ||
-      this.qualitySwitchDisabled() ||
       this.destroyed
     ) {
       return;
     }
 
-    this.mediaMessage.set(`Switching to ${this.profileLabel(profile)}…`);
-    this.selectedProfile.set(profile);
+    if (this.transitionBlocked()) {
+      this.pendingProfile = profile;
+      this.mediaMessage.set('Stop camera movement before switching camera or quality.');
+      void this.ensurePtzStopped();
+      return;
+    }
+
+    if (this.qualitySwitchDisabled()) {
+      return;
+    }
+
+    this.applyQualitySwitch(profile);
+  }
+
+  onPtzSafetyChange(safety: PtzSafetyState): void {
+    this.ptzSafetyState.set(safety);
+    this.ptzSafetyChange.emit(safety);
+    if (safety !== 'clear') {
+      return;
+    }
+
+    if (this.closeRequested) {
+      if (!this.viewerStopPromise) {
+        void this.stop();
+      }
+      return;
+    }
+
+    if (this.pendingProfile) {
+      const profile = this.pendingProfile;
+      this.pendingProfile = null;
+      this.applyQualitySwitch(profile);
+      return;
+    }
+
+    if (this.retryAfterPtzStop) {
+      this.retryAfterPtzStop = false;
+      this.retry();
+      return;
+    }
+
+  }
+
+  prepareForTransition(): Promise<boolean> {
+    return this.ensurePtzStopped();
+  }
+
+  isClosed(): boolean {
+    return this.state().kind === 'closed';
+  }
+
+  closeAnyway(): Promise<void> {
+    if (this.ptzSafetyState() !== 'stopFailed') {
+      return Promise.resolve();
+    }
+    if (this.forceClosePromise) {
+      return this.forceClosePromise;
+    }
+
+    this.pendingProfile = null;
+    this.retryAfterPtzStop = false;
+    this.forceClosePending.set(true);
+    this.forceClosePromise = this.forceCloseInternal().finally(() => {
+      this.forceClosePromise = null;
+      this.forceClosePending.set(false);
+    });
+    return this.forceClosePromise;
   }
 
   async toggleSound(): Promise<void> {
@@ -351,9 +449,11 @@ export class WhepViewerComponent {
       return this.viewerStopPromise;
     }
 
-    this.viewerStopPromise = this.stopInternal().finally(() => {
-      this.viewerStopPromise = null;
-    });
+    this.viewerStopPromise = Promise.resolve()
+      .then(() => this.stopInternal())
+      .finally(() => {
+        this.viewerStopPromise = null;
+      });
     return this.viewerStopPromise;
   }
 
@@ -370,8 +470,21 @@ export class WhepViewerComponent {
       return;
     }
 
+    this.closeRequested = true;
+    this.pendingProfile = null;
+    this.retryAfterPtzStop = false;
+    const [ptzStopped] = await Promise.all([
+      this.ensurePtzStopped(),
+      this.stopRecording()
+    ]);
+    if (!ptzStopped) {
+      this.mediaMessage.set(
+        'Camera movement may still be active. Retry Stop or choose Close Anyway.'
+      );
+      return;
+    }
+
     const generation = ++this.connectionGeneration;
-    await this.stopRecording();
     this.playbackBlocked.set(false);
     this.frameAvailable.set(false);
     this.soundEnabled.set(false);
@@ -381,9 +494,47 @@ export class WhepViewerComponent {
     }
     await this.closeCurrentSession(false);
     this.state.set({ kind: 'closed' });
+    this.closeRequested = false;
     if (!this.destroyed && generation === this.connectionGeneration) {
       this.closed.emit();
     }
+  }
+
+  private async forceCloseInternal(): Promise<void> {
+    this.closeRequested = false;
+    this.mediaMessage.set('Finalizing media before closing…');
+    await this.stopRecording();
+
+    ++this.connectionGeneration;
+    this.playbackBlocked.set(false);
+    this.frameAvailable.set(false);
+    this.soundEnabled.set(false);
+    const video = this.videoElement()?.nativeElement;
+    if (video) {
+      video.muted = true;
+    }
+    await this.closeCurrentSession(false);
+    this.state.set({ kind: 'closed' });
+    if (!this.destroyed) {
+      this.forcedCloseReady.emit();
+    }
+  }
+
+  private ensurePtzStopped(): Promise<boolean> {
+    return this.ptzControls()?.ensureStopped() ?? Promise.resolve(true);
+  }
+
+  private applyQualitySwitch(profile: CameraStreamProfile): void {
+    if (
+      profile === this.selectedProfile() ||
+      this.destroyed ||
+      this.transitionBlocked()
+    ) {
+      return;
+    }
+
+    this.mediaMessage.set(`Switching to ${this.profileLabel(profile)}…`);
+    this.selectedProfile.set(profile);
   }
 
   private async stopRecording(limit: RecordingLimit | null = null): Promise<void> {
@@ -598,7 +749,7 @@ export class WhepViewerComponent {
       return;
     }
 
-    await this.stopRecording();
+    await Promise.all([this.stopRecording(), this.ensurePtzStopped()]);
     await this.closeCurrentSession(false);
     this.fail(generation, this.errorMessage(error));
   }

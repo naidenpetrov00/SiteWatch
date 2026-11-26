@@ -3,13 +3,16 @@
   [title]="data.camera.name"
   [subtitle]="'Camera #' + data.camera.numberId + ' · Secure live stream'"
   [closeAriaLabel]="'Close live view for ' + data.camera.name"
+  [closeDisabled]="forceClosePending()"
 >
   <div class="camera-live-view-dialog">
     <app-whep-viewer
       [siteId]="data.siteId"
       [camera]="data.camera"
       (recordingPendingChange)="onRecordingPendingChange($event)"
+      (ptzSafetyChange)="onPtzSafetyChange($event)"
       (closed)="onViewerClosed()"
+      (forcedCloseReady)="onForcedCloseReady()"
     />
   </div>
 
@@ -17,6 +20,17 @@
     dialog-shell-actions
     cancelLabel="Close"
     [showSubmit]="false"
+    [cancelDisabled]="forceClosePending()"
+    [showSecondary]="ptzSafetyState() === 'stopFailed'"
+    secondaryLabel="Close Anyway"
+    [secondaryDisabled]="forceClosePending()"
     (cancel)="closeDialog()"
-  />
+    (secondarySubmit)="closeAnyway()"
+  >
+    @if (ptzSafetyState() === 'stopFailed') {
+      <span dialog-action-bar-extra class="camera-live-view-dialog__warning" role="status">
+        Camera movement may still be active.
+      </span>
+    }
+  </app-dialog-action-bar>
 </app-dialog-shell>

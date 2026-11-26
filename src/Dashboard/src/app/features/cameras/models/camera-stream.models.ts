@@ -14,6 +14,14 @@ export interface CameraStreamAccessResponse {
 
 export type CameraStreamProfile = 'sub' | 'main';
 
+export type PtzDirection = 'Up' | 'Down' | 'Left' | 'Right';
+
+export interface PtzRelativeMovement {
+  horizontal: number;
+  vertical: number;
+  zoom: number;
+}
+
 export type WhepViewerState =
   | { kind: 'preparing' }
   | { kind: 'connecting' }

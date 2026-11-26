@@ -106,7 +106,7 @@ export class ManageCamerasPage {
           component instanceof CameraLiveViewDialogComponent
             ? component.canCloseDialog()
             : true,
-        width: '60rem',
+        width: '78rem',
         maxWidth: 'calc(100vw - 2rem)',
         maxHeight: 'calc(100vh - 2rem)',
         data

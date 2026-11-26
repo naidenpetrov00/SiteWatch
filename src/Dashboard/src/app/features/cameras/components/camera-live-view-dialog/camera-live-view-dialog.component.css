@@ -4,6 +4,12 @@
 }
 
 .camera-live-view-dialog {
-  width: min(100%, 60rem);
+  width: min(100%, 78rem);
   min-width: 0;
+}
+
+.camera-live-view-dialog__warning {
+  color: var(--mat-sys-error);
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
 }

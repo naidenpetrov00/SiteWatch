@@ -9,7 +9,9 @@ import { CameraRequest, UpdateCameraRequest } from '../models/camera-request.mod
 import {
   CameraStreamProfile,
   CameraStreamAccessResponse,
-  DashboardSiteCamera
+  DashboardSiteCamera,
+  PtzDirection,
+  PtzRelativeMovement
 } from '../models/camera-stream.models';
 import { DashboardCamera } from '../models/dashboard-camera.model';
 import { DashboardCameraDetails } from '../models/dashboard-camera-details.model';
@@ -24,6 +26,8 @@ interface DashboardCamerasQueryState {
 }
 
 interface CreateCameraResponse { id: string; }
+
+const PTZ_REQUEST_TIMEOUT_MS = 12_000;
 
 const DEFAULT_QUERY_STATE: DashboardCamerasQueryState = {
   pageIndex: 0,
@@ -103,6 +107,39 @@ export class DashboardCamerasService {
       this.http.post<CameraStreamAccessResponse>(
         buildApiUrl(`/dashboard/sites/${siteId}/cameras/${cameraId}/stream-access`),
         { profile }
+      )
+    );
+  }
+
+  startPtzMovement(cameraId: string, direction: PtzDirection): Promise<void> {
+    return firstValueFrom(
+      this.http.post<void>(buildApiUrl(`/cameras/${cameraId}/ptz/start`), {
+        direction
+      }, {
+        timeout: PTZ_REQUEST_TIMEOUT_MS
+      })
+    );
+  }
+
+  stopPtzMovement(cameraId: string, direction: PtzDirection): Promise<void> {
+    return firstValueFrom(
+      this.http.post<void>(buildApiUrl(`/cameras/${cameraId}/ptz/stop`), {
+        direction
+      }, {
+        timeout: PTZ_REQUEST_TIMEOUT_MS
+      })
+    );
+  }
+
+  movePtzRelatively(
+    cameraId: string,
+    movement: PtzRelativeMovement
+  ): Promise<void> {
+    return firstValueFrom(
+      this.http.post<void>(
+        buildApiUrl(`/cameras/${cameraId}/ptz/relative`),
+        movement,
+        { timeout: PTZ_REQUEST_TIMEOUT_MS }
       )
     );
   }

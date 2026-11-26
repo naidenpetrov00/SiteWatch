@@ -1,0 +1,178 @@
+<section
+  class="camera-ptz"
+  [attr.aria-label]="'PTZ controls for ' + cameraName()"
+  [attr.aria-busy]="busy()"
+>
+  <header class="camera-ptz__header">
+    <div>
+      <p class="camera-ptz__eyebrow">Camera control</p>
+      <h3>Pan, Tilt & Zoom</h3>
+    </div>
+    @if (busy()) {
+      <mat-spinner diameter="22" aria-label="PTZ command in progress" />
+    }
+  </header>
+
+  <div
+    class="camera-ptz__pad"
+    role="group"
+    [attr.aria-label]="'Directional controls for ' + cameraName()"
+  >
+    <button
+      mat-icon-button
+      type="button"
+      class="camera-ptz__direction camera-ptz__direction--up"
+      matTooltip="Move Up"
+      matTooltipTouchGestures="off"
+      [attr.aria-label]="'Move ' + cameraName() + ' up'"
+      [attr.aria-pressed]="isDirectionActive('Up')"
+      [class.camera-ptz__direction--active]="isDirectionActive('Up')"
+      [disabled]="directionButtonDisabled('Up')"
+      (pointerdown)="onPointerDown($event, 'Up')"
+      (pointerup)="onPointerUp($event, 'Up')"
+      (pointercancel)="onPointerCancelled($event, 'Up')"
+      (lostpointercapture)="onLostPointerCapture($event, 'Up')"
+      (keydown)="onDirectionKeyDown($event, 'Up')"
+      (keyup)="onDirectionKeyUp($event, 'Up')"
+      (blur)="onDirectionBlur('Up')"
+      (click)="onDirectionClick($event, 'Up')"
+    >
+      <mat-icon aria-hidden="true">keyboard_arrow_up</mat-icon>
+    </button>
+
+    <button
+      mat-icon-button
+      type="button"
+      class="camera-ptz__direction camera-ptz__direction--left"
+      matTooltip="Move Left"
+      matTooltipTouchGestures="off"
+      [attr.aria-label]="'Move ' + cameraName() + ' left'"
+      [attr.aria-pressed]="isDirectionActive('Left')"
+      [class.camera-ptz__direction--active]="isDirectionActive('Left')"
+      [disabled]="directionButtonDisabled('Left')"
+      (pointerdown)="onPointerDown($event, 'Left')"
+      (pointerup)="onPointerUp($event, 'Left')"
+      (pointercancel)="onPointerCancelled($event, 'Left')"
+      (lostpointercapture)="onLostPointerCapture($event, 'Left')"
+      (keydown)="onDirectionKeyDown($event, 'Left')"
+      (keyup)="onDirectionKeyUp($event, 'Left')"
+      (blur)="onDirectionBlur('Left')"
+      (click)="onDirectionClick($event, 'Left')"
+    >
+      <mat-icon aria-hidden="true">keyboard_arrow_left</mat-icon>
+    </button>
+
+    <button
+      mat-icon-button
+      type="button"
+      class="camera-ptz__stop"
+      [class.camera-ptz__stop--warning]="safetyState() === 'stopFailed'"
+      [attr.aria-label]="safetyState() === 'stopFailed' ? 'Retry stopping ' + cameraName() : 'Stop movement for ' + cameraName()"
+      [matTooltip]="safetyState() === 'stopFailed' ? 'Retry Stop' : 'Stop Movement'"
+      matTooltipTouchGestures="off"
+      [disabled]="safetyState() === 'clear' || safetyState() === 'stopping'"
+      (click)="stopMovement()"
+    >
+      <mat-icon aria-hidden="true">stop_circle</mat-icon>
+    </button>
+
+    <button
+      mat-icon-button
+      type="button"
+      class="camera-ptz__direction camera-ptz__direction--right"
+      matTooltip="Move Right"
+      matTooltipTouchGestures="off"
+      [attr.aria-label]="'Move ' + cameraName() + ' right'"
+      [attr.aria-pressed]="isDirectionActive('Right')"
+      [class.camera-ptz__direction--active]="isDirectionActive('Right')"
+      [disabled]="directionButtonDisabled('Right')"
+      (pointerdown)="onPointerDown($event, 'Right')"
+      (pointerup)="onPointerUp($event, 'Right')"
+      (pointercancel)="onPointerCancelled($event, 'Right')"
+      (lostpointercapture)="onLostPointerCapture($event, 'Right')"
+      (keydown)="onDirectionKeyDown($event, 'Right')"
+      (keyup)="onDirectionKeyUp($event, 'Right')"
+      (blur)="onDirectionBlur('Right')"
+      (click)="onDirectionClick($event, 'Right')"
+    >
+      <mat-icon aria-hidden="true">keyboard_arrow_right</mat-icon>
+    </button>
+
+    <button
+      mat-icon-button
+      type="button"
+      class="camera-ptz__direction camera-ptz__direction--down"
+      matTooltip="Move Down"
+      matTooltipTouchGestures="off"
+      [attr.aria-label]="'Move ' + cameraName() + ' down'"
+      [attr.aria-pressed]="isDirectionActive('Down')"
+      [class.camera-ptz__direction--active]="isDirectionActive('Down')"
+      [disabled]="directionButtonDisabled('Down')"
+      (pointerdown)="onPointerDown($event, 'Down')"
+      (pointerup)="onPointerUp($event, 'Down')"
+      (pointercancel)="onPointerCancelled($event, 'Down')"
+      (lostpointercapture)="onLostPointerCapture($event, 'Down')"
+      (keydown)="onDirectionKeyDown($event, 'Down')"
+      (keyup)="onDirectionKeyUp($event, 'Down')"
+      (blur)="onDirectionBlur('Down')"
+      (click)="onDirectionClick($event, 'Down')"
+    >
+      <mat-icon aria-hidden="true">keyboard_arrow_down</mat-icon>
+    </button>
+  </div>
+
+  <div
+    class="camera-ptz__zoom"
+    role="group"
+    [attr.aria-label]="'Zoom controls for ' + cameraName()"
+  >
+    <button
+      mat-stroked-button
+      type="button"
+      [attr.aria-label]="'Zoom out ' + cameraName()"
+      [disabled]="movementControlsDisabled() || safetyState() !== 'clear'"
+      (click)="zoom(-1)"
+    >
+      <mat-icon aria-hidden="true">zoom_out</mat-icon>
+      Zoom Out
+    </button>
+    <button
+      mat-stroked-button
+      type="button"
+      [attr.aria-label]="'Zoom in ' + cameraName()"
+      [disabled]="movementControlsDisabled() || safetyState() !== 'clear'"
+      (click)="zoom(1)"
+    >
+      <mat-icon aria-hidden="true">zoom_in</mat-icon>
+      Zoom In
+    </button>
+  </div>
+
+  <p
+    class="camera-ptz__status"
+    [class.camera-ptz__status--warning]="safetyState() === 'stopFailed'"
+    aria-live="polite"
+    aria-atomic="true"
+  >
+    {{ statusMessage() }}
+  </p>
+
+  @if (safetyState() === 'stopFailed') {
+    <button
+      mat-flat-button
+      type="button"
+      class="camera-ptz__retry-stop"
+      [attr.aria-label]="'Retry stopping movement for ' + cameraName()"
+      (click)="stopMovement()"
+    >
+      <mat-icon aria-hidden="true">stop_circle</mat-icon>
+      Retry Stop
+    </button>
+  }
+
+  @if (safetyState() !== 'clear') {
+    <p class="camera-ptz__guidance">
+      Stop camera movement before switching camera or quality.
+    </p>
+  }
+</section>

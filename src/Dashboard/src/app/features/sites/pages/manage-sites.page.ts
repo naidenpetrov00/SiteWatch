@@ -206,8 +206,9 @@ export class ManageSitesPage {
           component instanceof SiteCamerasDialogComponent
             ? component.canCloseDialog()
             : true,
-        width: '72rem',
+        width: '90rem',
         maxWidth: 'calc(100vw - 2rem)',
+        maxHeight: 'calc(100vh - 2rem)',
         data: {
           siteId: event.row.id,
           siteName: event.row.name,

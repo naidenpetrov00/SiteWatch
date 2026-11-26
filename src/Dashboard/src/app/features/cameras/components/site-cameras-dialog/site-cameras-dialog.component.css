@@ -28,12 +28,19 @@
   gap: 0.65rem;
   max-height: 30rem;
   overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .site-cameras-dialog__recording-guidance {
   margin: 0;
   color: var(--mat-sys-error);
   font-size: 0.875rem;
+}
+
+.site-cameras-dialog__close-warning {
+  color: var(--mat-sys-error);
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
 }
 
 .site-camera {
@@ -96,7 +103,7 @@
   font-size: 2.5rem;
 }
 
-@media (max-width: 56rem) {
+@media (max-width: 78rem) {
   .site-cameras-dialog {
     grid-template-columns: 1fr;
   }

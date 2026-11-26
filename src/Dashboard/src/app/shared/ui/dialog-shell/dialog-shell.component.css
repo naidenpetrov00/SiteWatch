@@ -43,12 +43,14 @@
   margin: 0.125rem 0 0;
   font-size: clamp(1.8rem, 3vw, 2.4rem);
   line-height: 1.1;
+  overflow-wrap: anywhere;
 }
 
 .dialog-shell__subtitle {
   max-width: 56ch;
   margin: 0.5rem 0 0;
   color: rgba(15, 23, 42, 0.7);
+  overflow-wrap: anywhere;
 }
 
 .dialog-shell__close-button {
@@ -59,6 +61,7 @@
 .dialog-shell__body {
   min-height: 0;
   overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .dialog-shell__actions {
