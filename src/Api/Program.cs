@@ -69,7 +69,9 @@ else
     app.UseCors(Api.DependencyInjection.ProductionCorsPolicy);
 }
 
-app.UseHttpsRedirection();
+app.UseWhen(
+    context => !context.Request.Path.StartsWithSegments("/internal/mediamtx"),
+    branch => branch.UseHttpsRedirection());
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -1,0 +1,44 @@
+# Camera paths are registered lazily by the authenticated SiteWatch API.
+logLevel: info
+logDestinations: [stdout]
+
+authMethod: internal
+authInternalUsers: []
+# No action, including Control API access, bypasses external HTTP authorization.
+authHTTPExclude: []
+
+api: true
+apiAddress: :9997
+apiEncryption: false
+apiAllowOrigins: []
+
+metrics: false
+pprof: false
+playback: false
+
+# MediaMTX pulls cameras as an RTSP client; it does not accept RTSP publishers.
+rtsp: false
+rtmp: false
+hls: false
+srt: false
+moq: false
+
+webrtc: true
+webrtcAddress: :8889
+webrtcEncryption: false
+webrtcAllowOrigins: []
+webrtcLocalUDPAddress: :8189
+webrtcLocalTCPAddress: ""
+webrtcIPsFromInterfaces: true
+webrtcAdditionalHosts: []
+webrtcICEServers2: []
+
+pathDefaults:
+  sourceOnDemand: true
+  sourceOnDemandStartTimeout: 10s
+  sourceOnDemandCloseAfter: 10s
+  rtspTransport: tcp
+  record: false
+
+# SiteWatch is the sole writer of this runtime path namespace.
+paths: {}

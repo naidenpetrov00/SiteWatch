@@ -33,5 +33,25 @@ www.{$DASHBOARD_DOMAIN} {
 {$API_DOMAIN} {
 	encode zstd gzip
 	import security_headers
-	reverse_proxy api:8080
+
+	@mediamtx_internal path /internal/mediamtx /internal/mediamtx/*
+
+	route {
+		respond @mediamtx_internal 404
+		reverse_proxy api:8080
+	}
+}
+
+{$STREAM_DOMAIN} {
+	import security_headers
+
+	@whep {
+		method OPTIONS POST PATCH DELETE
+		path_regexp whep ^/.+/whep(?:/[^/]+)?$
+	}
+
+	route {
+		reverse_proxy @whep mediamtx:8889
+		respond 404
+	}
 }

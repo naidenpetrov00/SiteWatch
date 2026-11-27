@@ -1,0 +1,142 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.camera-ptz {
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+  min-width: 0;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.85rem;
+  background: var(--mat-sys-surface-container-low);
+}
+
+.camera-ptz__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.camera-ptz__header > div {
+  min-width: 0;
+}
+
+.camera-ptz__eyebrow {
+  margin: 0;
+  color: var(--mat-sys-primary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.camera-ptz h3 {
+  margin: 0.2rem 0 0;
+  font-size: 1rem;
+  text-wrap: balance;
+}
+
+.camera-ptz__pad {
+  display: grid;
+  grid-template-columns: repeat(3, 3.5rem);
+  grid-template-rows: repeat(3, 3.5rem);
+  place-content: center;
+  gap: 0.35rem;
+  min-width: 0;
+  user-select: none;
+}
+
+.camera-ptz__direction,
+.camera-ptz__stop {
+  width: 3.5rem;
+  height: 3.5rem;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.camera-ptz__direction--up {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.camera-ptz__direction--left {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.camera-ptz__stop {
+  grid-column: 2;
+  grid-row: 2;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.camera-ptz__direction--right {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.camera-ptz__direction--down {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.camera-ptz__direction--active {
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+}
+
+.camera-ptz__stop--warning {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.camera-ptz__zoom {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.camera-ptz__zoom button {
+  min-height: 3rem;
+  min-width: 0;
+  touch-action: manipulation;
+}
+
+.camera-ptz__status,
+.camera-ptz__guidance {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.camera-ptz__status--warning,
+.camera-ptz__guidance {
+  color: var(--mat-sys-error);
+}
+
+.camera-ptz__retry-stop {
+  min-height: 3rem;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  touch-action: manipulation;
+}
+
+.camera-ptz button:focus-visible {
+  outline: 3px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 26rem) {
+  .camera-ptz__zoom {
+    grid-template-columns: 1fr;
+  }
+}

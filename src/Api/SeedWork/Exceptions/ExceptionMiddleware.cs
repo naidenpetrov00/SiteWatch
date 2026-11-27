@@ -3,6 +3,7 @@ using Application.ActivityCatalog;
 using Application.ProductCatalog;
 using Application.TerritorialStructure;
 using Application.Cameras;
+using Application.Cameras.Streaming;
 using Application.Persons;
 using Application.RetailerListings;
 using Application.Retailers;
@@ -257,6 +258,31 @@ internal sealed class ExceptionMiddleware(
         catch (ForbiddenAccessException)
         {
             context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        }
+        catch (CameraStreamConfigurationException)
+        {
+            context.Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
+            context.Response.ContentType = "application/problem+json";
+            await context.Response.WriteAsync(JsonSerializer.Serialize(new
+            {
+                status = StatusCodes.Status422UnprocessableEntity,
+                title = "Unsupported camera stream configuration",
+                detail = "The camera does not have a supported live-stream configuration.",
+                instance = context.Request.Path.Value,
+            }));
+        }
+        catch (MediaMtxGatewayUnavailableException)
+        {
+            logger.LogWarning("A MediaMTX gateway request failed.");
+            context.Response.StatusCode = StatusCodes.Status502BadGateway;
+            context.Response.ContentType = "application/problem+json";
+            await context.Response.WriteAsync(JsonSerializer.Serialize(new
+            {
+                status = StatusCodes.Status502BadGateway,
+                title = "Live-stream gateway unavailable",
+                detail = "The live-stream gateway could not prepare the requested stream.",
+                instance = context.Request.Path.Value,
+            }));
         }
         catch (CameraCommunicationException ex)
         {

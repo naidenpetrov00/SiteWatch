@@ -1,8 +1,11 @@
 using System.Diagnostics;
 using Api.SeedWork;
 using Api.SeedWork.Extensions;
+using Api.Services;
 using Application.Cameras.Commands;
 using Application.Cameras.Queries;
+using Application.Cameras.Streaming;
+using Application.SeedWork.Interfaces;
 using Application.SeedWork.Models;
 using Application.SeedWork.Security;
 using MediatR;
@@ -69,6 +72,31 @@ public class Cameras : EndpointGroupBase
             .RequireAuthorization(AuthorizationPolicies.AdministratorOrWorker);
         dashboardGroup.MapGet("/cameras", GetDashboardCameras);
         dashboardGroup.MapGet("/cameras/{cameraId:guid}", GetDashboardCamera);
+        dashboardGroup.MapGet(
+                "/sites/{siteId:guid}/cameras",
+                GetDashboardSiteCameras)
+            .WithName("GetDashboardSiteCameras")
+            .WithSummary("Get safe camera identity details for a dashboard site")
+            .WithDescription(
+                "Returns camera identity fields without credentials or connection details.")
+            .Produces<IReadOnlyList<DashboardSiteCameraDto>>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces(StatusCodes.Status404NotFound);
+        dashboardGroup.MapPost(
+                "/sites/{siteId:guid}/cameras/{cameraId:guid}/stream-access",
+                GetDashboardCameraStreamAccess)
+            .WithName("GetDashboardCameraStreamAccess")
+            .WithSummary("Get temporary access to a camera live stream")
+            .WithDescription(
+                "Registers the requested on-demand stream and returns short-lived WHEP access.")
+            .Produces<CameraStreamAccessResponse>(StatusCodes.Status200OK)
+            .ProducesValidationProblem()
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status422UnprocessableEntity)
+            .Produces(StatusCodes.Status502BadGateway);
     }
 
     private static async Task<Ok<CameraDto>> CameraById(IMediator mediator, Guid cameraId)
@@ -264,6 +292,43 @@ public class Cameras : EndpointGroupBase
         return TypedResults.Ok(camera);
     }
 
+    private static async Task<Ok<IReadOnlyList<DashboardSiteCameraDto>>> GetDashboardSiteCameras(
+        IMediator mediator,
+        Guid siteId,
+        CancellationToken cancellationToken)
+    {
+        var cameras = await mediator.Send(
+            new DashboardSiteCamerasQuery(siteId),
+            cancellationToken);
+        return TypedResults.Ok(cameras);
+    }
+
+    private static async Task<Ok<CameraStreamAccessResponse>> GetDashboardCameraStreamAccess(
+        IMediator mediator,
+        IMediaMtxAccessTicketService ticketService,
+        IUser user,
+        HttpResponse httpResponse,
+        Guid siteId,
+        Guid cameraId,
+        CameraStreamAccessRequest request,
+        CancellationToken cancellationToken)
+    {
+        var stream = await mediator.Send(
+            new PrepareCameraStreamAccessCommand(siteId, cameraId, request.Profile),
+            cancellationToken);
+        var ticket = ticketService.CreateViewerReadTicket(
+            siteId,
+            cameraId,
+            stream.Path,
+            user.Id ?? throw new UnauthorizedAccessException());
+
+        httpResponse.Headers.CacheControl = "private, no-store";
+        return TypedResults.Ok(new CameraStreamAccessResponse(
+            stream.WhepUrl.AbsoluteUri,
+            ticket.Ticket,
+            ticket.ExpiresAt));
+    }
+
     /// <summary>Specifies a supported PTZ movement direction.</summary>
     public sealed record PtzDirectionRequest
     {
@@ -280,4 +345,16 @@ public class Cameras : EndpointGroupBase
 
     /// <summary>Specifies the site to which a camera is reassigned.</summary>
     public sealed record MoveCameraToSiteRequest(Guid SiteId);
+
+    /// <summary>Specifies the live-stream profile to request.</summary>
+    public sealed record CameraStreamAccessRequest
+    {
+        public required string Profile { get; init; }
+    }
+
+    /// <summary>Contains temporary browser access to a camera live stream.</summary>
+    public sealed record CameraStreamAccessResponse(
+        string WhepUrl,
+        string BearerTicket,
+        DateTimeOffset ConnectionDeadline);
 }

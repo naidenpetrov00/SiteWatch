@@ -1,0 +1,114 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.site-cameras-dialog {
+  display: grid;
+  grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr);
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.site-cameras-dialog__list,
+.site-cameras-dialog__viewer {
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.site-cameras-dialog h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.site-cameras-dialog__camera-list {
+  display: grid;
+  gap: 0.65rem;
+  max-height: 30rem;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.site-cameras-dialog__recording-guidance {
+  margin: 0;
+  color: var(--mat-sys-error);
+  font-size: 0.875rem;
+}
+
+.site-cameras-dialog__close-warning {
+  color: var(--mat-sys-error);
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.site-camera {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface);
+}
+
+.site-camera--selected {
+  border-color: var(--mat-sys-primary);
+  background: var(--mat-sys-primary-container);
+}
+
+.site-camera__identity {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.site-camera__identity strong,
+.site-camera__identity span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.site-camera__identity span {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.82rem;
+}
+
+.site-camera button {
+  justify-self: start;
+}
+
+.site-cameras-dialog__feedback,
+.site-cameras-dialog__viewer-empty {
+  display: grid;
+  place-items: center;
+  gap: 0.6rem;
+  min-height: 10rem;
+  padding: 1rem;
+  border: 1px dashed var(--mat-sys-outline-variant);
+  border-radius: 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+  text-align: center;
+}
+
+.site-cameras-dialog__feedback--error {
+  color: var(--mat-sys-error);
+}
+
+.site-cameras-dialog__feedback mat-icon,
+.site-cameras-dialog__viewer-empty mat-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 2.5rem;
+}
+
+@media (max-width: 78rem) {
+  .site-cameras-dialog {
+    grid-template-columns: 1fr;
+  }
+
+  .site-cameras-dialog__camera-list {
+    max-height: 16rem;
+  }
+}

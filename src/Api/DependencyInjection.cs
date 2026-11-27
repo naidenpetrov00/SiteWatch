@@ -1,9 +1,11 @@
 using System.Reflection;
 using System.Text;
 using Api.Services;
+using Application.Cameras.Streaming;
 using Application.SeedWork.Interfaces;
 using Application.SeedWork.Security;
 using Ardalis.GuardClauses;
+using Infrastructure.Cameras.Streaming;
 using Infrastructure.SeedWork.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
@@ -55,6 +57,23 @@ public static class DependencyInjection
 
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddScoped<IUser, CurrentUser>();
+        builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
+        builder.Services.AddSingleton<
+            IMediaMtxAccessTicketService,
+            MediaMtxAccessTicketService>();
+        builder.Services.AddSingleton<MediaMtxPathReconciliationState>();
+        builder.Services.AddOptions<MediaMtxOptions>()
+            .Bind(configuration.GetSection(MediaMtxOptions.SectionName))
+            .Validate(
+                options => MediaMtxOptions.IsValidOrigin(options.ControlApiBaseUrl),
+                "MediaMtx:ControlApiBaseUrl must be an absolute HTTP(S) origin.")
+            .Validate(
+                options => MediaMtxOptions.IsValidOrigin(options.PublicWhepBaseUrl),
+                "MediaMtx:PublicWhepBaseUrl must be an absolute HTTP(S) origin.")
+            .ValidateOnStart();
+        builder.Services.AddHttpClient<IMediaMtxGateway, MediaMtxGateway>(client =>
+            client.Timeout = TimeSpan.FromSeconds(5))
+            .RedactLoggedHeaders(["Authorization"]);
         builder.Services.AddHostedService<RetailerPriceCollectionHostedService>();
         builder.Services.AddSingleton<
             IInvoiceFileAccessTicketService,

@@ -1,0 +1,101 @@
+<app-dialog-shell
+  eyebrow="Live cameras"
+  [title]="data.siteName"
+  [subtitle]="'Site #' + data.siteNumberId + ' · Select one camera to start a secure live stream.'"
+  closeAriaLabel="Close site cameras"
+  [closeDisabled]="forceClosePending()"
+>
+  <div class="site-cameras-dialog">
+    <section class="site-cameras-dialog__list" aria-labelledby="site-cameras-heading">
+      <h3 id="site-cameras-heading">Cameras</h3>
+
+      @if (isLoading()) {
+        <div class="site-cameras-dialog__feedback" role="status" aria-live="polite">
+          <mat-spinner diameter="32" />
+          <span>Loading cameras…</span>
+        </div>
+      } @else if (loadFailed()) {
+        <div class="site-cameras-dialog__feedback site-cameras-dialog__feedback--error" role="alert">
+          <mat-icon aria-hidden="true">videocam_off</mat-icon>
+          <span>The site cameras could not be loaded. Try opening this dialog again.</span>
+        </div>
+      } @else if (cameras().length === 0) {
+        <div class="site-cameras-dialog__feedback">
+          <mat-icon aria-hidden="true">videocam_off</mat-icon>
+          <span>No cameras are assigned to this site.</span>
+        </div>
+      } @else {
+        @if (recordingPending()) {
+          <p class="site-cameras-dialog__recording-guidance" role="status">
+            Stop recording before switching cameras.
+          </p>
+        }
+        @if (ptzSafetyState() !== 'clear') {
+          <p class="site-cameras-dialog__recording-guidance" role="status">
+            Stop camera movement before switching camera or quality.
+          </p>
+        }
+        <div class="site-cameras-dialog__camera-list">
+          @for (camera of cameras(); track camera.id) {
+            <article
+              class="site-camera"
+              [class.site-camera--selected]="selectedCamera()?.id === camera.id"
+            >
+              <div class="site-camera__identity">
+                <strong [matTooltip]="camera.name">{{ camera.name }}</strong>
+                <span>#{{ camera.numberId }} · {{ camera.brand }} {{ camera.model }}</span>
+              </div>
+              <button
+                mat-stroked-button
+                type="button"
+                [disabled]="recordingPending() || ptzSafetyState() !== 'clear' || selectedCamera()?.id === camera.id"
+                [attr.aria-label]="'Open live view for ' + camera.name"
+                (click)="selectCamera(camera)"
+              >
+                {{ selectedCamera()?.id === camera.id ? 'Viewing' : 'Live View' }}
+              </button>
+            </article>
+          }
+        </div>
+      }
+    </section>
+
+    <section class="site-cameras-dialog__viewer" aria-labelledby="site-live-view-heading">
+      <h3 id="site-live-view-heading">Live view</h3>
+      @if (selectedCamera(); as camera) {
+        <app-whep-viewer
+          [siteId]="data.siteId"
+          [camera]="camera"
+          (recordingPendingChange)="onRecordingPendingChange($event)"
+          (ptzSafetyChange)="onPtzSafetyChange($event)"
+          (closed)="onViewerClosed()"
+          (forcedCloseReady)="onForcedCloseReady()"
+        />
+      } @else {
+        <div class="site-cameras-dialog__viewer-empty">
+          <mat-icon aria-hidden="true">live_tv</mat-icon>
+          <strong>Select a camera</strong>
+          <span>Only one camera can stream at a time.</span>
+        </div>
+      }
+    </section>
+  </div>
+
+  <app-dialog-action-bar
+    dialog-shell-actions
+    cancelLabel="Close"
+    [showSubmit]="false"
+    [cancelDisabled]="forceClosePending()"
+    [showSecondary]="ptzSafetyState() === 'stopFailed'"
+    secondaryLabel="Close Anyway"
+    [secondaryDisabled]="forceClosePending()"
+    (cancel)="closeDialog()"
+    (secondarySubmit)="closeAnyway()"
+  >
+    @if (ptzSafetyState() === 'stopFailed') {
+      <span dialog-action-bar-extra class="site-cameras-dialog__close-warning" role="status">
+        Camera movement may still be active.
+      </span>
+    }
+  </app-dialog-action-bar>
+</app-dialog-shell>
