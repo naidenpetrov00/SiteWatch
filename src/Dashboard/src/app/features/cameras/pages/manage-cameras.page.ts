@@ -3,9 +3,18 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { firstValueFrom } from 'rxjs';
 
 import { DataTableComponent } from '../../../shared/data-table/data-table.component';
-import { DataTableColumn, DataTableState } from '../../../shared/data-table/data-table.types';
+import {
+  DataTableColumn,
+  DataTableRowAction,
+  DataTableRowActionEvent,
+  DataTableState
+} from '../../../shared/data-table/data-table.types';
 import { ActionButtonComponent } from '../../../shared/ui/action-button/action-button.component';
 import { AddCameraDialogComponent } from '../components/add-camera-dialog/add-camera-dialog.component';
+import {
+  CameraLiveViewDialogComponent,
+  CameraLiveViewDialogData
+} from '../components/camera-live-view-dialog/camera-live-view-dialog.component';
 import { DeleteCameraDialogComponent } from '../components/delete-camera-dialog/delete-camera-dialog.component';
 import { EditCameraDialogComponent } from '../components/edit-camera-dialog/edit-camera-dialog.component';
 import { DashboardCamera } from '../models/dashboard-camera.model';
@@ -41,6 +50,14 @@ export class ManageCamerasPage {
   readonly camerasTotalCount = signal(0);
   readonly tableState = signal<DataTableState<DashboardCamera> | null>(null);
   readonly columns = CAMERA_COLUMNS;
+  readonly rowActions: readonly DataTableRowAction<DashboardCamera>[] = [
+    {
+      id: 'live-view',
+      label: 'Live View',
+      ariaLabelAccessor: (camera) => `Open live view for ${camera.name}`,
+      disabledPredicate: (camera) => camera.siteId === null
+    }
+  ];
   readonly pageSize = 50;
   readonly pageSizeOptions = [50, 100, 500, 1000] as const;
 
@@ -59,8 +76,42 @@ export class ManageCamerasPage {
   }
 
   onTableStateChange(state: DataTableState<DashboardCamera>): void { this.tableState.set(state); }
+
   openAddCameraDialog(): void {
     this.dialog.open(AddCameraDialogComponent, { autoFocus: false, width: '48rem', maxWidth: 'calc(100vw - 2rem)' });
+  }
+
+  onRowActionClicked(event: DataTableRowActionEvent<DashboardCamera>): void {
+    if (event.action.id !== 'live-view' || event.row.siteId === null) {
+      return;
+    }
+
+    const data: CameraLiveViewDialogData = {
+      siteId: event.row.siteId,
+      camera: {
+        id: event.row.id,
+        numberId: event.row.numberId,
+        name: event.row.name,
+        brand: event.row.brand,
+        model: event.row.model
+      }
+    };
+
+    this.dialog.open<CameraLiveViewDialogComponent, CameraLiveViewDialogData>(
+      CameraLiveViewDialogComponent,
+      {
+        autoFocus: false,
+        closeOnNavigation: true,
+        closePredicate: (_result, _config, component) =>
+          component instanceof CameraLiveViewDialogComponent
+            ? component.canCloseDialog()
+            : true,
+        width: '78rem',
+        maxWidth: 'calc(100vw - 2rem)',
+        maxHeight: 'calc(100vh - 2rem)',
+        data
+      }
+    );
   }
 
   async onCellButtonClicked(event: { row: DashboardCamera; column: DataTableColumn<DashboardCamera> }): Promise<void> {

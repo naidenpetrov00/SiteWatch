@@ -7,5 +7,5 @@
     </div>
     <div class="manage-cameras-page__actions"><app-action-button label="Add Camera" variant="primary" (clicked)="openAddCameraDialog()" /></div>
   </header>
-  <app-data-table tableEyebrow="Cameras" tableLabel="Manage Cameras" emptyMessage="No cameras match the current filters." filterApplyMode="search" [rows]="cameras()" [filteredRowsTotal]="camerasFilteredCount()" [overallRowsTotal]="camerasTotalCount()" [columns]="columns" [pageSize]="pageSize" [pageSizeOptions]="pageSizeOptions" (tableStateChange)="onTableStateChange($event)" (cellButtonClicked)="onCellButtonClicked($event)" />
+  <app-data-table tableEyebrow="Cameras" tableLabel="Manage Cameras" emptyMessage="No cameras match the current filters." filterApplyMode="search" [rows]="cameras()" [filteredRowsTotal]="camerasFilteredCount()" [overallRowsTotal]="camerasTotalCount()" [columns]="columns" [rowActions]="rowActions" [pageSize]="pageSize" [pageSizeOptions]="pageSizeOptions" (tableStateChange)="onTableStateChange($event)" (cellButtonClicked)="onCellButtonClicked($event)" (rowActionClicked)="onRowActionClicked($event)" />
 </main>

@@ -12,6 +12,10 @@ import {
 } from '../../../shared/data-table/data-table.types';
 import { OffersService } from '../../offers/services/offers.service';
 import { getOfferError } from '../../offers/utils/offer-error';
+import {
+  SiteCamerasDialogComponent,
+  SiteCamerasDialogData
+} from '../../cameras/components/site-cameras-dialog/site-cameras-dialog.component';
 import { DashboardSite } from '../models/dashboard-site.model';
 import { DashboardSitesService } from '../services/dashboard-sites.service';
 import { EditSiteDialogComponent } from '../components/edit-site-dialog/edit-site-dialog.component';
@@ -111,6 +115,11 @@ export class ManageSitesPage {
   readonly columns = SITE_COLUMNS;
   readonly rowActions: readonly DataTableRowAction<DashboardSite>[] = [
     {
+      id: 'view-cameras',
+      label: 'View Cameras',
+      ariaLabelAccessor: (site) => `View cameras for Site ${site.numberId}`
+    },
+    {
       id: 'create-offer',
       label: 'Create Offer',
       ariaLabelAccessor: (site) => `Create an offer for Site ${site.numberId}`,
@@ -189,6 +198,26 @@ export class ManageSitesPage {
     event: DataTableRowActionEvent<DashboardSite>
   ): Promise<void> {
     this.pageError.set(null);
+    if (event.action.id === 'view-cameras') {
+      this.dialog.open<SiteCamerasDialogComponent, SiteCamerasDialogData>(SiteCamerasDialogComponent, {
+        autoFocus: false,
+        closeOnNavigation: true,
+        closePredicate: (_result, _config, component) =>
+          component instanceof SiteCamerasDialogComponent
+            ? component.canCloseDialog()
+            : true,
+        width: '90rem',
+        maxWidth: 'calc(100vw - 2rem)',
+        maxHeight: 'calc(100vh - 2rem)',
+        data: {
+          siteId: event.row.id,
+          siteName: event.row.name,
+          siteNumberId: event.row.numberId
+        }
+      });
+      return;
+    }
+
     if (event.action.id === 'view-offers') {
       await this.router.navigate(['/sites', event.row.id, 'offers']);
       return;
