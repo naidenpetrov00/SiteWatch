@@ -4,21 +4,21 @@ const MAX_RECORDING_BYTES = 268_435_456;
 const FINALIZATION_TIMEOUT_MS = 10_000;
 
 const VIDEO_WITH_AUDIO_MIME_TYPES = [
-  'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
-  'video/mp4;codecs=avc1.640028,mp4a.40.2',
-  'video/mp4',
   'video/webm;codecs=vp8,opus',
   'video/webm;codecs=vp9,opus',
-  'video/webm'
+  'video/webm',
+  'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+  'video/mp4;codecs=avc1.640028,mp4a.40.2',
+  'video/mp4'
 ] as const;
 
 const VIDEO_ONLY_MIME_TYPES = [
-  'video/mp4;codecs=avc1.42E01E',
-  'video/mp4;codecs=avc1.640028',
-  'video/mp4',
   'video/webm;codecs=vp8',
   'video/webm;codecs=vp9',
-  'video/webm'
+  'video/webm',
+  'video/mp4;codecs=avc1.42E01E',
+  'video/mp4;codecs=avc1.640028',
+  'video/mp4'
 ] as const;
 
 export type RecordingLimit = 'duration' | 'bytes';
